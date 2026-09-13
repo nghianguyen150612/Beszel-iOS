@@ -17,6 +17,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Patch Go runtime for legacy iOS ARM64
+        run: sudo python3 .github/scripts/patch-go-ios-arm64-runtime.py
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
