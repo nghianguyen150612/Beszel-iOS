@@ -115,6 +115,9 @@ func (a *Agent) refreshSystemDetails() {
 		}
 	}
 
+	// Apply platform-specific metadata overrides.
+	a.adjustPlatformSystemDetails()
+
 	// zfs
 	if _, err := zfs.ARCSize(); err != nil {
 		slog.Debug("Not monitoring ZFS ARC", "err", err)
