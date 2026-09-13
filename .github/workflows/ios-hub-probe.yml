@@ -23,7 +23,7 @@ jobs:
       - name: Build web UI
         working-directory: internal/site
         run: |
-          bun install --frozen-lockfile
+          bun install
           bun run build
 
       - name: Show environment
