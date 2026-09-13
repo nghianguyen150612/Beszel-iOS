@@ -81,8 +81,12 @@ func (a *Agent) refreshSystemDetails() {
 	}
 
 	// cpu model
-	if info, err := cpu.Info(); err == nil && len(info) > 0 {
-		a.systemDetails.CpuModel = info[0].ModelName
+	// gopsutil's Darwin ARM64 cpu.Info path probes macOS-specific IOKit
+	// properties that may not exist on iOS.
+	if runtime.GOOS != "ios" {
+		if info, err := cpu.Info(); err == nil && len(info) > 0 {
+			a.systemDetails.CpuModel = info[0].ModelName
+		}
 	}
 	// gopsutil doesn't parse the "cpu model" field from /proc/cpuinfo, which
 	// is the only source of the CPU model name on MIPS. Fall back to reading
