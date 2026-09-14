@@ -6,8 +6,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-
-	"howett.net/plist"
 )
 
 type iosBattery struct {
@@ -26,131 +24,98 @@ func readIOSBatteries() ([]iosBattery, error) {
 		"-r",
 		"-c",
 		"AppleARMPMUCharger",
-		"-a",
+		"-l",
 	).Output()
 	if err != nil {
 		return nil, err
 	}
 
-	// ioreg -a doesn't guarantee that the matching registry properties
-	// are the top-level plist object. Decode generically and walk the tree
-	// looking for a dictionary containing battery capacity properties.
-	var root any
-	if _, err := plist.Unmarshal(out, &root); err != nil {
-		return nil, err
-	}
+	lines := strings.Split(string(out), "\n")
 
-	var batteries []iosBattery
-	findIOSBatteries(root, &batteries)
+	current, okCurrent := ioregInt(lines, "CurrentCapacity")
+	maxCapacity, okMax := ioregInt(lines, "MaxCapacity")
 
-	if len(batteries) == 0 {
+	if !okCurrent || !okMax || maxCapacity <= 0 {
 		return nil, errNoBatteries
 	}
 
-	return batteries, nil
-}
+	rawMax, _ := ioregInt(lines, "AppleRawMaxCapacity")
 
-func findIOSBatteries(v any, result *[]iosBattery) {
-	switch value := v.(type) {
-	case map[string]any:
-		if bat, ok := decodeIOSBattery(value); ok {
-			*result = append(*result, bat)
-			return
-		}
-
-		for _, child := range value {
-			findIOSBatteries(child, result)
-		}
-
-	case []any:
-		for _, child := range value {
-			findIOSBatteries(child, result)
-		}
-	}
-}
-
-func decodeIOSBattery(values map[string]any) (iosBattery, bool) {
-	current, hasCurrent := plistInt(values["CurrentCapacity"])
-	maxCapacity, hasMax := plistInt(values["MaxCapacity"])
-
-	// These two properties identify the AppleARMPMUCharger battery record.
-	if !hasCurrent || !hasMax || maxCapacity <= 0 {
-		return iosBattery{}, false
-	}
-
-	rawMax, _ := plistInt(values["AppleRawMaxCapacity"])
-
-	installed, hasInstalled := plistBool(values["BatteryInstalled"])
-	if !hasInstalled {
-		// Some iOS versions omit BatteryInstalled from the serialized
-		// AppleARMPMUCharger plist even though capacity data is present.
+	installed, okInstalled := ioregBool(lines, "BatteryInstalled")
+	if !okInstalled {
 		installed = true
 	}
 
-	external, _ := plistBool(values["ExternalConnected"])
-	charging, _ := plistBool(values["IsCharging"])
-	full, _ := plistBool(values["FullyCharged"])
+	external, _ := ioregBool(lines, "ExternalConnected")
+	charging, _ := ioregBool(lines, "IsCharging")
+	full, _ := ioregBool(lines, "FullyCharged")
 
-	return iosBattery{
-		CurrentCapacity:     current,
-		MaxCapacity:         maxCapacity,
-		AppleRawMaxCapacity: rawMax,
-		ExternalConnected:   external,
-		IsCharging:          charging,
-		FullyCharged:        full,
-		BatteryInstalled:    installed,
-	}, true
+	return []iosBattery{
+		{
+			CurrentCapacity:     current,
+			MaxCapacity:         maxCapacity,
+			AppleRawMaxCapacity: rawMax,
+			ExternalConnected:   external,
+			IsCharging:          charging,
+			FullyCharged:        full,
+			BatteryInstalled:    installed,
+		},
+	}, nil
 }
 
-func plistInt(v any) (int, bool) {
-	switch value := v.(type) {
-	case int:
+func ioregValue(lines []string, key string) (string, bool) {
+	prefix := `"` + key + `" = `
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		// Legacy ioreg output prefixes registry properties with "|".
+		if strings.HasPrefix(line, "|") {
+			line = strings.TrimSpace(strings.TrimPrefix(line, "|"))
+		}
+
+		// Only match a top-level property line. This intentionally avoids
+		// matching keys embedded inside the large BatteryData dictionary.
+		if !strings.HasPrefix(line, prefix) {
+			continue
+		}
+
+		value := strings.TrimSpace(strings.TrimPrefix(line, prefix))
 		return value, true
-	case int8:
-		return int(value), true
-	case int16:
-		return int(value), true
-	case int32:
-		return int(value), true
-	case int64:
-		return int(value), true
-	case uint:
-		return int(value), true
-	case uint8:
-		return int(value), true
-	case uint16:
-		return int(value), true
-	case uint32:
-		return int(value), true
-	case uint64:
-		return int(value), true
-	case string:
-		n, err := strconv.Atoi(strings.TrimSpace(value))
-		return n, err == nil
-	default:
+	}
+
+	return "", false
+}
+
+func ioregInt(lines []string, key string) (int, bool) {
+	value, ok := ioregValue(lines, key)
+	if !ok {
 		return 0, false
 	}
+
+	value = strings.Trim(value, `"`)
+	n, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, false
+	}
+
+	return n, true
 }
 
-func plistBool(v any) (bool, bool) {
-	if value, ok := v.(bool); ok {
-		return value, true
+func ioregBool(lines []string, key string) (bool, bool) {
+	value, ok := ioregValue(lines, key)
+	if !ok {
+		return false, false
 	}
 
-	if n, ok := plistInt(v); ok {
-		return n != 0, true
+	switch strings.ToLower(strings.Trim(value, `"`)) {
+	case "yes", "true", "1":
+		return true, true
+	case "no", "false", "0":
+		return false, true
+	default:
+		return false, false
 	}
-
-	if value, ok := v.(string); ok {
-		switch strings.ToLower(strings.TrimSpace(value)) {
-		case "yes", "true", "on":
-			return true, true
-		case "no", "false", "off":
-			return false, true
-		}
-	}
-
-	return false, false
 }
 
 func HasReadableBattery() bool {
@@ -193,7 +158,7 @@ func GetBatteryStats() ([]Battery, error) {
 			state = stateIdle
 		}
 
-		battery := Battery{
+		b := Battery{
 			Name:    "Primary",
 			Percent: uint8(percent),
 			State:   state,
@@ -201,11 +166,11 @@ func GetBatteryStats() ([]Battery, error) {
 		}
 
 		if bat.AppleRawMaxCapacity > 0 {
-			battery.FullChargeCapacity = uint64(bat.AppleRawMaxCapacity)
-			battery.HasFullChargeCapacity = true
+			b.FullChargeCapacity = uint64(bat.AppleRawMaxCapacity)
+			b.HasFullChargeCapacity = true
 		}
 
-		result = append(result, battery)
+		result = append(result, b)
 	}
 
 	if len(result) == 0 {
