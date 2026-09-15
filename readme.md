@@ -36,6 +36,8 @@ This branch collects those changes in one place so the port stays recognizable a
 | Hub on iOS | **Tested** — runs natively, serves UI and `/api/health` |
 | Battery monitoring | **Tested** — percentage + charging state on validated hardware |
 | System metadata | **Tested** — hostname, kernel, CPU model, iOS version |
+| Consolidated build pipeline | **Working** — one workflow builds Agent + Hub + SHA256SUMS |
+| GitHub Releases | **Planned** — not published yet |
 | One-line installer | **Planned** — not available yet |
 
 See [docs/ios-port-status.md](docs/ios-port-status.md) for the full audit.
@@ -101,12 +103,18 @@ iOS builds run on the macOS GitHub Actions runners:
 - `GOOS=ios`, `GOARCH=arm64`, `CGO_ENABLED=1`
 - iPhoneOS SDK + Apple clang wrapper, `-mios-version-min=12.0`
 - Go runtime patch applied first
-- Hub workflow builds the web UI before the Go binary
+- Hub web UI (`bun install && bun run build` in `internal/site`) built before the Hub binary
 
-Workflows (manual dispatch):
+Consolidated pipeline (manual dispatch, also runs on `ios` pushes touching build/iOS files):
+
+- `.github/workflows/ios-build.yml` — builds Agent + Hub, verifies Mach-O outputs, generates and verifies `SHA256SUMS`, uploads one `beszel-ios-arm64` artifact containing exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS` (under `build/ios/`).
+
+Legacy reference probes (kept as fallback until the consolidated workflow is proven; candidates for removal later):
 
 - `.github/workflows/ios-agent-probe.yml`
 - `.github/workflows/ios-hub-probe.yml`
+
+No GitHub Releases are published yet. The exact future release asset names are `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`.
 
 See [docs/ios-build-notes.md](docs/ios-build-notes.md) for details.
 

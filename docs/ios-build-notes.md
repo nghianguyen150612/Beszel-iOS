@@ -1,6 +1,6 @@
 # iOS Build Notes
 
-This documents the unusual requirements for producing working iOS binaries. It summarizes the two probe workflows; see the YAML itself for exact steps.
+This documents the unusual requirements for producing working iOS binaries. The primary reference is the consolidated `.github/workflows/ios-build.yml`; the two probe workflows (`ios-agent-probe.yml`, `ios-hub-probe.yml`) are legacy references kept as fallback. See the YAML itself for exact steps.
 
 ## Target
 
@@ -11,13 +11,18 @@ This documents the unusual requirements for producing working iOS binaries. It s
 
 ## Toolchain
 
-1. Apply the Go runtime patch first: `sudo python3 .github/scripts/patch-go-ios-arm64-runtime.py`.
-2. Resolve the SDK and compiler: `xcrun --sdk iphoneos --show-sdk-path`, `xcrun --sdk iphoneos --find clang`.
-3. Create a clang wrapper passing `-arch arm64 -isysroot <SDK> -mios-version-min=12.0`, and export it as `CC`.
-4. Build with the wrapper:
-   - Agent: `go build -trimpath -ldflags="-s -w" -o build/beszel-agent-ios-arm64 ./internal/cmd/agent`
-   - Hub: `go build -trimpath -ldflags="-s -w" -o build/beszel-hub-ios-arm64 ./internal/cmd/hub`
-5. Sanity-check with `file`, `otool -hv`, and `otool -l | grep LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS`.
+1. Apply the Go runtime patch first: `sudo python3 .github/scripts/patch-go-ios-arm64-runtime.py` (workflow fails if this fails).
+2. Build the Hub frontend first (`internal/site`: `bun install`, `bun run build`). Do not switch to frozen-lockfile installs without verifying against the current repo.
+3. Resolve the SDK and compiler: `xcrun --sdk iphoneos --show-sdk-path`, `xcrun --sdk iphoneos --find clang`. Never hardcode an SDK path.
+4. Create one clang wrapper passing `-arch arm64 -isysroot <SDK> -mios-version-min=12.0`, and reuse it as `CC` for both builds.
+5. Build with the wrapper into `build/ios/`:
+   - Agent: `go build -trimpath -ldflags="-s -w" -o build/ios/beszel-agent-ios-arm64 ./internal/cmd/agent`
+   - Hub: `go build -trimpath -ldflags="-s -w" -o build/ios/beszel-hub-ios-arm64 ./internal/cmd/hub`
+6. Verify both binaries: `file`, `otool -hv`, `otool -l | grep LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS`. The workflow fails on missing/empty files, non-Mach-O output, non-arm64 output, missing iOS load commands, or missing `12.0` deployment metadata.
+7. Generate checksums with macOS-compatible `shasum -a 256` (no absolute paths):
+   - `shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS`
+8. Verify with `shasum -a 256 -c SHA256SUMS`.
+9. Upload one `beszel-ios-arm64` artifact with exactly the three files above. No release publishing happens in this workflow.
 
 ## Why `ldid` is needed at install time
 

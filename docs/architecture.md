@@ -52,7 +52,14 @@ Binaries must live under `/usr/local/bin` (`chown root:wheel`, `chmod 755`, `ldi
 - `agent/system.go` — skips Darwin `cpu.Info()` on iOS, calls `adjustPlatformSystemDetails()`.
 - `agent/system_platform_ios.go` / `agent/system_platform_other.go` — iOS sysctl/plist metadata vs. no-op.
 - `.github/scripts/patch-go-ios-arm64-runtime.py` — A7 `procyield` workaround (build-time, macOS runner).
-- `.github/workflows/ios-agent-probe.yml` / `ios-hub-probe.yml` — device-targeted builds.
+- `.github/workflows/ios-build.yml` — consolidated pipeline (Agent + Hub + SHA256SUMS → one artifact).
+- `.github/workflows/ios-agent-probe.yml` / `ios-hub-probe.yml` — legacy reference probes (fallback until consolidated flow is proven).
+
+## Distribution status
+
+**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. These are the exact future release asset names.
+
+**Planned, not implemented:** GitHub Release publishing, versioning/tags, `install.sh`, LaunchDaemon automation, update/rollback, uninstall.
 
 ## Future distribution architecture (planned, not implemented)
 

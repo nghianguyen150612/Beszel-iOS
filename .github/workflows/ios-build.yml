@@ -1,0 +1,154 @@
+name: iOS Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ios
+    paths:
+      - "agent/**"
+      - "internal/cmd/agent/**"
+      - "internal/cmd/hub/**"
+      - "internal/site/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/ios-build.yml"
+      - ".github/scripts/patch-go-ios-arm64-runtime.py"
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Patch Go runtime for legacy iOS ARM64
+        run: sudo python3 .github/scripts/patch-go-ios-arm64-runtime.py
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Build web UI
+        working-directory: internal/site
+        run: |
+          bun install
+          bun run build
+
+      - name: Show environment
+        run: |
+          go version
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+          xcrun --sdk iphoneos --find clang
+
+      - name: Create iOS clang wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/ios-clangwrap.sh" <<'WRAP'
+          #!/bin/sh
+          SDK_PATH="$(xcrun --sdk iphoneos --show-sdk-path)"
+          CLANG="$(xcrun --sdk iphoneos --find clang)"
+
+          exec "$CLANG" \
+            -arch arm64 \
+            -isysroot "$SDK_PATH" \
+            -mios-version-min=12.0 \
+            "$@"
+          WRAP
+
+          chmod +x "$RUNNER_TEMP/ios-clangwrap.sh"
+
+      - name: Build Beszel agent for iOS arm64
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios
+
+          CGO_ENABLED=1 \
+          GOOS=ios \
+          GOARCH=arm64 \
+          CC="$RUNNER_TEMP/ios-clangwrap.sh" \
+          go build \
+            -trimpath \
+            -ldflags="-s -w" \
+            -o build/ios/beszel-agent-ios-arm64 \
+            ./internal/cmd/agent
+
+      - name: Build Beszel hub for iOS arm64
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios
+
+          CGO_ENABLED=1 \
+          GOOS=ios \
+          GOARCH=arm64 \
+          CC="$RUNNER_TEMP/ios-clangwrap.sh" \
+          go build \
+            -trimpath \
+            -ldflags="-s -w" \
+            -o build/ios/beszel-hub-ios-arm64 \
+            ./internal/cmd/hub
+
+      - name: Verify Mach-O outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for bin in build/ios/beszel-agent-ios-arm64 build/ios/beszel-hub-ios-arm64; do
+            echo "== $bin =="
+            if [ ! -s "$bin" ]; then
+              echo "ERROR: missing or empty binary: $bin" >&2
+              exit 1
+            fi
+            file "$bin"
+            if ! file "$bin" | grep -q "Mach-O"; then
+              echo "ERROR: not a Mach-O binary: $bin" >&2
+              exit 1
+            fi
+            if ! file "$bin" | grep -q "arm64"; then
+              echo "ERROR: not an arm64 binary: $bin" >&2
+              exit 1
+            fi
+            otool -hv "$bin"
+            if ! otool -l "$bin" | grep -Eq 'LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS'; then
+              echo "ERROR: missing iOS version load command in $bin" >&2
+              exit 1
+            fi
+            otool -l "$bin" | grep -A8 -E 'LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS'
+            if ! otool -l "$bin" | grep -q "12\.0"; then
+              echo "ERROR: expected iOS 12.0 deployment metadata in $bin" >&2
+              exit 1
+            fi
+          done
+
+      - name: Generate SHA256SUMS
+        shell: bash
+        working-directory: build/ios
+        run: |
+          set -euo pipefail
+          shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Verify SHA256SUMS
+        shell: bash
+        working-directory: build/ios
+        run: |
+          set -euo pipefail
+          shasum -a 256 -c SHA256SUMS
+
+      - name: Upload iOS release payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: beszel-ios-arm64
+          path: |
+            build/ios/beszel-agent-ios-arm64
+            build/ios/beszel-hub-ios-arm64
+            build/ios/SHA256SUMS
