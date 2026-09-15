@@ -10,13 +10,13 @@ Provide native Beszel Agent + Hub binaries for jailbroken iOS devices while pres
 
 - Upstream: [henrygd/beszel](https://github.com/henrygd/beszel).
 - `main` tracks upstream (currently in sync at the last fetch).
-- `ios` = upstream base + 8 iOS-specific files/changes (see below). No Agent/Hub rewrite, no Hub database changes, no removed upstream features.
+- `ios` = upstream base + iOS-specific files/changes (see below). No Agent/Hub rewrite, no Hub database changes, no removed upstream features.
 - The `ios` branch may lag upstream `main` by a few commits (e.g. recent web-theme fixes); that lag is not an iOS regression.
 
 ## Branch model
 
 - `main` — upstream-aligned. No iOS-only changes.
-- `ios` — active iOS port branch. All iOS work belongs here.
+- `ios` — active iOS port branch and repository default branch. All iOS work belongs here.
 
 ## Validated hardware
 
@@ -37,9 +37,7 @@ Everything else is **Untested** until a real device report lands in the repo.
 | `agent/system_platform_ios.go` (`//go:build ios`) | Sets OS/Arch, hostname/kernel/cores/threads via sysctl, CPU model from `hw.machine` (A7 family mapping), `OsName` from `SystemVersion.plist` | **Tested** |
 | `agent/system_platform_other.go` (`//go:build !ios`) | No-op hook so non-iOS builds are unchanged | **Working** |
 | `.github/scripts/patch-go-ios-arm64-runtime.py` | Replaces `CNTVCT_EL0`-based `procyieldAsm` with legacy `YIELD` loop; refuses to patch unknown runtimes | **Tested** (required on A7/iOS 12) |
-| `.github/workflows/ios-build.yml` | Consolidated pipeline: one macOS job builds Agent + Hub into `build/ios/`, verifies Mach-O/iOS-12 metadata, generates + verifies `SHA256SUMS`, uploads single `beszel-ios-arm64` artifact | **Working** (new; requires successful CI run to confirm) |
-| `.github/workflows/ios-agent-probe.yml` | macOS runner, patched Go, iPhoneOS SDK clang wrapper (`-mios-version-min=12.0`), `CGO_ENABLED=1 GOOS=ios GOARCH=arm64`, builds `./internal/cmd/agent` | **Working** (legacy reference, kept as fallback) |
-| `.github/workflows/ios-hub-probe.yml` | Same toolchain + `bun install && bun run build` in `internal/site` before building `./internal/cmd/hub` | **Working** (legacy reference, kept as fallback) |
+| `.github/workflows/ios-build.yml` | Consolidated pipeline: one macOS job builds Agent + Hub into `build/ios/`, verifies Mach-O/iOS-12 metadata, generates + verifies `SHA256SUMS`, uploads single `beszel-ios-arm64` artifact; a dependent `release-ios` job (tag pushes only) re-verifies the payload and publishes exactly those three files as a non-draft, non-prerelease GitHub Release marked Latest | **Working** |
 
 Verified build-tag selection: `GOOS=ios go list ./agent/battery` yields only `battery.go + battery_ios.go`; `GOOS=darwin` yields `battery_darwin.go`. `gofmt` clean, `go test ./agent/battery` passes on Linux, `go vet` passes for the iOS battery package.
 
@@ -82,13 +80,14 @@ Verified build-tag selection: `GOOS=ios go list ./agent/battery` yields only `ba
 ### Build status — Working
 
 - Consolidated `.github/workflows/ios-build.yml` builds both binaries into `build/ios/`, validates Mach-O arm64 + iOS load commands + 12.0 deployment metadata, generates `SHA256SUMS` via `shasum -a 256`, verifies it, and uploads one `beszel-ios-arm64` artifact (`beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`).
-- Legacy probe workflows (`ios-agent-probe.yml`, `ios-hub-probe.yml`) are kept as fallback reference until the consolidated pipeline proves itself; they are candidates for removal in a later prompt.
+- Tag pushes matching `v*-ios.*` additionally run the `release-ios` job, which re-downloads the artifact, re-verifies it (existence, non-zero size, exact two-entry `SHA256SUMS`, checksum match), validates the tag against `beszel.Version` and `ios` history, then publishes the three files via `gh release create --latest` (non-draft, non-prerelease).
+- The legacy probe workflows (`ios-agent-probe.yml`, `ios-hub-probe.yml`) were removed once the consolidated pipeline proved itself; all of their behavior is covered above.
 
 ## Known limitations
 
 - Only the iPad mini 2 / A7 / iOS 12.5.7 target is validated.
 - Binaries must be installed under `/usr/local/bin` with `chown root:wheel`, `chmod 755`, `ldid -S`. `$HOME`/`/tmp` execution has previously failed.
-- Consolidated CI pipeline exists, but no GitHub Release, installer, updater, or uninstaller exists yet.
+- GitHub Releases are published from iOS tags, but no installer, updater, or uninstaller exists yet.
 - LaunchDaemon plists and packaging scripts are not yet in the repo (only documented paths).
 
 ## Untested devices / iOS versions
@@ -97,6 +96,6 @@ All other iPhones/iPads, all other SoCs (A8+), and all other iOS versions (inclu
 
 ## Planned installer / release work
 
-**Existing:** consolidated CI build pipeline producing `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS` as a single `beszel-ios-arm64` artifact.
+**Existing:** consolidated CI build pipeline producing `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS` as a single `beszel-ios-arm64` artifact; tag-triggered GitHub Release publication of those exact three asset names (see [ios-build-notes.md](ios-build-notes.md) for the `v<upstream>-ios.<rev>` scheme).
 
-**Planned** (not implemented): GitHub Release publishing with those exact asset names; an `install.sh` offering Install Agent / Install Hub / Both / Update / Repair / Uninstall; automatic updates; uninstall tooling; LaunchDaemon plists under `packaging/launchd/`. See [architecture.md](architecture.md).
+**Planned** (not implemented): an `install.sh` offering Install Agent / Install Hub / Both / Update / Repair / Uninstall; automatic updates; uninstall tooling; LaunchDaemon plists under `packaging/launchd/`. The future installer will download from `.../releases/latest/download/...` and its raw URL will target the `ios` branch (e.g. `.../ios/install.sh`). See [architecture.md](architecture.md).

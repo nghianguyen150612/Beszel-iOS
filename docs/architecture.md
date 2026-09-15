@@ -8,10 +8,11 @@ henrygd/beszel
       v
     main            upstream-aligned branch
       |
-      + iOS compatibility work (8 files: battery, system metadata,
-      |                         runtime patch, 2 workflows)
+      + iOS compatibility work (battery, system metadata,
+      |                         runtime patch, consolidated
+      |                         build/release workflow)
       v
-     ios            active iOS port branch
+     ios            active iOS port branch (default branch)
 ```
 
 Design rule: `ios` stays recognizable as Beszel. No Agent rewrite, no Hub rewrite, no database-semantics change, no removed upstream features.
@@ -52,14 +53,13 @@ Binaries must live under `/usr/local/bin` (`chown root:wheel`, `chmod 755`, `ldi
 - `agent/system.go` — skips Darwin `cpu.Info()` on iOS, calls `adjustPlatformSystemDetails()`.
 - `agent/system_platform_ios.go` / `agent/system_platform_other.go` — iOS sysctl/plist metadata vs. no-op.
 - `.github/scripts/patch-go-ios-arm64-runtime.py` — A7 `procyield` workaround (build-time, macOS runner).
-- `.github/workflows/ios-build.yml` — consolidated pipeline (Agent + Hub + SHA256SUMS → one artifact).
-- `.github/workflows/ios-agent-probe.yml` / `ios-hub-probe.yml` — legacy reference probes (fallback until consolidated flow is proven).
+- `.github/workflows/ios-build.yml` — consolidated pipeline (Agent + Hub + SHA256SUMS → one artifact; on `v*-ios.*` tags, a dependent job validates the tag and publishes the same three files as a Latest GitHub Release).
 
 ## Distribution status
 
-**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. These are the exact future release asset names.
+**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `ios` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean.
 
-**Planned, not implemented:** GitHub Release publishing, versioning/tags, `install.sh`, LaunchDaemon automation, update/rollback, uninstall.
+**Planned, not implemented:** `install.sh`, LaunchDaemon automation, update/rollback, uninstall.
 
 ## Future distribution architecture (planned, not implemented)
 

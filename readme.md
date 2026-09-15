@@ -37,7 +37,7 @@ This branch collects those changes in one place so the port stays recognizable a
 | Battery monitoring | **Tested** — percentage + charging state on validated hardware |
 | System metadata | **Tested** — hostname, kernel, CPU model, iOS version |
 | Consolidated build pipeline | **Working** — one workflow builds Agent + Hub + SHA256SUMS |
-| GitHub Releases | **Planned** — not published yet |
+| GitHub Releases | **Working** — published from iOS tags (`v<upstream>-ios.<rev>`) |
 | One-line installer | **Planned** — not available yet |
 
 See [docs/ios-port-status.md](docs/ios-port-status.md) for the full audit.
@@ -92,9 +92,33 @@ which replaces that path with a legacy `YIELD` loop. This patch is **required** 
 
 There is **no production one-line installer yet**.
 
-The planned UX is eventually something like `curl ... | sudo sh` with Agent / Hub / Both / Update / Repair / Uninstall options, installing binaries into `/usr/local/bin` (with `chown root:wheel`, `chmod 755`, `ldid -S`). That installer does **not** exist in this branch yet — do not advertise it as usable.
+The planned UX is eventually something like `curl ... | sudo sh` (fetched from
+`https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh`)
+with Agent / Hub / Both / Update / Repair / Uninstall options, installing binaries
+into `/usr/local/bin` (with `chown root:wheel`, `chmod 755`, `ldid -S`). That
+installer does **not** exist in this branch yet — do not advertise it as usable.
 
-Current deployment is manual: build via the GitHub workflows, copy to `/usr/local/bin` on device, sign with `ldid`, and install the LaunchDaemon plists. Custom binaries must live under `/usr/local/bin`; running them from `$HOME` or `/tmp` has previously caused iOS execution/sandbox problems.
+### Manual download
+
+GitHub Releases publish exactly three assets per iOS release:
+
+- `beszel-agent-ios-arm64`
+- `beszel-hub-ios-arm64`
+- `SHA256SUMS`
+
+Download the latest release:
+
+```sh
+curl -fsSLO https://github.com/nghianguyen150612/beszel-ios/releases/latest/download/beszel-agent-ios-arm64
+curl -fsSLO https://github.com/nghianguyen150612/beszel-ios/releases/latest/download/beszel-hub-ios-arm64
+curl -fsSLO https://github.com/nghianguyen150612/beszel-ios/releases/latest/download/SHA256SUMS
+shasum -a 256 -c SHA256SUMS
+```
+
+Current deployment is otherwise manual: copy the verified binaries to
+`/usr/local/bin` on device, sign with `ldid`, and install the LaunchDaemon
+plists. Custom binaries must live under `/usr/local/bin`; running them from
+`$HOME` or `/tmp` has previously caused iOS execution/sandbox problems.
 
 ## Building
 
@@ -105,23 +129,23 @@ iOS builds run on the macOS GitHub Actions runners:
 - Go runtime patch applied first
 - Hub web UI (`bun install && bun run build` in `internal/site`) built before the Hub binary
 
-Consolidated pipeline (manual dispatch, also runs on `ios` pushes touching build/iOS files):
+Consolidated pipeline (manual dispatch, also runs on `ios` pushes touching build/iOS files, and on every `v*-ios.*` tag push):
 
 - `.github/workflows/ios-build.yml` — builds Agent + Hub, verifies Mach-O outputs, generates and verifies `SHA256SUMS`, uploads one `beszel-ios-arm64` artifact containing exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS` (under `build/ios/`).
 
-Legacy reference probes (kept as fallback until the consolidated workflow is proven; candidates for removal later):
+Releases are published from version tags, not from branch pushes:
 
-- `.github/workflows/ios-agent-probe.yml`
-- `.github/workflows/ios-hub-probe.yml`
-
-No GitHub Releases are published yet. The exact future release asset names are `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`.
+- Tag format: `v<upstream-version>-ios.<revision>` (for example `v0.19.0-ios.1`).
+- Pushing a valid tag rebuilds both binaries and publishes the same three files as GitHub Release assets, marked as the repository's Latest release.
+- The tag must match the `beszel.Version` declared in `beszel.go` and must reference a commit in `ios` history; otherwise the release job fails before publishing.
+- Upstream release automation (`release.yml`, `docker-images.yml`) explicitly ignores `v*-ios.*` tags, so iOS releases never trigger GoReleaser or Docker image builds.
 
 See [docs/ios-build-notes.md](docs/ios-build-notes.md) for details.
 
 ## Project branch model
 
 - `main` — upstream-aligned branch. Do not put iOS-only changes here.
-- `ios` — **active iOS port branch.** All iOS development belongs here.
+- `ios` — **active iOS port branch and repository default branch.** All iOS development belongs here.
 
 This task, and all future iOS work, must stay on `ios`.
 
@@ -130,7 +154,7 @@ This task, and all future iOS work, must stay on `ios`.
 - Based on [henrygd/beszel](https://github.com/henrygd/beszel).
 - `main` tracks upstream; `ios` adds iOS compatibility on top.
 - Upstream features, Hub database semantics, and Agent architecture are intentionally preserved.
-- Frontend lag of a commit or two behind upstream is expected; iOS-only changes are the 8 files documented in [docs/ios-port-status.md](docs/ios-port-status.md).
+- Frontend lag of a commit or two behind upstream is expected; iOS-only changes are the battery, system-metadata, runtime-patch, and build/release files documented in [docs/ios-port-status.md](docs/ios-port-status.md).
 
 ## Contributing / testing other devices
 

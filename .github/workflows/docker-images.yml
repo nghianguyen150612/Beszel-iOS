@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - "v*"
+      # iOS port tags (v<upstream>-ios.<rev>) ship native iOS binaries via
+      # .github/workflows/ios-build.yml, not Docker images. Exclude them here
+      # so iOS releases do not trigger unrelated image builds.
+      - "!v*-ios.*"
 
 jobs:
   build:

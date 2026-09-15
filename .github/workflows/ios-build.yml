@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - ios
+    # NOTE: path filters are NOT evaluated for tag pushes by GitHub Actions,
+    # so iOS release tags always run the full build + release pipeline below,
+    # while branch pushes to `ios` still skip docs-only changes.
+    tags:
+      - "v*-ios.*"
     paths:
       - "agent/**"
       - "internal/cmd/agent/**"
@@ -14,6 +19,9 @@ on:
       - "go.sum"
       - ".github/workflows/ios-build.yml"
       - ".github/scripts/patch-go-ios-arm64-runtime.py"
+
+permissions:
+  contents: read
 
 jobs:
   build-ios:
@@ -152,3 +160,141 @@ jobs:
             build/ios/beszel-agent-ios-arm64
             build/ios/beszel-hub-ios-arm64
             build/ios/SHA256SUMS
+
+  release-ios:
+    needs: build-ios
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate iOS release tag format
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
+          echo "Validating iOS release tag: ${TAG}"
+          if [ ! -f beszel.go ]; then
+            echo "ERROR: beszel.go not found at tag checkout" >&2
+            exit 1
+          fi
+          BASE_VERSION="$(sed -n 's/^[[:space:]]*Version[[:space:]]*=[[:space:]]*"\(.*\)".*/\1/p' beszel.go | head -n 1)"
+          if [ -z "${BASE_VERSION}" ]; then
+            echo "ERROR: could not read beszel.Version from beszel.go" >&2
+            exit 1
+          fi
+          echo "Base Beszel version from source: ${BASE_VERSION}"
+          echo "BASE_VERSION=${BASE_VERSION}" >> "$GITHUB_ENV"
+          ESCAPED_VERSION="$(printf '%s' "${BASE_VERSION}" | sed 's/\./\\./g')"
+          EXPECTED_PATTERN="^v${ESCAPED_VERSION}-ios\\.[1-9][0-9]*$"
+          if ! printf '%s' "${TAG}" | grep -Eq "${EXPECTED_PATTERN}"; then
+            echo "ERROR: tag '${TAG}' does not match required format 'v${BASE_VERSION}-ios.<positive integer>'" >&2
+            exit 1
+          fi
+          echo "Tag format OK: ${TAG}"
+
+      - name: Verify tag belongs to ios history
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
+          TAG_SHA="$(git rev-list -n 1 "${TAG}")"
+          echo "Tag ${TAG} points at ${TAG_SHA}"
+          git fetch origin ios --no-tags
+          if git merge-base --is-ancestor "${TAG_SHA}" origin/ios; then
+            echo "Tag commit is in ios branch history: OK"
+          else
+            echo "ERROR: tag ${TAG} (${TAG_SHA}) is not an ancestor of origin/ios; refusing to release" >&2
+            exit 1
+          fi
+
+      - name: Download iOS build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: beszel-ios-arm64
+          path: dist
+
+      - name: Verify release payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          for f in beszel-agent-ios-arm64 beszel-hub-ios-arm64 SHA256SUMS; do
+            if [ ! -f "$f" ]; then
+              echo "ERROR: missing payload file: $f" >&2
+              exit 1
+            fi
+            if [ ! -s "$f" ]; then
+              echo "ERROR: empty payload file: $f" >&2
+              exit 1
+            fi
+          done
+          echo "--- SHA256SUMS ---"
+          cat SHA256SUMS
+          if [ "$(wc -l < SHA256SUMS | tr -d ' ')" != "2" ]; then
+            echo "ERROR: SHA256SUMS must contain exactly 2 entries" >&2
+            exit 1
+          fi
+          if ! grep -Eq '^[0-9a-f]{64} [ *]beszel-agent-ios-arm64$' SHA256SUMS; then
+            echo "ERROR: SHA256SUMS missing valid beszel-agent-ios-arm64 entry" >&2
+            exit 1
+          fi
+          if ! grep -Eq '^[0-9a-f]{64} [ *]beszel-hub-ios-arm64$' SHA256SUMS; then
+            echo "ERROR: SHA256SUMS missing valid beszel-hub-ios-arm64 entry" >&2
+            exit 1
+          fi
+          sha256sum -c SHA256SUMS
+          echo "Payload verification OK"
+          ls -l
+
+      - name: Publish GitHub Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
+          BASE_VERSION="${BASE_VERSION:?BASE_VERSION is empty (tag validation must run first)}"
+          NOTES_FILE="$(mktemp)"
+          cat > "${NOTES_FILE}" <<EOF
+          Beszel iOS ${TAG} - unofficial community port of Beszel, based on Beszel ${BASE_VERSION}.
+
+          - Native Agent and Hub binaries for jailbroken iOS (arm64)
+          - Validated on: iPad mini 2 (Apple A7, iOS 12.5.7)
+          - Broader device compatibility remains untested
+          - Verify checksums after download: run shasum -a 256 -c SHA256SUMS
+          - Upstream Beszel: https://github.com/henrygd/beszel
+          EOF
+          gh release create "${TAG}" \
+            --title "Beszel iOS ${TAG}" \
+            --notes-file "${NOTES_FILE}" \
+            --latest \
+            dist/beszel-agent-ios-arm64 dist/beszel-hub-ios-arm64 dist/SHA256SUMS
+
+      - name: Verify published release
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
+          REPO="${{ github.repository }}"
+          echo "== release view =="
+          gh release view "${TAG}" --json tagName,name,isDraft,isPrerelease,assets
+          DRAFT="$(gh release view "${TAG}" --json isDraft --jq .isDraft)"
+          PRERELEASE="$(gh release view "${TAG}" --json isPrerelease --jq .isPrerelease)"
+          [ "${DRAFT}" = "false" ] || { echo "ERROR: release ${TAG} is a draft" >&2; exit 1; }
+          [ "${PRERELEASE}" = "false" ] || { echo "ERROR: release ${TAG} is marked prerelease" >&2; exit 1; }
+          for asset in beszel-agent-ios-arm64 beszel-hub-ios-arm64 SHA256SUMS; do
+            gh release view "${TAG}" --json assets --jq '.assets[].name' | grep -qx "${asset}" \
+              || { echo "ERROR: release asset missing: ${asset}" >&2; exit 1; }
+          done
+          COUNT="$(gh release view "${TAG}" --json assets --jq '.assets | length')"
+          [ "${COUNT}" = "3" ] || { echo "ERROR: expected exactly 3 release assets, found ${COUNT}" >&2; exit 1; }
+          LATEST_TAG="$(gh api "repos/${REPO}/releases/latest" --jq .tag_name)"
+          [ "${LATEST_TAG}" = "${TAG}" ] || { echo "ERROR: latest release is ${LATEST_TAG}, expected ${TAG}" >&2; exit 1; }
+          echo "Release verification OK: ${TAG} is published, non-draft, non-prerelease, Latest, with 3 assets."

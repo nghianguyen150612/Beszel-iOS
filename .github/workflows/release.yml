@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - "v*"
+      # iOS port tags (v<upstream>-ios.<rev>) are published by
+      # .github/workflows/ios-build.yml instead. Exclude them here so
+      # GoReleaser never creates or mutates an iOS GitHub Release.
+      - "!v*-ios.*"
 
 permissions:
   contents: write
