@@ -1,73 +1,143 @@
-# Beszel
+# Beszel iOS
 
-Beszel is a lightweight server monitoring platform that includes Docker statistics, historical data, and alert functions.
+**An unofficial community port of [Beszel](https://github.com/henrygd/beszel) for jailbroken iOS devices.**
 
-It has a friendly web interface, simple configuration, and is ready to use out of the box. It supports automatic backup, multi-user, OAuth authentication, and API access.
+This repository preserves the original Beszel Agent + Hub architecture and makes both components run natively on jailbroken iOS. Both the Agent and the Hub have been demonstrated on real iOS hardware.
 
-[![agent Docker Image Size](https://img.shields.io/docker/image-size/henrygd/beszel-agent/latest?logo=docker&label=agent%20image%20size)](https://hub.docker.com/r/henrygd/beszel-agent)
-[![hub Docker Image Size](https://img.shields.io/docker/image-size/henrygd/beszel/latest?logo=docker&label=hub%20image%20size)](https://hub.docker.com/r/henrygd/beszel)
-[![MIT license](https://img.shields.io/github/license/henrygd/beszel?color=%239944ee)](https://github.com/henrygd/beszel/blob/main/LICENSE)
-[![Crowdin](https://badges.crowdin.net/beszel/localized.svg)](https://crowdin.com/project/beszel)
+> Upstream project: **Beszel by henrygd** — <https://github.com/henrygd/beszel>
+> This is a community port. It is not affiliated with or endorsed by the upstream project.
 
-![Screenshot of Beszel dashboard and system page, side by side. The dashboard shows metrics from multiple connected systems, while the system page shows detailed metrics for a single system.](https://henrygd-assets.b-cdn.net/beszel/screenshot-new.png)
+## What is Beszel iOS?
 
-## Features
+[Beszel](https://github.com/henrygd/beszel) is a lightweight server monitoring platform with a Hub (dashboard) and an Agent (per-machine metrics reporter).
 
-- **Lightweight**: Smaller and less resource-intensive than leading solutions.
-- **Simple**: Easy setup with little manual configuration required.
-- **Docker stats**: Tracks CPU, memory, and network usage history for each container.
-- **ZFS**: Tracks pool capacity, health, and I/O, plus per-dataset usage.
-- **Alerts**: Configurable alerts for CPU, memory, disk, bandwidth, temperature, fan speed, load average, and status.
-- **Multi-user**: Users manage their own systems. Admins can share systems across users.
-- **OAuth / OIDC**: Supports many OAuth2 providers. Password auth can be disabled.
-- **Automatic backups**: Save to and restore from disk or S3-compatible storage.
-<!-- - **REST API**: Use or update your data in your own scripts and applications. -->
+Beszel iOS ports both components to jailbroken iOS with minimal divergence from upstream:
 
-## Architecture
+- Same Agent + Hub architecture and protocol.
+- iOS-specific system metadata, battery telemetry, and build support.
+- A build-time workaround for the legacy Apple A7 Go runtime issue (see below).
 
-Beszel consists of two main components: the **hub** and the **agent**.
+## Why this port exists
 
-- **Hub**: A web application built on [PocketBase](https://pocketbase.io/) that provides a dashboard for viewing and managing connected systems.
-- **Agent**: Runs on each system you want to monitor and communicates system metrics to the hub.
+Stock Beszel targets Linux / macOS / Windows hosts. Jailbroken iOS devices can act as small always-on servers, but they need:
 
-## Getting started
+- `GOOS=ios` builds with the iPhoneOS SDK,
+- iOS system identification (no macOS-only CPU probing),
+- battery telemetry from the iOS I/O registry,
+- a legacy ARM64 runtime workaround for older Apple SoCs.
 
-The [quick start guide](https://beszel.dev/guide/getting-started) and other documentation is available on our website, [beszel.dev](https://beszel.dev). You'll be up and running in a few minutes.
+This branch collects those changes in one place so the port stays recognizable as Beszel.
 
-## Screenshots
+## Current status
 
-![Dashboard](https://beszel.dev/image/dashboard.png)
-![System page](https://beszel.dev/image/system-full.png)
-![Notification Settings](https://beszel.dev/image/settings-notifications.png)
+| Component | Status |
+| --- | --- |
+| Agent on iOS | **Tested** — runs natively, reports to Hub |
+| Hub on iOS | **Tested** — runs natively, serves UI and `/api/health` |
+| Battery monitoring | **Tested** — percentage + charging state on validated hardware |
+| System metadata | **Tested** — hostname, kernel, CPU model, iOS version |
+| One-line installer | **Planned** — not available yet |
 
-## Supported metrics
+See [docs/ios-port-status.md](docs/ios-port-status.md) for the full audit.
 
-- **CPU usage** - Host system and Docker / Podman containers.
-- **Memory usage** - Host system and containers. Includes swap and ZFS ARC.
-- **Disk usage** - Host system. Supports multiple partitions and devices.
-- **Disk I/O** - Host system. Supports multiple partitions and devices.
-- **Network usage** - Host system and containers.
-- **Load average** - Host system.
-- **Temperature** - Host system sensors.
-- **Fan speed** - Host system sensors (Linux, via `/sys/class/hwmon`).
-- **GPU usage / power draw** - Nvidia, AMD, and Intel.
-- **Battery** - Host system battery charge.
-- **Containers** - Status and metrics of all running Docker / Podman containers.
-- **S.M.A.R.T.** - Host system disk health (includes eMMC wear/EOL and Linux mdraid array health via sysfs when available).
-- **ZFS** - Pool capacity, usage, health, I/O throughput, scrub status, and per-dataset usage.
+## Tested hardware
 
-## Help and discussion
+**Validated (real device):**
 
-Please search existing issues and discussions before opening a new one. I try my best to respond, but may not always have time to do so.
+- iPad mini 2 (iPad4,4 / A1489)
+- Apple A7, arm64
+- iOS 12.5.7, jailbroken (Procursus bootstrap)
 
-#### Bug reports and feature requests
+Other devices and iOS versions are **untested**. Do not assume broader compatibility. If you test another device, please report it (see Contributing below).
 
-Bug reports and feature requests can be posted on [GitHub issues](https://github.com/henrygd/beszel/issues).
+## Features currently working
 
-#### Support and general discussion
+### Agent
 
-Support requests and general discussion can be posted on [GitHub discussions](https://github.com/henrygd/beszel/discussions) or the community-run [Matrix room](https://matrix.to/#/#beszel:matrix.org): `#beszel:matrix.org`.
+- Runs natively as `/usr/local/bin/beszel-agent`.
+- Default port `45876`.
+- Managed via LaunchDaemon at `/Library/LaunchDaemons/dev.beszel.agent.plist`.
+- Reports CPU, memory, disk, network, load average, and battery to the Hub.
+- Skips the incompatible Darwin CPU probe on iOS; uses iOS sysctls instead.
 
-## License
+### Hub
 
-Beszel is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+- Runs natively as `/usr/local/bin/beszel-hub`.
+- Default port `8090`.
+- Managed via LaunchDaemon at `/Library/LaunchDaemons/dev.beszel.hub.plist`.
+- Health endpoint: `http://127.0.0.1:8090/api/health`.
+- Web frontend is built (`bun install && bun run build` in `internal/site`) before compiling the Hub binary.
+
+> **Warning:** `/var/lib/beszel-hub` contains Hub database / account / configuration state. Never delete it during upgrades or packaging work.
+
+### Battery monitoring
+
+- Reads `/usr/sbin/ioreg -r -c AppleARMPMUCharger -l` (plain-text `-l` output).
+- Do **not** use `ioreg ... -a` here: the tested iOS 12 `ioreg` fails with `can't open file` for that form.
+- Parses `CurrentCapacity`, `MaxCapacity`, `AppleRawMaxCapacity`, `ExternalConnected`, `IsCharging`, `FullyCharged`, and `BatteryInstalled`.
+- Validated result shape: `Battery:[23 3]`, `Batteries:map[Primary:23]`.
+- Implementation: `agent/battery/battery_ios.go` (`//go:build ios`).
+
+### iOS-specific runtime workaround
+
+On the validated Apple A7 / iOS 12 target, the modern Go ARM64 `runtime.procyieldAsm` path (using `CNTVCT_EL0`) faults with `SIGILL`. The build applies:
+
+- `.github/scripts/patch-go-ios-arm64-runtime.py`
+
+which replaces that path with a legacy `YIELD` loop. This patch is **required** for the current A7/iOS 12 build. Do not remove it without validating on the same hardware.
+
+## Installation status
+
+There is **no production one-line installer yet**.
+
+The planned UX is eventually something like `curl ... | sudo sh` with Agent / Hub / Both / Update / Repair / Uninstall options, installing binaries into `/usr/local/bin` (with `chown root:wheel`, `chmod 755`, `ldid -S`). That installer does **not** exist in this branch yet — do not advertise it as usable.
+
+Current deployment is manual: build via the GitHub workflows, copy to `/usr/local/bin` on device, sign with `ldid`, and install the LaunchDaemon plists. Custom binaries must live under `/usr/local/bin`; running them from `$HOME` or `/tmp` has previously caused iOS execution/sandbox problems.
+
+## Building
+
+iOS builds run on the macOS GitHub Actions runners:
+
+- `GOOS=ios`, `GOARCH=arm64`, `CGO_ENABLED=1`
+- iPhoneOS SDK + Apple clang wrapper, `-mios-version-min=12.0`
+- Go runtime patch applied first
+- Hub workflow builds the web UI before the Go binary
+
+Workflows (manual dispatch):
+
+- `.github/workflows/ios-agent-probe.yml`
+- `.github/workflows/ios-hub-probe.yml`
+
+See [docs/ios-build-notes.md](docs/ios-build-notes.md) for details.
+
+## Project branch model
+
+- `main` — upstream-aligned branch. Do not put iOS-only changes here.
+- `ios` — **active iOS port branch.** All iOS development belongs here.
+
+This task, and all future iOS work, must stay on `ios`.
+
+## Upstream relationship
+
+- Based on [henrygd/beszel](https://github.com/henrygd/beszel).
+- `main` tracks upstream; `ios` adds iOS compatibility on top.
+- Upstream features, Hub database semantics, and Agent architecture are intentionally preserved.
+- Frontend lag of a commit or two behind upstream is expected; iOS-only changes are the 8 files documented in [docs/ios-port-status.md](docs/ios-port-status.md).
+
+## Contributing / testing other devices
+
+Helpful contributions:
+
+- Test reports from other jailbroken devices/iOS versions (model, SoC, iOS version, jailbreak/bootstrap, what worked).
+- Build logs from the iOS workflows.
+- Docs fixes that keep the port recognizable as Beszel.
+
+Please target the `ios` branch, keep upstream attribution intact, and do not remove the battery implementation or the A7 runtime workaround.
+
+## License / attribution
+
+MIT License — see [LICENSE](LICENSE). Original copyright retained:
+
+> Copyright (c) 2024 henrygd
+
+Beszel is by [henrygd](https://github.com/henrygd/beszel). This repository adds an unofficial community iOS port on the `ios` branch.
