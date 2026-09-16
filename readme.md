@@ -98,7 +98,7 @@ curl -fsSL \
   | sudo sh
 ```
 
-This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v0.1.0)
+This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v0.2.0)
 downloads the Latest release assets, verifies their SHA256 checksums,
 installs the binaries into `/usr/local/bin` (with `chown root:wheel`,
 `chmod 755`, `ldid -S`), creates the data directories and LaunchDaemon
@@ -110,7 +110,14 @@ Menu:
 - Install Agent
 - Install Hub
 - Install Agent + Hub
+- Update
 - Exit
+
+First run installs Agent / Hub / Both. Later, re-run the SAME one-line
+command and choose Update — no second updater script is needed. Update
+resolves the current Latest release tag once, then downloads SHA256SUMS and
+binaries from that same pinned release, so a release cannot change
+mid-transaction.
 
 Working:
 
@@ -120,13 +127,17 @@ Working:
 - release checksum verification before anything is installed
 - `ldid` signing (offers `apt-get install -y ldid` when missing; never upgrades the system)
 - LaunchDaemon setup and service startup
-- existing-install detection (refuses to overwrite; update is not implemented yet)
+- existing-install detection
+- release state tracking (`/var/lib/beszel-ios/install-state`)
+- Agent update, Hub update, Agent + Hub update (Hub first, then Agent)
+- signed binary staging before any downtime
+- binary backup (`/usr/local/bin/beszel-agent.bak`, `/usr/local/bin/beszel-hub.bak`)
+- automatic rollback to the previous binary when a new version fails to start
+- config preservation (plists are never regenerated during update; no key prompt)
+- Hub database preservation (`/var/lib/beszel-hub` is never deleted, reset, or re-owned)
 
 Not yet implemented:
 
-- automatic update
-- binary backup
-- rollback
 - repair
 - reconfigure
 - uninstall

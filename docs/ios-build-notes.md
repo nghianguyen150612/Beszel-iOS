@@ -88,3 +88,12 @@ Each release therefore exposes the future installer contract:
 - `.../releases/latest/download/beszel-agent-ios-arm64`
 - `.../releases/latest/download/beszel-hub-ios-arm64`
 - `.../releases/latest/download/SHA256SUMS`
+
+The installer (`install.sh`, v0.2.0) follows the `/releases/latest` redirect
+once per run to resolve the current tag (validated against
+`v<upstream>-ios.<rev>`), then pins every download for that run to
+`.../releases/download/<tag>/...` so `SHA256SUMS` and both binaries always
+come from the same immutable release. Successful installs and updates record
+the release tag plus the original asset SHA-256 in
+`/var/lib/beszel-ios/install-state`; the `ldid`-signed binaries on device are
+never hash-compared against `SHA256SUMS`.

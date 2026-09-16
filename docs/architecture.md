@@ -57,9 +57,9 @@ Binaries must live under `/usr/local/bin` (`chown root:wheel`, `chmod 755`, `ldi
 
 ## Distribution status
 
-**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `ios` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean. The `install.sh` one-line installer consumes the Latest release for fresh Agent / Hub / Agent+Hub installs (checksum verification, `ldid` signing, on-device LaunchDaemon generation, Hub health check).
+**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `ios` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean. The `install.sh` one-line installer (v0.2.0) consumes the Latest release for fresh Agent / Hub / Agent+Hub installs (checksum verification, `ldid` signing, on-device LaunchDaemon generation, Hub health check) and for transactional updates: it resolves the Latest tag once per run, pins all downloads to that immutable tag, tracks installed releases in `/var/lib/beszel-ios/install-state` (installed binaries are `ldid`-signed, so their hashes are never compared against `SHA256SUMS`), stages signed binaries before downtime, keeps `/usr/local/bin/*.bak` backups, rolls back automatically on failed health/startup checks, preserves plists byte-for-byte, and never touches `/var/lib/beszel-hub`.
 
-**Planned, not implemented:** automatic update, binary backup, rollback, repair, reconfigure, uninstall.
+**Planned, not implemented:** repair, reconfigure, uninstall.
 
 ## Future distribution architecture (planned, not implemented)
 
@@ -79,9 +79,9 @@ install.sh
      +-- Install Agent
      +-- Install Hub
      +-- Install Both
-     +-- Update (preserve /var/lib/beszel-hub)
-     +-- Repair / reconfigure
-     +-- Uninstall (explicit confirmation for data)
+     +-- Update (preserve /var/lib/beszel-hub)      [implemented]
+     +-- Repair / reconfigure                       [planned]
+     +-- Uninstall (explicit confirmation for data) [planned]
 ```
 
 A future `packaging/launchd/` directory will hold the two LaunchDaemon plists; `scripts/` will hold device-side helpers. Neither exists yet — see [ios-port-status.md](ios-port-status.md) and [ios-build-notes.md](ios-build-notes.md).
