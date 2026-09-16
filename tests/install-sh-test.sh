@@ -227,6 +227,10 @@ expect_fail "pinned base rejects empty tag" pinned_base_for_tag ""
 printf '== prompt5: mock commands and sandbox ==\n'
 export BESZEL_UPDATE_SETTLE_SECS=0
 REAL_CURL_BIN=$(command -v curl)
+REAL_RM_BIN=$(command -v rm)
+REAL_MV_BIN=$(command -v mv)
+export BESZEL_TEST_REAL_RM="$REAL_RM_BIN"
+export BESZEL_TEST_REAL_MV="$REAL_MV_BIN"
 MOCKBIN="${SANDBOX}/mockbin"
 MOCKCTL="${SANDBOX}/mockctl"
 mkdir -p "$MOCKBIN" "$MOCKCTL"
@@ -242,6 +246,9 @@ export BESZEL_TEST_LOAD_FAIL_LABEL=""
 export BESZEL_TEST_NO_PID=0
 export BESZEL_TEST_LIST_FAIL=0
 export BESZEL_TEST_PLIST_VALID=ok
+export BESZEL_TEST_RM_FAIL=0
+export BESZEL_TEST_MV_FAIL=0
+export BESZEL_TEST_UNLOAD_FAIL_LABEL=""
 
 cat > "${MOCKBIN}/curl" << 'MOCKEOF'
 #!/bin/sh
@@ -302,6 +309,8 @@ case "$_mcmd" in
 	unload)
 		printf 'unload %s\n' "$_plist" >> mock.log
 		if [ "${BESZEL_TEST_UNLOAD_FAIL:-0}" = "1" ]; then exit 1; fi
+		_ufl="${BESZEL_TEST_UNLOAD_FAIL_LABEL:-}"
+		if [ -n "$_mlabel" ] && [ "$_ufl" = "$_mlabel" ]; then exit 1; fi
 		if [ "$_mlabel" = "agent" ]; then printf '0' > loaded_agent; printf '-' > pid_agent; fi
 		if [ "$_mlabel" = "hub" ]; then printf '0' > loaded_hub; printf '-' > pid_hub; fi
 		exit 0
@@ -369,7 +378,17 @@ cat > "${MOCKBIN}/plutil" << 'MOCKEOF'
 if [ "${BESZEL_TEST_PLIST_VALID:-ok}" = "ok" ]; then exit 0; fi
 exit 1
 MOCKEOF
-chmod +x "${MOCKBIN}/curl" "${MOCKBIN}/launchctl" "${MOCKBIN}/ldid" "${MOCKBIN}/sleep" "${MOCKBIN}/plutil"
+cat > "${MOCKBIN}/rm" << 'MOCKEOF'
+#!/bin/sh
+if [ "${BESZEL_TEST_RM_FAIL:-0}" = "1" ]; then exit 1; fi
+exec "${BESZEL_TEST_REAL_RM}" "$@"
+MOCKEOF
+cat > "${MOCKBIN}/mv" << 'MOCKEOF'
+#!/bin/sh
+if [ "${BESZEL_TEST_MV_FAIL:-0}" = "1" ]; then exit 1; fi
+exec "${BESZEL_TEST_REAL_MV}" "$@"
+MOCKEOF
+chmod +x "${MOCKBIN}/curl" "${MOCKBIN}/launchctl" "${MOCKBIN}/ldid" "${MOCKBIN}/sleep" "${MOCKBIN}/plutil" "${MOCKBIN}/rm" "${MOCKBIN}/mv"
 PATH="${MOCKBIN}:$PATH"
 export PATH
 
@@ -415,6 +434,9 @@ mock_reset() {
 	BESZEL_TEST_NO_PID=0
 	BESZEL_TEST_LIST_FAIL=0
 	BESZEL_TEST_PLIST_VALID=ok
+	BESZEL_TEST_RM_FAIL=0
+	BESZEL_TEST_MV_FAIL=0
+	BESZEL_TEST_UNLOAD_FAIL_LABEL=""
 }
 
 t_make_release() {
@@ -983,15 +1005,15 @@ printf '== prompt5: update safety static checks ==\n'
 t_body() {
 	sed -n "/^$1()/,/^}/p" "$SCRIPT"
 }
-if grep -q "4) Update" "$SCRIPT" && grep -q "5) Repair / Reconfigure" "$SCRIPT" && grep -q "6) Exit" "$SCRIPT"; then
-	pass "menu offers Update, Repair / Reconfigure and Exit"
+if grep -q "4) Update" "$SCRIPT" && grep -q "5) Repair / Reconfigure" "$SCRIPT" && grep -q "6) Uninstall" "$SCRIPT" && grep -q "7) Exit" "$SCRIPT"; then
+	pass "menu offers Update, Repair / Reconfigure, Uninstall and Exit"
 else
-	fail "menu offers Update, Repair / Reconfigure and Exit"
+	fail "menu offers Update, Repair / Reconfigure, Uninstall and Exit"
 fi
-if grep -q "Remove Agent\|Remove Hub\|) Uninstall\|uninstall_menu\|do_uninstall\|purge data" "$SCRIPT"; then
-	fail "no uninstall exposed yet"
+if grep -q "uninstall_agent_flow\|uninstall_menu" "$SCRIPT" && grep -q "DELETE HUB DATA" "$SCRIPT" && grep -q "DELETE AGENT DATA" "$SCRIPT"; then
+	pass "uninstall exposed with explicit purge phrases"
 else
-	pass "no uninstall exposed yet"
+	fail "uninstall exposed with explicit purge phrases"
 fi
 if grep -q "transactional updates" "$SCRIPT"; then
 	pass "header describes transactional updates"
@@ -1111,6 +1133,9 @@ p6_reset() {
 	printf '0' > "${MOCKCTL}/ask_empty_n"
 	BESZEL_TEST_PLIST_VALID=ok
 	BESZEL_TEST_LIST_FAIL=0
+	BESZEL_TEST_RM_FAIL=0
+	BESZEL_TEST_MV_FAIL=0
+	BESZEL_TEST_UNLOAD_FAIL_LABEL=""
 }
 P6_K1="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqM66/yBCvP5nLv8mQuczlB9lXh9B7 p6-old-host"
 P6_K2="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqM66/yBCvP5nLv8mQuczlB9lXh9B7 p6-new-host"
@@ -1797,7 +1822,7 @@ if t_body restore_missing_binary | grep -q "prompt_agent_key\|prompt_agent_port\
 else
 	pass "binary restore asks for no config"
 fi
-_T_RM_RF_OFFENDERS=$(grep -n "rm -rf" "$SCRIPT" | grep -v "WORK_DIR" | grep -v "SANDBOX" || true)
+_T_RM_RF_OFFENDERS=$(grep -n "rm -rf" "$SCRIPT" | grep -v "WORK_DIR" | grep -v "SANDBOX" | grep -v '_pg_dir' || true)
 if [ -z "$_T_RM_RF_OFFENDERS" ]; then
 	pass "rm -rf limited to work/sandbox paths"
 else
@@ -1808,10 +1833,15 @@ if grep -q "chown -R\|chmod -R" "$SCRIPT"; then
 else
 	pass "no recursive chown/chmod"
 fi
-if grep -q "Uninstall is NOT implemented" "$SCRIPT"; then
-	pass "uninstall still marked unimplemented"
+if grep -q "safe application uninstall" "$SCRIPT"; then
+	pass "header summarizes safe uninstall"
 else
+	fail "header summarizes safe uninstall"
+fi
+if grep -q "Uninstall is NOT implemented" "$SCRIPT"; then
 	fail "uninstall still marked unimplemented"
+else
+	pass "uninstall still marked unimplemented"
 fi
 if grep -q -i "repair.*not implemented\|reconfigure.*not implemented" "$SCRIPT"; then
 	fail "no stale repair/reconfigure TODO text"
@@ -1823,6 +1853,690 @@ if t_body backup_plist | grep -F -q '_bp_bak="${_bp_plist}.bak"' && t_body rollb
 	pass "fixed plist backup paths present"
 else
 	fail "fixed plist backup paths present"
+fi
+
+printf '== prompt7: uninstall fixtures ==\n'
+P7_SHA_A="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+P7_SHA_H="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+p7_prep_agent() {
+	t_prep_agent "$1" "${2:-45876}"
+	printf '%s-backup' "$1" > "${BIN_DIR}/${AGENT_BIN}.bak"
+	printf 'plist-backup' > "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.bak"
+	printf 'log-bytes' > "${LOG_DIR}/beszel-agent.log"
+	printf 'errlog-bytes' > "${LOG_DIR}/beszel-agent.err.log"
+	mkdir -p "${LIB_DIR}/beszel-agent"
+	printf 'agent-data-marker' > "${LIB_DIR}/beszel-agent/marker"
+	printf '1' > "${MOCKCTL}/loaded_agent"
+	printf '4100' > "${MOCKCTL}/pid_agent"
+}
+p7_prep_hub() {
+	t_prep_hub "$1" "${2:-8090}"
+	printf '%s-backup' "$1" > "${BIN_DIR}/${HUB_BIN}.bak"
+	printf 'plist-backup' > "${LAUNCHD_DIR}/${HUB_LABEL}.plist.bak"
+	printf 'log-bytes' > "${LOG_DIR}/beszel-hub.log"
+	printf 'errlog-bytes' > "${LOG_DIR}/beszel-hub.err.log"
+	mkdir -p "${LIB_DIR}/beszel-hub"
+	printf 'hub-db-marker' > "${LIB_DIR}/beszel-hub/db.sqlite"
+	printf '1' > "${MOCKCTL}/loaded_hub"
+	printf '4200' > "${MOCKCTL}/pid_hub"
+}
+p7_write_both_state() {
+	state_write_component "agent" "$1" "$P7_SHA_A" > /dev/null
+	state_write_component "hub" "$2" "$P7_SHA_H" > /dev/null
+}
+p7_no_staging_left() {
+	for _u_sl in "${BIN_DIR}"/*.uninstall.*; do
+		if [ -e "$_u_sl" ]; then
+			return 1
+		fi
+	done
+	return 0
+}
+
+printf '== prompt7: agent uninstall ==\n'
+# shellcheck disable=SC2329
+confirm_update() { return 0; }
+# shellcheck disable=SC2329
+confirm_destructive() { return 0; }
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+cp "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/u7-agent-ref"
+cp "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${SANDBOX}/u7-apl-ref"
+if ( transact_uninstall "agent" > "${SANDBOX}/u7.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "agent uninstall succeeds" "0" "$_rc"
+assert_eq "agent state ABSENT after uninstall" "ABSENT" "$(component_state agent)"
+for _u_gone in "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${AGENT_BIN}.bak" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.bak" "${LOG_DIR}/beszel-agent.log" "${LOG_DIR}/beszel-agent.err.log"; do
+	if [ -e "$_u_gone" ]; then
+		fail "artifact removed: $_u_gone"
+	else
+		pass "artifact removed: $_u_gone"
+	fi
+done
+if grep -q "agent-data-marker" "${LIB_DIR}/beszel-agent/marker"; then
+	pass "agent data preserved by uninstall"
+else
+	fail "agent data preserved by uninstall"
+fi
+assert_eq "service unloaded by uninstall" "0" "$(cat "${MOCKCTL}/loaded_agent")"
+if grep -q "^load .*dev.beszel.agent.plist" "${MOCKCTL}/mock.log"; then
+	fail "no launchctl load after successful uninstall"
+else
+	pass "no launchctl load after successful uninstall"
+fi
+if p7_no_staging_left; then
+	pass "no staging leftovers"
+else
+	fail "no staging leftovers"
+fi
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+if ( uninstall_agent_flow > "${SANDBOX}/u7flow.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "agent flow keeps data by default" "0" "$_rc"
+if grep -q "Agent application uninstalled" "${SANDBOX}/u7flow.log" && grep -q "Agent data preserved at" "${SANDBOX}/u7flow.log"; then
+	pass "uninstall + preservation reported"
+else
+	fail "uninstall + preservation reported"
+fi
+if grep -q "agent-data-marker" "${LIB_DIR}/beszel-agent/marker"; then
+	pass "flow preserves agent data"
+else
+	fail "flow preserves agent data"
+fi
+# shellcheck disable=SC2329
+confirm_destructive() { return 1; }
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "declined uninstall exits zero" "0" "$_rc"
+if cmp -s "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/u7-agent-ref" && [ "$(cat "${MOCKCTL}/loaded_agent")" = "1" ]; then
+	pass "declined uninstall changes nothing"
+else
+	fail "declined uninstall changes nothing"
+fi
+# shellcheck disable=SC2329
+confirm_destructive() { return 0; }
+
+printf '== prompt7: hub uninstall preserves db ==\n'
+t_reset_paths
+p6_reset
+p7_prep_hub "hub-v1-content" "8090"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+if ( transact_uninstall "hub" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "hub uninstall succeeds" "0" "$_rc"
+assert_eq "hub state ABSENT after uninstall" "ABSENT" "$(component_state hub)"
+for _u_gone in "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.bak" "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.bak" "${LOG_DIR}/beszel-hub.log" "${LOG_DIR}/beszel-hub.err.log"; do
+	if [ -e "$_u_gone" ]; then
+		fail "hub artifact removed: $_u_gone"
+	else
+		pass "hub artifact removed: $_u_gone"
+	fi
+done
+if grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
+	pass "hub database byte-identical after uninstall"
+else
+	fail "hub database byte-identical after uninstall"
+fi
+assert_eq "hub release state cleared" "" "$(state_hub_release 2> /dev/null || true)"
+assert_eq "agent release state preserved" "v0.19.0-ios.1" "$(state_agent_release)"
+
+printf '== prompt7: uninstall service safety ==\n'
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+cp "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/u7s-agent-ref"
+cp "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${SANDBOX}/u7s-apl-ref"
+BESZEL_TEST_UNLOAD_FAIL_LABEL="agent"
+if ( transact_uninstall "agent" > "${SANDBOX}/u7s.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+BESZEL_TEST_UNLOAD_FAIL_LABEL=""
+assert_eq "loaded-service unload failure aborts" "1" "$_rc"
+if cmp -s "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/u7s-agent-ref" && cmp -s "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${SANDBOX}/u7s-apl-ref"; then
+	pass "aborted uninstall leaves files byte-identical"
+else
+	fail "aborted uninstall leaves files byte-identical"
+fi
+if [ "$(cat "${MOCKCTL}/loaded_agent")" = "1" ] && p7_no_staging_left; then
+	pass "service still loaded, nothing staged"
+else
+	fail "service still loaded, nothing staged"
+fi
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+printf '0' > "${MOCKCTL}/loaded_agent"
+printf '-' > "${MOCKCTL}/pid_agent"
+if ( transact_uninstall "agent" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "already-unloaded uninstall succeeds" "0" "$_rc"
+assert_eq "state ABSENT" "ABSENT" "$(component_state agent)"
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+BESZEL_TEST_MV_FAIL=1
+if ( transact_uninstall "agent" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+BESZEL_TEST_MV_FAIL=0
+assert_eq "staging failure exits non-zero" "1" "$_rc"
+if cmp -s "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/u7s-agent-ref"; then
+	pass "staging failure restores files"
+else
+	fail "staging failure restores files"
+fi
+assert_eq "staging failure reloads service" "1" "$(cat "${MOCKCTL}/loaded_agent")"
+assert_eq "staging failure keeps state" "v0.19.0-ios.1" "$(state_agent_release)"
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+rm -f "$(state_path)"
+mkdir "$(state_path)"
+if ( transact_uninstall "agent" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+rmdir "$(state_path)"
+assert_eq "state failure exits non-zero" "1" "$_rc"
+if cmp -s "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/u7s-agent-ref"; then
+	pass "state failure restores files"
+else
+	fail "state failure restores files"
+fi
+assert_eq "state failure reloads service" "1" "$(cat "${MOCKCTL}/loaded_agent")"
+if [ ! -e "$(state_path)" ] || [ -d "$(state_path)" ]; then
+	pass "blocking state artifact left alone"
+else
+	fail "blocking state artifact left alone"
+fi
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+BESZEL_TEST_MV_FAIL=1
+BESZEL_TEST_LOAD_FAIL_LABEL="agent"
+if ( transact_uninstall "agent" > "${SANDBOX}/u7crit.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+BESZEL_TEST_MV_FAIL=0
+BESZEL_TEST_LOAD_FAIL_LABEL=""
+assert_eq "rollback reload failure exits non-zero" "1" "$_rc"
+if grep -q "CRITICAL: uninstall rollback failed" "${SANDBOX}/u7crit.log"; then
+	pass "uninstall rollback failure is CRITICAL"
+else
+	fail "uninstall rollback failure is CRITICAL"
+fi
+if cmp -s "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/u7s-agent-ref"; then
+	pass "CRITICAL keeps files in place"
+else
+	fail "CRITICAL keeps files in place"
+fi
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_prep_hub "hub-v1-content" "8090"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+BESZEL_TEST_RM_FAIL=1
+if ( transact_uninstall "agent" > "${SANDBOX}/u7fin.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+BESZEL_TEST_RM_FAIL=0
+assert_eq "finalize failure exits non-zero" "1" "$_rc"
+assert_eq "finalize failure still unloads service" "0" "$(cat "${MOCKCTL}/loaded_agent")"
+assert_eq "finalize failure still clears app state" "ABSENT" "$(component_state agent)"
+if grep -q "could not be removed" "${SANDBOX}/u7fin.log"; then
+	pass "leftover artifacts reported"
+else
+	fail "leftover artifacts reported"
+fi
+
+printf '== prompt7: incomplete and absent uninstall ==\n'
+t_reset_paths
+p6_reset
+printf 'agent-v1-content' > "${BIN_DIR}/${AGENT_BIN}"
+chmod 755 "${BIN_DIR}/${AGENT_BIN}"
+mkdir -p "${LIB_DIR}/beszel-agent"
+printf 'agent-data-marker' > "${LIB_DIR}/beszel-agent/marker"
+assert_eq "working state BINARY_ONLY" "BINARY_ONLY" "$(component_state agent)"
+if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "binary-only cleanup succeeds" "0" "$_rc"
+assert_eq "state ABSENT" "ABSENT" "$(component_state agent)"
+if grep -q "agent-data-marker" "${LIB_DIR}/beszel-agent/marker"; then
+	pass "binary-only keeps data"
+else
+	fail "binary-only keeps data"
+fi
+t_reset_paths
+p6_reset
+write_agent_plist "$P6_K1" "45876" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '4100' > "${MOCKCTL}/pid_agent"
+assert_eq "working state PLIST_ONLY" "PLIST_ONLY" "$(component_state agent)"
+if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "plist-only cleanup succeeds" "0" "$_rc"
+assert_eq "plist-only ends ABSENT" "ABSENT" "$(component_state agent)"
+assert_eq "plist-only unloads service" "0" "$(cat "${MOCKCTL}/loaded_agent")"
+t_reset_paths
+p6_reset
+if ( uninstall_agent_flow > "${SANDBOX}/u7absent.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "absent uninstall is a no-op success" "0" "$_rc"
+if grep -q "not installed" "${SANDBOX}/u7absent.log"; then
+	pass "absent uninstall reports, not claims"
+else
+	fail "absent uninstall reports, not claims"
+fi
+mkdir -p "${LIB_DIR}/beszel-agent"
+printf 'agent-data-marker' > "${LIB_DIR}/beszel-agent/marker"
+if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "absent app with data offers purge path" "0" "$_rc"
+if grep -q "agent-data-marker" "${LIB_DIR}/beszel-agent/marker"; then
+	pass "absent-app keep default preserves data"
+else
+	fail "absent-app keep default preserves data"
+fi
+
+printf '== prompt7: one component preserves the other ==\n'
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_prep_hub "hub-v1-content" "8090"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+cp "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/u7-hub-ref"
+cp "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${SANDBOX}/u7-hpl-ref"
+if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "agent-only uninstall succeeds" "0" "$_rc"
+assert_eq "agent ABSENT" "ABSENT" "$(component_state agent)"
+assert_eq "hub still COMPLETE" "COMPLETE" "$(component_state hub)"
+if cmp -s "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/u7-hub-ref" && cmp -s "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${SANDBOX}/u7-hpl-ref"; then
+	pass "hub files untouched"
+else
+	fail "hub files untouched"
+fi
+assert_eq "hub state untouched" "v0.19.0-ios.1" "$(state_hub_release)"
+assert_eq "hub still loaded" "1" "$(cat "${MOCKCTL}/loaded_hub")"
+if grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
+	pass "hub db untouched by agent uninstall"
+else
+	fail "hub db untouched by agent uninstall"
+fi
+
+printf '== prompt7: uninstall both ==\n'
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_prep_hub "hub-v1-content" "8090"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+: > "${MOCKCTL}/mock.log"
+if ( uninstall_both_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "both uninstall succeeds" "0" "$_rc"
+assert_eq "agent ABSENT" "ABSENT" "$(component_state agent)"
+assert_eq "hub ABSENT" "ABSENT" "$(component_state hub)"
+_T_UA_UNLOAD=$(grep -n "^unload .*dev.beszel.agent.plist" "${MOCKCTL}/mock.log" | head -n 1 | cut -d: -f1)
+_T_UH_UNLOAD=$(grep -n "^unload .*dev.beszel.hub.plist" "${MOCKCTL}/mock.log" | head -n 1 | cut -d: -f1)
+if [ -n "$_T_UA_UNLOAD" ] && [ -n "$_T_UH_UNLOAD" ] && [ "$_T_UA_UNLOAD" -lt "$_T_UH_UNLOAD" ]; then
+	pass "agent removed before hub"
+else
+	fail "agent removed before hub"
+fi
+if [ ! -e "$(state_path)" ]; then
+	pass "empty state file removed"
+else
+	fail "empty state file removed"
+fi
+if [ ! -d "${LIB_DIR}/beszel-ios" ]; then
+	pass "empty state dir removed via rmdir"
+else
+	fail "empty state dir removed via rmdir"
+fi
+if grep -q "agent-data-marker" "${LIB_DIR}/beszel-agent/marker" && grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
+	pass "both data sets preserved"
+else
+	fail "both data sets preserved"
+fi
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_prep_hub "hub-v1-content" "8090"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+cp "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/u7b-hub-ref"
+BESZEL_TEST_MV_FAIL=1
+if ( uninstall_both_flow > "${SANDBOX}/u7b.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+BESZEL_TEST_MV_FAIL=0
+assert_eq "agent failure aborts both" "1" "$_rc"
+if cmp -s "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/u7b-hub-ref"; then
+	pass "hub untouched after agent failure"
+else
+	fail "hub untouched after agent failure"
+fi
+assert_eq "hub state untouched" "v0.19.0-ios.1" "$(state_hub_release)"
+assert_eq "agent files restored by rollback" "COMPLETE" "$(component_state agent)"
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_prep_hub "hub-v1-content" "8090"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+cp "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/u7b-agent-gone-ref"
+BESZEL_TEST_UNLOAD_FAIL_LABEL="hub"
+if ( uninstall_both_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+BESZEL_TEST_UNLOAD_FAIL_LABEL=""
+assert_eq "hub failure exits non-zero" "1" "$_rc"
+assert_eq "agent stays removed" "ABSENT" "$(component_state agent)"
+assert_eq "agent state cleared" "" "$(state_agent_release 2> /dev/null || true)"
+assert_eq "hub preserved" "COMPLETE" "$(component_state hub)"
+assert_eq "hub state preserved" "v0.19.0-ios.1" "$(state_hub_release)"
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_prep_hub "hub-v1-content" "8090"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+mkdir -p "${LIB_DIR}/beszel-ios"
+printf 'sentinel' > "${LIB_DIR}/beszel-ios/sentinel-do-not-remove"
+if ( uninstall_both_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "both uninstall succeeds with sentinel" "0" "$_rc"
+if [ ! -e "$(state_path)" ] && [ -f "${LIB_DIR}/beszel-ios/sentinel-do-not-remove" ]; then
+	pass "non-empty state dir left alone"
+else
+	fail "non-empty state dir left alone"
+fi
+
+printf '== prompt7: data purge ==\n'
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "uninstall with keep succeeds" "0" "$_rc"
+if grep -q "agent-data-marker" "${LIB_DIR}/beszel-agent/marker"; then
+	pass "keep default preserves agent data"
+else
+	fail "keep default preserves agent data"
+fi
+# shellcheck disable=SC2329
+confirm_update() { return 1; }
+ask_queue_set "maybe later"
+if ( offer_agent_data_purge > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "wrong phrase exits zero" "0" "$_rc"
+if grep -q "agent-data-marker" "${LIB_DIR}/beszel-agent/marker"; then
+	pass "wrong phrase preserves agent data"
+else
+	fail "wrong phrase preserves agent data"
+fi
+ask_queue_set "DELETE AGENT DATA"
+if ( offer_agent_data_purge > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "exact phrase purges" "0" "$_rc"
+if [ ! -e "${LIB_DIR}/beszel-agent" ]; then
+	pass "agent data dir absent after purge"
+else
+	fail "agent data dir absent after purge"
+fi
+t_reset_paths
+p6_reset
+p7_prep_hub "hub-v1-content" "8090"
+if ( uninstall_hub_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "hub uninstall with keep succeeds" "0" "$_rc"
+ask_queue_set "yes"
+if ( offer_hub_data_purge > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+if grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
+	pass "weak phrase preserves hub data"
+else
+	fail "weak phrase preserves hub data"
+fi
+ask_queue_set "DELETE HUB DATA "
+if ( offer_hub_data_purge > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+if grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
+	pass "padded phrase preserves hub data"
+else
+	fail "padded phrase preserves hub data"
+fi
+ask_queue_set "DELETE HUB DATA"
+if ( offer_hub_data_purge > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "exact hub phrase purges" "0" "$_rc"
+if [ ! -e "${LIB_DIR}/beszel-hub" ]; then
+	pass "hub data dir absent after purge"
+else
+	fail "hub data dir absent after purge"
+fi
+t_reset_paths
+p6_reset
+p7_prep_hub "hub-v1-content" "8090"
+if ( offer_hub_data_purge > "${SANDBOX}/u7pref.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "purge while installed refused" "1" "$_rc"
+if grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
+	pass "installed-app data untouched"
+else
+	fail "installed-app data untouched"
+fi
+if ( offer_agent_data_purge > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "agent purge while hub installed proceeds (agent absent)" "0" "$_rc"
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+if ( transact_uninstall "agent" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "app removed for later-purge test" "0" "$_rc"
+ask_queue_set "DELETE AGENT DATA"
+if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "later retained-data purge works" "0" "$_rc"
+if [ ! -e "${LIB_DIR}/beszel-agent" ]; then
+	pass "later purge removes data"
+else
+	fail "later purge removes data"
+fi
+t_reset_paths
+p6_reset
+mkdir -p "${SANDBOX}/evil-target"
+printf 'precious' > "${SANDBOX}/evil-target/marker"
+mkdir -p "${LIB_DIR}"
+ln -s "${SANDBOX}/evil-target" "${LIB_DIR}/beszel-agent"
+# shellcheck disable=SC2329
+confirm_update() { return 1; }
+ask_queue_set "DELETE AGENT DATA"
+if ( offer_agent_data_purge > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "symlinked data purge refused" "1" "$_rc"
+if [ -L "${LIB_DIR}/beszel-agent" ] && grep -q "precious" "${SANDBOX}/evil-target/marker"; then
+	pass "symlink and target untouched"
+else
+	fail "symlink and target untouched"
+fi
+rm -f "${LIB_DIR}/beszel-agent"
+expect_fail "LIB_DIR itself refused" validate_purge_path "$LIB_DIR" "agent"
+expect_fail "root refused" validate_purge_path "/" "hub"
+expect_fail "empty refused" validate_purge_path "" "agent"
+expect_fail "wrong component path refused" validate_purge_path "${LIB_DIR}/beszel-hub" "agent"
+mkdir -p "${LIB_DIR}/beszel-agent"
+expect_ok "exact agent path accepted" validate_purge_path "${LIB_DIR}/beszel-agent" "agent"
+# shellcheck disable=SC2329
+confirm_update() { return 0; }
+
+printf '== prompt7: symlink and fixture safety ==\n'
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+cp "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${SANDBOX}/u7y-apl-ref"
+rm "${BIN_DIR}/${AGENT_BIN}"
+ln -s "${SANDBOX}/u7y-apl-ref" "${BIN_DIR}/${AGENT_BIN}"
+if ( transact_uninstall "agent" > "${SANDBOX}/u7y.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "symlinked binary refused" "1" "$_rc"
+if grep -q "Unexpected symlink detected" "${SANDBOX}/u7y.log"; then
+	pass "symlink refusal names the path"
+else
+	fail "symlink refusal names the path"
+fi
+if [ -L "${BIN_DIR}/${AGENT_BIN}" ] && cmp -s "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${SANDBOX}/u7y-apl-ref"; then
+	pass "symlink case changes nothing"
+else
+	fail "symlink case changes nothing"
+fi
+rm "${BIN_DIR}/${AGENT_BIN}"
+printf 'agent-v1-content' > "${BIN_DIR}/${AGENT_BIN}"
+rm "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+ln -s "${SANDBOX}/u7y-apl-ref" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+if ( transact_uninstall "agent" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "symlinked plist refused" "1" "$_rc"
+if [ -L "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ] && grep -q "agent-v1-content" "${BIN_DIR}/${AGENT_BIN}"; then
+	pass "plist symlink case changes nothing"
+else
+	fail "plist symlink case changes nothing"
+fi
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_prep_hub "hub-v1-content" "8090"
+printf 'unrelated-bin' > "${BIN_DIR}/other-tool"
+printf 'unrelated-plist' > "${LAUNCHD_DIR}/com.example.other.plist"
+mkdir -p "${LIB_DIR}/other-data"
+printf 'unrelated-data' > "${LIB_DIR}/other-data/file"
+printf 'unrelated-log' > "${LOG_DIR}/other.log"
+if ( uninstall_both_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "both uninstall with fixtures succeeds" "0" "$_rc"
+if grep -q "unrelated-bin" "${BIN_DIR}/other-tool" && grep -q "unrelated-plist" "${LAUNCHD_DIR}/com.example.other.plist" && grep -q "unrelated-data" "${LIB_DIR}/other-data/file" && grep -q "unrelated-log" "${LOG_DIR}/other.log"; then
+	pass "unrelated fixtures untouched"
+else
+	fail "unrelated fixtures untouched"
+fi
+if grep -q 'rm -rf.\{0,40\}beszel-\*' "$SCRIPT"; then
+	fail "no wildcard beszel deletion"
+else
+	pass "no wildcard beszel deletion"
+fi
+_T_RM_RF_N=$(grep -c "rm -rf" "$SCRIPT")
+_T_RM_RF_OFFENDERS=$(grep -n "rm -rf" "$SCRIPT" | grep -v "WORK_DIR" | grep -v '_pg_dir' || true)
+if [ -z "$_T_RM_RF_OFFENDERS" ] && [ "$_T_RM_RF_N" = "2" ]; then
+	pass "rm -rf limited to work dir and guarded purge"
+else
+	fail "rm -rf limited to work dir and guarded purge"
+fi
+if grep -n "rm -rf" "$SCRIPT" | grep -q '"\$[^"]*\*'; then
+	fail "no rm -rf with glob argument"
+else
+	pass "no rm -rf with glob argument"
+fi
+if grep -q "find .* -delete\|find .* -exec rm" "$SCRIPT"; then
+	fail "no find-delete cleanup"
+else
+	pass "no find-delete cleanup"
+fi
+
+printf '== prompt7: reinstall reuses retained data ==\n'
+t_reset_paths
+p6_reset
+mkdir -p "${LIB_DIR}/beszel-hub"
+printf 'hub-db-marker' > "${LIB_DIR}/beszel-hub/db.sqlite"
+chmod 755 "${LIB_DIR}/beszel-hub" 2> /dev/null || true
+if ensure_data_dir "${LIB_DIR}/beszel-hub"; then _rc=0; else _rc=$?; fi
+assert_eq "existing hub data dir accepted" "0" "$_rc"
+if grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
+	pass "reinstall path never wipes hub data"
+else
+	fail "reinstall path never wipes hub data"
+fi
+if ensure_data_dir "${LIB_DIR}/beszel-agent"; then _rc=0; else _rc=$?; fi
+assert_eq "missing agent data dir created" "0" "$_rc"
+if t_body do_install_agent | grep -q "rm .*beszel-agent\|rm -rf"; then
+	fail "fresh agent install wipes no data"
+else
+	pass "fresh agent install wipes no data"
+fi
+if t_body do_install_hub | grep -q "rm .*beszel-hub\|rm -rf"; then
+	fail "fresh hub install wipes no data"
+else
+	pass "fresh hub install wipes no data"
+fi
+
+printf '== prompt7: offline uninstall ==\n'
+t_reset_paths
+p6_reset
+p7_prep_agent "agent-v1-content"
+p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
+BESZEL_TEST_RESOLVE_FAIL=1
+BESZEL_TEST_DOWNLOAD_FAIL=1
+BESZEL_TEST_LDID_FAIL=1
+if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+BESZEL_TEST_RESOLVE_FAIL=0
+BESZEL_TEST_DOWNLOAD_FAIL=0
+BESZEL_TEST_LDID_FAIL=0
+assert_eq "uninstall works with broken network/ldid" "0" "$_rc"
+assert_eq "offline uninstall reaches ABSENT" "ABSENT" "$(component_state agent)"
+check_deps() {
+	printf 'CHECK_DEPS_CALLED\n' >> "${MOCKCTL}/checkdeps.log"
+	return 1
+}
+: > "${MOCKCTL}/checkdeps.log"
+t_reset_paths
+p6_reset
+p7_prep_hub "hub-v1-content" "8090"
+if ( uninstall_hub_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "uninstall without dependency gate succeeds" "0" "$_rc"
+if [ -s "${MOCKCTL}/checkdeps.log" ]; then
+	fail "uninstall never calls check_deps"
+else
+	pass "uninstall never calls check_deps"
+fi
+assert_eq "hub ABSENT without deps" "ABSENT" "$(component_state hub)"
+
+printf '== prompt7: uninstall signal trap ==\n'
+t_reset_paths
+p6_reset
+p6_prep_agent_full "agent-v1-content" "45876" "$P6_K1"
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '4100' > "${MOCKCTL}/pid_agent"
+_UN_STAGED_BIN_FIX="${BIN_DIR}/${AGENT_BIN}.uninstall.424242"
+_UN_STAGED_PLIST_FIX="${LAUNCHD_DIR}/${AGENT_LABEL}.plist.uninstall.424242"
+mv "${BIN_DIR}/${AGENT_BIN}" "$_UN_STAGED_BIN_FIX"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "$_UN_STAGED_PLIST_FIX"
+printf '0' > "${MOCKCTL}/loaded_agent"
+printf '-' > "${MOCKCTL}/pid_agent"
+cp "$_UN_STAGED_BIN_FIX" "${SANDBOX}/trap-u-bin-good"
+cp "$_UN_STAGED_PLIST_FIX" "${SANDBOX}/trap-u-plist-good"
+if BESZEL_INSTALL_LIB_ONLY=1 BESZEL_UPDATE_SETTLE_SECS=0 BESZEL_BIN_DIR="$SB_BIN" BESZEL_LIB_DIR="$SB_LIB" BESZEL_LAUNCHD_DIR="$SB_LAUNCHD" BESZEL_LOG_DIR="$SB_LOG" BESZEL_TEST_MOCKCTL="$MOCKCTL" PATH="${MOCKBIN}:$PATH" sh -c '. ./install.sh; _UPDATE_ACTIVE="uninstall-agent"; _UPDATE_NEED_ROLLBACK=1; _UN_COMP="agent"; _UN_WAS_LOADED=1; _UN_HAD_BIN=1; _UN_HAD_PLIST=1; _UN_STAGED_BIN="'"$_UN_STAGED_BIN_FIX"'"; _UN_STAGED_PLIST="'"$_UN_STAGED_PLIST_FIX"'"; update_signal_trap; printf "UNREACHABLE\n"' > "${SANDBOX}/trap-u.log" 2>&1; then _rc=0; else _rc=$?; fi
+assert_eq "uninstall signal trap exits 130" "130" "$_rc"
+if cmp -s "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/trap-u-bin-good" && cmp -s "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${SANDBOX}/trap-u-plist-good"; then
+	pass "signal trap restores staged application"
+else
+	fail "signal trap restores staged application"
+fi
+assert_eq "service reloaded by uninstall rollback" "1" "$(cat "${MOCKCTL}/loaded_agent")"
+
+printf '== prompt7: uninstall safety statics ==\n'
+for _u_fn in transact_uninstall uninstall_agent_flow uninstall_hub_flow uninstall_both_flow offer_agent_data_purge offer_hub_data_purge purge_data_dir; do
+	if t_body "$_u_fn" | grep -q "ensure_pinned_release\|fetch_sums\|fetch_and_verify_binary\|stage_new_binary\|compute_sha256\|verify_file\|sums_hash_for"; then
+		fail "no network/hashing in $_u_fn"
+	else
+		pass "no network/hashing in $_u_fn"
+	fi
+done
+for _u_fn in transact_uninstall uninstall_agent_flow uninstall_hub_flow uninstall_both_flow offer_agent_data_purge offer_hub_data_purge purge_data_dir; do
+	if t_body "$_u_fn" | grep -q "ldid"; then
+		fail "no ldid in $_u_fn"
+	else
+		pass "no ldid in $_u_fn"
+	fi
+done
+_T_UE_LINE=$(t_body transact_uninstall | grep -n "update_end" | head -n 1 | cut -d: -f1)
+_T_FIN_LINE=$(t_body transact_uninstall | grep -n "finalize\|Application artifacts removed" | head -n 1 | cut -d: -f1)
+if [ -z "$_T_FIN_LINE" ]; then
+	_T_FIN_LINE=$(t_body transact_uninstall | grep -n '_tu_final_rc' | head -n 1 | cut -d: -f1)
+fi
+if [ -n "$_T_UE_LINE" ] && [ -n "$_T_FIN_LINE" ] && [ "$_T_UE_LINE" -lt "$_T_FIN_LINE" ]; then
+	pass "traps disarmed before finalize"
+else
+	fail "traps disarmed before finalize"
+fi
+if t_body purge_data_dir | grep -q "svc_load\|rollback_uninstall"; then
+	fail "purge never reinstalls service"
+else
+	pass "purge never reinstalls service"
+fi
+if t_body uninstall_both_flow | grep -q "transact_uninstall"; then
+	_T_BA_LINE=$(t_body uninstall_both_flow | grep -n 'transact_uninstall "agent"' | head -n 1 | cut -d: -f1)
+	_T_BH_LINE=$(t_body uninstall_both_flow | grep -n 'transact_uninstall "hub"' | head -n 1 | cut -d: -f1)
+	if [ -n "$_T_BA_LINE" ] && [ -n "$_T_BH_LINE" ] && [ "$_T_BA_LINE" -lt "$_T_BH_LINE" ]; then
+		pass "both uninstall orders agent before hub"
+	else
+		fail "both uninstall orders agent before hub"
+	fi
+else
+	fail "both uninstall uses transactions"
+fi
+if grep -q "DELETE ALL" "$SCRIPT"; then
+	fail "no DELETE ALL shortcut"
+else
+	pass "no DELETE ALL shortcut"
+fi
+if grep -q -- "--yes-delete-all\|--yes \|--force" "$SCRIPT"; then
+	fail "no dangerous yes flags"
+else
+	pass "no dangerous yes flags"
 fi
 
 printf '== posix / safety static checks ==\n'
@@ -1848,7 +2562,7 @@ if grep -n '`' "$SCRIPT" > /dev/null; then
 else
 	pass "no backtick substitution"
 fi
-if grep -q 'INSTALLER_VERSION="0.3.0"' "$SCRIPT"; then
+if grep -q 'INSTALLER_VERSION="0.4.0"' "$SCRIPT"; then
 	pass "installer version constant present"
 else
 	fail "installer version constant present"

@@ -9,9 +9,16 @@
 # from /dev/tty so the menu works when stdin is a curl pipe.
 #
 # Scope: fresh installs of Agent and/or Hub, safe transactional updates
-# with signed-binary staging, binary backup and automatic rollback, plus
-# non-destructive diagnostics, conservative repair and safe reconfiguration.
-# Uninstall is NOT implemented here.
+# with signed-binary staging, binary backup and automatic rollback,
+# non-destructive diagnostics, conservative repair, safe reconfiguration,
+# safe application uninstall (data preserved by default) and optional
+# explicit data purge. Nothing else is intentionally missing from the
+# installer lifecycle.
+#
+# Data policy: /var/lib/beszel-agent and especially /var/lib/beszel-hub
+# (Hub database, accounts, configuration) are USER DATA. Ordinary uninstall
+# removes only application/service artifacts and always preserves data;
+# deleting data requires a separate explicit typed confirmation.
 #
 # Version model: installed binaries are ldid-signed on device, so the hash of
 # an installed binary differs from its unsigned release asset. Update
@@ -27,7 +34,7 @@
 set -eu
 umask 022
 
-INSTALLER_VERSION="0.3.0"
+INSTALLER_VERSION="0.4.0"
 USER_AGENT="beszel-ios-installer/${INSTALLER_VERSION}"
 
 RELEASE_LATEST_PAGE="https://github.com/nghianguyen150612/beszel-ios/releases/latest"
@@ -376,6 +383,60 @@ state_hub_sha() {
 	return 0
 }
 
+# state_write_all <agent-rel> <agent-sha> <hub-rel> <hub-sha> — atomically
+# writes the whole state file. Each value may be empty (unknown); non-empty
+# values must validate. Shared by record and clear paths.
+state_write_all() {
+	_sa_agent_rel="$1"
+	_sa_agent_sha="$2"
+	_sa_hub_rel="$3"
+	_sa_hub_sha="$4"
+	if [ -n "$_sa_agent_rel" ]; then
+		valid_release_tag "$_sa_agent_rel" || return 1
+	fi
+	if [ -n "$_sa_agent_sha" ]; then
+		printf '%s' "$_sa_agent_sha" | grep -q -E '^[0-9a-fA-F]{64}$' || return 1
+		_sa_agent_sha=$(printf '%s' "$_sa_agent_sha" | tr 'A-F' 'a-f')
+	fi
+	if [ -n "$_sa_hub_rel" ]; then
+		valid_release_tag "$_sa_hub_rel" || return 1
+	fi
+	if [ -n "$_sa_hub_sha" ]; then
+		printf '%s' "$_sa_hub_sha" | grep -q -E '^[0-9a-fA-F]{64}$' || return 1
+		_sa_hub_sha=$(printf '%s' "$_sa_hub_sha" | tr 'A-F' 'a-f')
+	fi
+	_sa_dir="${LIB_DIR}/${STATE_SUBDIR}"
+	mkdir -p "$_sa_dir" || return 1
+	fix_path_owner "$_sa_dir" || true
+	chmod 755 "$_sa_dir" || return 1
+	_sa_tmp="${_sa_dir}/${STATE_FILE_NAME}.new.$$"
+	{
+		printf 'STATE_VERSION=%s\n' "$STATE_VERSION"
+		printf 'AGENT_RELEASE=%s\n' "$_sa_agent_rel"
+		printf 'AGENT_ASSET_SHA256=%s\n' "$_sa_agent_sha"
+		printf 'HUB_RELEASE=%s\n' "$_sa_hub_rel"
+		printf 'HUB_ASSET_SHA256=%s\n' "$_sa_hub_sha"
+	} > "$_sa_tmp" || {
+		rm -f "$_sa_tmp"
+		return 1
+	}
+	[ -s "$_sa_tmp" ] || {
+		rm -f "$_sa_tmp"
+		return 1
+	}
+	fix_path_owner "$_sa_tmp" || true
+	chmod 644 "$_sa_tmp" || {
+		rm -f "$_sa_tmp"
+		return 1
+	}
+	mv -f "$_sa_tmp" "$(state_path)" || {
+		rm -f "$_sa_tmp"
+		return 1
+	}
+	fix_path_owner "$(state_path)" || true
+	return 0
+}
+
 # state_write_component <agent|hub> <release-tag> <asset-sha256>
 # Atomically records one component, preserving the other component's values.
 state_write_component() {
@@ -388,7 +449,6 @@ state_write_component() {
 	esac
 	valid_release_tag "$_sw_rel" || return 1
 	printf '%s' "$_sw_sha" | grep -q -E '^[0-9a-fA-F]{64}$' || return 1
-	_sw_sha_norm=$(printf '%s' "$_sw_sha" | tr 'A-F' 'a-f')
 	_sw_agent_rel=""
 	_sw_agent_sha=""
 	_sw_hub_rel=""
@@ -400,43 +460,56 @@ state_write_component() {
 	case "$_sw_comp" in
 		agent)
 			_sw_agent_rel="$_sw_rel"
-			_sw_agent_sha="$_sw_sha_norm"
+			_sw_agent_sha="$_sw_sha"
 			;;
 		hub)
 			_sw_hub_rel="$_sw_rel"
-			_sw_hub_sha="$_sw_sha_norm"
+			_sw_hub_sha="$_sw_sha"
 			;;
 	esac
-	_sw_dir="${LIB_DIR}/${STATE_SUBDIR}"
-	mkdir -p "$_sw_dir" || return 1
-	fix_path_owner "$_sw_dir" || true
-	chmod 755 "$_sw_dir" || return 1
-	_sw_tmp="${_sw_dir}/${STATE_FILE_NAME}.new.$$"
-	{
-		printf 'STATE_VERSION=%s\n' "$STATE_VERSION"
-		printf 'AGENT_RELEASE=%s\n' "$_sw_agent_rel"
-		printf 'AGENT_ASSET_SHA256=%s\n' "$_sw_agent_sha"
-		printf 'HUB_RELEASE=%s\n' "$_sw_hub_rel"
-		printf 'HUB_ASSET_SHA256=%s\n' "$_sw_hub_sha"
-	} > "$_sw_tmp" || {
-		rm -f "$_sw_tmp"
-		return 1
-	}
-	[ -s "$_sw_tmp" ] || {
-		rm -f "$_sw_tmp"
-		return 1
-	}
-	fix_path_owner "$_sw_tmp" || true
-	chmod 644 "$_sw_tmp" || {
-		rm -f "$_sw_tmp"
-		return 1
-	}
-	mv -f "$_sw_tmp" "$(state_path)" || {
-		rm -f "$_sw_tmp"
-		return 1
-	}
-	fix_path_owner "$(state_path)" || true
-	return 0
+	if state_write_all "$_sw_agent_rel" "$_sw_agent_sha" "$_sw_hub_rel" "$_sw_hub_sha"; then
+		return 0
+	fi
+	return 1
+}
+
+# state_clear_component <agent|hub> — clears only that component's release
+# fields, preserving the other component. When no component release
+# information remains, the state file itself is removed (exact path) and the
+# state directory is removed with rmdir, but only if empty.
+state_clear_component() {
+	_sc_comp="$1"
+	case "$_sc_comp" in
+		agent | hub) ;;
+		*) return 1 ;;
+	esac
+	_sc_agent_rel=""
+	_sc_agent_sha=""
+	_sc_hub_rel=""
+	_sc_hub_sha=""
+	_sc_agent_rel=$(state_agent_release 2> /dev/null || true)
+	_sc_agent_sha=$(state_agent_sha 2> /dev/null || true)
+	_sc_hub_rel=$(state_hub_release 2> /dev/null || true)
+	_sc_hub_sha=$(state_hub_sha 2> /dev/null || true)
+	case "$_sc_comp" in
+		agent)
+			_sc_agent_rel=""
+			_sc_agent_sha=""
+			;;
+		hub)
+			_sc_hub_rel=""
+			_sc_hub_sha=""
+			;;
+	esac
+	if [ -z "$_sc_agent_rel" ] && [ -z "$_sc_agent_sha" ] && [ -z "$_sc_hub_rel" ] && [ -z "$_sc_hub_sha" ]; then
+		rm -f "$(state_path)" || return 1
+		rmdir "${LIB_DIR}/${STATE_SUBDIR}" 2> /dev/null || true
+		return 0
+	fi
+	if state_write_all "$_sc_agent_rel" "$_sc_agent_sha" "$_sc_hub_rel" "$_sc_hub_sha"; then
+		return 0
+	fi
+	return 1
 }
 
 # fix_path_owner <path> — best-effort root:wheel for production; tolerates
@@ -592,7 +665,18 @@ check_layout() {
 	done
 }
 
+# check_launchctl — minimal tool gate for local-only operations (menu,
+# diagnostics, uninstall, purge). Uninstall must stay possible when the
+# network or ldid are broken, so those are checked separately per flow.
+check_launchctl() {
+	if ! command -v launchctl > /dev/null 2>&1; then
+		die "Missing required tool: launchctl. This installer manages iOS LaunchDaemons; aborting."
+	fi
+}
+
 check_deps() {
+	# Full gate for install / update / repair paths that download and sign
+	# binaries. Deliberately NOT called for plain uninstall/purge.
 	_missing=""
 	for _dep in curl launchctl; do
 		if ! command -v "$_dep" > /dev/null 2>&1; then
@@ -718,7 +802,7 @@ ensure_data_dir() {
 	_ed_dir="$1"
 	if [ ! -d "$_ed_dir" ]; then
 		mkdir -p "$_ed_dir" || die "Cannot create data directory ${_ed_dir}."
-		chown root:wheel "$_ed_dir" || die "Cannot set ownership on ${_ed_dir}."
+		fix_path_owner "$_ed_dir" || die "Cannot set ownership on ${_ed_dir}."
 		chmod 755 "$_ed_dir" || die "Cannot set permissions on ${_ed_dir}."
 	fi
 }
@@ -1561,6 +1645,8 @@ _update_rollback_if_needed() {
 			hub) rollback_component "hub" || true ;;
 			agent-plist) rollback_plist "agent" || true ;;
 			hub-plist) rollback_plist "hub" || true ;;
+			uninstall-agent) rollback_uninstall "agent" || true ;;
+			uninstall-hub) rollback_uninstall "hub" || true ;;
 		esac
 	fi
 	_UPDATE_TRAP_BUSY=0
@@ -1581,9 +1667,9 @@ update_exit_trap() {
 	cleanup_work_dir
 }
 
-# update_begin <agent|hub|agent-plist|hub-plist> — arm the transaction
-# traps (no rollback needed yet); the caller sets _UPDATE_NEED_ROLLBACK=1
-# at the point of no return (service unload / file replacement).
+# update_begin <agent|hub|agent-plist|hub-plist|uninstall-agent|uninstall-hub>
+# Arm the transaction traps (no rollback needed yet); the caller sets
+# _UPDATE_NEED_ROLLBACK=1 at the point of no return.
 update_begin() {
 	_UPDATE_ACTIVE="$1"
 	_UPDATE_NEED_ROLLBACK=0
@@ -2608,6 +2694,661 @@ repair_hub_flow() {
 	return 1
 }
 
+# ------------------------------------------------------------ uninstall ---
+
+# Uninstall removes application/service artifacts only. User data
+# (/var/lib/beszel-agent, /var/lib/beszel-hub) is ALWAYS preserved by normal
+# uninstall; deleting data is a separate explicit purge step. Every removal
+# target below is a fixed installer path — nothing is built from user input,
+# no glob deletion is used, and symlinks at primary locations fail closed.
+
+# validate_uninstall_targets <agent|hub> — every existing removable
+# application file must be an ordinary file. A symlink (or other surprise)
+# at the primary binary/plist refuses the whole uninstall; surprising
+# backup/log kinds also refuse before anything is touched.
+validate_uninstall_targets() {
+	_vu_comp="$1"
+	_vu_bin=""
+	_vu_plist=""
+	case "$_vu_comp" in
+		agent)
+			_vu_bin="${BIN_DIR}/${AGENT_BIN}"
+			_vu_plist="${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+			;;
+		hub)
+			_vu_bin="${BIN_DIR}/${HUB_BIN}"
+			_vu_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+			;;
+		*)
+			return 1
+			;;
+	esac
+	if [ -L "$_vu_bin" ]; then
+		say_err "Unexpected symlink detected at ${_vu_bin}."
+		say_err "Refusing automatic uninstall; inspect it manually."
+		return 1
+	fi
+	if [ -L "$_vu_plist" ]; then
+		say_err "Unexpected symlink detected at ${_vu_plist}."
+		say_err "Refusing automatic uninstall; inspect it manually."
+		return 1
+	fi
+	if [ -e "$_vu_bin" ] && [ ! -f "$_vu_bin" ]; then
+		say_err "Unexpected file kind at ${_vu_bin}."
+		say_err "Refusing automatic uninstall; inspect it manually."
+		return 1
+	fi
+	if [ -e "$_vu_plist" ] && [ ! -f "$_vu_plist" ]; then
+		say_err "Unexpected file kind at ${_vu_plist}."
+		say_err "Refusing automatic uninstall; inspect it manually."
+		return 1
+	fi
+	_vu_bak1="${_vu_bin}.bak"
+	_vu_bak2="${_vu_plist}.bak"
+	_vu_log1=""
+	_vu_log2=""
+	case "$_vu_comp" in
+		agent)
+			_vu_log1="${LOG_DIR}/beszel-agent.log"
+			_vu_log2="${LOG_DIR}/beszel-agent.err.log"
+			;;
+		hub)
+			_vu_log1="${LOG_DIR}/beszel-hub.log"
+			_vu_log2="${LOG_DIR}/beszel-hub.err.log"
+			;;
+	esac
+	for _vu_p in "$_vu_bak1" "$_vu_bak2" "$_vu_log1" "$_vu_log2"; do
+		if [ -e "$_vu_p" ] && [ ! -f "$_vu_p" ] && [ ! -L "$_vu_p" ]; then
+			say_err "Unexpected file kind at ${_vu_p}."
+			say_err "Refusing automatic uninstall; inspect it manually."
+			return 1
+		fi
+	done
+	return 0
+}
+
+uninstall_critical() {
+	say_err "CRITICAL: uninstall rollback failed."
+	say_err "Binary: ${_un_bin}"
+	say_err "Plist: ${_un_plist}"
+	say_err "Staged binary: ${_UN_STAGED_BIN:-none}"
+	say_err "Staged plist: ${_UN_STAGED_PLIST:-none}"
+	say_err "Installer state: $(state_path)"
+	say_err "The service may be stopped; staged files and backups were left in place."
+	return 1
+}
+
+# rollback_uninstall <agent|hub> — move staged files back to their live
+# names, reload the service when it was loaded before, and verify. Uses the
+# _UN_* transaction globals captured before staging.
+rollback_uninstall() {
+	_ru_comp="$1"
+	_ru_label=""
+	case "$_ru_comp" in
+		agent) _ru_label="$AGENT_LABEL" ;;
+		hub) _ru_label="$HUB_LABEL" ;;
+		*) return 1 ;;
+	esac
+	_un_bin="${BIN_DIR}/beszel-${_ru_comp}"
+	_un_plist="${LAUNCHD_DIR}/dev.beszel.${_ru_comp}.plist"
+	say_info "Restoring staged application files..."
+	if [ -n "${_UN_STAGED_BIN:-}" ] && [ -e "${_UN_STAGED_BIN:-}" ]; then
+		if [ -e "$_un_bin" ]; then
+			uninstall_critical
+			return 1
+		fi
+		mv -f "$_UN_STAGED_BIN" "$_un_bin" || {
+			uninstall_critical
+			return 1
+		}
+	fi
+	if [ -n "${_UN_STAGED_PLIST:-}" ] && [ -e "${_UN_STAGED_PLIST:-}" ]; then
+		if [ -e "$_un_plist" ]; then
+			uninstall_critical
+			return 1
+		fi
+		mv -f "$_UN_STAGED_PLIST" "$_un_plist" || {
+			uninstall_critical
+			return 1
+		}
+	fi
+	if [ "${_UN_HAD_BIN:-0}" = "1" ] && [ ! -e "$_un_bin" ]; then
+		uninstall_critical
+		return 1
+	fi
+	if [ "${_UN_HAD_PLIST:-0}" = "1" ] && [ ! -e "$_un_plist" ]; then
+		uninstall_critical
+		return 1
+	fi
+	if [ "${_UN_WAS_LOADED:-0}" = "1" ]; then
+		if [ ! -f "$_un_plist" ]; then
+			uninstall_critical
+			return 1
+		fi
+		if ! svc_load "$_un_plist"; then
+			uninstall_critical
+			return 1
+		fi
+		case "$_ru_comp" in
+			agent)
+				if ! agent_post_update_ok "$_ru_label"; then
+					uninstall_critical
+					return 1
+				fi
+				;;
+			hub)
+				_ru_port=""
+				_ru_port=$(hub_port_from_plist "$_un_plist" 2> /dev/null || true)
+				if [ -n "$_ru_port" ]; then
+					if ! wait_for_hub "$_ru_port"; then
+						uninstall_critical
+						return 1
+					fi
+				elif ! svc_running "$_ru_label"; then
+					uninstall_critical
+					return 1
+				fi
+				;;
+		esac
+	fi
+	say_ok "Uninstall rollback succeeded."
+	return 0
+}
+
+# transact_uninstall <agent|hub> — transactional application uninstall:
+# unload, stage the live binary/plist aside, verify the service is gone,
+# clear installer state, then finalize artifact deletion. Data directories
+# are never touched. No prompts, no network. Returns 0/1.
+transact_uninstall() {
+	_tu_comp="$1"
+	_tu_label=""
+	case "$_tu_comp" in
+		agent) _tu_label="$AGENT_LABEL" ;;
+		hub) _tu_label="$HUB_LABEL" ;;
+		*) return 1 ;;
+	esac
+	_tu_bin="${BIN_DIR}/beszel-${_tu_comp}"
+	_tu_plist="${LAUNCHD_DIR}/dev.beszel.${_tu_comp}.plist"
+	_tu_bin_bak="${_tu_bin}.bak"
+	_tu_plist_bak="${_tu_plist}.bak"
+	_tu_log1=""
+	_tu_log2=""
+	case "$_tu_comp" in
+		agent)
+			_tu_log1="${LOG_DIR}/beszel-agent.log"
+			_tu_log2="${LOG_DIR}/beszel-agent.err.log"
+			;;
+		hub)
+			_tu_log1="${LOG_DIR}/beszel-hub.log"
+			_tu_log2="${LOG_DIR}/beszel-hub.err.log"
+			;;
+	esac
+	if [ "$(component_state "$_tu_comp")" = "ABSENT" ]; then
+		say_err "No ${_tu_comp} application artifacts to uninstall."
+		return 1
+	fi
+	validate_uninstall_targets "$_tu_comp" || return 1
+	_UN_COMP="$_tu_comp"
+	_UN_WAS_LOADED=0
+	_UN_HAD_BIN=0
+	_UN_HAD_PLIST=0
+	_UN_STAGED_BIN=""
+	_UN_STAGED_PLIST=""
+	[ -e "$_tu_bin" ] && _UN_HAD_BIN=1
+	[ -e "$_tu_plist" ] && _UN_HAD_PLIST=1
+	if svc_loaded "$_tu_label"; then
+		_UN_WAS_LOADED=1
+	fi
+	update_begin "uninstall-${_tu_comp}"
+	_UPDATE_NEED_ROLLBACK=1
+	if [ -f "$_tu_plist" ]; then
+		if ! svc_unload "$_tu_plist" > /dev/null 2>&1; then
+			say_warn "launchctl unload reported an issue; verifying service state."
+		fi
+		if svc_loaded "$_tu_label"; then
+			say_err "Service ${_tu_label} is still loaded after unload."
+			say_err "Aborting before deleting anything."
+			_UPDATE_NEED_ROLLBACK=0
+			update_end
+			return 1
+		fi
+	else
+		if svc_loaded "$_tu_label"; then
+			say_err "Service ${_tu_label} is still loaded but its plist is missing."
+			say_err "Refusing automatic uninstall; inspect it manually."
+			_UPDATE_NEED_ROLLBACK=0
+			update_end
+			return 1
+		fi
+	fi
+	_tu_ok=1
+	_tu_suffix=".uninstall.$$"
+	if [ -e "$_tu_bin" ]; then
+		_UN_STAGED_BIN="${_tu_bin}${_tu_suffix}"
+		rm -f "$_UN_STAGED_BIN" || true
+		if ! mv -f "$_tu_bin" "$_UN_STAGED_BIN"; then
+			say_err "Failed to stage ${_tu_bin} aside."
+			_tu_ok=0
+		fi
+	fi
+	if [ "$_tu_ok" = "1" ] && [ -e "$_tu_plist" ]; then
+		_UN_STAGED_PLIST="${_tu_plist}${_tu_suffix}"
+		rm -f "$_UN_STAGED_PLIST" || true
+		if ! mv -f "$_tu_plist" "$_UN_STAGED_PLIST"; then
+			say_err "Failed to stage ${_tu_plist} aside."
+			_tu_ok=0
+		fi
+	fi
+	if [ "$_tu_ok" = "1" ]; then
+		if svc_loaded "$_tu_label"; then
+			say_err "Service ${_tu_label} is still present after staging."
+			_tu_ok=0
+		fi
+	fi
+	if [ "$_tu_ok" = "1" ]; then
+		if ! state_clear_component "$_tu_comp"; then
+			say_err "Installer state cleanup failed."
+			_tu_ok=0
+		fi
+	fi
+	if [ "$_tu_ok" = "1" ]; then
+		_UPDATE_NEED_ROLLBACK=0
+		update_end
+		_tu_final_rc=0
+		_tu_leftovers=""
+		for _tu_f in "$_UN_STAGED_BIN" "$_UN_STAGED_PLIST" "$_tu_bin_bak" "$_tu_plist_bak" "$_tu_log1" "$_tu_log2"; do
+			if [ -n "$_tu_f" ] && [ -e "$_tu_f" ]; then
+				if ! rm -f "$_tu_f"; then
+					_tu_leftovers="${_tu_leftovers} ${_tu_f}"
+					_tu_final_rc=1
+				fi
+			fi
+		done
+		if [ "$_tu_final_rc" = "0" ]; then
+			say_ok "Application artifacts removed."
+			return 0
+		fi
+		say_warn "Application uninstalled, but some artifacts could not be removed:${_tu_leftovers}"
+		return 1
+	fi
+	_UPDATE_NEED_ROLLBACK=0
+	if rollback_uninstall "$_tu_comp"; then
+		update_end
+		return 1
+	fi
+	update_end
+	return 1
+}
+
+# ----------------------------------------------- data purge (explicit) ---
+
+# validate_purge_path <path> <agent|hub> — the path must be exactly the
+# expected data directory: non-empty, not /, not LIB_DIR itself, not a
+# symlink, an actual directory.
+validate_purge_path() {
+	_vp_path="${1:-}"
+	_vp_comp="${2:-}"
+	_vp_want=""
+	case "$_vp_comp" in
+		agent) _vp_want="${LIB_DIR}/beszel-agent" ;;
+		hub) _vp_want="${LIB_DIR}/beszel-hub" ;;
+		*) return 1 ;;
+	esac
+	[ -n "$_vp_path" ] || return 1
+	[ "$_vp_path" = "$_vp_want" ] || return 1
+	[ "$_vp_path" != "/" ] || return 1
+	[ "$_vp_path" != "${LIB_DIR}" ] || return 1
+	[ "${LIB_DIR}" != "/" ] || return 1
+	[ ! -L "$_vp_path" ] || return 1
+	[ -d "$_vp_path" ] || return 1
+	return 0
+}
+
+# purge_data_dir <agent|hub> — irreversibly remove the validated data
+# directory. No prompts here; the caller collects confirmations FIRST.
+purge_data_dir() {
+	_pg_comp="$1"
+	_pg_dir=""
+	case "$_pg_comp" in
+		agent) _pg_dir="${LIB_DIR}/beszel-agent" ;;
+		hub) _pg_dir="${LIB_DIR}/beszel-hub" ;;
+		*) return 1 ;;
+	esac
+	validate_purge_path "$_pg_dir" "$_pg_comp" || {
+		say_err "Refusing to purge ${_pg_dir}: failed safety validation."
+		return 1
+	}
+	rm -rf "$_pg_dir" || {
+		say_err "Could not completely remove ${_pg_dir}."
+		return 1
+	}
+	if [ -e "$_pg_dir" ]; then
+		say_err "Could not completely remove ${_pg_dir}."
+		return 1
+	fi
+	say_ok "Data removed: ${_pg_dir}"
+	return 0
+}
+
+# offer_agent_data_purge — standalone-safe: refuses while the application is
+# installed, reports when no data exists, keeps by default, and purges only
+# on the exact typed phrase.
+offer_agent_data_purge() {
+	_oa_dir="${LIB_DIR}/beszel-agent"
+	if [ ! -e "$_oa_dir" ]; then
+		say_info "No retained Agent data at ${_oa_dir}."
+		return 0
+	fi
+	if [ "$(component_state agent)" != "ABSENT" ]; then
+		say_err "Agent application is still installed; uninstall it before purging data."
+		return 1
+	fi
+	if confirm_update "Keep Agent data at ${_oa_dir}?"; then
+		say_info "Agent data preserved."
+		return 0
+	fi
+	say_warn "WARNING: ${_oa_dir} holds Agent state. Purging is permanent."
+	say_warn "This cannot be undone by the installer."
+	_oa_answer=""
+	ask_tty "Type exactly: DELETE AGENT DATA" _oa_answer "" || return 1
+	if [ "$_oa_answer" != "DELETE AGENT DATA" ]; then
+		say_info "Agent data preserved."
+		return 0
+	fi
+	if purge_data_dir "agent"; then
+		return 0
+	fi
+	return 1
+}
+
+# offer_hub_data_purge — standalone-safe Hub equivalent with the strong
+# typed confirmation.
+offer_hub_data_purge() {
+	_oh_dir="${LIB_DIR}/beszel-hub"
+	if [ ! -e "$_oh_dir" ]; then
+		say_info "No retained Hub data at ${_oh_dir}."
+		return 0
+	fi
+	if [ "$(component_state hub)" != "ABSENT" ]; then
+		say_err "Hub application is still installed; uninstall it before purging data."
+		return 1
+	fi
+	if confirm_update "Keep Hub data at ${_oh_dir}?"; then
+		say_info "Hub data preserved."
+		return 0
+	fi
+	say_warn "WARNING:"
+	say_warn "${_oh_dir} contains your Beszel database, accounts,"
+	say_warn "configuration, and historical data."
+	say_warn "This cannot be undone by the installer."
+	_oh_answer=""
+	ask_tty "Type exactly: DELETE HUB DATA" _oh_answer "" || return 1
+	if [ "$_oh_answer" != "DELETE HUB DATA" ]; then
+		say_info "Hub data preserved."
+		return 0
+	fi
+	if purge_data_dir "hub"; then
+		return 0
+	fi
+	return 1
+}
+
+# ------------------------------------------------------ uninstall menu ---
+
+# uninstall_agent_flow — plan, confirm (default NO), transactional app
+# removal with data preserved, then the optional separate data decision.
+uninstall_agent_flow() {
+	if [ "$(component_state agent)" = "ABSENT" ]; then
+		say_info "Agent application is not installed."
+		if offer_agent_data_purge; then
+			return 0
+		fi
+		return 1
+	fi
+	say_info "Agent will be uninstalled."
+	say_info "Remove:"
+	say_info "  ${BIN_DIR}/${AGENT_BIN}"
+	say_info "  ${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+	say_info "  Agent backup files"
+	say_info "  Agent installer release state"
+	say_info "Preserve:"
+	say_info "  ${LIB_DIR}/beszel-agent"
+	if confirm_destructive "Continue with Agent uninstall?"; then
+		:
+	else
+		say_info "Agent uninstall cancelled."
+		return 0
+	fi
+	if transact_uninstall "agent"; then
+		say_ok "Agent application uninstalled."
+	else
+		return 1
+	fi
+	if [ -e "${LIB_DIR}/beszel-agent" ]; then
+		say_info "Agent data preserved at ${LIB_DIR}/beszel-agent."
+	fi
+	if offer_agent_data_purge; then
+		return 0
+	fi
+	return 1
+}
+
+# uninstall_hub_flow — Hub mirror. The database is preserved by default;
+# purging it needs the exact typed phrase afterwards.
+uninstall_hub_flow() {
+	if [ "$(component_state hub)" = "ABSENT" ]; then
+		say_info "Hub application is not installed."
+		if offer_hub_data_purge; then
+			return 0
+		fi
+		return 1
+	fi
+	say_info "Hub will be uninstalled."
+	say_info "Remove:"
+	say_info "  ${BIN_DIR}/${HUB_BIN}"
+	say_info "  ${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+	say_info "  Hub backup files"
+	say_info "  Hub installer release state"
+	say_info "Preserve:"
+	say_info "  ${LIB_DIR}/beszel-hub"
+	if confirm_destructive "Continue with Hub uninstall?"; then
+		:
+	else
+		say_info "Hub uninstall cancelled."
+		return 0
+	fi
+	if transact_uninstall "hub"; then
+		say_ok "Hub application uninstalled."
+	else
+		return 1
+	fi
+	if [ -e "${LIB_DIR}/beszel-hub" ]; then
+		say_info "Hub data preserved at ${LIB_DIR}/beszel-hub."
+	fi
+	if offer_hub_data_purge; then
+		return 0
+	fi
+	return 1
+}
+
+# uninstall_both_flow — Agent first (so the Hub stays up until the Agent is
+# gone), then Hub. Independent transactions, one combined confirmation, then
+# separate data decisions per component.
+uninstall_both_flow() {
+	if [ "$(component_state agent)" = "ABSENT" ] || [ "$(component_state hub)" = "ABSENT" ]; then
+		say_err "Agent + Hub uninstall needs both applications installed."
+		return 1
+	fi
+	say_info "Agent + Hub will be uninstalled (Agent first, then Hub)."
+	say_info "Remove: both binaries, both plists, backup files, installer release state."
+	say_info "Preserve:"
+	say_info "  ${LIB_DIR}/beszel-agent"
+	say_info "  ${LIB_DIR}/beszel-hub"
+	if confirm_destructive "Continue with Agent + Hub uninstall?"; then
+		:
+	else
+		say_info "Uninstall cancelled."
+		return 0
+	fi
+	transact_uninstall "agent" || {
+		say_err "Agent uninstall failed; Hub was left untouched."
+		return 1
+	}
+	say_ok "Agent application uninstalled."
+	transact_uninstall "hub" || {
+		say_err "Hub uninstall failed; Agent remains uninstalled."
+		return 1
+	}
+	say_ok "Hub application uninstalled."
+	if [ -e "${LIB_DIR}/beszel-agent" ]; then
+		say_info "Agent data preserved at ${LIB_DIR}/beszel-agent."
+	fi
+	if [ -e "${LIB_DIR}/beszel-hub" ]; then
+		say_info "Hub data preserved at ${LIB_DIR}/beszel-hub."
+	fi
+	if offer_agent_data_purge; then
+		:
+	else
+		return 1
+	fi
+	if offer_hub_data_purge; then
+		return 0
+	fi
+	return 1
+}
+
+u_menu_line() {
+	# Print one menu line to /dev/tty when available, else stdout.
+	if [ -w /dev/tty ]; then
+		printf '%s\n' "$1" > /dev/tty
+	else
+		printf '%s\n' "$1"
+	fi
+}
+
+show_uninstall_menu() {
+	u_menu_line ""
+	u_menu_line "Uninstall"
+}
+
+# uninstall_menu — adapts to installed applications and retained data.
+# Application entries appear only for installed components; purge entries
+# appear only for retained data whose application is already absent.
+uninstall_menu() {
+	while :; do
+		_um_u_agent_st=$(component_state "agent")
+		_um_u_hub_st=$(component_state "hub")
+		_um_u_agent_app=0
+		_um_u_hub_app=0
+		[ "$_um_u_agent_st" != "ABSENT" ] && _um_u_agent_app=1
+		[ "$_um_u_hub_st" != "ABSENT" ] && _um_u_hub_app=1
+		_um_u_agent_data=0
+		_um_u_hub_data=0
+		[ -e "${LIB_DIR}/beszel-agent" ] && _um_u_agent_data=1
+		[ -e "${LIB_DIR}/beszel-hub" ] && _um_u_hub_data=1
+		if [ "$_um_u_agent_app" = "0" ] && [ "$_um_u_hub_app" = "0" ] && [ "$_um_u_agent_data" = "0" ] && [ "$_um_u_hub_data" = "0" ]; then
+			say_info "No Beszel iOS installation or retained data was detected."
+			return 0
+		fi
+		if [ "$_um_u_agent_app" = "0" ] && [ "$_um_u_agent_data" = "1" ]; then
+			say_info "Agent application is not installed, but retained Agent data exists."
+		fi
+		if [ "$_um_u_hub_app" = "0" ] && [ "$_um_u_hub_data" = "1" ]; then
+			say_info "Hub application is not installed, but retained Hub data exists."
+		fi
+		_um_u_n=0
+		_um_u_1=""
+		_um_u_2=""
+		_um_u_3=""
+		_um_u_4=""
+		_um_u_5=""
+		show_uninstall_menu
+		if [ "$_um_u_agent_app" = "1" ]; then
+			_um_u_n=$((_um_u_n + 1))
+			case "$_um_u_n" in
+				1) _um_u_1="uninstall-agent" ;;
+				2) _um_u_2="uninstall-agent" ;;
+				3) _um_u_3="uninstall-agent" ;;
+				4) _um_u_4="uninstall-agent" ;;
+				5) _um_u_5="uninstall-agent" ;;
+			esac
+			u_menu_line "  ${_um_u_n}) Uninstall Agent"
+		fi
+		if [ "$_um_u_hub_app" = "1" ]; then
+			_um_u_n=$((_um_u_n + 1))
+			case "$_um_u_n" in
+				1) _um_u_1="uninstall-hub" ;;
+				2) _um_u_2="uninstall-hub" ;;
+				3) _um_u_3="uninstall-hub" ;;
+				4) _um_u_4="uninstall-hub" ;;
+				5) _um_u_5="uninstall-hub" ;;
+			esac
+			u_menu_line "  ${_um_u_n}) Uninstall Hub"
+		fi
+		if [ "$_um_u_agent_app" = "1" ] && [ "$_um_u_hub_app" = "1" ]; then
+			_um_u_n=$((_um_u_n + 1))
+			case "$_um_u_n" in
+				1) _um_u_1="uninstall-both" ;;
+				2) _um_u_2="uninstall-both" ;;
+				3) _um_u_3="uninstall-both" ;;
+				4) _um_u_4="uninstall-both" ;;
+				5) _um_u_5="uninstall-both" ;;
+			esac
+			u_menu_line "  ${_um_u_n}) Uninstall Agent + Hub"
+		fi
+		if [ "$_um_u_agent_app" = "0" ] && [ "$_um_u_agent_data" = "1" ]; then
+			_um_u_n=$((_um_u_n + 1))
+			case "$_um_u_n" in
+				1) _um_u_1="purge-agent" ;;
+				2) _um_u_2="purge-agent" ;;
+				3) _um_u_3="purge-agent" ;;
+				4) _um_u_4="purge-agent" ;;
+				5) _um_u_5="purge-agent" ;;
+			esac
+			u_menu_line "  ${_um_u_n}) Purge retained Agent data"
+		fi
+		if [ "$_um_u_hub_app" = "0" ] && [ "$_um_u_hub_data" = "1" ]; then
+			_um_u_n=$((_um_u_n + 1))
+			case "$_um_u_n" in
+				1) _um_u_1="purge-hub" ;;
+				2) _um_u_2="purge-hub" ;;
+				3) _um_u_3="purge-hub" ;;
+				4) _um_u_4="purge-hub" ;;
+				5) _um_u_5="purge-hub" ;;
+			esac
+			u_menu_line "  ${_um_u_n}) Purge retained Hub data"
+		fi
+		_um_u_n=$((_um_u_n + 1))
+		_um_u_back="$_um_u_n"
+		u_menu_line "  ${_um_u_n}) Back"
+		_UMU_CHOICE=""
+		ask_tty "Select" _UMU_CHOICE "" || return 1
+		_um_u_action=""
+		case "$_UMU_CHOICE" in
+			1) _um_u_action="$_um_u_1" ;;
+			2) _um_u_action="$_um_u_2" ;;
+			3) _um_u_action="$_um_u_3" ;;
+			4) _um_u_action="$_um_u_4" ;;
+			5) _um_u_action="$_um_u_5" ;;
+		esac
+		if [ -z "$_um_u_action" ]; then
+			if [ "$_UMU_CHOICE" = "$_um_u_back" ]; then
+				say_info "Back selected."
+				return 0
+			fi
+			say_err "Invalid selection '${_UMU_CHOICE}'."
+			return 1
+		fi
+		case "$_um_u_action" in
+			uninstall-agent) uninstall_agent_flow || say_warn "Agent uninstall did not complete." ;;
+			uninstall-hub) uninstall_hub_flow || say_warn "Hub uninstall did not complete." ;;
+			uninstall-both) uninstall_both_flow || say_warn "Agent + Hub uninstall did not complete." ;;
+			purge-agent) offer_agent_data_purge || say_warn "Agent data purge did not complete." ;;
+			purge-hub) offer_hub_data_purge || say_warn "Hub data purge did not complete." ;;
+		esac
+	done
+}
+
 show_update_menu() {
 	# $1 = agent|hub|both.
 	_su_mode="$1"
@@ -2848,7 +3589,8 @@ Unofficial community port of Beszel
   3) Install Agent + Hub
   4) Update
   5) Repair / Reconfigure
-  6) Exit
+  6) Uninstall
+  7) Exit
 EOF
 	else
 		cat << EOF
@@ -2861,7 +3603,8 @@ Unofficial community port of Beszel
   3) Install Agent + Hub
   4) Update
   5) Repair / Reconfigure
-  6) Exit
+  6) Uninstall
+  7) Exit
 EOF
 	fi
 }
@@ -2871,24 +3614,45 @@ main() {
 	check_root
 	check_device
 	check_layout
-	check_deps
+	check_launchctl
 	setup_work_dir
 	while :; do
 		print_menu
 		CHOICE=""
 		ask_tty "Select" CHOICE "" || exit 1
 		case "$CHOICE" in
-			1) flow_agent || say_warn "Agent install did not complete." ;;
-			2) flow_hub || say_warn "Hub install did not complete." ;;
-			3) flow_both || say_warn "Agent + Hub install did not complete." ;;
-			4) update_menu || say_warn "Update did not complete." ;;
-			5) repair_menu ;;
-			6)
+			1)
+				if check_deps; then
+					flow_agent || say_warn "Agent install did not complete."
+				fi
+				;;
+			2)
+				if check_deps; then
+					flow_hub || say_warn "Hub install did not complete."
+				fi
+				;;
+			3)
+				if check_deps; then
+					flow_both || say_warn "Agent + Hub install did not complete."
+				fi
+				;;
+			4)
+				if check_deps; then
+					update_menu || say_warn "Update did not complete."
+				fi
+				;;
+			5)
+				if check_deps; then
+					repair_menu || say_warn "Repair / Reconfigure did not complete."
+				fi
+				;;
+			6) uninstall_menu || say_warn "Uninstall did not complete." ;;
+			7)
 				say_info "Exit selected."
 				break
 				;;
 			*)
-				say_err "Invalid selection '${CHOICE}': choose 1-6."
+				say_err "Invalid selection '${CHOICE}': choose 1-7."
 				exit 1
 				;;
 		esac

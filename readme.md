@@ -98,7 +98,7 @@ curl -fsSL \
   | sudo sh
 ```
 
-This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v0.3.0)
+This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v0.4.0)
 downloads the Latest release assets, verifies their SHA256 checksums,
 installs the binaries into `/usr/local/bin` (with `chown root:wheel`,
 `chmod 755`, `ldid -S`), creates the data directories and LaunchDaemon
@@ -112,14 +112,16 @@ Menu:
 - Install Agent + Hub
 - Update
 - Repair / Reconfigure
+- Uninstall
 - Exit
 
 First run installs Agent / Hub / Both. Later, re-run the SAME one-line
-command and choose Update or Repair / Reconfigure — no second script is
-needed. After an action completes you return to the main menu; Back returns
-there as well. Update resolves the current Latest release tag once, then
-downloads SHA256SUMS and binaries from that same pinned release, so a
-release cannot change mid-transaction.
+command and choose Update, Repair / Reconfigure, or Uninstall — no second
+script is needed. After an action completes you return to the main menu;
+Back returns there as well. Update resolves the current Latest release tag
+once, then downloads SHA256SUMS and binaries from that same pinned release,
+so a release cannot change mid-transaction. Uninstall needs no network and
+no `ldid`: it works offline using only local tools.
 
 Working:
 
@@ -142,12 +144,40 @@ Working:
 - reconfigure Agent (change Hub public key and/or Agent port via a validated, backed-up plist transaction with automatic config rollback)
 - reconfigure Hub (change Hub listening port, health-checked on the new port, with rollback to the previous port)
 - plist backups (`/Library/LaunchDaemons/dev.beszel.agent.plist.bak`, `/Library/LaunchDaemons/dev.beszel.hub.plist.bak`)
+- safe uninstall (Agent, Hub, or both; transactional service removal with rollback, works offline)
+- optional explicit data purge (typed confirmation only)
 
-Still planned:
+The installer lifecycle is complete: install, update, repair/reconfigure,
+and uninstall are all covered.
 
-- uninstall
+### Uninstall vs purge
 
-> **Warning:** `/var/lib/beszel-hub` contains Hub database / account / configuration state. Repair and reconfigure never delete, reset, or re-own it. Do not hand-edit plists or install-state; use the installer menus.
+A normal uninstall removes only application/service artifacts:
+
+- the service is unloaded first (never deleted from under a running service)
+- `/usr/local/bin/beszel-agent` (or `beszel-hub`)
+- `/Library/LaunchDaemons/dev.beszel.agent.plist` (or Hub equivalent)
+- the component's binary `.bak` and plist `.bak` backups
+- the component's exact service log files
+- the component's installer release state
+
+It always preserves user data:
+
+- `/var/lib/beszel-agent`
+- `/var/lib/beszel-hub`
+
+Deleting data is a separate optional purge step offered afterwards (and also
+later for already-removed applications with retained data). Keeping data is
+the default. Purging requires typing an exact phrase:
+
+- Agent data: `DELETE AGENT DATA`
+- Hub data: `DELETE HUB DATA`
+
+Anything else keeps the data. There is no shortcut to delete everything at
+once. A later fresh install reuses a preserved data directory as-is: it is
+never wiped, re-owned recursively, or re-created.
+
+> **Warning:** `/var/lib/beszel-hub` contains Hub database / account / configuration state. It is preserved by install, update, repair, reconfigure, and normal uninstall alike. Do not hand-edit plists or install-state, and do not run manual `rm -rf` commands against these paths; use the installer menus.
 
 ### Manual download
 
