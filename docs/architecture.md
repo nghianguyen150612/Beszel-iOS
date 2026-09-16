@@ -57,9 +57,9 @@ Binaries must live under `/usr/local/bin` (`chown root:wheel`, `chmod 755`, `ldi
 
 ## Distribution status
 
-**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `ios` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean.
+**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `ios` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean. The `install.sh` one-line installer consumes the Latest release for fresh Agent / Hub / Agent+Hub installs (checksum verification, `ldid` signing, on-device LaunchDaemon generation, Hub health check).
 
-**Planned, not implemented:** `install.sh`, LaunchDaemon automation, update/rollback, uninstall.
+**Planned, not implemented:** automatic update, binary backup, rollback, repair, reconfigure, uninstall.
 
 ## Future distribution architecture (planned, not implemented)
 

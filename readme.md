@@ -38,7 +38,7 @@ This branch collects those changes in one place so the port stays recognizable a
 | System metadata | **Tested** — hostname, kernel, CPU model, iOS version |
 | Consolidated build pipeline | **Working** — one workflow builds Agent + Hub + SHA256SUMS |
 | GitHub Releases | **Working** — published from iOS tags (`v<upstream>-ios.<rev>`) |
-| One-line installer | **Planned** — not available yet |
+| One-line installer | **Working** — fresh Agent / Hub / Agent+Hub installs |
 
 See [docs/ios-port-status.md](docs/ios-port-status.md) for the full audit.
 
@@ -88,15 +88,50 @@ On the validated Apple A7 / iOS 12 target, the modern Go ARM64 `runtime.procyiel
 
 which replaces that path with a legacy `YIELD` loop. This patch is **required** for the current A7/iOS 12 build. Do not remove it without validating on the same hardware.
 
-## Installation status
+## Installation
 
-There is **no production one-line installer yet**.
+On a jailbroken iOS device, run:
 
-The planned UX is eventually something like `curl ... | sudo sh` (fetched from
-`https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh`)
-with Agent / Hub / Both / Update / Repair / Uninstall options, installing binaries
-into `/usr/local/bin` (with `chown root:wheel`, `chmod 755`, `ldid -S`). That
-installer does **not** exist in this branch yet — do not advertise it as usable.
+```sh
+curl -fsSL \
+  https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh \
+  | sudo sh
+```
+
+This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v0.1.0)
+downloads the Latest release assets, verifies their SHA256 checksums,
+installs the binaries into `/usr/local/bin` (with `chown root:wheel`,
+`chmod 755`, `ldid -S`), creates the data directories and LaunchDaemon
+plists, starts the services, and verifies Hub health. No clone, Go toolchain,
+or manual signing/plist work is needed.
+
+Menu:
+
+- Install Agent
+- Install Hub
+- Install Agent + Hub
+- Exit
+
+Working:
+
+- Agent fresh install (Hub public key + port prompts, launchd setup, service start)
+- Hub fresh install (port prompt, launchd setup, service start, `/api/health` verification)
+- Agent + Hub fresh install (Hub first, then Agent key flow)
+- release checksum verification before anything is installed
+- `ldid` signing (offers `apt-get install -y ldid` when missing; never upgrades the system)
+- LaunchDaemon setup and service startup
+- existing-install detection (refuses to overwrite; update is not implemented yet)
+
+Not yet implemented:
+
+- automatic update
+- binary backup
+- rollback
+- repair
+- reconfigure
+- uninstall
+
+> **Warning:** `/var/lib/beszel-hub` contains Hub database / account / configuration state. The installer never deletes or resets it.
 
 ### Manual download
 
@@ -115,7 +150,7 @@ curl -fsSLO https://github.com/nghianguyen150612/beszel-ios/releases/latest/down
 shasum -a 256 -c SHA256SUMS
 ```
 
-Current deployment is otherwise manual: copy the verified binaries to
+Without the installer, deployment is manual: copy the verified binaries to
 `/usr/local/bin` on device, sign with `ldid`, and install the LaunchDaemon
 plists. Custom binaries must live under `/usr/local/bin`; running them from
 `$HOME` or `/tmp` has previously caused iOS execution/sandbox problems.
