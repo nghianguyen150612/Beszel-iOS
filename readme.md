@@ -98,7 +98,7 @@ curl -fsSL \
   | sudo sh
 ```
 
-This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v0.2.0)
+This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v0.3.0)
 downloads the Latest release assets, verifies their SHA256 checksums,
 installs the binaries into `/usr/local/bin` (with `chown root:wheel`,
 `chmod 755`, `ldid -S`), creates the data directories and LaunchDaemon
@@ -111,13 +111,15 @@ Menu:
 - Install Hub
 - Install Agent + Hub
 - Update
+- Repair / Reconfigure
 - Exit
 
 First run installs Agent / Hub / Both. Later, re-run the SAME one-line
-command and choose Update — no second updater script is needed. Update
-resolves the current Latest release tag once, then downloads SHA256SUMS and
-binaries from that same pinned release, so a release cannot change
-mid-transaction.
+command and choose Update or Repair / Reconfigure — no second script is
+needed. After an action completes you return to the main menu; Back returns
+there as well. Update resolves the current Latest release tag once, then
+downloads SHA256SUMS and binaries from that same pinned release, so a
+release cannot change mid-transaction.
 
 Working:
 
@@ -132,17 +134,20 @@ Working:
 - Agent update, Hub update, Agent + Hub update (Hub first, then Agent)
 - signed binary staging before any downtime
 - binary backup (`/usr/local/bin/beszel-agent.bak`, `/usr/local/bin/beszel-hub.bak`)
-- automatic rollback to the previous binary when a new version fails to start
+- automatic binary rollback when a new version fails to start
 - config preservation (plists are never regenerated during update; no key prompt)
 - Hub database preservation (`/var/lib/beszel-hub` is never deleted, reset, or re-owned)
+- diagnostics (read-only Agent/Hub status: binary, plist, service PID, ports, release; the Agent key value is never printed, only whether one is configured)
+- repair (restores missing/broken service components while preserving configuration and data where possible: restart in place, restore a missing binary from Latest without re-asking config, recreate missing config only with explicit confirmation)
+- reconfigure Agent (change Hub public key and/or Agent port via a validated, backed-up plist transaction with automatic config rollback)
+- reconfigure Hub (change Hub listening port, health-checked on the new port, with rollback to the previous port)
+- plist backups (`/Library/LaunchDaemons/dev.beszel.agent.plist.bak`, `/Library/LaunchDaemons/dev.beszel.hub.plist.bak`)
 
-Not yet implemented:
+Still planned:
 
-- repair
-- reconfigure
 - uninstall
 
-> **Warning:** `/var/lib/beszel-hub` contains Hub database / account / configuration state. The installer never deletes or resets it.
+> **Warning:** `/var/lib/beszel-hub` contains Hub database / account / configuration state. Repair and reconfigure never delete, reset, or re-own it. Do not hand-edit plists or install-state; use the installer menus.
 
 ### Manual download
 

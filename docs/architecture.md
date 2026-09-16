@@ -57,9 +57,9 @@ Binaries must live under `/usr/local/bin` (`chown root:wheel`, `chmod 755`, `ldi
 
 ## Distribution status
 
-**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `ios` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean. The `install.sh` one-line installer (v0.2.0) consumes the Latest release for fresh Agent / Hub / Agent+Hub installs (checksum verification, `ldid` signing, on-device LaunchDaemon generation, Hub health check) and for transactional updates: it resolves the Latest tag once per run, pins all downloads to that immutable tag, tracks installed releases in `/var/lib/beszel-ios/install-state` (installed binaries are `ldid`-signed, so their hashes are never compared against `SHA256SUMS`), stages signed binaries before downtime, keeps `/usr/local/bin/*.bak` backups, rolls back automatically on failed health/startup checks, preserves plists byte-for-byte, and never touches `/var/lib/beszel-hub`.
+**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `ios` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean. The `install.sh` one-line installer (v0.3.0) consumes the Latest release for fresh Agent / Hub / Agent+Hub installs (checksum verification, `ldid` signing, on-device LaunchDaemon generation, Hub health check) and for transactional updates: it resolves the Latest tag once per run, pins all downloads to that immutable tag, tracks installed releases in `/var/lib/beszel-ios/install-state` (installed binaries are `ldid`-signed, so their hashes are never compared against `SHA256SUMS`), stages signed binaries before downtime, keeps `/usr/local/bin/*.bak` backups, rolls back automatically on failed health/startup checks, preserves plists byte-for-byte, and never touches `/var/lib/beszel-hub`. It also offers read-only diagnostics (the Agent key value is never displayed), conservative repair, and reconfiguration through validated plist transactions backed up to `/Library/LaunchDaemons/*.plist.bak` with automatic config rollback; reconfiguration and restart-only repair never alter install state, and only repairs that install a freshly downloaded Latest binary record the new release.
 
-**Planned, not implemented:** repair, reconfigure, uninstall.
+**Planned, not implemented:** uninstall.
 
 ## Future distribution architecture (planned, not implemented)
 
@@ -80,7 +80,7 @@ install.sh
      +-- Install Hub
      +-- Install Both
      +-- Update (preserve /var/lib/beszel-hub)      [implemented]
-     +-- Repair / reconfigure                       [planned]
+     +-- Repair / reconfigure                       [implemented]
      +-- Uninstall (explicit confirmation for data) [planned]
 ```
 

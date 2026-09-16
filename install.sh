@@ -8,9 +8,10 @@
 # POSIX /bin/sh only: no bashisms, no zsh-isms. Interactive input is read
 # from /dev/tty so the menu works when stdin is a curl pipe.
 #
-# Scope: fresh installs of Agent and/or Hub, plus safe transactional updates
-# with signed-binary staging, binary backup and automatic rollback.
-# Repair, reconfigure and uninstall are NOT implemented here.
+# Scope: fresh installs of Agent and/or Hub, safe transactional updates
+# with signed-binary staging, binary backup and automatic rollback, plus
+# non-destructive diagnostics, conservative repair and safe reconfiguration.
+# Uninstall is NOT implemented here.
 #
 # Version model: installed binaries are ldid-signed on device, so the hash of
 # an installed binary differs from its unsigned release asset. Update
@@ -18,11 +19,15 @@
 # (/var/lib/beszel-ios/install-state), never a hash comparison of the
 # installed binary against SHA256SUMS. SHA256SUMS only validates freshly
 # downloaded release assets before installation.
+#
+# Key handling: the Agent plist holds the Hub public key. Diagnostics and
+# summaries report only whether a key is configured; the value is never
+# printed, logged, or stored in install-state.
 
 set -eu
 umask 022
 
-INSTALLER_VERSION="0.2.0"
+INSTALLER_VERSION="0.3.0"
 USER_AGENT="beszel-ios-installer/${INSTALLER_VERSION}"
 
 RELEASE_LATEST_PAGE="https://github.com/nghianguyen150612/beszel-ios/releases/latest"
@@ -478,6 +483,51 @@ component_status() {
 	return 0
 }
 
+# component_state <agent|hub> — prints one of:
+#   ABSENT       neither a trustworthy binary nor a plist exists
+#   COMPLETE     regular binary and plist both exist
+#   BINARY_ONLY  regular binary exists, plist missing
+#   PLIST_ONLY   plist exists, usable binary missing
+# A symlinked or non-regular expected binary is never counted: repair must
+# not blindly follow it. Diagnostics and repair decide on this state; the
+# older component_status helper is kept for install/update compatibility.
+component_state() {
+	_cst_comp="$1"
+	_cst_bin=""
+	_cst_plist=""
+	case "$_cst_comp" in
+		agent)
+			_cst_bin="${BIN_DIR}/${AGENT_BIN}"
+			_cst_plist="${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+			;;
+		hub)
+			_cst_bin="${BIN_DIR}/${HUB_BIN}"
+			_cst_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+			;;
+		*)
+			return 1
+			;;
+	esac
+	_cst_have_bin=0
+	_cst_have_plist=0
+	if [ -f "$_cst_bin" ] && [ ! -L "$_cst_bin" ]; then
+		_cst_have_bin=1
+	fi
+	if [ -f "$_cst_plist" ] && [ ! -L "$_cst_plist" ]; then
+		_cst_have_plist=1
+	fi
+	if [ "$_cst_have_bin" = "1" ] && [ "$_cst_have_plist" = "1" ]; then
+		printf 'COMPLETE'
+	elif [ "$_cst_have_bin" = "1" ]; then
+		printf 'BINARY_ONLY'
+	elif [ "$_cst_have_plist" = "1" ]; then
+		printf 'PLIST_ONLY'
+	else
+		printf 'ABSENT'
+	fi
+	return 0
+}
+
 # release_is_current <agent|hub> <tag> — true when tracked release == tag.
 release_is_current() {
 	_ri_comp="$1"
@@ -673,19 +723,44 @@ ensure_data_dir() {
 	fi
 }
 
+# plist_valid <file> — 0 when the file parses as XML with the first
+# available checker. Returns 0 (with no claim) when no checker exists.
+plist_valid() {
+	_pv_file="$1"
+	[ -f "$_pv_file" ] && [ -s "$_pv_file" ] || return 1
+	if command -v plutil > /dev/null 2>&1; then
+		plutil --lint "$_pv_file" > /dev/null 2>&1 || return 1
+		return 0
+	fi
+	if command -v xmllint > /dev/null 2>&1; then
+		xmllint --noout "$_pv_file" > /dev/null 2>&1 || return 1
+		return 0
+	fi
+	if command -v python3 > /dev/null 2>&1; then
+		python3 -c 'import sys,xml.dom.minidom; xml.dom.minidom.parse(sys.argv[1])' "$_pv_file" > /dev/null 2>&1 || return 1
+		return 0
+	fi
+	return 0
+}
+
 check_plist() {
 	_cp_file="$1"
+	_cp_tool="none"
 	if command -v plutil > /dev/null 2>&1; then
-		plutil --lint "$_cp_file" || die "Generated plist failed validation: ${_cp_file}"
-		say_ok "Plist valid (plutil): ${_cp_file}"
+		_cp_tool="plutil"
 	elif command -v xmllint > /dev/null 2>&1; then
-		xmllint --noout "$_cp_file" || die "Generated plist failed validation: ${_cp_file}"
-		say_ok "Plist valid (xmllint): ${_cp_file}"
+		_cp_tool="xmllint"
 	elif command -v python3 > /dev/null 2>&1; then
-		python3 -c 'import sys,xml.dom.minidom; xml.dom.minidom.parse(sys.argv[1])' "$_cp_file" || die "Generated plist failed validation: ${_cp_file}"
-		say_ok "Plist valid (xml parser): ${_cp_file}"
-	else
+		_cp_tool="xml parser"
+	fi
+	if [ "$_cp_tool" = "none" ]; then
 		say_warn "No plist checker available; skipping validation for ${_cp_file}."
+		return 0
+	fi
+	if plist_valid "$_cp_file"; then
+		say_ok "Plist valid (${_cp_tool}): ${_cp_file}"
+	else
+		die "Generated plist failed validation: ${_cp_file}"
 	fi
 }
 
@@ -832,6 +907,46 @@ svc_running() {
 	return 0
 }
 
+# svc_loaded <label> — true when the label appears in launchctl output at
+# all (running or stopped). False when launchctl yields nothing usable.
+svc_loaded() {
+	_sl2_label="$1"
+	_sl2_out=""
+	_sl2_out=$(launchctl list 2> /dev/null || true)
+	[ -n "$_sl2_out" ] || return 1
+	printf '%s\n' "$_sl2_out" | grep -q -F "$_sl2_label" || return 1
+	return 0
+}
+
+# svc_pid <label> — print the launchd PID for a label, or "none" when no
+# live numeric PID is listed. Read-only; used by diagnostics.
+svc_pid() {
+	_sp_label="$1"
+	_sp_out=""
+	_sp_out=$(launchctl list 2> /dev/null || true)
+	_sp_line=$(printf '%s\n' "$_sp_out" | grep -F "$_sp_label" | head -n 1 || true)
+	if [ -z "$_sp_line" ]; then
+		printf 'none'
+		return 1
+	fi
+	set -f
+	# shellcheck disable=SC2086
+	set -- $_sp_line
+	set +f
+	[ "$#" -ge 1 ] || {
+		printf 'none'
+		return 1
+	}
+	case "$1" in
+		'' | '-' | '0' | *[!0-9]*)
+			printf 'none'
+			return 1
+			;;
+	esac
+	printf '%s' "$1"
+	return 0
+}
+
 # agent_post_update_ok <label> — the Agent's own health subcommand reflects
 # recent Hub connections, so it cannot prove a fresh restart. Instead require
 # a live launchd PID that survives a short bounded stabilization period.
@@ -852,13 +967,80 @@ agent_post_update_ok() {
 # hub_port_from_plist <plist> — conservative parse of the existing generated
 # Hub plist's "0.0.0.0:<port>" argument. Never falls back to a default: when
 # the configured port cannot be proven, the caller must abort the update.
+# Ambiguous plists (zero or several distinct ports) are rejected.
 hub_port_from_plist() {
 	_hp_file="${1:-}"
 	[ -f "$_hp_file" ] || return 1
-	_hp_port=$(sed -n 's/.*0\.0\.0\.0:\([0-9][0-9]*\).*/\1/p' "$_hp_file" 2> /dev/null | head -n 1 || true)
-	[ -n "$_hp_port" ] || return 1
+	_hp_ports=$(sed -n 's/.*0\.0\.0\.0:\([0-9][0-9]*\).*/\1/p' "$_hp_file" 2> /dev/null | sort -u || true)
+	_hp_n=$(printf '%s' "$_hp_ports" | grep -c '[0-9]' || true)
+	[ "$_hp_n" = "1" ] || return 1
+	_hp_port="$_hp_ports"
 	valid_port "$_hp_port" || return 1
 	printf '%s' "$_hp_port"
+	return 0
+}
+
+# --------------------------------------------- safe plist value parsing ---
+
+# The generated plists are XML property lists. iOS 12 plutil has no reliable
+# extraction flags, so values are read with a conservative text parser tuned
+# to the known installer-generated structure (<key> and <string> elements one
+# per line). The parser never sources, evals or executes plist content; it
+# fails closed on anything ambiguous. XML entities are decoded explicitly.
+xml_decode() {
+	printf '%s' "$1" | sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&quot;/"/g' -e "s/&apos;/'/g" -e 's/&amp;/\&/g'
+}
+
+# plist_pairs <file> — normalise one-per-line <key>/<string> elements into a
+# KEY:<name> / VAL:<raw> stream. Lines in any other shape are ignored, which
+# breaks key/value association downstream and therefore fails closed.
+plist_pairs() {
+	_pp_file="${1:-}"
+	[ -f "$_pp_file" ] || return 1
+	sed -n -e 's/^[[:space:]]*<key>\([^<]*\)<\/key>[[:space:]]*$/KEY:\1/p' -e 's/^[[:space:]]*<string>\(.*\)<\/string>[[:space:]]*$/VAL:\1/p' "$_pp_file" 2> /dev/null || return 1
+	return 0
+}
+
+# plist_value_for <file> <key-name> — print the XML-decoded value of a key
+# that must occur exactly once and be immediately followed by its <string>.
+plist_value_for() {
+	_vf_file="$1"
+	_vf_name="$2"
+	case "$_vf_name" in
+		'' | *[!A-Za-z0-9_]* | *' '*) return 1 ;;
+	esac
+	_vf_stream=$(plist_pairs "$_vf_file") || return 1
+	[ -n "$_vf_stream" ] || return 1
+	_vf_n=$(printf '%s\n' "$_vf_stream" | grep -c "^KEY:${_vf_name}\$" || true)
+	[ "$_vf_n" = "1" ] || return 1
+	_vf_raw=$(printf '%s\n' "$_vf_stream" | grep -A1 "^KEY:${_vf_name}\$" | tail -n 1 || true)
+	case "$_vf_raw" in
+		VAL:*) _vf_enc=${_vf_raw#VAL:} ;;
+		*) return 1 ;;
+	esac
+	xml_decode "$_vf_enc"
+	return 0
+}
+
+# agent_port_from_plist <file> — LISTEN value must look like ":<port>".
+agent_port_from_plist() {
+	_apf_val=""
+	_apf_val=$(plist_value_for "$1" "LISTEN") || return 1
+	case "$_apf_val" in
+		:*) _apf_port=${_apf_val#:} ;;
+		*) return 1 ;;
+	esac
+	valid_port "$_apf_port" || return 1
+	printf '%s' "$_apf_port"
+	return 0
+}
+
+# agent_key_from_plist <file> — KEY value must pass SSH-key validation.
+agent_key_from_plist() {
+	_akf_val=""
+	_akf_val=$(plist_value_for "$1" "KEY") || return 1
+	valid_ssh_key "$_akf_val" || return 1
+	printf '%s' "$_akf_val"
 	return 0
 }
 
@@ -874,6 +1056,161 @@ wait_for_hub() {
 		_wh_i=$((_wh_i + 1))
 	done
 	return 1
+}
+
+# ------------------------------------------------------ diagnostics ---
+
+# Diagnostics are strictly read-only: they never write files, never load or
+# unload services, and never print the Agent KEY value (only whether a valid
+# key is configured).
+diag_release_line() {
+	# $1 = agent|hub. Prints a human release line.
+	_dr_rel=""
+	case "$1" in
+		agent) _dr_rel=$(state_agent_release 2> /dev/null || true) ;;
+		hub) _dr_rel=$(state_hub_release 2> /dev/null || true) ;;
+	esac
+	if [ -n "$_dr_rel" ]; then
+		printf 'known release %s' "$_dr_rel"
+	elif [ -f "$(state_path)" ]; then
+		printf 'state present but release missing/invalid (legacy or corrupt)'
+	else
+		printf 'unknown (legacy installation, no state yet)'
+	fi
+	return 0
+}
+
+diag_service_line() {
+	# $1 = label. Prints "loaded, PID <n>" / "loaded, not running" /
+	# "not loaded" / "load state unknown".
+	_ds_label="$1"
+	_ds_out=""
+	_ds_out=$(launchctl list 2> /dev/null || true)
+	if [ -z "$_ds_out" ]; then
+		printf 'load state unknown (launchctl unreadable)'
+		return 0
+	fi
+	if ! printf '%s\n' "$_ds_out" | grep -q -F "$_ds_label"; then
+		printf 'not loaded'
+		return 0
+	fi
+	_ds_pid=""
+	_ds_pid=$(svc_pid "$_ds_label" 2> /dev/null || true)
+	if [ -n "$_ds_pid" ] && [ "$_ds_pid" != "none" ]; then
+		printf 'loaded, PID %s' "$_ds_pid"
+	else
+		printf 'loaded, not running'
+	fi
+	return 0
+}
+
+diagnose_agent() {
+	_da_bin="${BIN_DIR}/${AGENT_BIN}"
+	_da_plist="${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+	_da_bak="${_da_bin}.bak"
+	say_info "---- Agent diagnostics ----"
+	if [ -e "$_da_bin" ]; then
+		if [ -f "$_da_bin" ] && [ ! -L "$_da_bin" ]; then
+			say_info "Binary: present (${_da_bin}, regular file)"
+		else
+			say_info "Binary: present but NOT a regular file (${_da_bin}); treated as untrusted"
+		fi
+	else
+		say_info "Binary: missing (${_da_bin})"
+	fi
+	if [ -e "$_da_plist" ]; then
+		if [ -f "$_da_plist" ] && [ ! -L "$_da_plist" ]; then
+			if plist_valid "$_da_plist"; then
+				say_info "Plist: present (${_da_plist}, XML valid)"
+			else
+				say_info "Plist: present (${_da_plist}, XML INVALID)"
+			fi
+		else
+			say_info "Plist: present but NOT a regular file (${_da_plist}); treated as untrusted"
+		fi
+	else
+		say_info "Plist: missing (${_da_plist})"
+	fi
+	say_info "Service: $(diag_service_line "$AGENT_LABEL")"
+	_da_port=""
+	_da_port=$(agent_port_from_plist "$_da_plist" 2> /dev/null || true)
+	if [ -n "$_da_port" ]; then
+		say_info "Agent port: ${_da_port}"
+	else
+		say_info "Agent port: unreadable (plist missing or unparseable)"
+	fi
+	if agent_key_from_plist "$_da_plist" > /dev/null 2>&1; then
+		say_info "Agent key: configured"
+	else
+		say_info "Agent key: missing/unreadable"
+	fi
+	say_info "Release: $(diag_release_line agent)"
+	if [ -s "$_da_bak" ]; then
+		say_info "Backup: present (${_da_bak})"
+	else
+		say_info "Backup: absent"
+	fi
+	if [ -d "${LIB_DIR}/beszel-agent" ]; then
+		say_info "Data directory: present (${LIB_DIR}/beszel-agent)"
+	else
+		say_info "Data directory: missing (${LIB_DIR}/beszel-agent)"
+	fi
+	return 0
+}
+
+diagnose_hub() {
+	_dh_bin="${BIN_DIR}/${HUB_BIN}"
+	_dh_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+	_dh_bak="${_dh_bin}.bak"
+	say_info "---- Hub diagnostics ----"
+	if [ -e "$_dh_bin" ]; then
+		if [ -f "$_dh_bin" ] && [ ! -L "$_dh_bin" ]; then
+			say_info "Binary: present (${_dh_bin}, regular file)"
+		else
+			say_info "Binary: present but NOT a regular file (${_dh_bin}); treated as untrusted"
+		fi
+	else
+		say_info "Binary: missing (${_dh_bin})"
+	fi
+	if [ -e "$_dh_plist" ]; then
+		if [ -f "$_dh_plist" ] && [ ! -L "$_dh_plist" ]; then
+			if plist_valid "$_dh_plist"; then
+				say_info "Plist: present (${_dh_plist}, XML valid)"
+			else
+				say_info "Plist: present (${_dh_plist}, XML INVALID)"
+			fi
+		else
+			say_info "Plist: present but NOT a regular file (${_dh_plist}); treated as untrusted"
+		fi
+	else
+		say_info "Plist: missing (${_dh_plist})"
+	fi
+	say_info "Service: $(diag_service_line "$HUB_LABEL")"
+	_dh_port=""
+	_dh_port=$(hub_port_from_plist "$_dh_plist" 2> /dev/null || true)
+	if [ -n "$_dh_port" ]; then
+		say_info "Hub port: ${_dh_port}"
+		if curl -fsSL --max-time 3 "http://127.0.0.1:${_dh_port}/api/health" > /dev/null 2>&1; then
+			say_info "Health: reachable (http://127.0.0.1:${_dh_port}/api/health)"
+		else
+			say_info "Health: unreachable (service may be starting or stopped)"
+		fi
+	else
+		say_info "Hub port: unreadable (plist missing or unparseable)"
+		say_info "Health: skipped (port unreadable)"
+	fi
+	say_info "Release: $(diag_release_line hub)"
+	if [ -s "$_dh_bak" ]; then
+		say_info "Backup: present (${_dh_bak})"
+	else
+		say_info "Backup: absent"
+	fi
+	if [ -d "${LIB_DIR}/beszel-hub" ]; then
+		say_info "Data directory: present (${LIB_DIR}/beszel-hub)"
+	else
+		say_info "Data directory: missing (${LIB_DIR}/beszel-hub)"
+	fi
+	return 0
 }
 
 # ------------------------------------------------- update transactions ---
@@ -1053,6 +1390,163 @@ rollback_component() {
 	return 0
 }
 
+# ----------------------------------------------- plist transactions ---
+
+# Plist backups live at fixed installer paths next to the live plist and are
+# managed with temp-file + atomic rename only (never cp onto a live path, so
+# a surprising destination symlink can never be followed). One previous
+# known-good plist backup is kept; it is never confused with the binary .bak.
+backup_plist() {
+	# $1 = agent|hub.
+	_bp_plist=""
+	case "$1" in
+		agent) _bp_plist="${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ;;
+		hub) _bp_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist" ;;
+		*) return 1 ;;
+	esac
+	_bp_bak="${_bp_plist}.bak"
+	if [ ! -f "$_bp_plist" ] || [ -L "$_bp_plist" ]; then
+		say_err "Refusing to back up ${_bp_plist}: not a regular file."
+		return 1
+	fi
+	if [ ! -s "$_bp_plist" ]; then
+		say_err "Refusing to back up ${_bp_plist}: file is empty."
+		return 1
+	fi
+	_bp_tmp="${_bp_bak}.new"
+	rm -f "$_bp_tmp"
+	cp "$_bp_plist" "$_bp_tmp" || {
+		rm -f "$_bp_tmp"
+		return 1
+	}
+	[ -s "$_bp_tmp" ] || {
+		rm -f "$_bp_tmp"
+		return 1
+	}
+	if [ "$(id -u)" = "0" ]; then
+		fix_path_owner "$_bp_tmp" || {
+			rm -f "$_bp_tmp"
+			return 1
+		}
+	fi
+	chmod 644 "$_bp_tmp" || {
+		rm -f "$_bp_tmp"
+		return 1
+	}
+	mv -f "$_bp_tmp" "$_bp_bak" || {
+		rm -f "$_bp_tmp"
+		return 1
+	}
+	[ -s "$_bp_bak" ] || return 1
+	return 0
+}
+
+# replace_plist <agent|hub> <validated-tmp> — atomically move a prepared
+# plist into place. A stray symlink at the destination is removed (link
+# only, target untouched) so repair can proceed; anything else unexpected
+# aborts.
+replace_plist() {
+	_rp_comp="$1"
+	_rp_tmp="$2"
+	_rp_dest=""
+	case "$_rp_comp" in
+		agent) _rp_dest="${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ;;
+		hub) _rp_dest="${LAUNCHD_DIR}/${HUB_LABEL}.plist" ;;
+		*) return 1 ;;
+	esac
+	[ -f "$_rp_tmp" ] && [ -s "$_rp_tmp" ] || return 1
+	if [ -L "$_rp_dest" ]; then
+		rm -f "$_rp_dest" || return 1
+	fi
+	if [ -e "$_rp_dest" ] && { [ ! -f "$_rp_dest" ] || [ -L "$_rp_dest" ]; }; then
+		say_err "Refusing to replace ${_rp_dest}: unexpected file kind."
+		return 1
+	fi
+	mv -f "$_rp_tmp" "$_rp_dest" || return 1
+	if [ "$(id -u)" = "0" ]; then
+		fix_path_owner "$_rp_dest" || return 1
+	fi
+	chmod 644 "$_rp_dest" || return 1
+	return 0
+}
+
+plist_rollback_critical() {
+	say_err "CRITICAL: configuration rollback failed."
+	say_err "Plist: ${_rp_final}"
+	say_err "Plist backup: ${_rp_bak}"
+	say_err "The service may be stopped; the backup was left in place."
+	return 1
+}
+
+# rollback_plist <agent|hub> — restore the backed-up plist atomically,
+# reload the original configuration and verify the previous service.
+# Install state is left untouched.
+rollback_plist() {
+	_rp_comp="$1"
+	_rp_label=""
+	case "$_rp_comp" in
+		agent) _rp_label="$AGENT_LABEL" ;;
+		hub) _rp_label="$HUB_LABEL" ;;
+		*) return 1 ;;
+	esac
+	_rp_final="${LAUNCHD_DIR}/${_rp_label}.plist"
+	_rp_bak="${_rp_final}.bak"
+	if [ ! -s "$_rp_bak" ]; then
+		say_err "Configuration rollback unavailable: backup ${_rp_bak} is missing."
+		return 1
+	fi
+	say_info "Restoring previous configuration..."
+	svc_unload "$_rp_final" > /dev/null 2>&1 || true
+	_rp_tmp="${_rp_final}.restore"
+	rm -f "$_rp_tmp"
+	cp "$_rp_bak" "$_rp_tmp" || {
+		plist_rollback_critical
+		return 1
+	}
+	mv -f "$_rp_tmp" "$_rp_final" || {
+		rm -f "$_rp_tmp"
+		plist_rollback_critical
+		return 1
+	}
+	if [ "$(id -u)" = "0" ]; then
+		fix_path_owner "$_rp_final" || {
+			plist_rollback_critical
+			return 1
+		}
+	fi
+	chmod 644 "$_rp_final" || {
+		plist_rollback_critical
+		return 1
+	}
+	if ! svc_load "$_rp_final"; then
+		plist_rollback_critical
+		return 1
+	fi
+	case "$_rp_comp" in
+		agent)
+			if ! agent_post_update_ok "$_rp_label"; then
+				plist_rollback_critical
+				return 1
+			fi
+			;;
+		hub)
+			_rp_port=""
+			_rp_port=$(hub_port_from_plist "$_rp_final" 2> /dev/null || true)
+			if [ -n "$_rp_port" ]; then
+				if ! wait_for_hub "$_rp_port"; then
+					plist_rollback_critical
+					return 1
+				fi
+			elif ! svc_running "$_rp_label"; then
+				plist_rollback_critical
+				return 1
+			fi
+			;;
+	esac
+	say_ok "Configuration rollback succeeded."
+	return 0
+}
+
 # ----------------------------------------------- interrupt-safe traps ---
 
 _update_rollback_if_needed() {
@@ -1065,6 +1559,8 @@ _update_rollback_if_needed() {
 		case "$_UPDATE_ACTIVE" in
 			agent) rollback_component "agent" || true ;;
 			hub) rollback_component "hub" || true ;;
+			agent-plist) rollback_plist "agent" || true ;;
+			hub-plist) rollback_plist "hub" || true ;;
 		esac
 	fi
 	_UPDATE_TRAP_BUSY=0
@@ -1085,8 +1581,9 @@ update_exit_trap() {
 	cleanup_work_dir
 }
 
-# update_begin <agent|hub> — arm the transaction traps (no rollback needed
-# yet); the caller sets _UPDATE_NEED_ROLLBACK=1 at the point of no return.
+# update_begin <agent|hub|agent-plist|hub-plist> — arm the transaction
+# traps (no rollback needed yet); the caller sets _UPDATE_NEED_ROLLBACK=1
+# at the point of no return (service unload / file replacement).
 update_begin() {
 	_UPDATE_ACTIVE="$1"
 	_UPDATE_NEED_ROLLBACK=0
@@ -1450,6 +1947,17 @@ confirm_update() {
 	esac
 }
 
+# confirm_destructive <prompt> — y/N confirmation (default No) for actions
+# that replace configuration or binaries. Read from /dev/tty.
+confirm_destructive() {
+	_cd_answer=""
+	ask_tty "$1 [y/N]" _cd_answer "N" || return 1
+	case "$_cd_answer" in
+		[Yy] | [Yy][Ee][Ss]) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
 # current_release_label <agent|hub> — tracked tag, or the legacy notice.
 current_release_label() {
 	_cr_cur=""
@@ -1604,6 +2112,502 @@ update_both_flow() {
 	return 0
 }
 
+# ---------------------------------------------------------- reconfigure ---
+
+# reconfigure_agent_flow — change the Hub public key and/or the Agent port.
+# Configuration only: the binary, data directory, .bak file and install
+# state are never touched here.
+reconfigure_agent_flow() {
+	_ra_plist="${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+	if [ "$(component_state agent)" != "COMPLETE" ]; then
+		say_err "Agent installation is incomplete; use Repair Agent first."
+		return 1
+	fi
+	_ra_old_key=""
+	_ra_old_key=$(agent_key_from_plist "$_ra_plist") || {
+		say_err "Cannot interpret the existing Agent configuration safely."
+		say_err "Use Repair Agent to recreate it."
+		return 1
+	}
+	_ra_old_port=""
+	_ra_old_port=$(agent_port_from_plist "$_ra_plist") || {
+		say_err "Cannot interpret the existing Agent configuration safely."
+		say_err "Use Repair Agent to recreate it."
+		return 1
+	}
+	say_info "Current Agent port: ${_ra_old_port}"
+	_ra_new_port="$_ra_old_port"
+	if confirm_destructive "Change port?"; then
+		prompt_agent_port || return 1
+		_ra_new_port="$AGENT_PORT"
+		AGENT_PORT=""
+	fi
+	_ra_new_key="$_ra_old_key"
+	_ra_old_key="redacted-after-use"
+	_ra_keep_key=1
+	if confirm_update "Keep existing Hub public key?"; then
+		:
+	else
+		prompt_agent_key || return 1
+		_ra_new_key="$AGENT_KEY"
+		_ra_keep_key=0
+	fi
+	AGENT_KEY="redacted-after-use"
+	if [ "$_ra_new_port" = "$_ra_old_port" ] && [ "$_ra_keep_key" = "1" ]; then
+		say_info "No Agent configuration changes requested."
+		_ra_new_key="redacted-after-use"
+		return 0
+	fi
+	_ra_tmp="${WORK_DIR}/dev.beszel.agent.plist.reconf"
+	rm -f "$_ra_tmp"
+	write_agent_plist "$_ra_new_key" "$_ra_new_port" "$_ra_tmp"
+	_ra_new_key="redacted-after-use"
+	if ! plist_valid "$_ra_tmp"; then
+		rm -f "$_ra_tmp"
+		say_err "Generated Agent configuration failed validation; nothing was changed."
+		return 1
+	fi
+	backup_plist "agent" || {
+		rm -f "$_ra_tmp"
+		return 1
+	}
+	update_begin "agent-plist"
+	_UPDATE_NEED_ROLLBACK=1
+	if ! svc_unload "$_ra_plist" > /dev/null 2>&1; then
+		say_warn "launchctl unload reported an issue; continuing with replacement."
+	fi
+	_ra_ok=1
+	if ! replace_plist "agent" "$_ra_tmp"; then
+		say_err "Failed to replace ${_ra_plist}."
+		_ra_ok=0
+	fi
+	if [ "$_ra_ok" = "1" ]; then
+		if ! svc_load "$_ra_plist"; then
+			say_err "Agent with new configuration failed to load."
+			_ra_ok=0
+		fi
+	fi
+	if [ "$_ra_ok" = "1" ]; then
+		if ! agent_post_update_ok "$AGENT_LABEL"; then
+			say_err "Agent with new configuration failed verification."
+			_ra_ok=0
+		fi
+	fi
+	if [ "$_ra_ok" = "1" ]; then
+		_UPDATE_NEED_ROLLBACK=0
+		update_end
+		rm -f "${_ra_plist}.restore"
+		say_ok "Agent reconfigured (port ${_ra_new_port})."
+		return 0
+	fi
+	rm -f "$_ra_tmp"
+	_UPDATE_NEED_ROLLBACK=0
+	if rollback_plist "agent"; then
+		update_end
+		return 1
+	fi
+	update_end
+	return 1
+}
+
+# reconfigure_hub_flow — change the Hub listening port only. The binary,
+# data directory (/var/lib/beszel-hub), .bak file and install state are
+# never touched here.
+reconfigure_hub_flow() {
+	_rh_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+	if [ "$(component_state hub)" != "COMPLETE" ]; then
+		say_err "Hub installation is incomplete; use Repair Hub first."
+		return 1
+	fi
+	_rh_old_port=""
+	_rh_old_port=$(hub_port_from_plist "$_rh_plist") || {
+		say_err "Cannot interpret the existing Hub configuration safely."
+		say_err "Use Repair Hub to recreate it."
+		return 1
+	}
+	say_info "Current Hub port: ${_rh_old_port}"
+	_rh_answer=""
+	ask_tty "New Hub port" _rh_answer "$_rh_old_port" || return 1
+	[ -n "$_rh_answer" ] || _rh_answer="$_rh_old_port"
+	while ! valid_port "$_rh_answer"; do
+		say_warn "Invalid port '${_rh_answer}': enter a number 1-65535."
+		_rh_answer=""
+		ask_tty "New Hub port" _rh_answer "$_rh_old_port" || return 1
+		[ -n "$_rh_answer" ] || _rh_answer="$_rh_old_port"
+	done
+	if [ "$_rh_answer" = "$_rh_old_port" ]; then
+		say_info "No Hub configuration changes requested."
+		return 0
+	fi
+	_rh_new_port="$_rh_answer"
+	_rh_tmp="${WORK_DIR}/dev.beszel.hub.plist.reconf"
+	rm -f "$_rh_tmp"
+	write_hub_plist "$_rh_new_port" "$_rh_tmp"
+	if ! plist_valid "$_rh_tmp"; then
+		rm -f "$_rh_tmp"
+		say_err "Generated Hub configuration failed validation; nothing was changed."
+		return 1
+	fi
+	backup_plist "hub" || {
+		rm -f "$_rh_tmp"
+		return 1
+	}
+	update_begin "hub-plist"
+	_UPDATE_NEED_ROLLBACK=1
+	if ! svc_unload "$_rh_plist" > /dev/null 2>&1; then
+		say_warn "launchctl unload reported an issue; continuing with replacement."
+	fi
+	_rh_ok=1
+	if ! replace_plist "hub" "$_rh_tmp"; then
+		say_err "Failed to replace ${_rh_plist}."
+		_rh_ok=0
+	fi
+	if [ "$_rh_ok" = "1" ]; then
+		if ! svc_load "$_rh_plist"; then
+			say_err "Hub with new configuration failed to load."
+			_rh_ok=0
+		fi
+	fi
+	if [ "$_rh_ok" = "1" ]; then
+		if ! wait_for_hub "$_rh_new_port"; then
+			say_err "Hub with new configuration failed health check."
+			_rh_ok=0
+		fi
+	fi
+	if [ "$_rh_ok" = "1" ]; then
+		_UPDATE_NEED_ROLLBACK=0
+		update_end
+		rm -f "${_rh_plist}.restore"
+		say_ok "Hub reconfigured (port ${_rh_new_port})."
+		return 0
+	fi
+	rm -f "$_rh_tmp"
+	_UPDATE_NEED_ROLLBACK=0
+	if rollback_plist "hub"; then
+		update_end
+		return 1
+	fi
+	update_end
+	return 1
+}
+
+# -------------------------------------------------------------- repair ---
+
+# restart_existing_service <agent|hub> — reload the untouched existing
+# plist and verify. No downloads, no binary or state changes.
+restart_existing_service() {
+	_rs_comp="$1"
+	_rs_label=""
+	case "$_rs_comp" in
+		agent) _rs_label="$AGENT_LABEL" ;;
+		hub) _rs_label="$HUB_LABEL" ;;
+		*) return 1 ;;
+	esac
+	_rs_plist="${LAUNCHD_DIR}/${_rs_label}.plist"
+	if ! plist_valid "$_rs_plist"; then
+		say_err "The existing plist failed validation: ${_rs_plist}"
+		return 1
+	fi
+	svc_unload "$_rs_plist" > /dev/null 2>&1 || true
+	if ! svc_load "$_rs_plist"; then
+		say_err "Existing service failed to load."
+		return 1
+	fi
+	case "$_rs_comp" in
+		agent)
+			agent_post_update_ok "$_rs_label" || {
+				say_err "Existing Agent failed verification."
+				return 1
+			}
+			;;
+		hub)
+			_rs_port=""
+			_rs_port=$(hub_port_from_plist "$_rs_plist") || {
+				say_err "Cannot determine the Hub health port safely."
+				return 1
+			}
+			wait_for_hub "$_rs_port" || {
+				say_err "Existing Hub failed health check."
+				return 1
+			}
+			;;
+	esac
+	say_ok "Service restarted with its existing configuration."
+	return 0
+}
+
+# restore_missing_binary <agent|hub> <tag> — reinstall only the missing
+# binary from the pinned Latest release while preserving the existing
+# plist (and Hub database). Records release state after service success.
+# On failure the just-placed binary is removed again so the filesystem
+# returns to its prior state; install state is left untouched.
+restore_missing_binary() {
+	_rm_comp="$1"
+	_rm_tag="$2"
+	_rm_bin=""
+	_rm_asset=""
+	case "$_rm_comp" in
+		agent)
+			_rm_bin="$AGENT_BIN"
+			_rm_asset="$AGENT_ASSET"
+			;;
+		hub)
+			_rm_bin="$HUB_BIN"
+			_rm_asset="$HUB_ASSET"
+			;;
+		*)
+			return 1
+			;;
+	esac
+	_rm_final="${BIN_DIR}/${_rm_bin}"
+	_rm_plist="${LAUNCHD_DIR}/dev.beszel.${_rm_comp}.plist"
+	if [ "$(component_state "$_rm_comp")" != "PLIST_ONLY" ]; then
+		say_err "Binary restore needs a plist without a usable binary; state changed."
+		return 1
+	fi
+	case "$_rm_comp" in
+		agent)
+			agent_key_from_plist "$_rm_plist" > /dev/null 2>&1 || {
+				say_err "Cannot interpret the existing Agent configuration; refusing to guess it."
+				return 1
+			}
+			agent_port_from_plist "$_rm_plist" > /dev/null 2>&1 || {
+				say_err "Cannot interpret the existing Agent configuration; refusing to guess it."
+				return 1
+			}
+			;;
+		hub)
+			hub_port_from_plist "$_rm_plist" > /dev/null 2>&1 || {
+				say_err "Cannot interpret the existing Hub configuration; refusing to guess it."
+				return 1
+			}
+			;;
+	esac
+	_rm_staged=""
+	_rm_staged=$(stage_new_binary "$_rm_asset" "$_rm_bin") || return 1
+	if [ -L "$_rm_final" ]; then
+		rm -f "$_rm_final" || {
+			rm -f "$_rm_staged"
+			return 1
+		}
+	fi
+	if [ -e "$_rm_final" ]; then
+		say_err "A binary appeared at ${_rm_final}; refusing to overwrite it."
+		rm -f "$_rm_staged"
+		return 1
+	fi
+	mv -f "$_rm_staged" "$_rm_final" || {
+		rm -f "$_rm_staged"
+		return 1
+	}
+	if [ "$(id -u)" = "0" ]; then
+		fix_path_owner "$_rm_final" || {
+			rm -f "$_rm_final"
+			return 1
+		}
+	fi
+	chmod 755 "$_rm_final" || {
+		rm -f "$_rm_final"
+		return 1
+	}
+	svc_unload "$_rm_plist" > /dev/null 2>&1 || true
+	if ! svc_load "$_rm_plist"; then
+		say_err "Restored binary failed to load; removing it again."
+		svc_unload "$_rm_plist" > /dev/null 2>&1 || true
+		rm -f "$_rm_final"
+		return 1
+	fi
+	case "$_rm_comp" in
+		agent)
+			if ! agent_post_update_ok "dev.beszel.${_rm_comp}"; then
+				say_err "Restored binary failed verification; removing it again."
+				svc_unload "$_rm_plist" > /dev/null 2>&1 || true
+				rm -f "$_rm_final"
+				return 1
+			fi
+			;;
+		hub)
+			_rm_port=""
+			_rm_port=$(hub_port_from_plist "$_rm_plist" 2> /dev/null || true)
+			if [ -z "$_rm_port" ] || ! wait_for_hub "$_rm_port"; then
+				say_err "Restored binary failed verification; removing it again."
+				svc_unload "$_rm_plist" > /dev/null 2>&1 || true
+				rm -f "$_rm_final"
+				return 1
+			fi
+			;;
+	esac
+	_rm_sha=""
+	_rm_sha=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$_rm_asset" 2> /dev/null || true)
+	if [ -n "$_rm_sha" ]; then
+		state_write_component "$_rm_comp" "$_rm_tag" "$_rm_sha" || say_warn "Binary restored but state recording failed."
+	else
+		say_warn "Binary restored but state recording failed (checksum entry missing)."
+	fi
+	say_ok "Binary restored from ${_rm_tag}; existing configuration preserved."
+	return 0
+}
+
+# repair_agent_flow — conservative Agent repair preserving configuration.
+repair_agent_flow() {
+	_rpa_st=$(component_state "agent")
+	case "$_rpa_st" in
+		ABSENT)
+			say_err "Agent is not installed. Use Install Agent."
+			return 1
+			;;
+		COMPLETE)
+			if svc_running "$AGENT_LABEL"; then
+				say_ok "Agent service is already running."
+				return 0
+			fi
+			say_info "Agent installed but not running; restarting existing service..."
+			if restart_existing_service "agent"; then
+				return 0
+			fi
+			say_info "Existing configuration will be preserved."
+			if confirm_destructive "Replace Agent binary with Latest release?"; then
+				ensure_pinned_release || return 1
+				fetch_sums || return 1
+				if transact_agent_update "$LATEST_TAG"; then
+					return 0
+				fi
+				return 1
+			fi
+			say_info "Binary replacement declined."
+			return 1
+			;;
+		PLIST_ONLY)
+			say_info "Agent binary missing; existing configuration will be preserved."
+			ensure_pinned_release || return 1
+			fetch_sums || return 1
+			if restore_missing_binary "agent" "$LATEST_TAG"; then
+				return 0
+			fi
+			return 1
+			;;
+		BINARY_ONLY)
+			say_info "Agent configuration is missing."
+			say_info "Repair requires recreating Agent configuration."
+			if confirm_destructive "Continue?"; then
+				:
+			else
+				say_info "Repair cancelled."
+				return 0
+			fi
+			prompt_agent_key || return 1
+			prompt_agent_port || return 1
+			_rpc_tmp="${WORK_DIR}/dev.beszel.agent.plist.repair"
+			rm -f "$_rpc_tmp"
+			write_agent_plist "$AGENT_KEY" "$AGENT_PORT" "$_rpc_tmp"
+			AGENT_KEY="redacted-after-use"
+			AGENT_PORT=""
+			if ! plist_valid "$_rpc_tmp"; then
+				rm -f "$_rpc_tmp"
+				say_err "Generated Agent configuration failed validation; nothing was changed."
+				return 1
+			fi
+			replace_plist "agent" "$_rpc_tmp" || return 1
+			svc_unload "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" > /dev/null 2>&1 || true
+			if ! svc_load "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"; then
+				say_err "Agent with recreated configuration failed to load; removing it again."
+				rm -f "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+				return 1
+			fi
+			if ! agent_post_update_ok "$AGENT_LABEL"; then
+				say_err "Agent with recreated configuration failed verification; removing it again."
+				svc_unload "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" > /dev/null 2>&1 || true
+				rm -f "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+				return 1
+			fi
+			say_ok "Agent configuration recreated; existing binary and data preserved."
+			return 0
+			;;
+	esac
+	return 1
+}
+
+# repair_hub_flow — conservative Hub repair preserving plist and database.
+repair_hub_flow() {
+	_rph_st=$(component_state "hub")
+	case "$_rph_st" in
+		ABSENT)
+			say_err "Hub is not installed. Use Install Hub."
+			return 1
+			;;
+		COMPLETE)
+			_rph_port=""
+			_rph_port=$(hub_port_from_plist "${LAUNCHD_DIR}/${HUB_LABEL}.plist" 2> /dev/null || true)
+			if [ -n "$_rph_port" ] && svc_running "$HUB_LABEL" && curl -fsSL --max-time 3 "http://127.0.0.1:${_rph_port}/api/health" > /dev/null 2>&1; then
+				say_ok "Hub service is already healthy."
+				return 0
+			fi
+			say_info "Hub installed but unhealthy; restarting existing service..."
+			if restart_existing_service "hub"; then
+				return 0
+			fi
+			say_info "Existing configuration and database will be preserved."
+			if confirm_destructive "Replace Hub binary with Latest release?"; then
+				ensure_pinned_release || return 1
+				fetch_sums || return 1
+				if transact_hub_update "$LATEST_TAG"; then
+					return 0
+				fi
+				return 1
+			fi
+			say_info "Binary replacement declined."
+			return 1
+			;;
+		PLIST_ONLY)
+			say_info "Hub binary missing; existing configuration and database will be preserved."
+			ensure_pinned_release || return 1
+			fetch_sums || return 1
+			if restore_missing_binary "hub" "$LATEST_TAG"; then
+				return 0
+			fi
+			return 1
+			;;
+		BINARY_ONLY)
+			say_info "Hub configuration is missing."
+			say_info "Repair requires recreating Hub configuration (port only)."
+			if confirm_destructive "Continue?"; then
+				:
+			else
+				say_info "Repair cancelled."
+				return 0
+			fi
+			prompt_hub_port || return 1
+			_rph_tmp="${WORK_DIR}/dev.beszel.hub.plist.repair"
+			rm -f "$_rph_tmp"
+			write_hub_plist "$HUB_PORT" "$_rph_tmp"
+			HUB_PORT=""
+			if ! plist_valid "$_rph_tmp"; then
+				rm -f "$_rph_tmp"
+				say_err "Generated Hub configuration failed validation; nothing was changed."
+				return 1
+			fi
+			replace_plist "hub" "$_rph_tmp" || return 1
+			svc_unload "${LAUNCHD_DIR}/${HUB_LABEL}.plist" > /dev/null 2>&1 || true
+			if ! svc_load "${LAUNCHD_DIR}/${HUB_LABEL}.plist"; then
+				say_err "Hub with recreated configuration failed to load; removing it again."
+				rm -f "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+				return 1
+			fi
+			_rph_new_port=""
+			_rph_new_port=$(hub_port_from_plist "${LAUNCHD_DIR}/${HUB_LABEL}.plist" 2> /dev/null || true)
+			if [ -z "$_rph_new_port" ] || ! wait_for_hub "$_rph_new_port"; then
+				say_err "Hub with recreated configuration failed health check; removing it again."
+				svc_unload "${LAUNCHD_DIR}/${HUB_LABEL}.plist" > /dev/null 2>&1 || true
+				rm -f "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+				return 1
+			fi
+			say_ok "Hub configuration recreated; existing binary and database preserved."
+			return 0
+			;;
+	esac
+	return 1
+}
+
 show_update_menu() {
 	# $1 = agent|hub|both.
 	_su_mode="$1"
@@ -1708,6 +2712,129 @@ update_menu() {
 	fi
 }
 
+# ------------------------------------------------------------ repair menu ---
+
+show_repair_menu() {
+	# $1 = agent|hub|both.
+	_sr_mode="$1"
+	if [ ! -r /dev/tty ] || [ ! -w /dev/tty ]; then
+		case "$_sr_mode" in
+			agent) say_info "Beszel Agent detected." ;;
+			hub) say_info "Beszel Hub detected." ;;
+		esac
+		return 0
+	fi
+	case "$_sr_mode" in
+		agent)
+			cat > /dev/tty << EOF
+
+Repair / Reconfigure (Agent)
+  1) Diagnose Agent
+  2) Repair Agent
+  3) Reconfigure Agent
+  4) Back
+EOF
+			;;
+		hub)
+			cat > /dev/tty << EOF
+
+Repair / Reconfigure (Hub)
+  1) Diagnose Hub
+  2) Repair Hub
+  3) Reconfigure Hub
+  4) Back
+EOF
+			;;
+		both)
+			cat > /dev/tty << EOF
+
+Repair / Reconfigure (Agent + Hub)
+  1) Diagnose Agent
+  2) Repair Agent
+  3) Reconfigure Agent
+  4) Diagnose Hub
+  5) Repair Hub
+  6) Reconfigure Hub
+  7) Back
+EOF
+			;;
+	esac
+	return 0
+}
+
+# repair_menu — diagnostics, repair and reconfiguration for whichever
+# components exist. Loops until Back (or input failure); actions report
+# their own outcome and return here.
+repair_menu() {
+	while :; do
+		_rm_agent_st=$(component_state "agent")
+		_rm_hub_st=$(component_state "hub")
+		if [ "$_rm_agent_st" = "ABSENT" ] && [ "$_rm_hub_st" = "ABSENT" ]; then
+			say_info "No Beszel iOS installation was detected."
+			return 0
+		fi
+		_rm_agent_here=0
+		_rm_hub_here=0
+		[ "$_rm_agent_st" != "ABSENT" ] && _rm_agent_here=1
+		[ "$_rm_hub_st" != "ABSENT" ] && _rm_hub_here=1
+		if [ "$_rm_agent_here" = "1" ] && [ "$_rm_hub_here" = "1" ]; then
+			show_repair_menu "both"
+			_RM_CHOICE=""
+			ask_tty "Select" _RM_CHOICE "" || return 1
+			case "$_RM_CHOICE" in
+				1) diagnose_agent ;;
+				2) repair_agent_flow || say_warn "Agent repair did not complete." ;;
+				3) reconfigure_agent_flow || say_warn "Agent reconfiguration did not complete." ;;
+				4) diagnose_hub ;;
+				5) repair_hub_flow || say_warn "Hub repair did not complete." ;;
+				6) reconfigure_hub_flow || say_warn "Hub reconfiguration did not complete." ;;
+				7)
+					say_info "Back selected."
+					return 0
+					;;
+				*)
+					say_err "Invalid selection '${_RM_CHOICE}'."
+					return 1
+					;;
+			esac
+		elif [ "$_rm_agent_here" = "1" ]; then
+			show_repair_menu "agent"
+			_RM_CHOICE=""
+			ask_tty "Select" _RM_CHOICE "" || return 1
+			case "$_RM_CHOICE" in
+				1) diagnose_agent ;;
+				2) repair_agent_flow || say_warn "Agent repair did not complete." ;;
+				3) reconfigure_agent_flow || say_warn "Agent reconfiguration did not complete." ;;
+				4)
+					say_info "Back selected."
+					return 0
+					;;
+				*)
+					say_err "Invalid selection '${_RM_CHOICE}'."
+					return 1
+					;;
+			esac
+		else
+			show_repair_menu "hub"
+			_RM_CHOICE=""
+			ask_tty "Select" _RM_CHOICE "" || return 1
+			case "$_RM_CHOICE" in
+				1) diagnose_hub ;;
+				2) repair_hub_flow || say_warn "Hub repair did not complete." ;;
+				3) reconfigure_hub_flow || say_warn "Hub reconfiguration did not complete." ;;
+				4)
+					say_info "Back selected."
+					return 0
+					;;
+				*)
+					say_err "Invalid selection '${_RM_CHOICE}'."
+					return 1
+					;;
+			esac
+		fi
+	done
+}
+
 print_menu() {
 	# Unquoted heredoc is safe here: this text contains no $ or backticks.
 	if [ -w /dev/tty ]; then
@@ -1720,7 +2847,8 @@ Unofficial community port of Beszel
   2) Install Hub
   3) Install Agent + Hub
   4) Update
-  5) Exit
+  5) Repair / Reconfigure
+  6) Exit
 EOF
 	else
 		cat << EOF
@@ -1732,7 +2860,8 @@ Unofficial community port of Beszel
   2) Install Hub
   3) Install Agent + Hub
   4) Update
-  5) Exit
+  5) Repair / Reconfigure
+  6) Exit
 EOF
 	fi
 }
@@ -1744,20 +2873,26 @@ main() {
 	check_layout
 	check_deps
 	setup_work_dir
-	print_menu
-	CHOICE=""
-	ask_tty "Select" CHOICE "" || exit 1
-	case "$CHOICE" in
-		1) flow_agent ;;
-		2) flow_hub ;;
-		3) flow_both ;;
-		4) update_menu ;;
-		5) say_info "Exit selected. Nothing was changed." ;;
-		*)
-			say_err "Invalid selection '${CHOICE}': choose 1-5."
-			exit 1
-			;;
-	esac
+	while :; do
+		print_menu
+		CHOICE=""
+		ask_tty "Select" CHOICE "" || exit 1
+		case "$CHOICE" in
+			1) flow_agent || say_warn "Agent install did not complete." ;;
+			2) flow_hub || say_warn "Hub install did not complete." ;;
+			3) flow_both || say_warn "Agent + Hub install did not complete." ;;
+			4) update_menu || say_warn "Update did not complete." ;;
+			5) repair_menu ;;
+			6)
+				say_info "Exit selected."
+				break
+				;;
+			*)
+				say_err "Invalid selection '${CHOICE}': choose 1-6."
+				exit 1
+				;;
+		esac
+	done
 }
 
 if [ "${BESZEL_INSTALL_LIB_ONLY:-0}" != "1" ]; then
