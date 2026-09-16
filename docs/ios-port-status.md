@@ -87,7 +87,7 @@ Verified build-tag selection: `GOOS=ios go list ./agent/battery` yields only `ba
 
 - Only the iPad mini 2 / A7 / iOS 12.5.7 target is validated.
 - Binaries must be installed under `/usr/local/bin` with `chown root:wheel`, `chmod 755`, `ldid -S`. `$HOME`/`/tmp` execution has previously failed.
-- GitHub Releases are published from iOS tags and `install.sh` covers fresh installs, transactional updates with backup/rollback, diagnostics, repair, reconfiguration, and safe uninstall with optional explicit data purge. The installer lifecycle is complete.
+- GitHub Releases are published from iOS tags and `install.sh` covers fresh installs, transactional updates with backup/rollback, diagnostics, repair, reconfiguration, and safe uninstall with optional explicit data purge. The installer lifecycle is implemented; it has **not** been validated end-to-end on a real device (see [device-validation.md](device-validation.md)). Real-device validation is blocked by the absence of authorized SSH access to the test iPad in the validation environment.
 - LaunchDaemon plists and packaging scripts are not yet in the repo (only documented paths; the installer generates the plists on-device).
 
 ## Untested devices / iOS versions
