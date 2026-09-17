@@ -2568,9 +2568,6 @@ else
 	fail "installer version constant present"
 fi
 
-printf '\n%d passed, %d failed\n' "$_pass" "$_fail"
-[ "$_fail" = "0" ]
-
 printf '== prompt8b: iOS arm64 detection regression ==\n'
 # On iOS, uname -m returns the model identifier (e.g. "iPad4,4"), NOT the
 # CPU architecture. check_device must detect arm64 via hw.cputype
@@ -2624,3 +2621,6 @@ if ( check_device_test4 ) 2>&1 | grep -q "uname -m is"; then
 else
     pass "check_device does not emit legacy uname -m arch message"
 fi
+
+printf '\n%d passed, %d failed\n' "$_pass" "$_fail"
+[ "$_fail" = "0" ]
