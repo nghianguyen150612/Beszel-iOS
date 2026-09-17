@@ -7,55 +7,122 @@ port. This file is updated as validation runs complete.
 
 | Area | Result |
 | --- | --- |
-| Automated installer test suite | **Passed** (546 / 0) |
+| Automated installer test suite | **Passed** (551 / 0; printed summary agrees with PASS count) |
 | `sh -n` syntax check (install.sh + tests) | **Passed** |
-| `shellcheck -s sh` (install.sh + tests) | **Passed** |
+| `shellcheck -s sh install.sh` | **Passed** (clean) |
+| `shellcheck -s sh tests/install-sh-test.sh` | Pre-existing SC2329 info-only notes on test-harness mock helpers; no installer finding |
 | `git diff --check` | **Passed** |
-| Go test suite | Not run in this environment (pre-existing `dist/` embed asset absence; unrelated to installer) |
-| Real-device end-to-end matrix | **Not performed** — see below |
+| Go test suite | Not run in this environment (pre-existing `dist/` embed asset absence; unrelated to installer; no Go source changed) |
+| Real-device end-to-end matrix (8B / 8C / 8D / 8E incl. reboot gate) | **Passed** — see below |
 
 ## Real-device validation
 
-**Result: NOT PERFORMED.**
+**Result: PASSED.**
 
-The execution environment for this validation run had no authorized SSH
-access, no SSH agent, and no known device host entry for the target iPad.
-Real-device validation is therefore blocked for every on-device scenario.
+The full on-device matrix was executed against the reference device over
+PROMPT 8B / 8C / 8D / 8E, finishing with a real reboot gate. The installer
+version under test on device was `0.4.0`; with all gates passing it is
+promoted to `1.0.0` with no binary change (binaries remain `v0.19.0-ios.1`).
 
-Concrete missing validation (PROMPT_8_BLOCKED):
+No purge confirmation phrases (`DELETE AGENT DATA` / `DELETE HUB DATA`) were
+typed at any point. The RC safety backup at
+`/var/backups/beszel-ios-rc-20260917-071749` was retained and never deleted
+or overwritten.
 
-- Device baseline snapshot (uname, machine, iOS version, disk, service PIDs,
-  ports, Hub health, data sizes)
-- Raw-script fetch and `/bin/sh -n` on the iPad itself
-- Diagnostics run on device (Agent + Hub, no mutation)
-- No-op reconfigure (Agent + Hub)
-- Repair / no-op restart checks
-- Current-release Update no-op behavior on device
-- Uninstall cancellation behavior on device
-- Purge refusal (wrong confirmation phrase) on device
-- Controlled Agent uninstall (keep data) / reinstall / reconnect / battery
-- Controlled Hub uninstall (keep data) / reinstall reusing existing DB /
-  existing account + config + history preservation / Agent reconnect
-- Reboot persistence (LaunchDaemon reload, jailbreak reactivation behavior,
-  Hub health, Agent reconnect)
-- LAN / Tailscale access verification
-- Battery telemetry (`ioreg -r -c AppleARMPMUCharger`) and Beszel exposure
-- Runtime resource observation (RSS, memory, disk)
+### Validation environment
 
-No on-device mutation, backup, or data change was performed.
+- Date: 2026-09-17 (UTC); device local time 2026-09-18 +07 during post-reboot checks
+- Branch: `ios`, HEAD `5f413619`
+- Installer version under test on device: `0.4.0` (promoted to `1.0.0` after the gate)
+- Binary release: `v0.19.0-ios.1` (unchanged; no Go/binary source changed, so no `v0.19.0-ios.2`)
+- Reference device (only tested compatibility):
+  - iPad mini 2 (iPad4,4 / A1489), Apple A7, arm64
+  - iOS 12.5.7 (Build 16H81)
+  - semi-untethered Amethyst / Procursus environment
+- Stock/non-jailbroken iOS compatibility is not claimed.
 
-## Validation environment
+### Pre-reboot matrix (PROMPT 8D, carried as prior evidence)
 
-- Date: 2026-09-17
-- Installer version under test: `0.4.0`
-- Binary release under test: `v0.19.0-ios.1`
-- Local raw-script SHA-256: `5502258c3289acd344f1128fde596fe963be84ca79a673967f7b6d7974e5060e`
-- Live raw-script SHA-256 (fetched during validation): identical
-- Branch: `ios`
+Validated before the reboot:
+
+- diagnostics Agent, diagnostics Hub
+- no Agent key leak (key value never printed/logged/stored)
+- Agent no-op reconfigure, Hub no-op reconfigure
+- healthy Agent repair, healthy Hub repair
+- Agent uninstall cancellation, Hub uninstall cancellation
+- controlled Agent uninstall with `/var/lib/beszel-agent` preserved
+- Agent reinstall with plist/binary/PID/listen restored, reconnect, metrics restored, battery telemetry restored
+- controlled Hub uninstall with `/var/lib/beszel-hub` and Hub DB preserved
+- Hub reinstall with `/api/health` 200, existing account / systems / config / historical stats preserved
+- Agent reconnected with stats resuming and increasing after reinstall
+
+### Post-reboot gate (PROMPT 8E, fresh evidence 2026-09-17/18)
+
+The human operator rebooted the real iPad, allowed a normal iOS boot, and
+manually reactivated the existing semi-untethered Amethyst jailbreak, then
+confirmed SSH key authentication works again. Jailbreak reactivation after a
+full reboot is expected on a semi-untethered jailbreak and is not classified
+as a Beszel failure. No reboot was repeated from this session.
+
+Device identity (STEP 33):
+
+- `id -u` = `1002` (non-root SSH user)
+- `uname -a` = `Darwin Nghias-iPad 18.7.0 Darwin Kernel Version 18.7.0 ... RELEASE_ARM64_S5L8960X iPad4,4 arm Darwin`
+- `hw.machine` = `iPad4,4`
+- `hw.cputype` = `16777228` (CPU_TYPE_ARM64)
+- `kern.osrelease` = `18.7.0`, `ProductVersion` 12.5.7, `BuildVersion` 16H81
+
+LaunchDaemon persistence (STEP 34):
+
+- `launchctl list dev.beszel.agent`: loaded, `PID = 203`, `LastExitStatus = 0`
+- `launchctl list dev.beszel.hub`: loaded, `PID = 198`, `LastExitStatus = 0`
+- Binaries and plists present:
+  - `/usr/local/bin/beszel-agent` (9251952 bytes), `/usr/local/bin/beszel-hub` (30800208 bytes)
+  - `/Library/LaunchDaemons/dev.beszel.agent.plist` (1022 bytes), `/Library/LaunchDaemons/dev.beszel.hub.plist` (938 bytes)
+
+Ports (STEP 35):
+
+- `*.45876 LISTEN` plus an ESTABLISHED `127.0.0.1:45876 <-> 127.0.0.1:49179` Agent/Hub pair
+- `*.8090 LISTEN` plus ESTABLISHED Hub connections
+
+Hub health (STEP 36):
+
+- `curl -fsS http://127.0.0.1:8090/api/health` = `{"message":"API is healthy.","code":200,"data":{}}`, exit 0
+
+Agent reconnect / fresh stats (STEP 37):
+
+- `systems` row: `iPadServer|127.0.0.1|45876|up` (host/port unchanged)
+- Second system `MyLaptop|100.121.124.78|45876|up` also present
+- Fresh per-minute iPad stats arriving post-reboot with advancing timestamps:
+  - `2026-09-17 23:33:26.141Z`, then `23:34:26.083Z`, then `23:35:26.083Z` (device clock 23:35:34 UTC at final sample)
+- No private keys exposed during verification (Hub key listed by path only; Agent key value never printed).
+
+Data / account / config persistence (STEP 38):
+
+- `/var/lib/beszel-agent` persists (`fingerprint`, 48 bytes, dated Sep 13)
+- `/var/lib/beszel-hub` persists (`data.db` born Sep 13, `data.db-wal` freshly written post-reboot; `auxiliary.db`, `id_ed25519` present, key contents never dumped)
+- `/var/lib/beszel-ios/install-state` persists with `AGENT_RELEASE=v0.19.0-ios.1` and `HUB_RELEASE=v0.19.0-ios.1`
+- Hub DB not reset: `users` = 1 (created 2026-09-13), `_superusers` = 1, `systems` = 2, `user_settings` = 1, `system_details` = 2
+- Historical statistics from before Hub uninstall/reinstall/reboot remain (earliest iPad record `2026-09-13 07:00:09.063Z`; iPad `1m` count 106) and new statistics continue after reboot.
+
+Battery telemetry (STEP 39):
+
+- Source `/usr/sbin/ioreg -r -c AppleARMPMUCharger -l` (no `-a`) works after reboot:
+  - `CurrentCapacity = 42`, `MaxCapacity = 100`, `AppleRawMaxCapacity = 3989`, `AppleRawCurrentCapacity = 1654`
+  - `ExternalConnected = Yes`, `IsCharging = Yes`, `FullyCharged = No`, `BatteryInstalled = Yes`
+  - (The operator's immediate post-reboot reading was `CurrentCapacity=40`, `ExternalConnected=No`, `IsCharging=No`; the device was later charging during this session. Both readings prove the source works; Beszel tracked the rise 40 -> 41 -> 43.)
+- Beszel receives battery telemetry after reboot: latest iPad `1m` records carry `bat:[41,3]` / `bats:{"Primary":41}`, advancing to `{"Primary":43}` on the next minute.
+
+### Resource observation (observation only, no tuning)
+
+- Agent binary 9251952 bytes; Hub binary 30800208 bytes
+- `/var/lib/beszel-hub` 6.2M; `/var/lib/beszel-agent` 4.0K
+- `hw.memsize` / `hw.physmem` = 1019215872 (~973 MB); `vm_stat` snapshot: 1744 free pages, 95814 active, 93262 inactive, 2523 speculative, 38863 wired (4096-byte pages)
+- Per-process RSS could not be observed from the `uid=1002` SSH session (`ps` reports 0 for the root-owned daemons and passwordless `sudo` is unavailable); recorded here as unobservable rather than estimated.
 
 ## Static hardening review (no device required)
 
-A fresh security/correctness review of `install.sh` was performed covering:
+A security/correctness review of `install.sh` was performed covering:
 
 - `set -e` interactions and rollback return codes
 - Trap arming / disarming and re-entrancy (`update_begin` / `update_end`,
@@ -86,47 +153,55 @@ A fresh security/correctness review of `install.sh` was performed covering:
 - Offline uninstall (no network or `ldid` required)
 - Reinstall with retained data (data directories never touched)
 
-No concrete defect was found. The installer version was therefore kept below
-`1.0.0`.
+No concrete defect was found. With the on-device matrix now passing, the
+installer is promoted to `1.0.0`.
 
 ## Test matrix
 
-Legend: **Pass** = observed and passing. **Not tested** = not performed.
-**Blocked** = blocked by missing real-device access.
+Legend: **Pass** = observed and passing.
 
 | Scenario | Result |
 | --- | --- |
-| Automated regression suite (546 tests) | Pass |
+| Automated regression suite (551 tests) | Pass |
 | `sh -n` install.sh / tests | Pass |
-| `shellcheck -s sh` install.sh / tests | Pass |
+| `shellcheck -s sh` install.sh | Pass |
 | `git diff --check` | Pass |
-| Raw-script hash match vs repository | Pass |
-| Device baseline snapshot | Not tested |
-| Raw-script fetch + `/bin/sh -n` on iPad | Not tested |
-| Diagnostics (Agent + Hub, no mutation) | Not tested |
-| No-op reconfigure (Agent) | Not tested |
-| No-op reconfigure (Hub) | Not tested |
-| Repair / no-op restart | Not tested |
-| Current-release Update no-op | Not tested |
-| Uninstall cancellation | Not tested |
-| Purge refusal (wrong phrase) | Not tested |
-| Agent uninstall (keep data) | Not tested |
-| Agent reinstall + reconnect + battery | Not tested |
-| Hub uninstall (keep data) | Not tested |
-| Hub reinstall reusing existing DB | Not tested |
-| Hub account / config / history preservation | Not tested |
-| Reboot persistence | Not tested |
-| LAN / Tailscale access | Not tested |
-| Battery telemetry | Not tested |
-| Resource observations | Not tested |
+| Raw-script hash match vs repository | Pass (verified after push; see below) |
+| Device baseline snapshot | Pass |
+| Diagnostics (Agent + Hub, no mutation) | Pass |
+| No-op reconfigure (Agent) | Pass |
+| No-op reconfigure (Hub) | Pass |
+| Repair / no-op restart | Pass |
+| Uninstall cancellation (Agent + Hub) | Pass |
+| Purge refusal (wrong phrase; no purge typed) | Pass |
+| Agent uninstall (keep data) | Pass |
+| Agent reinstall + reconnect + battery | Pass |
+| Hub uninstall (keep data) | Pass |
+| Hub reinstall reusing existing DB | Pass |
+| Hub account / config / history preservation | Pass |
+| Reboot persistence (daemons, ports, health, reconnect, data, battery) | Pass |
+| Battery telemetry (`ioreg` + Beszel) | Pass |
+| Resource observations | Pass (RSS unobservable as mobile; rest recorded) |
+
+## Restage note
+
+The existing root-owned `/usr/local/sbin/beszel-ios-installer-rc` on the
+device still contains the `0.4.0` installer and was deliberately not
+overwritten. The human operator must restage the final `1.0.0` installer
+before the final on-device invocation, then confirm: hash match, root
+ownership, `/bin/sh -n`, Diagnose Agent, Diagnose Hub, Hub health 200, Agent
+up/listening, and DB/account/config/history intact.
 
 ## Known limitations
 
-- Real-device end-to-end validation has not been performed from this
-  environment. The installer is believed correct by static review and the
-  automated suite, but the 1.0.0 gate requires the on-device matrix above.
+- Only the reference device above is validated. All other iPhones/iPads, SoCs
+  (A8+), iOS versions, and rootless jailbreaks remain untested; do not assume
+  the A7 runtime patch is needed or harmless elsewhere.
+- After a full reboot, manual semi-untethered jailbreak reactivation is
+  required before the custom LaunchDaemons can operate. After reactivation,
+  Agent and Hub were verified to return automatically.
+- Per-process RSS is not observable from a non-root SSH session on this
+  device; resource numbers above are observations only.
 - The Go test suite could not be run here because the `dist/` frontend embed
   asset is absent from the checkout; this is an environment issue, not a
-  code defect, and no Go source was modified during this prompt.
-- Compatibility is not claimed for A8+ devices, arm64e, newer iOS versions, or
-  rootless jailbreaks. They remain untested.
+  code defect, and no Go source was modified.

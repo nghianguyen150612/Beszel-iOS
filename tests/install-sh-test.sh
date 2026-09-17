@@ -2562,7 +2562,7 @@ if grep -n '`' "$SCRIPT" > /dev/null; then
 else
 	pass "no backtick substitution"
 fi
-if grep -q 'INSTALLER_VERSION="0.4.0"' "$SCRIPT"; then
+if grep -q 'INSTALLER_VERSION="1.0.0"' "$SCRIPT"; then
 	pass "installer version constant present"
 else
 	fail "installer version constant present"

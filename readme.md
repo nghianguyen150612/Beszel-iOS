@@ -38,7 +38,7 @@ This branch collects those changes in one place so the port stays recognizable a
 | System metadata | **Tested** — hostname, kernel, CPU model, iOS version |
 | Consolidated build pipeline | **Working** — one workflow builds Agent + Hub + SHA256SUMS |
 | GitHub Releases | **Working** — published from iOS tags (`v<upstream>-ios.<rev>`) |
-| One-line installer | **Working** — fresh Agent / Hub / Agent+Hub installs |
+| One-line installer | **Tested** — install / update / repair / reconfigure / uninstall lifecycle validated on the reference device, including reboot persistence |
 
 See [docs/ios-port-status.md](docs/ios-port-status.md) for the full audit.
 
@@ -48,7 +48,11 @@ See [docs/ios-port-status.md](docs/ios-port-status.md) for the full audit.
 
 - iPad mini 2 (iPad4,4 / A1489)
 - Apple A7, arm64
-- iOS 12.5.7, jailbroken (Procursus bootstrap)
+- iOS 12.5.7, jailbroken (semi-untethered Amethyst / Procursus environment)
+
+After a full reboot, manual jailbreak reactivation is required before the
+custom LaunchDaemons can operate; after reactivation, Agent and Hub were
+verified to return automatically. Stock/non-jailbroken iOS is not supported.
 
 Other devices and iOS versions are **untested**. Do not assume broader compatibility. If you test another device, please report it (see Contributing below).
 
@@ -98,7 +102,7 @@ curl -fsSL \
   | sudo sh
 ```
 
-This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v0.4.0)
+This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v1.0.0)
 downloads the Latest release assets, verifies their SHA256 checksums,
 installs the binaries into `/usr/local/bin` (with `chown root:wheel`,
 `chmod 755`, `ldid -S`), creates the data directories and LaunchDaemon

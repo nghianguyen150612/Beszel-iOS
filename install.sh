@@ -34,7 +34,7 @@
 set -eu
 umask 022
 
-INSTALLER_VERSION="0.4.0"
+INSTALLER_VERSION="1.0.0"
 USER_AGENT="beszel-ios-installer/${INSTALLER_VERSION}"
 
 RELEASE_LATEST_PAGE="https://github.com/nghianguyen150612/beszel-ios/releases/latest"
