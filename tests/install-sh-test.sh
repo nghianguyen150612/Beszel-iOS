@@ -2570,3 +2570,57 @@ fi
 
 printf '\n%d passed, %d failed\n' "$_pass" "$_fail"
 [ "$_fail" = "0" ]
+
+printf '== prompt8b: iOS arm64 detection regression ==\n'
+# On iOS, uname -m returns the model identifier (e.g. "iPad4,4"), NOT the
+# CPU architecture. check_device must detect arm64 via hw.cputype
+# (CPU_TYPE_ARM64 = 16777228) instead.
+#
+# Test 1: mocked sysctl returning the arm64 cputype AND a model identifier
+#         for hw.machine must PASS (this is the real iPad4,4 shape).
+check_device_test1() {
+    sysctl() { case "$*" in *cputype*) printf '16777228';; *) printf 'iPad4,4';; esac; }
+    uname() { case "$1" in -s) printf 'Darwin';; *) printf 'iPad4,4';; esac; }
+    check_device
+}
+if ( check_device_test1 ) > /dev/null 2>&1; then
+    pass "check_device accepts iOS arm64 via hw.cputype (iPad4,4 model)"
+else
+    fail "check_device accepts iOS arm64 via hw.cputype (iPad4,4 model)"
+fi
+# Test 2: non-arm64 cputype must be refused.
+check_device_test2() {
+    sysctl() { case "$*" in *cputype*) printf '12345';; *) printf 'iPhone9,3';; esac; }
+    uname() { case "$1" in -s) printf 'Darwin';; *) printf 'iPhone9,3';; esac; }
+    check_device
+}
+if ( check_device_test2 ) > /dev/null 2>&1; then
+    fail "check_device refuses non-arm64 cputype"
+else
+    pass "check_device refuses non-arm64 cputype"
+fi
+# Test 3: the refusal message must reference hw.cputype (the new gate),
+#         proving the installer no longer gates on uname -m for arch.
+if ( check_device_test2 ) 2>&1 | grep -q "hw.cputype"; then
+    pass "check_device error path references hw.cputype, not uname -m"
+else
+    fail "check_device error path references hw.cputype, not uname -m"
+fi
+# Test 4: a real macOS host (uname -m = x86_64, cputype = 16777224) must
+#         still be refused, and the message must not be the old
+#         "uname -m is 'x86_64'" string.
+check_device_test4() {
+    sysctl() { case "$*" in *cputype*) printf '16777224';; *) printf 'MacBookPro15,1';; esac; }
+    uname() { case "$1" in -s) printf 'Darwin';; *) printf 'x86_64';; esac; }
+    check_device
+}
+if ( check_device_test4 ) > /dev/null 2>&1; then
+    fail "check_device refuses macOS (x86_64 cputype)"
+else
+    pass "check_device refuses macOS (x86_64 cputype)"
+fi
+if ( check_device_test4 ) 2>&1 | grep -q "uname -m is"; then
+    fail "check_device must not emit legacy uname -m arch message"
+else
+    pass "check_device does not emit legacy uname -m arch message"
+fi

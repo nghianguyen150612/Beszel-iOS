@@ -631,9 +631,12 @@ EOF
 
 check_device() {
 	_cd_os=$(uname -s)
-	_cd_arch=$(uname -m)
 	[ "$_cd_os" = "Darwin" ] || die "Refusing to install: uname -s is '${_cd_os}', not Darwin. This installer targets jailbroken iOS only."
-	[ "$_cd_arch" = "arm64" ] || die "Refusing to install: uname -m is '${_cd_arch}', not arm64. This installer targets iOS arm64 only."
+	# On iOS, uname -m returns the model identifier (e.g. "iPad4,4"),
+	# NOT the CPU architecture, so detect arm64 via hw.cputype instead.
+	# CPU_TYPE_ARM64 = 16777228 (0x0100000C).
+	_cd_cputype=$(sysctl -n hw.cputype 2> /dev/null || true)
+	[ "$_cd_cputype" = "16777228" ] || die "Refusing to install: hw.cputype is '${_cd_cputype}', not arm64 (16777228). This installer targets iOS arm64 only."
 	_cd_machine=$(sysctl -n hw.machine 2> /dev/null || true)
 	[ -n "$_cd_machine" ] || _cd_machine="unknown"
 	case "$_cd_machine" in
