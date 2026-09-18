@@ -1,0 +1,26 @@
+name: Upstream Drift Check
+
+# Informational only: reports whether ios lags upstream stable releases.
+# Never modifies source, merges, bumps versions, files issues, or publishes.
+
+on:
+  schedule:
+    - cron: "0 12 * * 1" # Mondays 12:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check upstream drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x .github/scripts/check-upstream-drift.sh
+          .github/scripts/check-upstream-drift.sh

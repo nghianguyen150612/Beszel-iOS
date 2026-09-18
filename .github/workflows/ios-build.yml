@@ -11,14 +11,17 @@ on:
     tags:
       - "v*-ios.*"
     paths:
-      - "agent/**"
-      - "internal/cmd/agent/**"
-      - "internal/cmd/hub/**"
+      - "*.go"
+      - "**/*.go"
       - "internal/site/**"
       - "go.mod"
       - "go.sum"
+      - "go.work"
+      - "go.work.sum"
       - ".github/workflows/ios-build.yml"
       - ".github/scripts/patch-go-ios-arm64-runtime.py"
+      - "tests/ios-patch-sentinels.sh"
+      - "tests/upstream-sync-test.sh"
 
 permissions:
   contents: read
@@ -30,6 +33,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Run iOS maintenance sentinels
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh tests/ios-patch-sentinels.sh
+          sh tests/upstream-sync-test.sh
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -131,8 +141,16 @@ jobs:
               exit 1
             fi
             otool -l "$bin" | grep -A8 -E 'LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS'
-            if ! otool -l "$bin" | grep -q "12\.0"; then
-              echo "ERROR: expected iOS 12.0 deployment metadata in $bin" >&2
+            load_commands="$(otool -l "$bin")"
+            if ! printf '%s\n' "$load_commands" | awk '
+              $1 == "cmd" && $2 == "LC_BUILD_VERSION" { section = "build"; next }
+              $1 == "cmd" && $2 == "LC_VERSION_MIN_IPHONEOS" { section = "legacy"; next }
+              $1 == "cmd" { section = ""; next }
+              section == "build" && $1 == "minos" && $2 == "12.0" { found = 1 }
+              section == "legacy" && $1 == "version" && $2 == "12.0" { found = 1 }
+              END { exit(found ? 0 : 1) }
+            '; then
+              echo "ERROR: iOS deployment load command does not set minimum version to 12.0 in $bin" >&2
               exit 1
             fi
           done
@@ -163,7 +181,7 @@ jobs:
 
   release-ios:
     needs: build-ios
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref_name, '-ios.')
     runs-on: ubuntu-latest
     permissions:
       contents: write
