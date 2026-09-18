@@ -12,7 +12,7 @@ This documents the unusual requirements for producing working iOS binaries. The 
 ## Toolchain
 
 1. Apply the Go runtime patch first: `sudo python3 .github/scripts/patch-go-ios-arm64-runtime.py` (workflow fails if this fails).
-2. Build the Hub frontend first (`internal/site`: `bun install`, `bun run build`). Do not switch to frozen-lockfile installs without verifying against the current repo.
+2. Build the Hub frontend first with pinned Bun 1.4.0 (`internal/site`: `bun install --frozen-lockfile`, `bun run build`). The checked-in `bun.lock` reflects the `package.json` overrides, so frozen installs are required and reproducible from a clean checkout.
 3. Resolve the SDK and compiler: `xcrun --sdk iphoneos --show-sdk-path`, `xcrun --sdk iphoneos --find clang`. Never hardcode an SDK path.
 4. Create one clang wrapper passing `-arch arm64 -isysroot <SDK> -mios-version-min=12.0`, and reuse it as `CC` for both builds.
 5. Build with the wrapper into `build/ios/`:
@@ -46,9 +46,13 @@ The Hub embeds the web UI. Before compiling the Hub binary:
 
 ```sh
 cd internal/site
-bun install
+bun install --frozen-lockfile
 bun run build
 ```
+
+Bun is pinned to 1.4.0 in `.github/workflows/ios-build.yml`
+(`oven-sh/setup-bun@v2` with `bun-version: 1.4.0`). The macOS CI build
+remains authoritative for actual iPhoneOS binaries.
 
 Skipping this produces a Hub without the current frontend. The agent build does not need this step.
 

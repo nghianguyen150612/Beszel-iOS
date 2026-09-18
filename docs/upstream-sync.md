@@ -65,7 +65,7 @@ reviewed?”
 | 9 | iOS network handling | No iOS-specific network fork; `agent/network.go` and the upstream network collectors are used as-is | gopsutil network APIs or interface/address assumptions; VPN and per-interface behavior is not broadly validated |
 | 10 | Agent support / system metadata | `agent/system.go` skips the Darwin CPU probe on iOS and calls `adjustPlatformSystemDetails()`; `agent/system_platform_ios.go` supplies sysctl/plist metadata; `agent/system_platform_other.go` is the non-iOS no-op | `refreshSystemDetails`, `system.Details`, `system.Darwin`, or the gopsutil CPU/platform APIs |
 | 11 | Hub support | No Hub source fork; `.github/workflows/ios-build.yml` builds `./internal/cmd/hub` for iOS with the standard Hub code and migrations | `internal/cmd/hub`, PocketBase APIs, Hub initialization, migrations, or a dependency that stops compiling for iOS |
-| 12 | Frontend embed/build requirement | `internal/site/embed.go` embeds `all:dist`; `internal/site/dist` is ignored; the workflow runs `bun install` and `bun run build` before either Go build | Embed path, frontend package/build output, Bun/Vite, or generated frontend API/types |
+| 12 | Frontend embed/build requirement | `internal/site/embed.go` embeds `all:dist`; `internal/site/dist` is ignored; the workflow runs `bun install --frozen-lockfile` (pinned Bun 1.4.0) and `bun run build` before either Go build | Embed path, frontend package/build output, Bun/Vite, or generated frontend API/types |
 | 13 | GitHub release workflow | The iOS workflow uploads the three-file payload and only its tag job publishes; it validates source version, iOS history, checksums, asset count, and Latest/non-draft/non-prerelease state | `beszel.go` version declaration, artifact layout, GitHub action behavior, or release permissions |
 | 14 | iOS release-tag format | `v<upstream>-ios.<positive-integer>`, currently `v0.19.0-ios.1`; enforced by `install.sh` and the iOS release job | Upstream version declaration or any change to the release asset/tag contract |
 | 15 | `install.sh` | Installer 1.0.0: fresh Agent/Hub/Both install, checksum-pinned downloads, `ldid`, LaunchDaemons, health checks, and offline lifecycle actions | Release asset names, Latest-release URL shape, or upstream version/tag policy |
@@ -98,7 +98,7 @@ parity gate below.
 | Battery collectors | Not touched | UNAFFECTED | `battery_ios.go` and the Darwin exclusion are outside the pending range. |
 | Network collectors | Not touched | UNAFFECTED | No network collector or interface handling changed. |
 | Embedded frontend | Seven frontend files in `f0f1f798`; two in `6a7b2772`; one in `086091a0` | AUTO-MERGE LIKELY | The iOS Hub embeds the same generated frontend; build output and dashboard behavior must be rechecked. |
-| Frontend build output/toolchain | No embed path or package-manager change | AUTO-MERGE LIKELY | Existing `bun install` + `bun run build` remains the supported prerequisite, but generated output must be rebuilt. |
+| Frontend build output/toolchain | No embed path or package-manager change | AUTO-MERGE LIKELY | Existing `bun install --frozen-lockfile` (pinned Bun 1.4.0) + `bun run build` remains the supported prerequisite, but generated output must be rebuilt. |
 | Go version / `go.mod` / `go.sum` | Not touched | UNAFFECTED | The range keeps Go 1.27.1 and the dependency graph unchanged. |
 | Build tags / platform assumptions | `zfs_nonlinux.go` added; no runtime or iOS platform file touched | IOS PATCH REVIEW REQUIRED | `!linux` includes iOS, so `GOOS=ios go list/build` is an explicit gate even without a textual conflict. |
 | Go runtime / A7 assumption | Not touched | UNAFFECTED | The runtime patch is applied to the installed Go toolchain, independent of these upstream commits; its source-shape sentinel remains mandatory. |
@@ -256,8 +256,8 @@ The fresh-checkout workflow establishes the required prerequisites explicitly:
    `tests/upstream-sync-test.sh` before installing toolchains or compiling.
 2. `actions/setup-go` reads the exact Go version from `go.mod` (`1.27.1` at
    this audit snapshot).
-3. `oven-sh/setup-bun` installs Bun.
-4. `bun install` and `bun run build` populate the ignored production
+3. `oven-sh/setup-bun` installs pinned Bun 1.4.0.
+4. `bun install --frozen-lockfile` and `bun run build` populate the ignored production
    `internal/site/dist` before compiling the Hub.
 5. The runtime patch runs before either Go build and refuses an unknown
    runtime implementation.
@@ -282,15 +282,16 @@ production dashboard. Linux local environments cannot reproduce the macOS
 iPhoneOS CGO/Mach-O build; the macOS workflow remains authoritative for that
 gate.
 
-The frontend dependency step has a known reproducibility boundary: at this
-snapshot `internal/site/package.json` contains an `overrides` entry that is not
-represented in the checked-in Bun lockfile. With Bun 1.4.0,
-`bun install --frozen-lockfile` fails and reports that the overrides changed;
-the workflow's normal `bun install` is therefore intentional and is followed
-by the real production build. `oven-sh/setup-bun@v2` also does not pin a Bun
-version today. Before changing this to a frozen install, reconcile and review
-the lockfile with an explicitly selected Bun version in a separate dependency
-change; do not hide the mismatch with an empty `dist` directory.
+The frontend dependency step is reproducible from a clean checkout: the
+checked-in `internal/site/bun.lock` (lockfileVersion 3, generated with Bun
+1.4.0) reflects the `package.json` `overrides` entry
+(`@nanostores/router` → `nanostores ^0.11.3`, inherited from upstream since
+0.19.0), so `bun install --frozen-lockfile` succeeds without modifying the
+lockfile and is followed by the real production build
+(`bun run build`: Lingui extract/compile + Vite). `oven-sh/setup-bun@v2` pins
+Bun 1.4.0 in `.github/workflows/ios-build.yml`. Do not hide frontend issues
+with an empty `dist` directory; the macOS workflow remains authoritative for
+actual iPhoneOS binaries.
 
 ## Release versioning policy
 

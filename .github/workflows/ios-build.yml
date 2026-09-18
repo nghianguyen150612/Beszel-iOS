@@ -52,11 +52,13 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
 
       - name: Build web UI
         working-directory: internal/site
         run: |
-          bun install
+          bun install --frozen-lockfile
           bun run build
 
       - name: Show environment
