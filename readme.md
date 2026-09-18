@@ -237,9 +237,13 @@ This task, and all future iOS work, must stay on `ios`.
 ## Upstream relationship
 
 - Based on [henrygd/beszel](https://github.com/henrygd/beszel).
-- `main` tracks upstream; `ios` adds iOS compatibility on top.
+- `main` is the preserved upstream-aligned branch; `ios` adds iOS compatibility
+  on top and is maintained through the review-first procedure in
+  [docs/upstream-sync.md](docs/upstream-sync.md).
 - Upstream features, Hub database semantics, and Agent architecture are intentionally preserved.
-- Frontend lag of a commit or two behind upstream is expected; iOS-only changes are the battery, system-metadata, runtime-patch, and build/release files documented in [docs/ios-port-status.md](docs/ios-port-status.md).
+- The iOS base is tracked independently from untagged upstream-main drift;
+  iOS-only changes are the battery, system-metadata, runtime-patch, and
+  build/release files documented in [docs/ios-port-status.md](docs/ios-port-status.md).
 
 ## Contributing / testing other devices
 

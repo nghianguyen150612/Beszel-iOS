@@ -9,9 +9,13 @@ Provide native Beszel Agent + Hub binaries for jailbroken iOS devices while pres
 ## Upstream relationship
 
 - Upstream: [henrygd/beszel](https://github.com/henrygd/beszel).
-- `main` tracks upstream (currently in sync at the last fetch).
+- `main` is the preserved upstream-aligned branch; it is not advanced as part
+  of iOS maintenance work.
 - `ios` = upstream base + iOS-specific files/changes (see below). No Agent/Hub rewrite, no Hub database changes, no removed upstream features.
-- The `ios` branch may lag upstream `main` by a few commits (e.g. recent web-theme fixes); that lag is not an iOS regression.
+- The iOS base is recorded from `beszel.Version`, while untagged upstream-main
+  commits are audited separately before integration. See
+  [docs/upstream-sync.md](upstream-sync.md) for the current snapshot,
+  classifications, and procedure.
 
 ## Branch model
 
