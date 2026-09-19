@@ -1,264 +1,176 @@
 # Beszel iOS
 
-**An unofficial community port of [Beszel](https://github.com/henrygd/beszel) for jailbroken iOS devices.**
+Run Beszel Agent and Hub natively on a jailbroken iPhone or iPad — turn old iOS hardware into a lightweight monitoring node or self-hosted server.
 
-This repository preserves the original Beszel Agent + Hub architecture and makes both components run natively on jailbroken iOS. Both the Agent and the Hub have been demonstrated on real iOS hardware.
+[![License: MIT](https://img.shields.io/github/license/nghianguyen150612/beszel-ios)](LICENSE)
+![Beszel base 0.19.0](https://img.shields.io/badge/Beszel%20base-0.19.0-blue)
+![Tested on iPad mini 2 · iOS 12.5.7](https://img.shields.io/badge/tested-iPad%20mini%202%20%C2%B7%20iOS%2012.5.7-green)
+
+[Beszel](https://github.com/henrygd/beszel) is a lightweight, self-hosted server monitoring platform. You install a small **Agent** on each machine you want to watch, and a **Hub** collects the numbers and shows them in a web dashboard — CPU, memory, disk, network, and more. This project is an **unofficial community port** that runs both the Agent and the Hub directly on jailbroken iOS, with no Linux VM or container needed.
 
 > Upstream project: **Beszel by henrygd** — <https://github.com/henrygd/beszel>
+>
 > This is a community port. It is not affiliated with or endorsed by the upstream project.
 
-## What is Beszel iOS?
+## Why Beszel iOS?
 
-[Beszel](https://github.com/henrygd/beszel) is a lightweight server monitoring platform with a Hub (dashboard) and an Agent (per-machine metrics reporter).
+Have an old iPhone or iPad sitting in a drawer? If it's jailbroken, it can still be useful.
 
-Beszel iOS ports both components to jailbroken iOS with minimal divergence from upstream:
+Beszel iOS lets you reuse that device as a small always-on machine: run the monitoring Agent on it, check it from your normal Beszel dashboard, and — if you want — host the dashboard itself on the same iPhone or iPad. Everything runs as native arm64 iOS binaries and starts automatically with the system once your jailbreak environment is active.
 
-- Same Agent + Hub architecture and protocol.
-- iOS-specific system metadata, battery telemetry, and build support.
-- A build-time workaround for the legacy Apple A7 Go runtime issue (see below).
+In short: old iPad in, live system graphs out.
 
-## Why this port exists
+## Features
 
-Stock Beszel targets Linux / macOS / Windows hosts. Jailbroken iOS devices can act as small always-on servers, but they need:
+- **Native Beszel Agent for iOS** — reports CPU, memory, disk, network, load, and system info to any Beszel Hub.
+- **Native Beszel Hub for iOS** — serves the familiar Beszel web dashboard and stores history right on the device.
+- **Battery telemetry** — shows battery percentage and charging state alongside the usual server metrics.
+- **Starts automatically** — Agent and Hub run as system services and come back after jailbreak reactivation.
+- **Hub + Agent on one device** — one iPhone or iPad can monitor itself and show its own dashboard.
+- **One-command installer** — install, update, repair, reconfigure, and uninstall from a simple menu. Downloads are checksum-verified, updates keep a backup with automatic rollback, and your data is preserved.
+- **Safe by default** — normal uninstall removes the app but keeps your data; wiping data always asks for explicit confirmation.
+- **Stays close to upstream** — same Agent + Hub design and protocol as regular Beszel, based on upstream 0.19.0.
 
-- `GOOS=ios` builds with the iPhoneOS SDK,
-- iOS system identification (no macOS-only CPU probing),
-- battery telemetry from the iOS I/O registry,
-- a legacy ARM64 runtime workaround for older Apple SoCs.
+## Quick Start
 
-This branch collects those changes in one place so the port stays recognizable as Beszel.
+> **Before you start:** make sure your device meets the [Prerequisites](#prerequisites) below. In particular, you need a jailbroken device with SSH or terminal access.
 
-## Current status
-
-| Component | Status |
-| --- | --- |
-| Agent on iOS | **Tested** — runs natively, reports to Hub |
-| Hub on iOS | **Tested** — runs natively, serves UI and `/api/health` |
-| Battery monitoring | **Tested** — percentage + charging state on validated hardware |
-| System metadata | **Tested** — hostname, kernel, CPU model, iOS version |
-| Consolidated build pipeline | **Working** — one workflow builds Agent + Hub + SHA256SUMS |
-| GitHub Releases | **Working** — published from iOS tags (`v<upstream>-ios.<rev>`) |
-| One-line installer | **Tested** — install / update / repair / reconfigure / uninstall lifecycle validated on the reference device, including reboot persistence |
-
-See [docs/ios-port-status.md](docs/ios-port-status.md) for the full audit.
-
-## Tested hardware
-
-**Validated (real device):**
-
-- iPad mini 2 (iPad4,4 / A1489)
-- Apple A7, arm64
-- iOS 12.5.7, jailbroken (semi-untethered Amethyst / Procursus environment)
-
-After a full reboot, manual jailbreak reactivation is required before the
-custom LaunchDaemons can operate; after reactivation, Agent and Hub were
-verified to return automatically. Stock/non-jailbroken iOS is not supported.
-
-Other devices and iOS versions are **untested**. Do not assume broader compatibility. If you test another device, please report it (see Contributing below).
-
-## Features currently working
-
-### Agent
-
-- Runs natively as `/usr/local/bin/beszel-agent`.
-- Default port `45876`.
-- Managed via LaunchDaemon at `/Library/LaunchDaemons/dev.beszel.agent.plist`.
-- Reports CPU, memory, disk, network, load average, and battery to the Hub.
-- Skips the incompatible Darwin CPU probe on iOS; uses iOS sysctls instead.
-
-### Hub
-
-- Runs natively as `/usr/local/bin/beszel-hub`.
-- Default port `8090`.
-- Managed via LaunchDaemon at `/Library/LaunchDaemons/dev.beszel.hub.plist`.
-- Health endpoint: `http://127.0.0.1:8090/api/health`.
-- Web frontend is built (`bun install && bun run build` in `internal/site`) before compiling the Hub binary.
-
-> **Warning:** `/var/lib/beszel-hub` contains Hub database / account / configuration state. Never delete it during upgrades or packaging work.
-
-### Battery monitoring
-
-- Reads `/usr/sbin/ioreg -r -c AppleARMPMUCharger -l` (plain-text `-l` output).
-- Do **not** use `ioreg ... -a` here: the tested iOS 12 `ioreg` fails with `can't open file` for that form.
-- Parses `CurrentCapacity`, `MaxCapacity`, `AppleRawMaxCapacity`, `ExternalConnected`, `IsCharging`, `FullyCharged`, and `BatteryInstalled`.
-- Validated result shape: `Battery:[23 3]`, `Batteries:map[Primary:23]`.
-- Implementation: `agent/battery/battery_ios.go` (`//go:build ios`).
-
-### iOS-specific runtime workaround
-
-On the validated Apple A7 / iOS 12 target, the modern Go ARM64 `runtime.procyieldAsm` path (using `CNTVCT_EL0`) faults with `SIGILL`. The build applies:
-
-- `.github/scripts/patch-go-ios-arm64-runtime.py`
-
-which replaces that path with a legacy `YIELD` loop. This patch is **required** for the current A7/iOS 12 build. Do not remove it without validating on the same hardware.
-
-## Installation
-
-On a jailbroken iOS device, run:
+SSH into your jailbroken iPhone or iPad, then run:
 
 ```sh
-curl -fsSL \
-  https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh \
-  | sudo sh
+curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh | sudo sh
 ```
 
-This interactive installer (`install.sh`, POSIX `/bin/sh`, installer v1.0.0)
-downloads the Latest release assets, verifies their SHA256 checksums,
-installs the binaries into `/usr/local/bin` (with `chown root:wheel`,
-`chmod 755`, `ldid -S`), creates the data directories and LaunchDaemon
-plists, starts the services, and verifies Hub health. No clone, Go toolchain,
-or manual signing/plist work is needed.
+That's it — one command, no cloning or extra downloads. Then:
 
-Menu:
+1. Choose **Agent**, **Hub**, or **Agent + Hub** from the menu.
+2. Follow the prompts (for the Agent you'll need your Hub's public key; for the Hub you'll pick a port).
+3. If you installed a Hub, open its web address to create your account. If you installed an Agent, add it to your Hub as usual.
 
-- Install Agent
-- Install Hub
-- Install Agent + Hub
-- Update
-- Repair / Reconfigure
-- Uninstall
-- Exit
+To do anything later — update, check status, fix, reconfigure, or uninstall — just run the same command again and pick the option you want.
 
-First run installs Agent / Hub / Both. Later, re-run the SAME one-line
-command and choose Update, Repair / Reconfigure, or Uninstall — no second
-script is needed. After an action completes you return to the main menu;
-Back returns there as well. Update resolves the current Latest release tag
-once, then downloads SHA256SUMS and binaries from that same pinned release,
-so a release cannot change mid-transaction. Uninstall needs no network and
-no `ldid`: it works offline using only local tools.
+## Prerequisites
 
-Working:
+- A jailbroken **arm64** iPhone, iPad, or iPod touch.
+- A working jailbreak environment with standard Unix tools (`curl`, `launchctl`), network access, and a SHA-256 tool (`sha256sum`, `shasum`, or `openssl`).
+- A terminal on the device, or SSH access to it.
+- The ability to run commands as root (`sudo`) for installation.
 
-- Agent fresh install (Hub public key + port prompts, launchd setup, service start)
-- Hub fresh install (port prompt, launchd setup, service start, `/api/health` verification)
-- Agent + Hub fresh install (Hub first, then Agent key flow)
-- release checksum verification before anything is installed
-- `ldid` signing (offers `apt-get install -y ldid` when missing; never upgrades the system)
-- LaunchDaemon setup and service startup
-- existing-install detection
-- release state tracking (`/var/lib/beszel-ios/install-state`)
-- Agent update, Hub update, Agent + Hub update (Hub first, then Agent)
-- signed binary staging before any downtime
-- binary backup (`/usr/local/bin/beszel-agent.bak`, `/usr/local/bin/beszel-hub.bak`)
-- automatic binary rollback when a new version fails to start
-- config preservation (plists are never regenerated during update; no key prompt)
-- Hub database preservation (`/var/lib/beszel-hub` is never deleted, reset, or re-owned)
-- diagnostics (read-only Agent/Hub status: binary, plist, service PID, ports, release; the Agent key value is never printed, only whether one is configured)
-- repair (restores missing/broken service components while preserving configuration and data where possible: restart in place, restore a missing binary from Latest without re-asking config, recreate missing config only with explicit confirmation)
-- reconfigure Agent (change Hub public key and/or Agent port via a validated, backed-up plist transaction with automatic config rollback)
-- reconfigure Hub (change Hub listening port, health-checked on the new port, with rollback to the previous port)
-- plist backups (`/Library/LaunchDaemons/dev.beszel.agent.plist.bak`, `/Library/LaunchDaemons/dev.beszel.hub.plist.bak`)
-- safe uninstall (Agent, Hub, or both; transactional service removal with rollback, works offline)
-- optional explicit data purge (typed confirmation only)
+The validated setup is an **Amethyst + Procursus** environment (see [Compatibility](#compatibility)). Other jailbreak setups may work, but they haven't received the same real-device testing yet. The installer will offer to install `ldid` (used to sign iOS binaries) if it's missing.
 
-The installer lifecycle is complete: install, update, repair/reconfigure,
-and uninstall are all covered.
+## Compatibility
 
-### Uninstall vs purge
+| Device | Chip | iOS | Jailbreak | Status |
+| --- | --- | --- | --- | --- |
+| iPad mini 2 (iPad4,4 / A1489) | Apple A7 | 12.5.7 | Amethyst + Procursus (semi-untethered) | **Tested** |
 
-A normal uninstall removes only application/service artifacts:
+Other jailbroken arm64 iPhones and iPads may work, but they are currently community-tested / unverified. Stock (non-jailbroken) iOS is not supported.
 
-- the service is unloaded first (never deleted from under a running service)
-- `/usr/local/bin/beszel-agent` (or `beszel-hub`)
-- `/Library/LaunchDaemons/dev.beszel.agent.plist` (or Hub equivalent)
-- the component's binary `.bak` and plist `.bak` backups
-- the component's exact service log files
-- the component's installer release state
+If you try another device, please [report it](#contributing) — that's how the table grows.
 
-It always preserves user data:
+## Agent, Hub, or both?
 
-- `/var/lib/beszel-agent`
-- `/var/lib/beszel-hub`
+Not sure which option to pick in the installer? Here's the simple version:
 
-Deleting data is a separate optional purge step offered afterwards (and also
-later for already-removed applications with retained data). Keeping data is
-the default. Purging requires typing an exact phrase:
+- **Agent** — "watch this device." It quietly measures this iPhone/iPad and sends the numbers to a Beszel Hub running somewhere else.
+- **Hub** — "the dashboard." It collects numbers from Agents, stores history, and shows the web interface you log into.
+- **Both** — "self-contained." The iOS device watches itself *and* hosts its own dashboard, so you can point a browser at the iPad itself.
 
-- Agent data: `DELETE AGENT DATA`
-- Hub data: `DELETE HUB DATA`
+Most people adding an old iPad to an existing setup just need the **Agent**. Pick **Both** if you want the iPad to work standalone.
 
-Anything else keeps the data. There is no shortcut to delete everything at
-once. A later fresh install reuses a preserved data directory as-is: it is
-never wiped, re-owned recursively, or re-created.
+Default ports: Agent `45876`, Hub `8090`. You can check the Hub locally at `http://127.0.0.1:8090/api/health`.
 
-> **Warning:** `/var/lib/beszel-hub` contains Hub database / account / configuration state. It is preserved by install, update, repair, reconfigure, and normal uninstall alike. Do not hand-edit plists or install-state, and do not run manual `rm -rf` commands against these paths; use the installer menus.
+## Battery monitoring
 
-### Manual download
+Because this is iOS, the Agent also reports battery information — percentage and charging state — right next to CPU and memory in the dashboard. No extra setup needed.
 
-GitHub Releases publish exactly three assets per iOS release:
+## After reboot
 
-- `beszel-agent-ios-arm64`
-- `beszel-hub-ios-arm64`
-- `SHA256SUMS`
+> **Note:** the validated jailbreak is **semi-untethered**. A full device reboot temporarily disables the jailbreak environment — that's normal jailbreak behavior, not a Beszel problem.
 
-Download the latest release:
+What this means in practice:
+
+- Beszel's files and data stay on the device across a reboot.
+- After rebooting, reactivate your jailbreak the way you normally do.
+- Once the jailbreak is active again, the Beszel services return automatically. You don't need to reinstall anything.
+
+## Updating
+
+Re-run the same installer command:
 
 ```sh
-curl -fsSLO https://github.com/nghianguyen150612/beszel-ios/releases/latest/download/beszel-agent-ios-arm64
-curl -fsSLO https://github.com/nghianguyen150612/beszel-ios/releases/latest/download/beszel-hub-ios-arm64
-curl -fsSLO https://github.com/nghianguyen150612/beszel-ios/releases/latest/download/SHA256SUMS
-shasum -a 256 -c SHA256SUMS
+curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh | sudo sh
 ```
 
-Without the installer, deployment is manual: copy the verified binaries to
-`/usr/local/bin` on device, sign with `ldid`, and install the LaunchDaemon
-plists. Custom binaries must live under `/usr/local/bin`; running them from
-`$HOME` or `/tmp` has previously caused iOS execution/sandbox problems.
+Choose **Update**. Your settings and Hub data are kept, the new binaries are verified before anything is swapped, and the previous version is kept as a backup with automatic rollback if the new one fails to start.
 
-## Building
+## Uninstalling
 
-iOS builds run on the macOS GitHub Actions runners:
+Run the installer command again and choose **Uninstall**, then pick Agent, Hub, or both.
 
-- `GOOS=ios`, `GOARCH=arm64`, `CGO_ENABLED=1`
-- iPhoneOS SDK + Apple clang wrapper, `-mios-version-min=12.0`
-- Go runtime patch applied first
-- Hub web UI (`bun install && bun run build` in `internal/site`) built before the Hub binary
+A normal uninstall removes the app and its services but **keeps your data**, so you can reinstall later without losing history. Wiping data is a separate, explicit step: the installer only deletes data if you type the exact confirmation phrase (`DELETE AGENT DATA` or `DELETE HUB DATA`). Anything else keeps your data safe.
 
-Consolidated pipeline (manual dispatch, also runs on `ios` pushes touching build/iOS files, and on every `v*-ios.*` tag push):
+## Data locations
 
-- `.github/workflows/ios-build.yml` — builds Agent + Hub, verifies Mach-O outputs, generates and verifies `SHA256SUMS`, uploads one `beszel-ios-arm64` artifact containing exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS` (under `build/ios/`).
+Useful if you make backups:
 
-Releases are published from version tags, not from branch pushes:
+- Agent data: `/var/lib/beszel-agent`
+- Hub data (database, accounts, history): `/var/lib/beszel-hub`
 
-- Tag format: `v<upstream-version>-ios.<revision>` (for example `v0.19.0-ios.1`).
-- Pushing a valid tag rebuilds both binaries and publishes the same three files as GitHub Release assets, marked as the repository's Latest release.
-- The tag must match the `beszel.Version` declared in `beszel.go` and must reference a commit in `ios` history; otherwise the release job fails before publishing.
-- Upstream release automation (`release.yml`, `docker-images.yml`) explicitly ignores `v*-ios.*` tags, so iOS releases never trigger GoReleaser or Docker image builds.
+Never delete these by hand — use the installer menus. The Hub folder in particular holds your accounts and history.
 
-See [docs/ios-build-notes.md](docs/ios-build-notes.md) for details.
+## Known limitations
 
-## Project branch model
+- Real-device testing so far centers on the iPad mini 2 / A7 / iOS 12.5.7 setup above. Other hardware and jailbreak combinations are not guaranteed yet.
+- A jailbroken device is required. Stock iOS is not supported.
+- After a full reboot, the semi-untethered jailbreak must be reactivated before Beszel's services can run again (they then return on their own).
+- This is an unofficial community port, not an upstream-supported iOS release.
 
-- `main` — upstream-aligned branch. Do not put iOS-only changes here.
-- `ios` — **active iOS port branch and repository default branch.** All iOS development belongs here.
+## Releases
 
-This task, and all future iOS work, must stay on `ios`.
+Current iOS binary release: **v0.19.0-ios.1**
 
-## Upstream relationship
+The version has two parts: `0.19.0` is the upstream Beszel version this port is based on, and `ios.1` is the iOS-port revision for that base. The installer itself is versioned separately (currently `1.0.0`).
 
-- Based on [henrygd/beszel](https://github.com/henrygd/beszel).
-- `main` is the preserved upstream-aligned branch; `ios` adds iOS compatibility
-  on top and is maintained through the review-first procedure in
-  [docs/upstream-sync.md](docs/upstream-sync.md).
-- Upstream features, Hub database semantics, and Agent architecture are intentionally preserved.
-- The iOS base is tracked independently from untagged upstream-main drift;
-  iOS-only changes are the battery, system-metadata, runtime-patch, and
-  build/release files documented in [docs/ios-port-status.md](docs/ios-port-status.md).
+Each release publishes three files: the Agent binary, the Hub binary, and a checksum file the installer verifies before installing anything. You can browse them under [GitHub Releases](https://github.com/nghianguyen150612/beszel-ios/releases).
 
-## Contributing / testing other devices
+## Documentation
 
-Helpful contributions:
+For details beyond this page:
 
-- Test reports from other jailbroken devices/iOS versions (model, SoC, iOS version, jailbreak/bootstrap, what worked).
-- Build logs from the iOS workflows.
-- Docs fixes that keep the port recognizable as Beszel.
+- [iOS port status](docs/ios-port-status.md) — what works and what's been tested
+- [Real-device validation](docs/device-validation.md) — full results from the reference iPad
+- [Port architecture](docs/architecture.md) — how the pieces fit together on iOS
+- [Building iOS binaries](docs/ios-build-notes.md) — how releases are built
+- [Upstream synchronization](docs/upstream-sync.md) — how the port stays close to upstream Beszel
 
-Please target the `ios` branch, keep upstream attribution intact, and do not remove the battery implementation or the A7 runtime workaround.
+## Building from source
 
-## License / attribution
+Most users never need this — the installer already gives you ready-made binaries.
+
+If you want to build iOS binaries yourself, you'll need macOS with the Xcode iPhoneOS SDK, plus Go and Bun, following the repository's build workflow. See [Building iOS binaries](docs/ios-build-notes.md) for the full steps.
+
+## Contributing
+
+The most helpful contribution right now is testing on more hardware. If you try Beszel iOS on another jailbroken iPhone or iPad, please open an issue or discussion with:
+
+- device model (e.g. iPad mini 2)
+- `hw.machine` value (e.g. `iPad4,4`)
+- iOS version
+- jailbreak and bootstrap (e.g. Amethyst + Procursus)
+- whether you ran Agent, Hub, or both
+- what worked, and relevant logs if something failed
+
+Build fixes, upstream-parity fixes, and documentation improvements are also welcome. Please target the `ios` branch.
+
+> Don't include private keys, passwords, tokens, or copies of your Hub database in reports.
+
+## Upstream and credits
+
+Beszel is by [henrygd](https://github.com/henrygd/beszel). This repository is an unofficial community iOS port maintained on the `ios` branch — please direct general Beszel questions to the upstream project.
+
+## License
 
 MIT License — see [LICENSE](LICENSE). Original copyright retained:
 
 > Copyright (c) 2024 henrygd
-
-Beszel is by [henrygd](https://github.com/henrygd/beszel). This repository adds an unofficial community iOS port on the `ios` branch.
