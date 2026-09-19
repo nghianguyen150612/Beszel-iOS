@@ -1,7 +1,5 @@
 # iOS Build Notes
 
-[Tiếng Việt](ios-build-notes.vi.md)
-
 This documents the unusual requirements for producing working iOS binaries. The primary reference is the consolidated `.github/workflows/ios-build.yml`, which owns both the build and the tag-triggered release. See the YAML itself for exact steps.
 
 ## Target

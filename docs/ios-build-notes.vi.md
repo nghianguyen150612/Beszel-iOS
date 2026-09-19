@@ -1,7 +1,5 @@
 # Ghi chú build iOS
 
-[English](ios-build-notes.md)
-
 Tài liệu này ghi lại các yêu cầu đặc biệt để build được binary iOS chạy được. Tham chiếu chính là file hợp nhất `.github/workflows/ios-build.yml`, nơi sở hữu cả bước build lẫn bước phát hành theo tag. Muốn biết từng bước chính xác, hãy đọc trực tiếp file YAML.
 
 ## Mục tiêu

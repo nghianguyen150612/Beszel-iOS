@@ -1,7 +1,5 @@
 # iOS Port Status
 
-[Tiếng Việt](ios-port-status.vi.md)
-
 Status labels used here: **Working** (implemented and believed correct), **Tested** (observed on the validated device), **Experimental** (present but lightly validated), **Untested** (no evidence), **Planned** (not implemented).
 
 ## Purpose

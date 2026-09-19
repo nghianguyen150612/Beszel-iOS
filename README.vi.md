@@ -1,5 +1,3 @@
-[English](README.md) | Tiếng Việt
-
 # Beszel iOS
 
 Chạy Beszel Agent và Hub trực tiếp trên iPhone hoặc iPad đã jailbreak — biến thiết bị iOS cũ thành một nút giám sát gọn nhẹ hoặc một máy chủ tự quản.
@@ -269,7 +267,10 @@ Chi tiết hơn ngoài trang này:
 - [Kiến trúc bản port](docs/architecture.vi.md) — các thành phần ghép với nhau trên iOS ra sao
 - [Ghi chú build iOS](docs/ios-build-notes.vi.md) — các bản phát hành được build thế nào
 - [Đồng bộ với bản gốc](docs/upstream-sync.vi.md) — bản port bám sát Beszel gốc ra sao
-- [English](README.md) — the full documentation in English
+
+### Bản gốc tiếng Anh
+
+Bản tiếng Anh gốc: [README.md](README.md)
 
 ## Build từ mã nguồn
 

@@ -1,7 +1,5 @@
 # Kiến trúc
 
-[English](architecture.md)
-
 ## Quan hệ với bản gốc
 
 ```text

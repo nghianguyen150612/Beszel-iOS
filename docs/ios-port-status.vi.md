@@ -1,7 +1,5 @@
 # Tình trạng bản port iOS
 
-[English](ios-port-status.md)
-
 Nhãn trạng thái dùng trong file này: **Working** (đã làm và tin là đúng), **Tested** (đã quan sát trên máy kiểm thử), **Experimental** (có nhưng mới kiểm thử sơ), **Untested** (chưa có bằng chứng), **Planned** (chưa làm).
 
 ## Mục đích

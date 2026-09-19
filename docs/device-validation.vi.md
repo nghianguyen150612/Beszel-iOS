@@ -1,7 +1,5 @@
 # Kiểm thử thiết bị Beszel iOS
 
-[English](device-validation.md)
-
 Hồ sơ kiểm thử theo hướng bằng chứng cho bản port cộng đồng Beszel iOS.
 File này được cập nhật mỗi khi có lượt kiểm thử hoàn thành.
 

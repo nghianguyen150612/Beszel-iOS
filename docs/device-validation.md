@@ -1,7 +1,5 @@
 # Beszel iOS Device Validation
 
-[Tiếng Việt](device-validation.vi.md)
-
 Evidence-oriented record of validation performed for the Beszel iOS community
 port. This file is updated as validation runs complete.
 

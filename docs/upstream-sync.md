@@ -1,7 +1,5 @@
 # Upstream Sync
 
-[Tiếng Việt](upstream-sync.vi.md)
-
 This is the maintenance contract for keeping the iOS port close to canonical
 Beszel without silently dropping an iOS compatibility patch.
 
@@ -313,6 +311,13 @@ The code version and installer version are independent:
 
 No release tag, binary revision, or installer version was created by this
 maintenance audit.
+
+## Documentation language maintenance
+
+English documentation (`README.md`, `docs/*.md`) is canonical. Vietnamese
+counterparts (`README.vi.md`, `docs/*.vi.md`) are secondary translations.
+Update the English canonical document first, then synchronize the Vietnamese
+translation so both languages keep the same facts.
 
 ## Future parity checklist
 

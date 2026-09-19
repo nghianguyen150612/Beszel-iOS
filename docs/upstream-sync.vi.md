@@ -1,7 +1,5 @@
 # Đồng bộ với bản gốc
 
-[English](upstream-sync.md)
-
 Đây là hợp đồng bảo trì để giữ bản port iOS gần với Beszel chuẩn,
 không làm rơi lặng lẽ bản vá tương thích iOS nào.
 
@@ -305,6 +303,12 @@ Version mã và version installer độc lập:
 - `INSTALLER_VERSION` giữ `1.0.0`; đợt audit bảo trì này không bump nó.
 
 Đợt audit bảo trì này không tạo tag phát hành, revision binary hay version installer nào.
+
+## Bảo trì ngôn ngữ tài liệu
+
+Tài liệu tiếng Anh (`README.md`, `docs/*.md`) là bản chuẩn. Các bản tiếng Việt
+(`README.vi.md`, `docs/*.vi.md`) là bản dịch phụ. Hãy cập nhật bản tiếng Anh
+chuẩn trước, rồi đồng bộ bản dịch tiếng Việt để hai ngôn ngữ giữ cùng sự kiện.
 
 ## Checklist tương đương tương lai
 

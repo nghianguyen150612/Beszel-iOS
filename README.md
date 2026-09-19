@@ -1,5 +1,3 @@
-English | [Tiếng Việt](README.vi.md)
-
 # Beszel iOS
 
 Run Beszel Agent and Hub natively on a jailbroken iPhone or iPad — turn old iOS hardware into a lightweight monitoring node or self-hosted server.
@@ -269,7 +267,10 @@ For details beyond this page:
 - [Port architecture](docs/architecture.md) — how the pieces fit together on iOS
 - [Building iOS binaries](docs/ios-build-notes.md) — how releases are built
 - [Upstream synchronization](docs/upstream-sync.md) — how the port stays close to upstream Beszel
-- [Tiếng Việt](README.vi.md) — toàn bộ tài liệu này bằng tiếng Việt
+
+### Translations
+
+Vietnamese translation: [README.vi.md](README.vi.md)
 
 ## Building from source
 
