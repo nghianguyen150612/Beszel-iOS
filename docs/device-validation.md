@@ -1,5 +1,7 @@
 # Beszel iOS Device Validation
 
+[Tiếng Việt](device-validation.vi.md)
+
 Evidence-oriented record of validation performed for the Beszel iOS community
 port. This file is updated as validation runs complete.
 
@@ -13,19 +15,19 @@ port. This file is updated as validation runs complete.
 | `shellcheck -s sh tests/install-sh-test.sh` | Pre-existing SC2329 info-only notes on test-harness mock helpers; no installer finding |
 | `git diff --check` | **Passed** |
 | Go test suite | Not run in this environment (pre-existing `dist/` embed asset absence; unrelated to installer; no Go source changed) |
-| Real-device end-to-end matrix (8B / 8C / 8D / 8E incl. reboot gate) | **Passed** — see below |
+| Real-device end-to-end matrix (incl. reboot validation) | **Passed** — see below |
 
 ## Real-device validation
 
 **Result: PASSED.**
 
-The full on-device matrix was executed against the reference device over
-PROMPT 8B / 8C / 8D / 8E, finishing with a real reboot gate. The installer
-version under test on device was `0.4.0`; with all gates passing it is
+The full on-device matrix was executed against the reference device,
+finishing with a real reboot validation. The installer
+version under test on device was `0.4.0`; with all checks passing it is
 promoted to `1.0.0` with no binary change (binaries remain `v0.19.0-ios.1`).
 
 No purge confirmation phrases (`DELETE AGENT DATA` / `DELETE HUB DATA`) were
-typed at any point. The RC safety backup at
+typed at any point. The release-candidate safety backup at
 `/var/backups/beszel-ios-rc-20260917-071749` was retained and never deleted
 or overwritten.
 
@@ -33,7 +35,7 @@ or overwritten.
 
 - Date: 2026-09-17 (UTC); device local time 2026-09-18 +07 during post-reboot checks
 - Branch: `ios`, HEAD `5f413619`
-- Installer version under test on device: `0.4.0` (promoted to `1.0.0` after the gate)
+- Installer version under test on device: `0.4.0` (promoted to `1.0.0` after validation)
 - Binary release: `v0.19.0-ios.1` (unchanged; no Go/binary source changed, so no `v0.19.0-ios.2`)
 - Reference device (only tested compatibility):
   - iPad mini 2 (iPad4,4 / A1489), Apple A7, arm64
@@ -41,7 +43,7 @@ or overwritten.
   - semi-untethered Amethyst / Procursus environment
 - Stock/non-jailbroken iOS compatibility is not claimed.
 
-### Pre-reboot matrix (PROMPT 8D, carried as prior evidence)
+### Pre-reboot matrix
 
 Validated before the reboot:
 
@@ -56,7 +58,7 @@ Validated before the reboot:
 - Hub reinstall with `/api/health` 200, existing account / systems / config / historical stats preserved
 - Agent reconnected with stats resuming and increasing after reinstall
 
-### Post-reboot gate (PROMPT 8E, fresh evidence 2026-09-17/18)
+### Post-reboot validation (fresh evidence 2026-09-17/18)
 
 The human operator rebooted the real iPad, allowed a normal iOS boot, and
 manually reactivated the existing semi-untethered Amethyst jailbreak, then
@@ -186,9 +188,9 @@ Legend: **Pass** = observed and passing.
 ## Restage note
 
 The existing root-owned `/usr/local/sbin/beszel-ios-installer-rc` on the
-device still contains the `0.4.0` installer and was deliberately not
-overwritten. The human operator must restage the final `1.0.0` installer
-before the final on-device invocation, then confirm: hash match, root
+reference device still contains the `0.4.0` installer and was deliberately not
+overwritten during validation. Before the final on-device invocation with the
+`1.0.0` installer, restage it and confirm: hash match, root
 ownership, `/bin/sh -n`, Diagnose Agent, Diagnose Hub, Hub health 200, Agent
 up/listening, and DB/account/config/history intact.
 

@@ -1,5 +1,7 @@
 # Architecture
 
+[Tiếng Việt](architecture.vi.md)
+
 ## Upstream relationship
 
 ```text

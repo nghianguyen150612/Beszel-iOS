@@ -1,5 +1,7 @@
 # iOS Port Status
 
+[Tiếng Việt](ios-port-status.vi.md)
+
 Status labels used here: **Working** (implemented and believed correct), **Tested** (observed on the validated device), **Experimental** (present but lightly validated), **Untested** (no evidence), **Planned** (not implemented).
 
 ## Purpose
@@ -95,7 +97,7 @@ Verified build-tag selection: `GOOS=ios go list ./agent/battery` yields only `ba
 
 - Only the iPad mini 2 / A7 / iOS 12.5.7 target is validated.
 - Binaries must be installed under `/usr/local/bin` with `chown root:wheel`, `chmod 755`, `ldid -S`. `$HOME`/`/tmp` execution has previously failed.
-- GitHub Releases are published from iOS tags and `install.sh` covers fresh installs, transactional updates with backup/rollback, diagnostics, repair, reconfiguration, and safe uninstall with optional explicit data purge. The installer lifecycle is implemented and has been **validated end-to-end on the reference device** (see [device-validation.md](device-validation.md)), including a full reboot gate: after reboot plus manual semi-untethered jailbreak reactivation, both LaunchDaemons returned automatically and Agent reconnect plus Hub health plus data/history persistence were re-verified. No stock/non-jailbroken iOS compatibility is claimed.
+- GitHub Releases are published from iOS tags and `install.sh` covers fresh installs, transactional updates with backup/rollback, diagnostics, repair, reconfiguration, and safe uninstall with optional explicit data purge. The installer lifecycle is implemented and has been **validated end-to-end on the reference device** (see [device-validation.md](device-validation.md)), including a full reboot validation: after reboot plus manual semi-untethered jailbreak reactivation, both LaunchDaemons returned automatically and Agent reconnect plus Hub health plus data/history persistence were re-verified. No stock/non-jailbroken iOS compatibility is claimed.
 - LaunchDaemon plists and packaging scripts are not yet in the repo (only documented paths; the installer generates the plists on-device).
 
 ## Untested devices / iOS versions

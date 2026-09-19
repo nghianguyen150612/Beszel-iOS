@@ -1,5 +1,7 @@
 # Upstream Sync
 
+[Tiếng Việt](upstream-sync.vi.md)
+
 This is the maintenance contract for keeping the iOS port close to canonical
 Beszel without silently dropping an iOS compatibility patch.
 
@@ -7,8 +9,8 @@ Beszel without silently dropping an iOS compatibility patch.
 
 - `upstream/main` — canonical Beszel source and behavior. It is an audit source,
   not the product branch.
-- `main` — preserved upstream-aligned branch. Prompt 9 does not advance or
-  merge it.
+- `main` — preserved upstream-aligned branch. iOS maintenance work does not
+  advance or merge it.
 - `ios` — the community-port development/default branch: upstream history plus
   the iOS-specific deltas listed below.
 - `origin` — `https://github.com/nghianguyen150612/beszel-ios.git`;
@@ -19,7 +21,7 @@ an unattended merge or rebase.
 
 ## Audit baseline
 
-The Prompt 9 audit started from the validated commit `8fed846c`, with
+The maintenance audit started from the validated commit `8fed846c`, with
 `HEAD == origin/ios` and `beszel.Version == "0.19.0"`.
 
 At the fetched audit snapshot:
@@ -87,7 +89,7 @@ but there is no iOS patch to reapply.
 The following table covers the requested upstream surfaces against the pending
 range `f204dc17..4bf70700`. Each surface has one classification and a concrete
 reason. A binary-producing integration still requires the complete real-device
-parity gate below.
+parity checklist below.
 
 | Surface | Evidence in pending range | Classification | Technical reason |
 | --- | --- | --- | --- |
@@ -100,7 +102,7 @@ parity gate below.
 | Embedded frontend | Seven frontend files in `f0f1f798`; two in `6a7b2772`; one in `086091a0` | AUTO-MERGE LIKELY | The iOS Hub embeds the same generated frontend; build output and dashboard behavior must be rechecked. |
 | Frontend build output/toolchain | No embed path or package-manager change | AUTO-MERGE LIKELY | Existing `bun install --frozen-lockfile` (pinned Bun 1.4.0) + `bun run build` remains the supported prerequisite, but generated output must be rebuilt. |
 | Go version / `go.mod` / `go.sum` | Not touched | UNAFFECTED | The range keeps Go 1.27.1 and the dependency graph unchanged. |
-| Build tags / platform assumptions | `zfs_nonlinux.go` added; no runtime or iOS platform file touched | IOS PATCH REVIEW REQUIRED | `!linux` includes iOS, so `GOOS=ios go list/build` is an explicit gate even without a textual conflict. |
+| Build tags / platform assumptions | `zfs_nonlinux.go` added; no runtime or iOS platform file touched | IOS PATCH REVIEW REQUIRED | `!linux` includes iOS, so `GOOS=ios go list/build` is an explicit check even without a textual conflict. |
 | Go runtime / A7 assumption | Not touched | UNAFFECTED | The runtime patch is applied to the installed Go toolchain, independent of these upstream commits; its source-shape sentinel remains mandatory. |
 | Release asset names | Not touched | UNAFFECTED | `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, and `SHA256SUMS` remain the port contract. |
 | Database migrations | Not touched | UNAFFECTED | No migration file or collection snapshot changed in the range. |
@@ -119,7 +121,7 @@ The fetched untagged upstream commits, oldest to newest, are:
 | --- | --- | --- | --- |
 | `086091a0` | Discard pending history when switching to live charts | AUTO-MERGE LIKELY | Frontend-only behavior; it is consumed by the embedded UI and has no iOS patch overlap. |
 | `6a7b2772` | Follow system theme preference live | AUTO-MERGE LIKELY | Frontend-only behavior; rebuild the embedded UI and check login/dashboard rendering. |
-| `98210174` | Skip ZFS utility calls when `/dev/zfs` is unavailable | IOS PATCH REVIEW REQUIRED | Adds a `!linux` file selected by iOS and changes shared storage-pool behavior; run the iOS package/build gate. |
+| `98210174` | Skip ZFS utility calls when `/dev/zfs` is unavailable | IOS PATCH REVIEW REQUIRED | Adds a `!linux` file selected by iOS and changes shared storage-pool behavior; run the iOS package/build checks. |
 | `a0bf3387` | Set Hub batch request/body limits | AUTO-MERGE LIKELY | Hub default settings only; no iOS source conflict or protocol change, but exercise Hub startup and alert-related behavior. |
 | `50f6fc07` | Atomic first-user bootstrap and tests | AUTO-MERGE LIKELY | Hub/users behavior only; no migration or iOS source conflict, but repeat login/bootstrap checks. |
 | `f0f1f798` | Persist view preferences and language | AUTO-MERGE LIKELY | Embedded frontend plus user settings behavior; rebuild and test dashboard/settings persistence. |
@@ -280,7 +282,7 @@ build without the real frontend build is therefore unsupported and must not be
 “fixed” with an empty directory: that would produce a Hub without the
 production dashboard. Linux local environments cannot reproduce the macOS
 iPhoneOS CGO/Mach-O build; the macOS workflow remains authoritative for that
-gate.
+check.
 
 The frontend dependency step is reproducible from a clean checkout: the
 checked-in `internal/site/bun.lock` (lockfileVersion 3, generated with Bun
@@ -307,7 +309,7 @@ The code version and installer version are independent:
   increments the revision: `v0.19.0-ios.1` → `v0.19.0-ios.2`.
 - Release notes must name the actual upstream base. Never claim a version newer
   than the source integrated into the release.
-- `INSTALLER_VERSION` remains `1.0.0`; Prompt 9 does not bump it.
+- `INSTALLER_VERSION` remains `1.0.0`; this maintenance audit does not bump it.
 
 No release tag, binary revision, or installer version was created by this
 maintenance audit.
@@ -372,8 +374,8 @@ untested.
 
 ## Current next-phase decision
 
-There is no newer stable upstream release than `v0.19.0`, so Prompt 9 does not
-require a stable-base integration and creates no new release.
+There is no newer stable upstream release than `v0.19.0`, so no
+stable-base integration is required and no new release is created.
 
 There is an optional future integration phase for the untagged upstream main
 range:
@@ -390,7 +392,7 @@ range:
 - Database migrations: none in the pending range.
 - Agent↔Hub protocol, ports/CLI, and health endpoint: no changes observed.
 - If the range is integrated and released while the base remains `0.19.0`,
-  the binary revision would be `v0.19.0-ios.2` after all gates. No such
+  the binary revision would be `v0.19.0-ios.2` after all checks. No such
   revision is being created now.
 - Before publishing, repeat the full automated/build/parity checklist and the
-  real-device gate, including reboot plus jailbreak reactivation.
+  real-device validation, including reboot plus jailbreak reactivation.
