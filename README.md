@@ -1,8 +1,8 @@
-# Beszel iOS
+# Beszel-iOS
 
 Run Beszel Agent and Hub natively on a jailbroken iPhone or iPad — turn old iOS hardware into a lightweight monitoring node or self-hosted server.
 
-[![License: MIT](https://img.shields.io/github/license/nghianguyen150612/beszel-ios)](LICENSE)
+[![License: MIT](https://img.shields.io/github/license/nghianguyen150612/Beszel-iOS)](LICENSE)
 ![Beszel base 0.19.0](https://img.shields.io/badge/Beszel%20base-0.19.0-blue)
 ![Tested on iPad mini 2 · iOS 12.5.7](https://img.shields.io/badge/tested-iPad%20mini%202%20%C2%B7%20iOS%2012.5.7-green)
 
@@ -12,11 +12,11 @@ Run Beszel Agent and Hub natively on a jailbroken iPhone or iPad — turn old iO
 >
 > This is a community port. It is not affiliated with or endorsed by the upstream project.
 
-## Why Beszel iOS?
+## Why Beszel-iOS?
 
 Have an old iPhone or iPad sitting in a drawer? If it's jailbroken, it can still be useful.
 
-Beszel iOS lets you reuse that device as a small always-on machine: run the monitoring Agent on it, check it from your normal Beszel dashboard, and — if you want — host the dashboard itself on the same iPhone or iPad. Everything runs as native arm64 iOS binaries and starts automatically with the system once your jailbreak environment is active.
+Beszel-iOS lets you reuse that device as a small always-on machine: run the monitoring Agent on it, check it from your normal Beszel dashboard, and — if you want — host the dashboard itself on the same iPhone or iPad. Everything runs as native arm64 iOS binaries and starts automatically with the system once your jailbreak environment is active.
 
 In short: old iPad in, live system graphs out.
 
@@ -38,7 +38,7 @@ In short: old iPad in, live system graphs out.
 SSH into your jailbroken iPhone or iPad, then run:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/install.sh | sudo sh
 ```
 
 That's it — one command, no cloning or extra downloads. Then:
@@ -189,7 +189,7 @@ This reboot-and-reactivation sequence was part of the real-device validation: af
 Re-run the same installer command:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/install.sh | sudo sh
 ```
 
 Choose **Update**. Your settings and Hub data are kept, the new binaries are verified before anything is swapped, and the previous version is kept as a backup with automatic rollback if the new one fails to start.
@@ -223,7 +223,7 @@ Never delete these by hand — use the installer menus. The Hub folder in partic
 ## Beginner FAQ
 
 **Do I need a jailbreak?**
-Yes. Beszel iOS installs native binaries and system services, which stock iOS does not allow.
+Yes. Beszel-iOS installs native binaries and system services, which stock iOS does not allow.
 
 **Can I install this on stock (non-jailbroken) iOS?**
 No. Stock iOS is not supported.
@@ -256,7 +256,7 @@ Current iOS binary release: **v0.19.0-ios.1**
 
 The version has two parts: `0.19.0` is the upstream Beszel version this port is based on, and `ios.1` is the iOS-port revision for that base. The installer itself is versioned separately (currently `1.0.0`).
 
-Each release publishes three files: the Agent binary, the Hub binary, and a checksum file the installer verifies before installing anything. You can browse them under [GitHub Releases](https://github.com/nghianguyen150612/beszel-ios/releases).
+Each release publishes three files: the Agent binary, the Hub binary, and a checksum file the installer verifies before installing anything. You can browse them under [GitHub Releases](https://github.com/nghianguyen150612/Beszel-iOS/releases).
 
 ## Documentation
 
@@ -280,7 +280,7 @@ If you want to build iOS binaries yourself, you'll need macOS with the Xcode iPh
 
 ## Contributing
 
-The most helpful contribution right now is testing on more hardware. If you try Beszel iOS on another jailbroken iPhone or iPad, please open an issue or discussion with:
+The most helpful contribution right now is testing on more hardware. If you try Beszel-iOS on another jailbroken iPhone or iPad, please open an issue or discussion with:
 
 - device model (e.g. iPad mini 2)
 - `hw.machine` value (e.g. `iPad4,4`)
@@ -289,13 +289,13 @@ The most helpful contribution right now is testing on more hardware. If you try 
 - whether you ran Agent, Hub, or both
 - what worked, and relevant logs if something failed
 
-Build fixes, upstream-parity fixes, and documentation improvements are also welcome. Please target the `ios` branch.
+Build fixes, upstream-parity fixes, and documentation improvements are also welcome. Please target the `iOS` branch.
 
 > Don't include private keys, passwords, tokens, or copies of your Hub database in reports.
 
 ## Upstream and credits
 
-Beszel is by [henrygd](https://github.com/henrygd/beszel). This repository is an unofficial community iOS port maintained on the `ios` branch — please direct general Beszel questions to the upstream project.
+Beszel is by [henrygd](https://github.com/henrygd/beszel). This repository is an unofficial community iOS port maintained on the `iOS` branch — please direct general Beszel questions to the upstream project.
 
 ## License
 

@@ -1,8 +1,8 @@
-# Beszel iOS
+# Beszel-iOS
 
 Chạy Beszel Agent và Hub trực tiếp trên iPhone hoặc iPad đã jailbreak — biến thiết bị iOS cũ thành một nút giám sát gọn nhẹ hoặc một máy chủ tự quản.
 
-[![License: MIT](https://img.shields.io/github/license/nghianguyen150612/beszel-ios)](LICENSE)
+[![License: MIT](https://img.shields.io/github/license/nghianguyen150612/Beszel-iOS)](LICENSE)
 ![Beszel base 0.19.0](https://img.shields.io/badge/Beszel%20base-0.19.0-blue)
 ![Tested on iPad mini 2 · iOS 12.5.7](https://img.shields.io/badge/tested-iPad%20mini%202%20%C2%B7%20iOS%2012.5.7-green)
 
@@ -12,11 +12,11 @@ Chạy Beszel Agent và Hub trực tiếp trên iPhone hoặc iPad đã jailbrea
 >
 > Đây là bản port cộng đồng, không liên kết và không được dự án gốc chứng thực.
 
-## Vì sao dùng Beszel iOS?
+## Vì sao dùng Beszel-iOS?
 
 Bạn còn một chiếc iPhone hay iPad cũ nằm trong ngăn kéo? Nếu máy đã jailbreak, nó vẫn còn dùng được.
 
-Beszel iOS giúp bạn tận dụng thiết bị đó như một máy nhỏ luôn bật: chạy Agent giám sát trên máy, xem số liệu từ bảng điều khiển Beszel quen thuộc, và — nếu muốn — host luôn bảng điều khiển ngay trên chính chiếc iPhone/iPad đó. Mọi thứ đều là binary arm64 chạy trực tiếp trên iOS và sẽ tự khởi động cùng hệ thống khi môi trường jailbreak đã hoạt động.
+Beszel-iOS giúp bạn tận dụng thiết bị đó như một máy nhỏ luôn bật: chạy Agent giám sát trên máy, xem số liệu từ bảng điều khiển Beszel quen thuộc, và — nếu muốn — host luôn bảng điều khiển ngay trên chính chiếc iPhone/iPad đó. Mọi thứ đều là binary arm64 chạy trực tiếp trên iOS và sẽ tự khởi động cùng hệ thống khi môi trường jailbreak đã hoạt động.
 
 Nói ngắn gọn: iPad cũ vào, biểu đồ hệ thống trực tiếp ra.
 
@@ -38,7 +38,7 @@ Nói ngắn gọn: iPad cũ vào, biểu đồ hệ thống trực tiếp ra.
 SSH vào chiếc iPhone/iPad đã jailbreak, rồi chạy:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/install.sh | sudo sh
 ```
 
 Chỉ một lệnh, không cần clone hay tải thêm gì khác. Sau đó:
@@ -189,7 +189,7 @@ Chuỗi khởi động lại rồi kích hoạt lại này đã nằm trong bài
 Chạy lại đúng lệnh cài đặt:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/install.sh | sudo sh
 ```
 
 Chọn **Update**. Cài đặt và dữ liệu Hub của bạn được giữ nguyên, binary mới được kiểm tra trước khi thay thế, bản cũ được giữ làm sao lưu và sẽ tự quay lại nếu bản mới khởi động thất bại.
@@ -223,7 +223,7 @@ Tiện cho việc sao lưu:
 ## Câu hỏi thường gặp
 
 **Có cần jailbreak không?**
-Có. Beszel iOS cài binary chạy trực tiếp và dịch vụ hệ thống, iOS gốc không cho phép việc đó.
+Có. Beszel-iOS cài binary chạy trực tiếp và dịch vụ hệ thống, iOS gốc không cho phép việc đó.
 
 **Máy iOS gốc (chưa jailbreak) có cài được không?**
 Không. iOS gốc không được hỗ trợ.
@@ -256,7 +256,7 @@ Bản binary iOS hiện tại: **v0.19.0-ios.1**
 
 Phiên bản có hai phần: `0.19.0` là phiên bản Beszel gốc mà bản port dựa trên, còn `ios.1` là số revision của bản port iOS cho base đó. Bản thân bộ cài đặt được đánh phiên bản riêng (hiện là `1.0.0`).
 
-Mỗi bản phát hành gồm ba file: binary Agent, binary Hub và file checksum để bộ cài đặt kiểm tra trước khi cài. Bạn có thể xem chúng trong [GitHub Releases](https://github.com/nghianguyen150612/beszel-ios/releases).
+Mỗi bản phát hành gồm ba file: binary Agent, binary Hub và file checksum để bộ cài đặt kiểm tra trước khi cài. Bạn có thể xem chúng trong [GitHub Releases](https://github.com/nghianguyen150612/Beszel-iOS/releases).
 
 ## Tài liệu
 
@@ -280,7 +280,7 @@ Nếu bạn muốn tự build binary iOS, bạn cần macOS có Xcode iPhoneOS S
 
 ## Đóng góp
 
-Đóng góp hữu ích nhất lúc này là thử trên thêm phần cứng. Nếu bạn thử Beszel iOS trên một chiếc iPhone/iPad đã jailbreak khác, hãy mở issue hoặc discussion kèm:
+Đóng góp hữu ích nhất lúc này là thử trên thêm phần cứng. Nếu bạn thử Beszel-iOS trên một chiếc iPhone/iPad đã jailbreak khác, hãy mở issue hoặc discussion kèm:
 
 - model máy (ví dụ iPad mini 2)
 - giá trị `hw.machine` (ví dụ `iPad4,4`)
@@ -289,13 +289,13 @@ Nếu bạn muốn tự build binary iOS, bạn cần macOS có Xcode iPhoneOS S
 - bạn đã chạy Agent, Hub hay cả hai
 - cái gì chạy được, và log liên quan nếu có lỗi
 
-Các bản sửa build, bản sửa giữ tương thích với bản gốc, và cải thiện tài liệu cũng rất được hoan nghênh. Hãy nhắm vào nhánh `ios`.
+Các bản sửa build, bản sửa giữ tương thích với bản gốc, và cải thiện tài liệu cũng rất được hoan nghênh. Hãy nhắm vào nhánh `iOS`.
 
 > Đừng đưa private key, mật khẩu, token hay bản sao cơ sở dữ liệu Hub vào báo cáo.
 
 ## Dự án gốc và ghi công
 
-Beszel là của [henrygd](https://github.com/henrygd/beszel). Repo này là bản port iOS cộng đồng không chính thức, duy trì trên nhánh `ios` — các câu hỏi chung về Beszel xin gửi về dự án gốc.
+Beszel là của [henrygd](https://github.com/henrygd/beszel). Repo này là bản port iOS cộng đồng không chính thức, duy trì trên nhánh `iOS` — các câu hỏi chung về Beszel xin gửi về dự án gốc.
 
 ## Giấy phép
 

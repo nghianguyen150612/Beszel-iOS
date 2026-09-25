@@ -1,6 +1,6 @@
-# Beszel iOS Device Validation
+# Beszel-iOS Device Validation
 
-Evidence-oriented record of validation performed for the Beszel iOS community
+Evidence-oriented record of validation performed for the Beszel-iOS community
 port. This file is updated as validation runs complete.
 
 ## Status summary
@@ -32,7 +32,7 @@ or overwritten.
 ### Validation environment
 
 - Date: 2026-09-17 (UTC); device local time 2026-09-18 +07 during post-reboot checks
-- Branch: `ios`, HEAD `5f413619`
+- Branch: `iOS`, HEAD `5f413619`
 - Installer version under test on device: `0.4.0` (promoted to `1.0.0` after validation)
 - Binary release: `v0.19.0-ios.1` (unchanged; no Go/binary source changed, so no `v0.19.0-ios.2`)
 - Reference device (only tested compatibility):

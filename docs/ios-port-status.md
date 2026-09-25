@@ -1,4 +1,4 @@
-# iOS Port Status
+# Beszel-iOS Port Status
 
 Status labels used here: **Working** (implemented and believed correct), **Tested** (observed on the validated device), **Experimental** (present but lightly validated), **Untested** (no evidence), **Planned** (not implemented).
 
@@ -11,7 +11,7 @@ Provide native Beszel Agent + Hub binaries for jailbroken iOS devices while pres
 - Upstream: [henrygd/beszel](https://github.com/henrygd/beszel).
 - `main` is the preserved upstream-aligned branch; it is not advanced as part
   of iOS maintenance work.
-- `ios` = upstream base + iOS-specific files/changes (see below). No Agent/Hub rewrite, no Hub database changes, no removed upstream features.
+- `iOS` = upstream base + Beszel-iOS-specific files/changes (see below). No Agent/Hub rewrite, no Hub database changes, no removed upstream features.
 - The iOS base is recorded from `beszel.Version`, while untagged upstream-main
   commits are audited separately before integration. See
   [docs/upstream-sync.md](upstream-sync.md) for the current snapshot,
@@ -20,7 +20,7 @@ Provide native Beszel Agent + Hub binaries for jailbroken iOS devices while pres
 ## Branch model
 
 - `main` — upstream-aligned. No iOS-only changes.
-- `ios` — active iOS port branch and repository default branch. All iOS work belongs here.
+- `iOS` — active Beszel-iOS port branch and repository default branch. All iOS work belongs here.
 
 ## Validated hardware
 
@@ -88,7 +88,7 @@ Verified build-tag selection: `GOOS=ios go list ./agent/battery` yields only `ba
 ### Build status — Working
 
 - Consolidated `.github/workflows/ios-build.yml` builds both binaries into `build/ios/`, validates Mach-O arm64 + iOS load commands + 12.0 deployment metadata, generates `SHA256SUMS` via `shasum -a 256`, verifies it, and uploads one `beszel-ios-arm64` artifact (`beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`).
-- Tag pushes matching `v*-ios.*` additionally run the `release-ios` job, which re-downloads the artifact, re-verifies it (existence, non-zero size, exact two-entry `SHA256SUMS`, checksum match), validates the tag against `beszel.Version` and `ios` history, then publishes the three files via `gh release create --latest` (non-draft, non-prerelease).
+- Tag pushes matching `v*-ios.*` additionally run the `release-ios` job, which re-downloads the artifact, re-verifies it (existence, non-zero size, exact two-entry `SHA256SUMS`, checksum match), validates the tag against `beszel.Version` and `iOS` history, then publishes the three files via `gh release create --latest` (non-draft, non-prerelease).
 - The legacy probe workflows (`ios-agent-probe.yml`, `ios-hub-probe.yml`) were removed once the consolidated pipeline proved itself; all of their behavior is covered above.
 
 ## Known limitations

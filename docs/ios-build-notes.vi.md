@@ -1,4 +1,4 @@
-# Ghi chú build iOS
+# Ghi chú build Beszel-iOS
 
 Tài liệu này ghi lại các yêu cầu đặc biệt để build được binary iOS chạy được. Tham chiếu chính là file hợp nhất `.github/workflows/ios-build.yml`, nơi sở hữu cả bước build lẫn bước phát hành theo tag. Muốn biết từng bước chính xác, hãy đọc trực tiếp file YAML.
 
@@ -69,17 +69,17 @@ job build macOS:
    phiên bản base của bản gốc (không có hậu tố `-ios.N` trong mã).
    Khi Beszel gốc lên phiên bản mới, revision iOS reset
    (ví dụ `v0.20.0-ios.1`).
-2. Commit gắn tag phải là ancestor của `origin/ios`, nên tag lỡ tạo
+2. Commit gắn tag phải là ancestor của `origin/iOS`, nên tag lỡ tạo
    trên lịch sử `main` không liên quan sẽ bị từ chối mà không phát hành
-   gì. Rebuild lịch sử (tag nằm sau HEAD `ios` hiện tại) vẫn cho phép.
+   gì. Rebuild lịch sử (tag nằm sau HEAD `iOS` hiện tại) vẫn cho phép.
 3. Job tải artifact `beszel-ios-arm64` từ chính lượt chạy của nó rồi
    kiểm tra lại: cả ba file tồn tại và khác rỗng, `SHA256SUMS`
    chứa đúng hai mục binary, và `sha256sum -c` đạt.
-4. Nó phát hành bằng `gh release create <tag> --title "Beszel iOS <tag>"
+4. Nó phát hành bằng `gh release create <tag> --title "Beszel-iOS <tag>"
    --latest` kèm ba file — không draft, không prerelease, gắn Latest —
    rồi assert trạng thái release và `/releases/latest` trỏ đúng tag mới.
 
-Path filter trong trigger workflow chỉ áp dụng cho push nhánh `ios`;
+Path filter trong trigger workflow chỉ áp dụng cho push nhánh `iOS`;
 GitHub không xét path filter cho push tag, nên tag phát hành luôn build. Automation
 theo tag của bản gốc được loại trừ tag iOS: `release.yml`
 (GoReleaser) và `docker-images.yml` đều loại `v*-ios.*`, nên bản phát hành iOS

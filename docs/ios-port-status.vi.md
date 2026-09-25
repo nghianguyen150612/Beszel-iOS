@@ -1,4 +1,4 @@
-# Tình trạng bản port iOS
+# Tình trạng bản port Beszel-iOS
 
 Nhãn trạng thái dùng trong file này: **Working** (đã làm và tin là đúng), **Tested** (đã quan sát trên máy kiểm thử), **Experimental** (có nhưng mới kiểm thử sơ), **Untested** (chưa có bằng chứng), **Planned** (chưa làm).
 
@@ -11,7 +11,7 @@ Cung cấp binary Beszel Agent + Hub chạy trực tiếp cho thiết bị iOS �
 - Bản gốc: [henrygd/beszel](https://github.com/henrygd/beszel).
 - `main` là nhánh bảo tồn bám sát bản gốc; công việc bảo trì iOS không đẩy
   hay merge vào đó.
-- `ios` = base bản gốc + các file/thay đổi iOS-specific (xem bên dưới). Không viết lại Agent/Hub, không đổi DB Hub, không lược tính năng gốc.
+- `iOS` = base bản gốc + các file/thay đổi iOS-specific (xem bên dưới). Không viết lại Agent/Hub, không đổi DB Hub, không lược tính năng gốc.
 - Base iOS ghi theo `beszel.Version`, còn các commit untagged trên upstream-main
   được audit riêng trước khi tích hợp. Xem
   [docs/upstream-sync.vi.md](upstream-sync.vi.md) để biết snapshot hiện tại,
@@ -20,7 +20,7 @@ Cung cấp binary Beszel Agent + Hub chạy trực tiếp cho thiết bị iOS �
 ## Mô hình nhánh
 
 - `main` — bám sát bản gốc. Không có thay đổi chỉ cho iOS.
-- `ios` — nhánh port iOS đang hoạt động và là nhánh mặc định của repo. Mọi việc iOS nằm ở đây.
+- `iOS` — nhánh port Beszel-iOS đang hoạt động và là nhánh mặc định của repo. Mọi việc iOS nằm ở đây.
 
 ## Phần cứng đã kiểm thử
 
@@ -88,7 +88,7 @@ Mọi thứ khác đều **Untested** cho tới khi có báo cáo máy thật tr
 ### Trạng thái build — Working
 
 - `.github/workflows/ios-build.yml` hợp nhất build cả hai binary vào `build/ios/`, kiểm tra Mach-O arm64 + load command iOS + metadata deployment 12.0, sinh `SHA256SUMS` bằng `shasum -a 256`, kiểm tra lại, rồi tải lên một artifact `beszel-ios-arm64` (`beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`).
-- Push tag khớp `v*-ios.*` chạy thêm job `release-ios`: tải lại artifact, kiểm tra lại (tồn tại, khác rỗng, `SHA256SUMS` đúng hai mục, khớp checksum), kiểm tra tag với `beszel.Version` và lịch sử `ios`, rồi phát hành ba file bằng `gh release create --latest` (không draft, không prerelease).
+- Push tag khớp `v*-ios.*` chạy thêm job `release-ios`: tải lại artifact, kiểm tra lại (tồn tại, khác rỗng, `SHA256SUMS` đúng hai mục, khớp checksum), kiểm tra tag với `beszel.Version` và lịch sử `iOS`, rồi phát hành ba file bằng `gh release create --latest` (không draft, không prerelease).
 - Các workflow probe cũ (`ios-agent-probe.yml`, `ios-hub-probe.yml`) đã gỡ khi pipeline hợp nhất chứng minh được mình; mọi hành vi của chúng đã bao phủ ở trên.
 
 ## Hạn chế đã biết
@@ -106,4 +106,4 @@ Mọi iPhone/iPad khác, mọi SoC khác (A8+), và mọi phiên bản iOS khác
 
 **Đã có:** pipeline build CI hợp nhất cho ra `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS` thành một artifact `beszel-ios-arm64`; phát hành GitHub Release theo tag với đúng ba tên asset đó (xem [ios-build-notes.vi.md](ios-build-notes.vi.md) cho scheme `v<upstream>-ios.<rev>`); bộ cài đặt một lệnh tương tác `install.sh` (1.0.0) cho cài mới Agent / Hub / Agent+Hub kèm kiểm tra checksum, ký `ldid`, dựng LaunchDaemon và kiểm tra health Hub, cộng cập nhật giao dịch Agent / Hub / Agent+Hub có theo dõi trạng thái bản (`/var/lib/beszel-ios/install-state`), staging đã ký, sao lưu binary (`/usr/local/bin/*.bak`), tự quay lại, giữ plist, và giữ DB Hub, cộng chẩn đoán chỉ đọc, sửa thận trọng (khởi động lại tại chỗ, khôi phục binary thiếu, tạo lại cấu hình khi được xác nhận) và cấu hình lại an toàn (key/cổng Agent, cổng Hub) với giao dịch plist đã kiểm tra, sao lưu plist (`/Library/LaunchDaemons/*.plist.bak`) và tự quay về cấu hình, cộng gỡ ứng dụng theo giao dịch (Agent, Hub hoặc Agent+Hub; giữ dữ liệu theo mặc định, chạy ngoại tuyến) với tùy chọn xóa dữ liệu cần xác nhận gõ (`DELETE AGENT DATA` / `DELETE HUB DATA`).
 
-**Dự kiến** (chưa làm): plist LaunchDaemon dưới `packaging/launchd/` (hiện do installer sinh thay). Installer resolve tag Latest một lần mỗi lượt chạy rồi ghim mọi lượt tải về tag đó (`.../releases/download/<tag>/...`); URL thô của nó trỏ nhánh `ios` (`.../ios/install.sh`). Xem [architecture.vi.md](architecture.vi.md).
+**Dự kiến** (chưa làm): plist LaunchDaemon dưới `packaging/launchd/` (hiện do installer sinh thay). Installer resolve tag Latest một lần mỗi lượt chạy rồi ghim mọi lượt tải về tag đó (`.../releases/download/<tag>/...`); URL thô của nó trỏ nhánh `iOS` (`.../ios/install.sh`). Xem [architecture.vi.md](architecture.vi.md).

@@ -1,4 +1,4 @@
-# iOS Build Notes
+# Beszel-iOS Build Notes
 
 This documents the unusual requirements for producing working iOS binaries. The primary reference is the consolidated `.github/workflows/ios-build.yml`, which owns both the build and the tag-triggered release. See the YAML itself for exact steps.
 
@@ -69,19 +69,19 @@ macOS build job:
    reporting the upstream base version (no `-ios.N` suffix in code).
    When upstream Beszel moves to a new version, the iOS revision resets
    (for example `v0.20.0-ios.1`).
-2. The tagged commit must be an ancestor of `origin/ios`, so a tag
+2. The tagged commit must be an ancestor of `origin/iOS`, so a tag
    accidentally created on unrelated `main` history is rejected without
-   publishing anything. Historical rebuilds (tag behind current `ios` HEAD)
+   publishing anything. Historical rebuilds (tag behind current `iOS` HEAD)
    remain allowed.
 3. The job downloads the `beszel-ios-arm64` artifact from its own run and
    re-verifies it: all three files exist and are non-zero, `SHA256SUMS`
    contains exactly the two binary entries, and `sha256sum -c` passes.
-4. It publishes with `gh release create <tag> --title "Beszel iOS <tag>"
+4. It publishes with `gh release create <tag> --title "Beszel-iOS <tag>"
    --latest` plus the three files — non-draft, non-prerelease, Latest —
    then asserts the release state and that `/releases/latest` resolves to
    the new tag.
 
-Path filters in the workflow trigger apply to `ios` branch pushes only;
+Path filters in the workflow trigger apply to `iOS` branch pushes only;
 GitHub does not evaluate path filters for tag pushes, so release tags always
 build. Upstream tag automation is scoped away from iOS tags: `release.yml`
 (GoReleaser) and `docker-images.yml` both exclude `v*-ios.*`, so an iOS

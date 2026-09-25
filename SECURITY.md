@@ -1,6 +1,6 @@
 # Security Policy
 
-This repository (`beszel-ios`, `ios` branch) is an **unofficial community port** of [Beszel by henrygd](https://github.com/henrygd/beszel) for jailbroken iOS devices. It is not the upstream project.
+This repository (`Beszel-iOS`, `iOS` branch) is an **unofficial community port** of [Beszel by henrygd](https://github.com/henrygd/beszel) for jailbroken iOS devices. It is not the upstream project.
 
 ## What goes where
 

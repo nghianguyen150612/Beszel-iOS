@@ -1,6 +1,6 @@
-# Kiểm thử thiết bị Beszel iOS
+# Kiểm thử thiết bị Beszel-iOS
 
-Hồ sơ kiểm thử theo hướng bằng chứng cho bản port cộng đồng Beszel iOS.
+Hồ sơ kiểm thử theo hướng bằng chứng cho bản port cộng đồng Beszel-iOS.
 File này được cập nhật mỗi khi có lượt kiểm thử hoàn thành.
 
 ## Tóm tắt trạng thái
@@ -32,7 +32,7 @@ hay ghi đè.
 ### Môi trường kiểm thử
 
 - Thời gian: 2026-09-17 (UTC); giờ máy lúc kiểm tra sau khởi động lại là 2026-09-18 +07
-- Nhánh: `ios`, HEAD `5f413619`
+- Nhánh: `iOS`, HEAD `5f413619`
 - Phiên bản installer thử trên máy: `0.4.0` (nâng lên `1.0.0` sau khi kiểm thử xong)
 - Bản binary: `v0.19.0-ios.1` (không đổi; không sửa mã Go/binary nên không có `v0.19.0-ios.2`)
 - Thiết bị tham chiếu (cấu hình duy nhất đã kiểm thử):

@@ -9,9 +9,9 @@ Beszel without silently dropping an iOS compatibility patch.
   not the product branch.
 - `main` — preserved upstream-aligned branch. iOS maintenance work does not
   advance or merge it.
-- `ios` — the community-port development/default branch: upstream history plus
+- `iOS` — the Beszel-iOS development/default branch: upstream history plus
   the iOS-specific deltas listed below.
-- `origin` — `https://github.com/nghianguyen150612/beszel-ios.git`;
+- `origin` — `https://github.com/nghianguyen150612/Beszel-iOS.git`;
   `upstream` — `https://github.com/henrygd/beszel.git`.
 
 Never turn `upstream/main` into the product branch, and never update `ios` with
@@ -20,7 +20,7 @@ an unattended merge or rebase.
 ## Audit baseline
 
 The maintenance audit started from the validated commit `8fed846c`, with
-`HEAD == origin/ios` and `beszel.Version == "0.19.0"`.
+`HEAD == origin/iOS` and `beszel.Version == "0.19.0"`.
 
 At the fetched audit snapshot:
 
@@ -33,7 +33,7 @@ At the fetched audit snapshot:
 - `ios` includes 20 iOS-port commits after that fork point.
 - `origin/main` was `6a7b2772`, six commits behind the fetched untagged
   `upstream/main`; it remains preserved and untouched.
-- The iOS Beszel base is therefore still `0.19.0`, and the stable-tag drift
+- The Beszel-iOS base is therefore still `0.19.0`, and the stable-tag drift
   status is **IN SYNC**.
 - The eight untagged upstream commits after `f204dc17` are pending review; they
   are not silently included in the validated iOS binary.
@@ -144,7 +144,7 @@ and does not update `main`.
    git branch --show-current
    git status --short
    git rev-parse HEAD
-   git rev-parse origin/ios
+   git rev-parse origin/iOS
    git symbolic-ref --short refs/remotes/upstream/HEAD
    ```
 

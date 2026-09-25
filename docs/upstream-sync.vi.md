@@ -9,9 +9,9 @@ không làm rơi lặng lẽ bản vá tương thích iOS nào.
   không phải nhánh sản phẩm.
 - `main` — nhánh bảo tồn bám sát bản gốc. Công việc bảo trì iOS không
   đẩy hay merge vào đó.
-- `ios` — nhánh phát triển/mặc định của bản port cộng đồng: lịch sử bản gốc cộng
+- `iOS` — nhánh phát triển/mặc định của Beszel-iOS: lịch sử bản gốc cộng
   các delta iOS-specific liệt kê bên dưới.
-- `origin` — `https://github.com/nghianguyen150612/beszel-ios.git`;
+- `origin` — `https://github.com/nghianguyen150612/Beszel-iOS.git`;
   `upstream` — `https://github.com/henrygd/beszel.git`.
 
 Không bao giờ biến `upstream/main` thành nhánh sản phẩm, và không bao giờ cập nhật `ios`
@@ -20,7 +20,7 @@ bằng merge hay rebase không có người xem.
 ## Baseline audit
 
 Đợt audit bảo trì bắt đầu từ commit đã kiểm thử `8fed846c`, với
-`HEAD == origin/ios` và `beszel.Version == "0.19.0"`.
+`HEAD == origin/iOS` và `beszel.Version == "0.19.0"`.
 
 Tại snapshot đã fetch lúc audit:
 
@@ -33,7 +33,7 @@ Tại snapshot đã fetch lúc audit:
 - `ios` gồm 20 commit port iOS sau điểm fork đó.
 - `origin/main` ở `6a7b2772`, sau `upstream/main` untagged đã fetch sáu commit;
   nó vẫn được bảo tồn, không đụng tới.
-- Base Beszel iOS vì vậy vẫn là `0.19.0`, và trạng thái lệch tag ổn định
+- Base Beszel-iOS vì vậy vẫn là `0.19.0`, và trạng thái lệch tag ổn định
   là **IN SYNC**.
 - Tám commit untagged của bản gốc sau `f204dc17` đang chờ xem xét; chúng
   không lặng lẽ nằm trong binary iOS đã kiểm thử.
@@ -141,7 +141,7 @@ không cập nhật `main`.
    git branch --show-current
    git status --short
    git rev-parse HEAD
-   git rev-parse origin/ios
+   git rev-parse origin/iOS
    git symbolic-ref --short refs/remotes/upstream/HEAD
    ```
 
