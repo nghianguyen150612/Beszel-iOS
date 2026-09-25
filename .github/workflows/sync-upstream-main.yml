@@ -1,0 +1,91 @@
+name: Sync Beszel upstream to main
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: sync-upstream-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout canonical iOS branch
+        uses: actions/checkout@v5
+        with:
+          ref: iOS
+          fetch-depth: 0
+
+      - name: Sync upstream main
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          UPSTREAM_URL='https://github.com/henrygd/beszel.git'
+          UPSTREAM_BRANCH='main'
+          DEST_BRANCH='main'
+
+          git remote add upstream "$UPSTREAM_URL" 2>/dev/null || git remote set-url upstream "$UPSTREAM_URL"
+
+          echo "Fetching origin/$DEST_BRANCH and upstream/$UPSTREAM_BRANCH..."
+          git fetch --no-tags origin "refs/heads/$DEST_BRANCH:refs/remotes/origin/$DEST_BRANCH"
+          git fetch --no-tags upstream "refs/heads/$UPSTREAM_BRANCH:refs/remotes/upstream/$UPSTREAM_BRANCH"
+
+          MAIN_SHA=$(git rev-parse "refs/remotes/origin/$DEST_BRANCH")
+          UPSTREAM_SHA=$(git rev-parse "refs/remotes/upstream/$UPSTREAM_BRANCH")
+
+          {
+            echo '### Sync Beszel upstream to main'
+            printf -- '- **Previous main SHA:** `%s`\n' "$MAIN_SHA"
+            printf -- '- **Upstream Beszel SHA:** `%s`\n' "$UPSTREAM_SHA"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$MAIN_SHA" == "$UPSTREAM_SHA" ]]; then
+            echo 'main is already up to date with Beszel upstream'
+            {
+              echo '- **Result:** Already up to date'
+              printf -- '- **New main SHA:** `%s`\n' "$MAIN_SHA"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if git merge-base --is-ancestor "$MAIN_SHA" "$UPSTREAM_SHA"; then
+            BEHIND_COUNT=$(git rev-list --count "$MAIN_SHA..$UPSTREAM_SHA")
+            echo "main is $BEHIND_COUNT commit(s) behind upstream; fast-forwarding..."
+
+            git push origin "$UPSTREAM_SHA:refs/heads/$DEST_BRANCH"
+
+            git fetch --no-tags origin "refs/heads/$DEST_BRANCH:refs/remotes/origin/$DEST_BRANCH"
+            NEW_MAIN_SHA=$(git rev-parse "refs/remotes/origin/$DEST_BRANCH")
+            [[ "$NEW_MAIN_SHA" == "$UPSTREAM_SHA" ]] || {
+              echo "::error::Remote main verification failed after push"
+              exit 1
+            }
+
+            {
+              printf -- '- **Result:** Fast-forwarded by %s commit(s)\n' "$BEHIND_COUNT"
+              printf -- '- **New main SHA:** `%s`\n' "$NEW_MAIN_SHA"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Successfully fast-forwarded main to $NEW_MAIN_SHA"
+            exit 0
+          fi
+
+          AHEAD_COUNT=$(git rev-list --count "$UPSTREAM_SHA..$MAIN_SHA")
+          BEHIND_COUNT=$(git rev-list --count "$MAIN_SHA..$UPSTREAM_SHA")
+
+          echo "::error::origin/main has diverged from upstream/main"
+          echo "Current main SHA: $MAIN_SHA"
+          echo "Upstream Beszel SHA: $UPSTREAM_SHA"
+          echo "Commits unique to main: $AHEAD_COUNT"
+          echo "Commits unique to upstream: $BEHIND_COUNT"
+
+          {
+            echo '- **Result:** Refused because branches diverged'
+            echo "- **Diagnostics:** main has $AHEAD_COUNT unique commit(s) and is missing $BEHIND_COUNT upstream commit(s)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
