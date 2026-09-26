@@ -12,6 +12,7 @@ set -eu
 
 TEST_DIR=$(dirname "$0")
 SCRIPT="${TEST_DIR}/../install.sh"
+export BESZEL_MANAGER_SOURCE_PATH="$SCRIPT"
 
 # Source install.sh for its functions without running the installer.
 export BESZEL_INSTALL_LIB_ONLY=1
@@ -2135,6 +2136,11 @@ p7_prep_hub "hub-v1-content" "8090"
 p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
 cp "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/u7-hub-ref"
 cp "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${SANDBOX}/u7-hpl-ref"
+if install_persistent_manager "$SCRIPT"; then
+	pass "managed CLI installed before one-component uninstall"
+else
+	fail "managed CLI installed before one-component uninstall"
+fi
 if ( uninstall_agent_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "agent-only uninstall succeeds" "0" "$_rc"
 assert_eq "agent ABSENT" "ABSENT" "$(component_state agent)"
@@ -2146,6 +2152,11 @@ else
 fi
 assert_eq "hub state untouched" "v0.19.0-ios.1" "$(state_hub_release)"
 assert_eq "hub still loaded" "1" "$(cat "${MOCKCTL}/loaded_hub")"
+if [ -f "${LIB_DIR}/beszel-ios/manager.sh" ] && [ -f "${BIN_DIR}/beszel-ios" ]; then
+	pass "managed CLI remains while Hub is installed"
+else
+	fail "managed CLI remains while Hub is installed"
+fi
 if grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
 	pass "hub db untouched by agent uninstall"
 else
@@ -2159,6 +2170,11 @@ p7_prep_agent "agent-v1-content"
 p7_prep_hub "hub-v1-content" "8090"
 p7_write_both_state "v0.19.0-ios.1" "v0.19.0-ios.1"
 : > "${MOCKCTL}/mock.log"
+if install_persistent_manager "$SCRIPT"; then
+	pass "managed CLI installed before final component removals"
+else
+	fail "managed CLI installed before final component removals"
+fi
 if ( uninstall_both_flow > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "both uninstall succeeds" "0" "$_rc"
 assert_eq "agent ABSENT" "ABSENT" "$(component_state agent)"
@@ -2179,6 +2195,11 @@ if [ ! -d "${LIB_DIR}/beszel-ios" ]; then
 	pass "empty state dir removed via rmdir"
 else
 	fail "empty state dir removed via rmdir"
+fi
+if [ ! -e "${BIN_DIR}/beszel-ios" ] && [ ! -e "${LIB_DIR}/beszel-ios/manager.sh" ]; then
+	pass "managed CLI removed after final component uninstall"
+else
+	fail "managed CLI removed after final component uninstall"
 fi
 if grep -q "agent-data-marker" "${LIB_DIR}/beszel-agent/marker" && grep -q "hub-db-marker" "${LIB_DIR}/beszel-hub/db.sqlite"; then
 	pass "both data sets preserved"
@@ -2620,6 +2641,268 @@ if ( check_device_test4 ) 2>&1 | grep -q "uname -m is"; then
     fail "check_device must not emit legacy uname -m arch message"
 else
     pass "check_device does not emit legacy uname -m arch message"
+fi
+
+printf '== persistent CLI foundation ==\n'
+CLI_ROOT="${SANDBOX}/cli-foundation"
+BIN_DIR="${CLI_ROOT}/usr/local/bin"
+LIB_DIR="${CLI_ROOT}/var/lib"
+LAUNCHD_DIR="${CLI_ROOT}/Library/LaunchDaemons"
+LOG_DIR="${CLI_ROOT}/var/log"
+CLI_OUT="${CLI_ROOT}/command.out"
+mkdir -p "$BIN_DIR" "$LIB_DIR" "$LAUNCHD_DIR" "$LOG_DIR"
+export BESZEL_BIN_DIR="$BIN_DIR"
+export BESZEL_LIB_DIR="$LIB_DIR"
+export BESZEL_LAUNCHD_DIR="$LAUNCHD_DIR"
+export BESZEL_LOG_DIR="$LOG_DIR"
+CLI_SECRET='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqM66/yBCvP5nLv8mQuczlB9lXh9B7 CLI_SECRET_MUST_NOT_PRINT'
+
+_cli_version_empty=$(main version)
+if printf '%s\n' "$_cli_version_empty" | grep -q 'Agent: not installed' && printf '%s\n' "$_cli_version_empty" | grep -q 'Hub: not installed'; then
+	pass "version handles no installed components"
+else
+	fail "version handles no installed components"
+fi
+
+printf 'legacy-data\n' > "${LIB_DIR}/retained-data-marker"
+mkdir -p "${BIN_DIR}" "${LAUNCHD_DIR}" "${LIB_DIR}/beszel-ios"
+printf 'agent-binary\n' > "${BIN_DIR}/beszel-agent"
+write_agent_plist "$CLI_SECRET" "45876" "${LAUNCHD_DIR}/dev.beszel.agent.plist"
+cat > "${LIB_DIR}/beszel-ios/install-state" << 'STATEEOF'
+STATE_VERSION=1
+AGENT_RELEASE=v0.19.0-ios.7
+AGENT_ASSET_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+HUB_RELEASE=v0.19.0-ios.8
+HUB_ASSET_SHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+STATEEOF
+_cli_version_agent=$(main version)
+if printf '%s\n' "$_cli_version_agent" | grep -q 'Agent: installed (release: v0.19.0-ios.7)' && printf '%s\n' "$_cli_version_agent" | grep -q 'Hub: not installed'; then
+	pass "version reports Agent-only installation and release"
+else
+	fail "version reports Agent-only installation and release"
+fi
+
+rm -f "${BIN_DIR}/beszel-agent" "${LAUNCHD_DIR}/dev.beszel.agent.plist"
+printf 'hub-binary\n' > "${BIN_DIR}/beszel-hub"
+write_hub_plist "8090" "${LAUNCHD_DIR}/dev.beszel.hub.plist"
+cat > "${LIB_DIR}/beszel-ios/install-state" << 'STATEEOF'
+STATE_VERSION=1
+HUB_RELEASE=v0.19.0-ios.8
+HUB_ASSET_SHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+STATEEOF
+_cli_version_hub=$(main version)
+if printf '%s\n' "$_cli_version_hub" | grep -q 'Agent: not installed' && printf '%s\n' "$_cli_version_hub" | grep -q 'Hub: installed (release: v0.19.0-ios.8)'; then
+	pass "version reports Hub-only installation and release"
+else
+	fail "version reports Hub-only installation and release"
+fi
+
+printf 'agent-binary\n' > "${BIN_DIR}/beszel-agent"
+write_agent_plist "$CLI_SECRET" "45876" "${LAUNCHD_DIR}/dev.beszel.agent.plist"
+cat > "${LIB_DIR}/beszel-ios/install-state" << 'STATEEOF'
+STATE_VERSION=1
+AGENT_RELEASE=v0.19.0-ios.7
+AGENT_ASSET_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+HUB_RELEASE=v0.19.0-ios.8
+HUB_ASSET_SHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+STATEEOF
+_cli_help=$(main help)
+_cli_help_flag=$(main --help)
+_cli_version=$(main version)
+_cli_version_flag=$(main --version)
+for _cli_word in menu install update status diagnostics repair reconfigure uninstall service doctor version help; do
+	if printf '%s\n' "$_cli_help" | grep -q "  ${_cli_word}[[:space:]]"; then
+		pass "help reserves command ${_cli_word}"
+	else
+		fail "help reserves command ${_cli_word}"
+	fi
+done
+for _cli_component in agent hub both; do
+	if printf '%s\n' "$_cli_help" | grep -q "^  ${_cli_component}$"; then
+		pass "help lists component ${_cli_component}"
+	else
+		fail "help lists component ${_cli_component}"
+	fi
+done
+if printf '%s\n' "$_cli_help_flag" | grep -q 'Usage: beszel-ios' && printf '%s\n' "$_cli_version" | grep -q 'Beszel-iOS manager version: 1.0.0' && printf '%s\n' "$_cli_version" | grep -q 'Agent: installed (release: v0.19.0-ios.7)' && printf '%s\n' "$_cli_version" | grep -q 'Hub: installed (release: v0.19.0-ios.8)' && printf '%s\n' "$_cli_version_flag" | grep -q 'Beszel-iOS manager version: 1.0.0'; then
+	pass "help/version flags and both-component versions"
+else
+	fail "help/version flags and both-component versions"
+fi
+if printf '%s\n%s\n%s\n%s\n' "$_cli_help" "$_cli_help_flag" "$_cli_version" "$_cli_version_flag" | grep -Fq "$CLI_SECRET"; then
+	fail "help and version never print the Agent key"
+else
+	pass "help and version never print the Agent key"
+fi
+_cli_inventory_before=$(find "$CLI_ROOT" -type f -exec cksum {} \; | sort)
+_cli_readonly_help=$(main help)
+_cli_readonly_version=$(main version)
+_cli_inventory_after=$(find "$CLI_ROOT" -type f -exec cksum {} \; | sort)
+assert_eq "help and version do not mutate fixtures" "$_cli_inventory_before" "$_cli_inventory_after"
+
+cli_expect_fail() {
+	_cef_name="$1"
+	_cef_reason="$2"
+	shift 2
+	if ( main "$@" ) > "$CLI_OUT" 2>&1; then
+		fail "$_cef_name"
+	elif grep -Fq "$_cef_reason" "$CLI_OUT" && grep -Fq 'Usage: beszel-ios' "$CLI_OUT"; then
+		pass "$_cef_name"
+	else
+		fail "$_cef_name (missing concise usage error)"
+	fi
+}
+cli_expect_fail "unknown command fails with usage" "Unknown command" not-a-command
+cli_expect_fail "excess arguments fail with usage" "Too many arguments" install agent extra
+cli_expect_fail "unknown component fails with usage" "Unknown component" install toaster
+cli_expect_fail "unsupported option combination fails" "Too many arguments" install agent --force
+cli_expect_fail "reserved command fails clearly" "not implemented yet" install agent
+
+if install_persistent_manager "$SCRIPT"; then
+	pass "persistent manager installation succeeds"
+else
+	fail "persistent manager installation succeeds"
+fi
+if [ -f "${LIB_DIR}/beszel-ios/manager.sh" ] && [ ! -L "${LIB_DIR}/beszel-ios/manager.sh" ] && [ -x "${BIN_DIR}/beszel-ios" ] && [ ! -L "${BIN_DIR}/beszel-ios" ]; then
+	pass "manager and sandbox command are regular installed files"
+else
+	fail "manager and sandbox command are regular installed files"
+fi
+if manager_file_is_managed "${LIB_DIR}/beszel-ios/manager.sh" && command_wrapper_is_managed "${BIN_DIR}/beszel-ios"; then
+	pass "persistent manager and wrapper ownership markers validate"
+else
+	fail "persistent manager and wrapper ownership markers validate"
+fi
+_cli_wrapper_help=$(BESZEL_INSTALL_LIB_ONLY=0 BESZEL_BIN_DIR="$BIN_DIR" BESZEL_LIB_DIR="$LIB_DIR" BESZEL_LAUNCHD_DIR="$LAUNCHD_DIR" BESZEL_LOG_DIR="$LOG_DIR" "${BIN_DIR}/beszel-ios" help)
+_cli_wrapper_version=$(BESZEL_INSTALL_LIB_ONLY=0 BESZEL_BIN_DIR="$BIN_DIR" BESZEL_LIB_DIR="$LIB_DIR" BESZEL_LAUNCHD_DIR="$LAUNCHD_DIR" BESZEL_LOG_DIR="$LOG_DIR" "${BIN_DIR}/beszel-ios" version)
+if printf '%s\n' "$_cli_wrapper_help" | grep -q 'Usage: beszel-ios' && printf '%s\n' "$_cli_wrapper_version" | grep -q 'Hub: installed (release: v0.19.0-ios.8)'; then
+	pass "installed command dispatches help and version"
+else
+	fail "installed command dispatches help and version"
+fi
+chmod 644 "${BIN_DIR}/beszel-ios"
+if install_persistent_manager "$SCRIPT" && [ -x "${BIN_DIR}/beszel-ios" ]; then
+	pass "managed wrapper permission is repaired safely"
+else
+	fail "managed wrapper permission is repaired safely"
+fi
+cp "${LIB_DIR}/beszel-ios/manager.sh" "${CLI_ROOT}/manager-before"
+cp "${BIN_DIR}/beszel-ios" "${CLI_ROOT}/command-before"
+printf '#!/bin/sh\n' > "${CLI_ROOT}/invalid-manager.sh"
+if install_persistent_manager "${CLI_ROOT}/invalid-manager.sh" > /dev/null 2>&1; then
+	fail "invalid manager update is refused"
+else
+	pass "invalid manager update is refused"
+fi
+if cmp -s "${LIB_DIR}/beszel-ios/manager.sh" "${CLI_ROOT}/manager-before" && cmp -s "${BIN_DIR}/beszel-ios" "${CLI_ROOT}/command-before"; then
+	pass "failed manager update leaves working CLI unchanged"
+else
+	fail "failed manager update leaves working CLI unchanged"
+fi
+rm -f "${LIB_DIR}/beszel-ios/install-state"
+_cli_version_legacy=$(main version)
+if printf '%s\n' "$_cli_version_legacy" | grep -q 'Agent: installed (release unknown (legacy or missing state))' && printf '%s\n' "$_cli_version_legacy" | grep -q 'Hub: installed (release unknown (legacy or missing state))'; then
+	pass "version handles legacy installs without state"
+else
+	fail "version handles legacy installs without state"
+fi
+rm -f "${BIN_DIR}/beszel-agent" "${BIN_DIR}/beszel-hub" "${LAUNCHD_DIR}/dev.beszel.agent.plist" "${LAUNCHD_DIR}/dev.beszel.hub.plist"
+mkdir -p "${LIB_DIR}/beszel-agent" "${LIB_DIR}/beszel-hub"
+printf 'retained-agent-data\n' > "${LIB_DIR}/beszel-agent/marker"
+printf 'retained-hub-history\n' > "${LIB_DIR}/beszel-hub/history"
+if cleanup_persistent_manager_if_unused; then
+	pass "final component cleanup runs with retained data present"
+else
+	fail "final component cleanup runs with retained data present"
+fi
+if [ ! -e "${BIN_DIR}/beszel-ios" ] && [ ! -e "${LIB_DIR}/beszel-ios/manager.sh" ] && [ -f "${LIB_DIR}/beszel-agent/marker" ] && [ -f "${LIB_DIR}/beszel-hub/history" ]; then
+	pass "retained data does not keep CLI installed and remains untouched"
+else
+	fail "retained data does not keep CLI installed and remains untouched"
+fi
+_cli_version_data_only=$(main version)
+if printf '%s\n' "$_cli_version_data_only" | grep -q 'Agent: not installed' && printf '%s\n' "$_cli_version_data_only" | grep -q 'Hub: not installed'; then
+	pass "version does not treat retained data as an installed component"
+else
+	fail "version does not treat retained data as an installed component"
+fi
+
+OCC_ROOT="${SANDBOX}/cli-occupied"
+BIN_DIR="${OCC_ROOT}/usr/local/bin"
+LIB_DIR="${OCC_ROOT}/var/lib"
+mkdir -p "$BIN_DIR" "$LIB_DIR"
+export BESZEL_BIN_DIR="$BIN_DIR"
+export BESZEL_LIB_DIR="$LIB_DIR"
+printf 'unrelated command bytes\n' > "${BIN_DIR}/beszel-ios"
+if install_persistent_manager "$SCRIPT" > "$CLI_OUT" 2>&1; then
+	fail "unrelated occupied command path is refused"
+else
+	pass "unrelated occupied command path is refused"
+fi
+if grep -q 'unrelated command bytes' "${BIN_DIR}/beszel-ios" && [ ! -e "${LIB_DIR}/beszel-ios/manager.sh" ]; then
+	pass "unrelated command and manager path are untouched"
+else
+	fail "unrelated command and manager path are untouched"
+fi
+
+BOOT_ROOT="${SANDBOX}/cli-bootstrap-source"
+BIN_DIR="${BOOT_ROOT}/usr/local/bin"
+LIB_DIR="${BOOT_ROOT}/var/lib"
+mkdir -p "$BIN_DIR" "$LIB_DIR"
+export BESZEL_BIN_DIR="$BIN_DIR"
+export BESZEL_LIB_DIR="$LIB_DIR"
+_cli_script_path="$(pwd)/install.sh"
+if ( BESZEL_MANAGER_SOURCE_PATH="" MANAGER_SOURCE_URL="file://${_cli_script_path}" install_persistent_manager ) > "$CLI_OUT" 2>&1; then
+	pass "curl-pipe fallback stages manager source from configured URL"
+else
+	fail "curl-pipe fallback stages manager source from configured URL"
+fi
+if [ -f "${LIB_DIR}/beszel-ios/manager.sh" ] && [ -f "${BIN_DIR}/beszel-ios" ]; then
+	pass "configured source produces a complete manager and wrapper"
+else
+	fail "configured source produces a complete manager and wrapper"
+fi
+
+FAIL_ROOT="${SANDBOX}/cli-install-failure"
+BIN_DIR="${FAIL_ROOT}/usr/local/bin"
+LIB_DIR="${FAIL_ROOT}/var/lib"
+mkdir -p "$BIN_DIR" "$LIB_DIR"
+export BESZEL_BIN_DIR="$BIN_DIR"
+export BESZEL_LIB_DIR="$LIB_DIR"
+BESZEL_TEST_MV_FAIL=1
+if install_persistent_manager "$SCRIPT" > "$CLI_OUT" 2>&1; then
+	fail "manager installation failure is reported"
+else
+	pass "manager installation failure is reported"
+fi
+BESZEL_TEST_MV_FAIL=0
+if [ ! -e "${BIN_DIR}/beszel-ios" ] && [ ! -e "${LIB_DIR}/beszel-ios/manager.sh" ]; then
+	pass "failed manager installation leaves no partial CLI"
+else
+	fail "failed manager installation leaves no partial CLI"
+fi
+
+check_root() { :; }
+check_device() { :; }
+check_layout() { :; }
+check_launchctl() { :; }
+setup_work_dir() { :; }
+print_menu() { printf 'MENU_DISPATCH_MARKER\n'; }
+ask_tty() {
+	case "$2" in
+		CHOICE) CHOICE="7" ;;
+		*) return 1 ;;
+	esac
+}
+if ( main ) 2>&1 | grep -q 'MENU_DISPATCH_MARKER'; then
+	pass "no-argument invocation dispatches to the interactive menu"
+else
+	fail "no-argument invocation dispatches to the interactive menu"
+fi
+if ( main menu ) 2>&1 | grep -q 'MENU_DISPATCH_MARKER'; then
+	pass "menu command dispatches to the interactive menu"
+else
+	fail "menu command dispatches to the interactive menu"
 fi
 
 printf '\n%d passed, %d failed\n' "$_pass" "$_fail"

@@ -47,7 +47,15 @@ That's it — one command, no cloning or extra downloads. Then:
 2. Follow the prompts (for the Agent you'll need your Hub's public key; for the Hub you'll pick a port).
 3. If you installed a Hub, open its web address to create your account. If you installed an Agent, add it to your Hub as usual.
 
-To do anything later — update, check status, fix, reconfigure, or uninstall — just run the same command again and pick the option you want.
+After installation, you can open the menu or inspect the local manager and component versions with:
+
+```sh
+sudo beszel-ios
+beszel-ios help
+beszel-ios version
+```
+
+The curl installer remains available if you need to install or recover the manager again.
 
 ## Prerequisites
 

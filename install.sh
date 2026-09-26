@@ -1,9 +1,10 @@
 #!/bin/sh
+# BESZEL_IOS_MANAGER_SOURCE_V1
 # Beszel iOS Installer — unofficial community port of Beszel for jailbroken iOS.
 #
 # Primary invocation (no clone, no Go toolchain, no manual downloads needed):
 #
-#   curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh | sudo sh
+#   curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/install.sh | sudo sh
 #
 # POSIX /bin/sh only: no bashisms, no zsh-isms. Interactive input is read
 # from /dev/tty so the menu works when stdin is a curl pipe.
@@ -36,6 +37,7 @@ umask 022
 
 INSTALLER_VERSION="1.0.0"
 USER_AGENT="beszel-ios-installer/${INSTALLER_VERSION}"
+MANAGER_SOURCE_URL="${BESZEL_MANAGER_SOURCE_URL:-https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/install.sh}"
 
 RELEASE_LATEST_PAGE="https://github.com/nghianguyen150612/beszel-ios/releases/latest"
 RELEASE_DOWNLOAD_ROOT="https://github.com/nghianguyen150612/beszel-ios/releases/download"
@@ -62,6 +64,8 @@ HUB_LABEL="dev.beszel.hub"
 # records which RELEASE was installed, never the signed binary hash.
 STATE_SUBDIR="beszel-ios"
 STATE_FILE_NAME="install-state"
+MANAGER_FILE_NAME="manager.sh"
+COMMAND_NAME="beszel-ios"
 STATE_VERSION="1"
 
 # Pinned immutable release for the current run. Resolved once from the Latest
@@ -615,6 +619,235 @@ release_is_current() {
 	[ -n "$_ri_cur" ] && [ "$_ri_cur" = "$_ri_tag" ]
 }
 
+# ------------------------------------------------ persistent CLI manager ---
+
+# path_owner_uid <path> — use the platform's stat spelling. Existing managed
+# copies may be replaced or removed only by their owner and only when they
+# have the expected regular-file shape and marker.
+path_owner_uid() {
+	_pou_path="$1"
+	case "$(uname -s)" in
+		Darwin) stat -f '%u' "$_pou_path" 2> /dev/null ;;
+		*) stat -c '%u' "$_pou_path" 2> /dev/null ;;
+	esac
+}
+
+manager_file_is_managed() {
+	_mfim_path="$1"
+	[ -f "$_mfim_path" ] && [ ! -L "$_mfim_path" ] || return 1
+	_mfim_owner=""
+	_mfim_owner=$(path_owner_uid "$_mfim_path") || return 1
+	[ "$_mfim_owner" = "$(id -u)" ] || return 1
+	grep -Fqx '# BESZEL_IOS_MANAGER_SOURCE_V1' "$_mfim_path" 2> /dev/null
+}
+
+command_wrapper_is_managed() {
+	_cwim_path="$1"
+	[ -f "$_cwim_path" ] && [ ! -L "$_cwim_path" ] || return 1
+	_cwim_owner=""
+	_cwim_owner=$(path_owner_uid "$_cwim_path") || return 1
+	[ "$_cwim_owner" = "$(id -u)" ] || return 1
+	[ "$(sed -n '1p' "$_cwim_path" 2> /dev/null)" = '#!/bin/sh' ] || return 1
+	[ "$(sed -n '2p' "$_cwim_path" 2> /dev/null)" = '# BESZEL_IOS_MANAGED_COMMAND_WRAPPER_V1' ] || return 1
+	[ "$(sed -n '3p' "$_cwim_path" 2> /dev/null)" = '_beszel_lib_dir=${BESZEL_LIB_DIR:-/var/lib}' ] || return 1
+	[ "$(sed -n '4p' "$_cwim_path" 2> /dev/null)" = 'exec /bin/sh "$_beszel_lib_dir/beszel-ios/manager.sh" "$@"' ] || return 1
+	[ "$(wc -l < "$_cwim_path" | tr -d '[:space:]')" = "4" ]
+}
+
+write_command_wrapper() {
+	_wcw_path="$1"
+	cat > "$_wcw_path" << 'EOF'
+#!/bin/sh
+# BESZEL_IOS_MANAGED_COMMAND_WRAPPER_V1
+_beszel_lib_dir=${BESZEL_LIB_DIR:-/var/lib}
+exec /bin/sh "$_beszel_lib_dir/beszel-ios/manager.sh" "$@"
+EOF
+}
+
+# stage_manager_source <destination> [source-file]
+# Direct/script-file invocations can copy their exact running version. The
+# curl | sudo sh bootstrap has no local script path, so only a successful
+# application install/update fetches the canonical manager source.
+stage_manager_source() {
+	_sms_dest="$1"
+	_sms_explicit="${2:-}"
+	_sms_candidate=""
+	if [ -n "$_sms_explicit" ]; then
+		_sms_candidate="$_sms_explicit"
+	elif [ -n "${BESZEL_MANAGER_SOURCE_PATH:-}" ]; then
+		_sms_candidate="$BESZEL_MANAGER_SOURCE_PATH"
+	else
+		case "$0" in
+			install.sh | */install.sh | manager.sh | */manager.sh) _sms_candidate="$0" ;;
+		esac
+	fi
+	if [ -n "$_sms_candidate" ]; then
+		[ -f "$_sms_candidate" ] && [ ! -L "$_sms_candidate" ] || return 1
+		cp "$_sms_candidate" "$_sms_dest" || return 1
+	else
+		command -v curl > /dev/null 2>&1 || return 1
+		curl -fsSL -A "$USER_AGENT" "$MANAGER_SOURCE_URL" -o "$_sms_dest" || return 1
+	fi
+	[ -s "$_sms_dest" ] || return 1
+	grep -Fqx '# BESZEL_IOS_MANAGER_SOURCE_V1' "$_sms_dest" || return 1
+	grep -q '^INSTALLER_VERSION="[^"]*"$' "$_sms_dest" || return 1
+	sh -n "$_sms_dest" > /dev/null 2>&1 || return 1
+	return 0
+}
+
+# install_persistent_manager [source-file] — atomically stages the canonical
+# manager and installs the exact managed wrapper. Unknown occupied paths,
+# symlinks, non-regular files, and copies owned by someone else are refused.
+install_persistent_manager() {
+	_ipm_dir="${LIB_DIR}/${STATE_SUBDIR}"
+	_ipm_manager="${_ipm_dir}/${MANAGER_FILE_NAME}"
+	_ipm_command="${BIN_DIR}/${COMMAND_NAME}"
+	_ipm_manager_tmp="${_ipm_manager}.new.$$"
+	_ipm_command_tmp="${_ipm_command}.new.$$"
+	_ipm_command_was_present=0
+	if [ ! -d "$BIN_DIR" ] || [ -L "$BIN_DIR" ]; then
+		say_err "Refusing unsafe command directory: ${BIN_DIR}."
+		return 1
+	fi
+	if [ ! -d "$LIB_DIR" ] || [ -L "$LIB_DIR" ]; then
+		say_err "Refusing unsafe library directory: ${LIB_DIR}."
+		return 1
+	fi
+
+	if [ -e "$_ipm_command" ] || [ -L "$_ipm_command" ]; then
+		command_wrapper_is_managed "$_ipm_command" || {
+			say_err "Refusing to replace unrecognized command path: ${_ipm_command}."
+			return 1
+		}
+		_ipm_command_was_present=1
+	fi
+	if [ -L "$_ipm_dir" ] || { [ -e "$_ipm_dir" ] && [ ! -d "$_ipm_dir" ]; }; then
+		say_err "Refusing unsafe manager state path: ${_ipm_dir}."
+		return 1
+	fi
+	if [ -e "$_ipm_manager" ] || [ -L "$_ipm_manager" ]; then
+		manager_file_is_managed "$_ipm_manager" || {
+			say_err "Refusing to replace unrecognized manager path: ${_ipm_manager}."
+			return 1
+		}
+	fi
+	if [ -e "$_ipm_manager_tmp" ] || [ -L "$_ipm_manager_tmp" ] || [ -e "$_ipm_command_tmp" ] || [ -L "$_ipm_command_tmp" ]; then
+		say_err "Refusing to reuse an existing manager staging path."
+		return 1
+	fi
+
+	mkdir -p "$_ipm_dir" || return 1
+	[ ! -L "$_ipm_dir" ] && [ -d "$_ipm_dir" ] || return 1
+	if ! stage_manager_source "$_ipm_manager_tmp" "${1:-}"; then
+		rm -f "$_ipm_manager_tmp"
+		say_err "Could not stage a valid Beszel-iOS manager file."
+		return 1
+	fi
+	write_command_wrapper "$_ipm_command_tmp" || {
+		rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+		return 1
+	}
+	chmod 755 "$_ipm_manager_tmp" "$_ipm_command_tmp" || {
+		rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+		return 1
+	}
+	fix_path_owner "$_ipm_manager_tmp" || {
+		rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+		return 1
+	}
+	fix_path_owner "$_ipm_command_tmp" || {
+		rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+		return 1
+	}
+	chmod 755 "$_ipm_dir" || {
+		rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+		return 1
+	}
+
+	# Recheck immediately before replacement to avoid clobbering a path that
+	# became occupied while staging.
+	if [ -e "$_ipm_manager" ] || [ -L "$_ipm_manager" ]; then
+		manager_file_is_managed "$_ipm_manager" || {
+			rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+			say_err "Manager path changed while staging; refusing replacement."
+			return 1
+		}
+	fi
+	if [ -e "$_ipm_command" ] || [ -L "$_ipm_command" ]; then
+		command_wrapper_is_managed "$_ipm_command" || {
+			rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+			say_err "Command path changed while staging; refusing replacement."
+			return 1
+		}
+	fi
+	if [ "$_ipm_command_was_present" = "1" ]; then
+		chmod 755 "$_ipm_command" || {
+			rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+			return 1
+		}
+	fi
+	if ! mv -f "$_ipm_manager_tmp" "$_ipm_manager"; then
+		rm -f "$_ipm_manager_tmp" "$_ipm_command_tmp"
+		return 1
+	fi
+	if [ "$_ipm_command_was_present" = "0" ]; then
+		if [ -e "$_ipm_command" ] || [ -L "$_ipm_command" ]; then
+			if ! command_wrapper_is_managed "$_ipm_command"; then
+				rm -f "$_ipm_command_tmp"
+				if manager_file_is_managed "$_ipm_manager"; then rm -f "$_ipm_manager"; fi
+				say_err "Command path became occupied; refusing to replace it."
+				return 1
+			fi
+		else
+			if ! mv -f "$_ipm_command_tmp" "$_ipm_command"; then
+				rm -f "$_ipm_command_tmp"
+				if manager_file_is_managed "$_ipm_manager"; then rm -f "$_ipm_manager"; fi
+				say_err "Could not install the Beszel-iOS command wrapper."
+				return 1
+			fi
+		fi
+	else
+		rm -f "$_ipm_command_tmp"
+	fi
+	return 0
+}
+
+# remove_persistent_manager — delete only owner-verified managed files and
+# leave unrelated state-directory contents (including retained user data)
+# untouched. Called only after both application components are absent.
+remove_persistent_manager() {
+	_rpm_dir="${LIB_DIR}/${STATE_SUBDIR}"
+	_rpm_manager="${_rpm_dir}/${MANAGER_FILE_NAME}"
+	_rpm_command="${BIN_DIR}/${COMMAND_NAME}"
+	if [ -e "$_rpm_command" ] || [ -L "$_rpm_command" ]; then
+		if command_wrapper_is_managed "$_rpm_command"; then
+			rm -f "$_rpm_command" || return 1
+		fi
+	fi
+	if [ -e "$_rpm_manager" ] || [ -L "$_rpm_manager" ]; then
+		if manager_file_is_managed "$_rpm_manager"; then
+			rm -f "$_rpm_manager" || return 1
+		fi
+	fi
+	rmdir "$_rpm_dir" 2> /dev/null || true
+	return 0
+}
+
+cleanup_persistent_manager_if_unused() {
+	if [ "$(component_state agent)" = "ABSENT" ] && [ "$(component_state hub)" = "ABSENT" ]; then
+		remove_persistent_manager
+	fi
+}
+
+persist_manager_after_success() {
+	if install_persistent_manager; then
+		say_ok "Persistent command installed/refreshed: ${BIN_DIR}/${COMMAND_NAME}."
+		return 0
+	fi
+	say_warn "Application files are in place, but the persistent beszel-ios command could not be installed or refreshed."
+	return 0
+}
+
 # ------------------------------------------------------------- environment ---
 
 check_root() {
@@ -623,7 +856,7 @@ check_root() {
 [ERROR] This installer must run as root (it writes /usr/local/bin,
 [ERROR] /var/lib and /Library/LaunchDaemons). Run:
 
-  curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/beszel-ios/ios/install.sh | sudo sh
+  curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/install.sh | sudo sh
 EOF
 		exit 1
 	fi
@@ -1974,6 +2207,7 @@ flow_agent() {
 		_agent_was_fresh=1
 	fi
 	do_install_agent
+	persist_manager_after_success
 	print_summary "agent"
 	if [ "$_agent_was_fresh" = "1" ]; then
 		say_info "Next: in the Hub UI, add this system using Host/IP 127.0.0.1 (same device) and Port: ${AGENT_PORT}."
@@ -1986,6 +2220,7 @@ flow_hub() {
 	ensure_pinned_release || exit 1
 	fetch_sums || exit 1
 	if do_install_hub; then
+		persist_manager_after_success
 		print_summary "hub"
 		say_info "Next: open the Hub UI in a browser, create your account, and copy the Hub public key (needed for Agent installs)."
 	else
@@ -2006,6 +2241,7 @@ flow_both() {
 		print_summary "agent+hub (hub health check failed)"
 		exit 1
 	fi
+	persist_manager_after_success
 	if [ "$_hub_was_fresh" = "1" ]; then
 		say_info "Hub is new: open the Hub UI in a browser and create your account if needed."
 	fi
@@ -2080,6 +2316,7 @@ update_agent_flow() {
 	esac
 	if release_is_current "agent" "$_ua_tag"; then
 		say_info "Agent is already on ${_ua_tag}; nothing to do."
+		persist_manager_after_success
 		return 0
 	fi
 	say_info "Current Agent: $(current_release_label agent)"
@@ -2097,6 +2334,7 @@ update_agent_flow() {
 	fi
 	fetch_sums || return 1
 	if transact_agent_update "$_ua_tag"; then
+		persist_manager_after_success
 		print_summary "agent update"
 		return 0
 	fi
@@ -2120,6 +2358,7 @@ update_hub_flow() {
 	esac
 	if release_is_current "hub" "$_uh_tag"; then
 		say_info "Hub is already on ${_uh_tag}; nothing to do."
+		persist_manager_after_success
 		return 0
 	fi
 	say_info "Current Hub: $(current_release_label hub)"
@@ -2137,6 +2376,7 @@ update_hub_flow() {
 	fi
 	fetch_sums || return 1
 	if transact_hub_update "$_uh_tag"; then
+		persist_manager_after_success
 		print_summary "hub update"
 		return 0
 	fi
@@ -2171,6 +2411,7 @@ update_both_flow() {
 	if [ "$_ub_hub_needs" = "0" ] && [ "$_ub_agent_needs" = "0" ]; then
 		say_info "Hub is already on ${_ub_tag}; nothing to do."
 		say_info "Agent is already on ${_ub_tag}; nothing to do."
+		persist_manager_after_success
 		return 0
 	fi
 	say_info "Current Hub:   $(current_release_label hub)"
@@ -2197,6 +2438,7 @@ update_both_flow() {
 	else
 		say_info "Agent is already on ${_ub_tag}; skipping Agent."
 	fi
+	persist_manager_after_success
 	print_summary "agent+hub update"
 	return 0
 }
@@ -2968,8 +3210,14 @@ transact_uninstall() {
 			fi
 		done
 		if [ "$_tu_final_rc" = "0" ]; then
+			if ! cleanup_persistent_manager_if_unused; then
+				say_warn "Application artifacts were removed, but the managed CLI could not be fully cleaned up."
+			fi
 			say_ok "Application artifacts removed."
 			return 0
+		fi
+		if ! cleanup_persistent_manager_if_unused; then
+			say_warn "Application artifacts were removed, but the managed CLI could not be fully cleaned up."
 		fi
 		say_warn "Application uninstalled, but some artifacts could not be removed:${_tu_leftovers}"
 		return 1
@@ -3612,7 +3860,7 @@ EOF
 	fi
 }
 
-main() {
+run_interactive_menu() {
 	say_info "Beszel iOS Installer v${INSTALLER_VERSION} — unofficial community port of Beszel."
 	check_root
 	check_device
@@ -3660,6 +3908,116 @@ main() {
 				;;
 		esac
 	done
+}
+
+print_cli_help() {
+	cat << 'EOF'
+Usage: beszel-ios [command] [component] [options]
+
+Commands:
+  menu         Open the interactive installer menu (available)
+  install      Reserved; handler is deferred to a later CLI task
+  update       Reserved; handler is deferred to a later CLI task
+  status       Reserved; handler is deferred to a later CLI task
+  diagnostics  Reserved; handler is deferred to a later CLI task
+  repair       Reserved; handler is deferred to a later CLI task
+  reconfigure  Reserved; handler is deferred to a later CLI task
+  uninstall    Reserved; handler is deferred to a later CLI task
+  service      Reserved; handler is deferred to a later CLI task
+  doctor       Reserved; handler is deferred to a later CLI task
+  version      Show manager and installed component releases
+  help         Show this help
+
+Components:
+  agent
+  hub
+  both
+
+Available CLI commands in this manager version: menu, version, help.
+Aliases: --help (help) and --version (version).
+The remaining command names are reserved for a later CLI implementation.
+EOF
+}
+
+print_component_version() {
+	_pcv_name="$1"
+	_pcv_comp="$2"
+	_pcv_state=$(component_state "$_pcv_comp") || _pcv_state="ABSENT"
+	if [ "$_pcv_state" = "ABSENT" ]; then
+		printf '%s: not installed\n' "$_pcv_name"
+		return 0
+	fi
+	_pcv_release=""
+	case "$_pcv_comp" in
+		agent) _pcv_release=$(state_agent_release 2> /dev/null || true) ;;
+		hub) _pcv_release=$(state_hub_release 2> /dev/null || true) ;;
+	esac
+	if [ -n "$_pcv_release" ]; then
+		_pcv_release_text="release: ${_pcv_release}"
+	else
+		_pcv_release_text="release unknown (legacy or missing state)"
+	fi
+	if [ "$_pcv_state" = "COMPLETE" ]; then
+		printf '%s: installed (%s)\n' "$_pcv_name" "$_pcv_release_text"
+	else
+		printf '%s: installed, incomplete (%s)\n' "$_pcv_name" "$_pcv_release_text"
+	fi
+	return 0
+}
+
+print_cli_version() {
+	printf 'Beszel-iOS manager version: %s\n' "$INSTALLER_VERSION"
+	print_component_version "Agent" "agent"
+	print_component_version "Hub" "hub"
+}
+
+cli_usage_error() {
+	_cli_error="${1:-Invalid command arguments.}"
+	say_err "$_cli_error"
+	say_err "Usage: beszel-ios [command] [component] [options]"
+	say_err "Run 'beszel-ios help' for the supported syntax."
+	exit 2
+}
+
+main() {
+	if [ "$#" = "0" ]; then
+		run_interactive_menu
+		return $?
+	fi
+	_cli_command="$1"
+	case "$_cli_command" in
+		help | --help)
+			[ "$#" = "1" ] || cli_usage_error "Help does not accept extra arguments."
+			print_cli_help
+			return 0
+			;;
+		version | --version)
+			[ "$#" = "1" ] || cli_usage_error "Version does not accept extra arguments."
+			print_cli_version
+			return 0
+			;;
+		menu)
+			[ "$#" = "1" ] || cli_usage_error "Menu does not accept extra arguments."
+			run_interactive_menu
+			return $?
+			;;
+		install | update | status | diagnostics | repair | reconfigure | uninstall)
+			[ "$#" -ge "2" ] || cli_usage_error "Command '${_cli_command}' requires a component."
+			[ "$#" -le "2" ] || cli_usage_error "Too many arguments for '${_cli_command}'."
+			case "$2" in
+				agent | hub | both) ;;
+				*) cli_usage_error "Unknown component '${2}'." ;;
+			esac
+			cli_usage_error "The '${_cli_command} ${2}' CLI handler is not implemented yet; use 'beszel-ios' for the interactive menu."
+			;;
+		service | doctor)
+			[ "$#" = "1" ] || cli_usage_error "Command '${_cli_command}' does not accept arguments in this manager version."
+			cli_usage_error "The '${_cli_command}' CLI handler is not implemented yet."
+			;;
+		*)
+			cli_usage_error "Unknown command '${_cli_command}'."
+			;;
+	esac
 }
 
 if [ "${BESZEL_INSTALL_LIB_ONLY:-0}" != "1" ]; then
