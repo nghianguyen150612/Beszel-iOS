@@ -3349,8 +3349,16 @@ offer_hub_data_purge() {
 # uninstall_agent_flow — plan, confirm (default NO), transactional app
 # removal with data preserved, then the optional separate data decision.
 uninstall_agent_flow() {
+	_uaf_mode="${1:-menu}"
+	case "$_uaf_mode" in
+		menu | cli-keep-data | cli-purge-data) ;;
+		*) say_err "Invalid internal Agent uninstall mode."; return 2 ;;
+	esac
 	if [ "$(component_state agent)" = "ABSENT" ]; then
 		say_info "Agent application is not installed."
+		if [ "$_uaf_mode" = "cli-keep-data" ]; then
+			return 0
+		fi
 		if offer_agent_data_purge; then
 			return 0
 		fi
@@ -3378,6 +3386,9 @@ uninstall_agent_flow() {
 	if [ -e "${LIB_DIR}/beszel-agent" ]; then
 		say_info "Agent data preserved at ${LIB_DIR}/beszel-agent."
 	fi
+	if [ "$_uaf_mode" = "cli-keep-data" ]; then
+		return 0
+	fi
 	if offer_agent_data_purge; then
 		return 0
 	fi
@@ -3387,8 +3398,16 @@ uninstall_agent_flow() {
 # uninstall_hub_flow — Hub mirror. The database is preserved by default;
 # purging it needs the exact typed phrase afterwards.
 uninstall_hub_flow() {
+	_uhf_mode="${1:-menu}"
+	case "$_uhf_mode" in
+		menu | cli-keep-data | cli-purge-data) ;;
+		*) say_err "Invalid internal Hub uninstall mode."; return 2 ;;
+	esac
 	if [ "$(component_state hub)" = "ABSENT" ]; then
 		say_info "Hub application is not installed."
+		if [ "$_uhf_mode" = "cli-keep-data" ]; then
+			return 0
+		fi
 		if offer_hub_data_purge; then
 			return 0
 		fi
@@ -3416,6 +3435,9 @@ uninstall_hub_flow() {
 	if [ -e "${LIB_DIR}/beszel-hub" ]; then
 		say_info "Hub data preserved at ${LIB_DIR}/beszel-hub."
 	fi
+	if [ "$_uhf_mode" = "cli-keep-data" ]; then
+		return 0
+	fi
 	if offer_hub_data_purge; then
 		return 0
 	fi
@@ -3426,6 +3448,11 @@ uninstall_hub_flow() {
 # gone), then Hub. Independent transactions, one combined confirmation, then
 # separate data decisions per component.
 uninstall_both_flow() {
+	_ubf_mode="${1:-menu}"
+	case "$_ubf_mode" in
+		menu | cli-keep-data | cli-purge-data) ;;
+		*) say_err "Invalid internal Agent + Hub uninstall mode."; return 2 ;;
+	esac
 	if [ "$(component_state agent)" = "ABSENT" ] || [ "$(component_state hub)" = "ABSENT" ]; then
 		say_err "Agent + Hub uninstall needs both applications installed."
 		return 1
@@ -3456,6 +3483,22 @@ uninstall_both_flow() {
 	fi
 	if [ -e "${LIB_DIR}/beszel-hub" ]; then
 		say_info "Hub data preserved at ${LIB_DIR}/beszel-hub."
+	fi
+	if [ "$_ubf_mode" = "cli-keep-data" ]; then
+		return 0
+	fi
+	if [ "$_ubf_mode" = "cli-purge-data" ]; then
+		# Protect the database, accounts and history first with the dedicated
+		# Hub confirmation before offering the independent Agent purge.
+		if offer_hub_data_purge; then
+			:
+		else
+			return 1
+		fi
+		if offer_agent_data_purge; then
+			return 0
+		fi
+		return 1
 	fi
 	if offer_agent_data_purge; then
 		:
@@ -3915,27 +3958,31 @@ print_cli_help() {
 Usage: beszel-ios [command] [component] [options]
 
 Commands:
-  menu         Open the interactive installer menu (available)
-  install      Reserved; handler is deferred to a later CLI task
-  update       Reserved; handler is deferred to a later CLI task
-  status       Reserved; handler is deferred to a later CLI task
-  diagnostics  Reserved; handler is deferred to a later CLI task
-  repair       Reserved; handler is deferred to a later CLI task
-  reconfigure  Reserved; handler is deferred to a later CLI task
-  uninstall    Reserved; handler is deferred to a later CLI task
-  service      Reserved; handler is deferred to a later CLI task
-  doctor       Reserved; handler is deferred to a later CLI task
-  version      Show manager and installed component releases
-  help         Show this help
+  menu                         Open the interactive installer menu
+  install <agent|hub|both>     Install selected components
+  update <agent|hub|both>      Safely update selected components
+  status [agent|hub|both]      Show read-only status (default: both)
+  diagnostics [agent|hub|both] Run read-only diagnostics (default: both)
+  repair <agent|hub|both>      Conservatively repair selected components
+  reconfigure <agent|hub>      Reconfigure one component
+  uninstall <agent|hub|both>   Remove application files and preserve data
+  uninstall <component> --purge
+                               Also request the separately confirmed data purge
+  version                      Show manager and installed component releases
+  help                         Show this help
+
+Aliases:
+  --help                       Same as help
+  --version                    Same as version
 
 Components:
   agent
   hub
   both
 
-Available CLI commands in this manager version: menu, version, help.
-Aliases: --help (help) and --version (version).
-The remaining command names are reserved for a later CLI implementation.
+Deferred to CLI-003:
+  service ...
+  doctor ...
 EOF
 }
 
@@ -3971,6 +4018,274 @@ print_cli_version() {
 	print_component_version "Hub" "hub"
 }
 
+# cli_prepare_mutation <full|local> — apply the same environment and root
+# gates used by the interactive menu. Local uninstall needs no download tools.
+cli_prepare_mutation() {
+	_cpm_mode="$1"
+	check_root
+	check_device
+	check_layout
+	check_launchctl
+	if [ "$_cpm_mode" = "full" ]; then
+		setup_work_dir
+		check_deps
+	fi
+	return 0
+}
+
+cli_require_update_component() {
+	_cru_component="$1"
+	case "$(component_status "$_cru_component")" in
+		complete) return 0 ;;
+		incomplete)
+			say_err "${_cru_component} installation is incomplete; repair it before updating."
+			return 1
+			;;
+		missing)
+			say_err "Beszel ${_cru_component} is not installed."
+			return 1
+			;;
+	esac
+	return 1
+}
+
+cli_install() {
+	cli_prepare_mutation full
+	case "$1" in
+		agent) flow_agent ;;
+		hub) flow_hub ;;
+		both) flow_both ;;
+		*) return 2 ;;
+	esac
+}
+
+cli_update() {
+	cli_prepare_mutation full
+	case "$1" in
+		agent) cli_require_update_component agent || return 1 ;;
+		hub) cli_require_update_component hub || return 1 ;;
+		both)
+			cli_require_update_component hub || return 1
+			cli_require_update_component agent || return 1
+			;;
+		*) return 2 ;;
+	esac
+	ensure_pinned_release
+	case "$1" in
+		agent) update_agent_flow "$LATEST_TAG" ;;
+		hub) update_hub_flow "$LATEST_TAG" ;;
+		both) update_both_flow "$LATEST_TAG" ;;
+		*) return 2 ;;
+	esac
+}
+
+# cli_status_service <launchd-label> maps the existing read-only service
+# diagnostic helper to concise status fields. Raw launchctl output is never
+# printed.
+cli_status_service() {
+	_css_label="$1"
+	CLI_STATUS_LAUNCHD="unknown"
+	CLI_STATUS_PROCESS="unknown"
+	CLI_STATUS_PID="unknown"
+	_css_service_line=$(diag_service_line "$_css_label")
+	case "$_css_service_line" in
+		"loaded, PID "*)
+			_css_pid=${_css_service_line#loaded, PID }
+			case "$_css_pid" in
+				'' | *[!0-9]*) return 0 ;;
+			esac
+			if [ "$_css_pid" -le 0 ]; then return 0; fi
+			CLI_STATUS_LAUNCHD="loaded"
+			CLI_STATUS_PROCESS="running"
+			CLI_STATUS_PID="$_css_pid"
+			;;
+		"loaded, not running")
+			CLI_STATUS_LAUNCHD="loaded"
+			CLI_STATUS_PROCESS="stopped"
+			CLI_STATUS_PID="none"
+			;;
+		"not loaded")
+			CLI_STATUS_LAUNCHD="unloaded"
+			CLI_STATUS_PROCESS="stopped"
+			CLI_STATUS_PID="none"
+			;;
+	esac
+	return 0
+}
+
+cli_status_path_state() {
+	_cps_path="$1"
+	if [ -L "$_cps_path" ] || { [ -e "$_cps_path" ] && [ ! -f "$_cps_path" ]; }; then
+		printf 'untrusted'
+	elif [ -f "$_cps_path" ]; then
+		printf 'present'
+	else
+		printf 'missing'
+	fi
+	return 0
+}
+
+cli_status_component() {
+	_csc_component="$1"
+	_csc_name=""
+	_csc_bin=""
+	_csc_plist=""
+	_csc_label=""
+	case "$_csc_component" in
+		agent)
+			_csc_name="Agent"
+			_csc_bin="${BIN_DIR}/${AGENT_BIN}"
+			_csc_plist="${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+			_csc_label="$AGENT_LABEL"
+			;;
+		hub)
+			_csc_name="Hub"
+			_csc_bin="${BIN_DIR}/${HUB_BIN}"
+			_csc_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+			_csc_label="$HUB_LABEL"
+			;;
+		*) return 2 ;;
+	esac
+	_csc_bin_state=$(cli_status_path_state "$_csc_bin")
+	if [ -L "$_csc_plist" ] || { [ -e "$_csc_plist" ] && [ ! -f "$_csc_plist" ]; }; then
+		_csc_plist_state="untrusted"
+	elif [ ! -f "$_csc_plist" ]; then
+		_csc_plist_state="missing"
+	elif plist_valid "$_csc_plist"; then
+		_csc_plist_state="valid"
+	else
+		_csc_plist_state="invalid"
+	fi
+	printf '%s\n' "$_csc_name"
+	if [ "$_csc_bin_state" = "missing" ] && [ "$_csc_plist_state" = "missing" ]; then
+		printf '  Installed: no\n'
+		return 0
+	fi
+	printf '  Installed: yes\n'
+	_csc_release=""
+	case "$_csc_component" in
+		agent) _csc_release=$(state_agent_release 2> /dev/null || true) ;;
+		hub) _csc_release=$(state_hub_release 2> /dev/null || true) ;;
+	esac
+	if [ -n "$_csc_release" ]; then
+		printf '  Release: %s\n' "$_csc_release"
+	else
+		printf '  Release: unknown (legacy or missing state)\n'
+	fi
+	printf '  Binary: %s\n' "$_csc_bin_state"
+	printf '  Plist: %s\n' "$_csc_plist_state"
+	cli_status_service "$_csc_label"
+	printf '  LaunchDaemon: %s\n' "$CLI_STATUS_LAUNCHD"
+	printf '  Process: %s\n' "$CLI_STATUS_PROCESS"
+	printf '  PID: %s\n' "$CLI_STATUS_PID"
+	if [ "$_csc_plist_state" = "valid" ]; then
+		case "$_csc_component" in
+			agent)
+				_csc_port=$(agent_port_from_plist "$_csc_plist" 2> /dev/null || true)
+				if [ -n "$_csc_port" ]; then printf '  Port: %s\n' "$_csc_port"; else printf '  Port: unknown\n'; fi
+				if agent_key_from_plist "$_csc_plist" > /dev/null 2>&1; then
+					printf '  Key: configured\n'
+				else
+					printf '  Key: missing\n'
+				fi
+				;;
+			hub)
+				_csc_port=$(hub_port_from_plist "$_csc_plist" 2> /dev/null || true)
+				if [ -n "$_csc_port" ]; then printf '  Port: %s\n' "$_csc_port"; else printf '  Port: unknown\n'; fi
+				if [ -n "$_csc_port" ] && command -v curl > /dev/null 2>&1; then
+					if curl -fsS --max-time 3 "http://127.0.0.1:${_csc_port}/api/health" > /dev/null 2>&1; then
+						printf '  Health: reachable\n'
+					else
+						printf '  Health: unreachable\n'
+					fi
+				else
+					printf '  Health: unknown\n'
+				fi
+				;;
+		esac
+	else
+		if [ "$_csc_component" = "agent" ]; then printf '  Port: unknown\n  Key: missing\n'; fi
+		if [ "$_csc_component" = "hub" ]; then printf '  Port: unknown\n  Health: unknown\n'; fi
+	fi
+	return 0
+}
+
+cli_status() {
+	case "$1" in
+		agent) cli_status_component agent ;;
+		hub) cli_status_component hub ;;
+		both)
+			cli_status_component agent
+			cli_status_component hub
+			;;
+		*) return 2 ;;
+	esac
+}
+
+cli_diagnostics() {
+	case "$1" in
+		agent) diagnose_agent ;;
+		hub) diagnose_hub ;;
+		both)
+			diagnose_agent
+			diagnose_hub
+			;;
+		*) return 2 ;;
+	esac
+}
+
+cli_repair_both() {
+	_cli_repair_rc=0
+	if ( repair_hub_flow ); then
+		printf 'Hub repair: PASS\n'
+	else
+		printf 'Hub repair: FAIL\n'
+		_cli_repair_rc=1
+	fi
+	if ( repair_agent_flow ); then
+		printf 'Agent repair: PASS\n'
+	else
+		printf 'Agent repair: FAIL\n'
+		_cli_repair_rc=1
+	fi
+	return "$_cli_repair_rc"
+}
+
+cli_repair() {
+	cli_prepare_mutation full
+	case "$1" in
+		agent) repair_agent_flow ;;
+		hub) repair_hub_flow ;;
+		both) cli_repair_both ;;
+		*) return 2 ;;
+	esac
+}
+
+cli_reconfigure() {
+	cli_prepare_mutation full
+	case "$1" in
+		agent) reconfigure_agent_flow ;;
+		hub) reconfigure_hub_flow ;;
+		*) return 2 ;;
+	esac
+}
+
+cli_uninstall() {
+	_cli_uninstall_component="$1"
+	_cli_uninstall_purge="$2"
+	cli_prepare_mutation local
+	_cli_uninstall_mode="cli-keep-data"
+	if [ "$_cli_uninstall_purge" = "1" ]; then
+		_cli_uninstall_mode="cli-purge-data"
+	fi
+	case "$_cli_uninstall_component" in
+		agent) uninstall_agent_flow "$_cli_uninstall_mode" ;;
+		hub) uninstall_hub_flow "$_cli_uninstall_mode" ;;
+		both) uninstall_both_flow "$_cli_uninstall_mode" ;;
+		*) return 2 ;;
+	esac
+}
+
 cli_usage_error() {
 	_cli_error="${1:-Invalid command arguments.}"
 	say_err "$_cli_error"
@@ -4001,21 +4316,58 @@ main() {
 			run_interactive_menu
 			return $?
 			;;
-		install | update | status | diagnostics | repair | reconfigure | uninstall)
+		install | update)
 			[ "$#" -ge "2" ] || cli_usage_error "Command '${_cli_command}' requires a component."
-			[ "$#" -le "2" ] || cli_usage_error "Too many arguments for '${_cli_command}'."
-			case "$2" in
-				agent | hub | both) ;;
-				*) cli_usage_error "Unknown component '${2}'." ;;
+			[ "$#" = "2" ] || cli_usage_error "Too many arguments for '${_cli_command}'."
+			case "$2" in agent | hub | both) ;; *) cli_usage_error "Unknown component; use agent, hub, or both." ;; esac
+			case "$_cli_command" in
+				install) cli_install "$2" ;;
+				update) cli_update "$2" ;;
 			esac
-			cli_usage_error "The '${_cli_command} ${2}' CLI handler is not implemented yet; use 'beszel-ios' for the interactive menu."
+			;;
+		status | diagnostics)
+			[ "$#" -le "2" ] || cli_usage_error "Too many arguments for '${_cli_command}'."
+			_cli_component="both"
+			if [ "$#" = "2" ]; then
+				case "$2" in agent | hub | both) _cli_component="$2" ;; *) cli_usage_error "Unknown component; use agent, hub, or both." ;; esac
+			fi
+			case "$_cli_command" in
+				status) cli_status "$_cli_component" ;;
+				diagnostics) cli_diagnostics "$_cli_component" ;;
+			esac
+			;;
+		repair)
+			[ "$#" -ge "2" ] || cli_usage_error "Command 'repair' requires a component."
+			[ "$#" = "2" ] || cli_usage_error "Too many arguments for 'repair'."
+			case "$2" in agent | hub | both) ;; *) cli_usage_error "Unknown component; use agent, hub, or both." ;; esac
+			cli_repair "$2"
+			;;
+		reconfigure)
+			[ "$#" -ge "2" ] || cli_usage_error "Command 'reconfigure' requires a component."
+			[ "$#" = "2" ] || cli_usage_error "Too many arguments for 'reconfigure'."
+			case "$2" in
+				agent | hub) cli_reconfigure "$2" ;;
+				both) cli_usage_error "Reconfigure supports one component: agent or hub." ;;
+				*) cli_usage_error "Unknown component; use agent or hub." ;;
+			esac
+			;;
+		uninstall)
+			[ "$#" -ge "2" ] || cli_usage_error "Command 'uninstall' requires a component."
+			case "$2" in agent | hub | both) ;; *) cli_usage_error "Unknown component; use agent, hub, or both." ;; esac
+			_cli_purge=0
+			if [ "$#" = "3" ]; then
+				[ "$3" = "--purge" ] || cli_usage_error "Uninstall accepts only the --purge option."
+				_cli_purge=1
+			elif [ "$#" -gt "3" ]; then
+				cli_usage_error "Too many arguments for 'uninstall'."
+			fi
+			cli_uninstall "$2" "$_cli_purge"
 			;;
 		service | doctor)
-			[ "$#" = "1" ] || cli_usage_error "Command '${_cli_command}' does not accept arguments in this manager version."
-			cli_usage_error "The '${_cli_command}' CLI handler is not implemented yet."
+			cli_usage_error "The '${_cli_command}' command is deferred to CLI-003."
 			;;
 		*)
-			cli_usage_error "Unknown command '${_cli_command}'."
+			cli_usage_error "Unknown command; run 'beszel-ios help' for supported syntax."
 			;;
 	esac
 }

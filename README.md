@@ -57,6 +57,36 @@ beszel-ios version
 
 The curl installer remains available if you need to install or recover the manager again.
 
+## CLI administration
+
+After the persistent `beszel-ios` command is installed, use it to manage Agent and Hub separately or together. Mutating commands need root; `status` and `diagnostics` are read-only:
+
+```sh
+sudo beszel-ios install agent
+sudo beszel-ios install hub
+sudo beszel-ios install both
+
+sudo beszel-ios update both
+
+beszel-ios status
+beszel-ios diagnostics
+
+sudo beszel-ios repair agent
+sudo beszel-ios reconfigure hub
+
+sudo beszel-ios uninstall agent
+sudo beszel-ios uninstall hub
+sudo beszel-ios uninstall both
+```
+
+Normal uninstall preserves Agent and Hub data. To request the separate purge path, use:
+
+```sh
+sudo beszel-ios uninstall hub --purge
+```
+
+The purge path still requires the exact typed confirmation. Deleting the Hub database, accounts, and history is irreversible without an external backup.
+
 ## Prerequisites
 
 - A jailbroken **arm64** iPhone, iPad, or iPod touch.

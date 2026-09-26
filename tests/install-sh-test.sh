@@ -2756,7 +2756,8 @@ cli_expect_fail "unknown command fails with usage" "Unknown command" not-a-comma
 cli_expect_fail "excess arguments fail with usage" "Too many arguments" install agent extra
 cli_expect_fail "unknown component fails with usage" "Unknown component" install toaster
 cli_expect_fail "unsupported option combination fails" "Too many arguments" install agent --force
-cli_expect_fail "reserved command fails clearly" "not implemented yet" install agent
+cli_expect_fail "service remains deferred to CLI-003" "deferred to CLI-003" service start
+cli_expect_fail "doctor remains deferred to CLI-003" "deferred to CLI-003" doctor agent
 
 if install_persistent_manager "$SCRIPT"; then
 	pass "persistent manager installation succeeds"
@@ -2903,6 +2904,552 @@ if ( main menu ) 2>&1 | grep -q 'MENU_DISPATCH_MARKER'; then
 	pass "menu command dispatches to the interactive menu"
 else
 	fail "menu command dispatches to the interactive menu"
+fi
+
+printf '== component-aware CLI parser ==\n'
+cli_expect_usage() {
+	_ceu_name="$1"
+	shift
+	_ceu_rc=0
+	if ( main "$@" ) > "$CLI_OUT" 2>&1; then
+		fail "$_ceu_name (unexpected success)"
+	else
+		_ceu_rc=$?
+	fi
+	if [ "$_ceu_rc" = "2" ] && grep -Fq 'Usage: beszel-ios' "$CLI_OUT"; then
+		pass "$_ceu_name"
+	else
+		fail "$_ceu_name (expected usage exit 2, got $_ceu_rc)"
+	fi
+}
+cli_expect_usage "install requires component" install
+cli_expect_usage "install rejects unknown component" install foo
+cli_expect_usage "install rejects extra argument" install agent extra
+cli_expect_usage "update requires component" update
+cli_expect_usage "update rejects unknown component" update foo
+cli_expect_usage "status rejects unknown component" status foo
+cli_expect_usage "diagnostics rejects unknown component" diagnostics foo
+cli_expect_usage "repair requires component" repair
+cli_expect_usage "repair rejects unknown component" repair foo
+cli_expect_usage "reconfigure requires component" reconfigure
+cli_expect_usage "reconfigure rejects both" reconfigure both
+cli_expect_usage "reconfigure rejects unknown component" reconfigure foo
+cli_expect_usage "uninstall requires component" uninstall
+cli_expect_usage "uninstall rejects unknown component" uninstall foo
+cli_expect_usage "uninstall rejects purge without component" uninstall --purge
+cli_expect_usage "status rejects purge" status agent --purge
+cli_expect_usage "repair rejects purge" repair agent --purge
+cli_expect_usage "uninstall rejects force" uninstall agent --force
+cli_expect_usage "uninstall rejects trailing purge argument" uninstall agent --purge extra
+cli_expect_usage "update rejects extra argument" update agent extra
+cli_expect_usage "diagnostics rejects extra argument" diagnostics agent extra
+
+CLI_STATUS_ROOT="${SANDBOX}/cli-component-status"
+BIN_DIR="${CLI_STATUS_ROOT}/usr-local-bin"
+LIB_DIR="${CLI_STATUS_ROOT}/var-lib"
+LAUNCHD_DIR="${CLI_STATUS_ROOT}/launchd"
+LOG_DIR="${CLI_STATUS_ROOT}/log"
+WORK_DIR="${CLI_STATUS_ROOT}/work"
+mkdir -p "$BIN_DIR" "$LIB_DIR" "$LAUNCHD_DIR" "$LOG_DIR" "$WORK_DIR"
+export BESZEL_BIN_DIR="$BIN_DIR"
+export BESZEL_LIB_DIR="$LIB_DIR"
+export BESZEL_LAUNCHD_DIR="$LAUNCHD_DIR"
+export BESZEL_LOG_DIR="$LOG_DIR"
+CLI_DISPATCH_LOG="${CLI_STATUS_ROOT}/dispatch.log"
+CLI_GATE_LOG="${CLI_STATUS_ROOT}/gates.log"
+export CLI_DISPATCH_LOG CLI_GATE_LOG
+
+# Isolate parser dispatch from device operations while recording the exact
+# lifecycle function and arguments selected by main().
+cli_dispatch_probe() (
+	check_root() { printf 'root\n' >> "$CLI_GATE_LOG"; }
+	check_device() { printf 'device\n' >> "$CLI_GATE_LOG"; }
+	check_layout() { printf 'layout\n' >> "$CLI_GATE_LOG"; }
+	check_launchctl() { printf 'launchctl\n' >> "$CLI_GATE_LOG"; }
+	check_deps() { printf 'deps\n' >> "$CLI_GATE_LOG"; }
+	setup_work_dir() { printf 'workdir\n' >> "$CLI_GATE_LOG"; }
+	flow_agent() { printf 'flow_agent\n' >> "$CLI_DISPATCH_LOG"; }
+	flow_hub() { printf 'flow_hub\n' >> "$CLI_DISPATCH_LOG"; }
+	flow_both() { printf 'flow_both\n' >> "$CLI_DISPATCH_LOG"; }
+	ensure_pinned_release() { LATEST_TAG='v0.19.0-ios.100'; }
+	update_agent_flow() { printf 'update_agent_flow:%s\n' "$1" >> "$CLI_DISPATCH_LOG"; }
+	update_hub_flow() { printf 'update_hub_flow:%s\n' "$1" >> "$CLI_DISPATCH_LOG"; }
+	update_both_flow() { printf 'update_both_flow:%s\n' "$1" >> "$CLI_DISPATCH_LOG"; }
+	cli_status_component() { printf 'status_%s\n' "$1" >> "$CLI_DISPATCH_LOG"; }
+	diagnose_agent() { printf 'diagnose_agent\n' >> "$CLI_DISPATCH_LOG"; }
+	diagnose_hub() { printf 'diagnose_hub\n' >> "$CLI_DISPATCH_LOG"; }
+	repair_agent_flow() {
+		printf 'repair_agent_flow\n' >> "$CLI_DISPATCH_LOG"
+		if [ "${CLI_TEST_AGENT_REPAIR_FAIL:-0}" = "1" ]; then return 1; fi
+		return 0
+	}
+	repair_hub_flow() {
+		printf 'repair_hub_flow\n' >> "$CLI_DISPATCH_LOG"
+		if [ "${CLI_TEST_HUB_REPAIR_FAIL:-0}" = "1" ]; then return 1; fi
+		return 0
+	}
+	reconfigure_agent_flow() { printf 'reconfigure_agent_flow\n' >> "$CLI_DISPATCH_LOG"; }
+	reconfigure_hub_flow() { printf 'reconfigure_hub_flow\n' >> "$CLI_DISPATCH_LOG"; }
+	uninstall_agent_flow() { printf 'uninstall_agent_flow:%s\n' "$1" >> "$CLI_DISPATCH_LOG"; }
+	uninstall_hub_flow() { printf 'uninstall_hub_flow:%s\n' "$1" >> "$CLI_DISPATCH_LOG"; }
+	uninstall_both_flow() { printf 'uninstall_both_flow:%s\n' "$1" >> "$CLI_DISPATCH_LOG"; }
+	main "$@"
+)
+
+cli_dispatch_expect() {
+	_cde_name="$1"
+	_cde_expected="$2"
+	shift 2
+	: > "$CLI_DISPATCH_LOG"
+	: > "$CLI_GATE_LOG"
+	if cli_dispatch_probe "$@" > "$CLI_OUT" 2>&1; then
+		_cde_rc=0
+	else
+		_cde_rc=$?
+	fi
+	_cde_actual=$(cat "$CLI_DISPATCH_LOG" 2> /dev/null || true)
+	if [ "$_cde_rc" = "0" ] && [ "$_cde_actual" = "$_cde_expected" ]; then
+		pass "$_cde_name"
+	else
+		fail "$_cde_name (expected [$_cde_expected], got [$_cde_actual], rc=$_cde_rc)"
+	fi
+}
+
+printf 'agent-fixture\n' > "${BIN_DIR}/${AGENT_BIN}"
+printf 'hub-fixture\n' > "${BIN_DIR}/${HUB_BIN}"
+touch "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+cli_dispatch_expect "install agent dispatches Agent flow" "flow_agent" install agent
+cli_dispatch_expect "install hub dispatches Hub flow" "flow_hub" install hub
+cli_dispatch_expect "install both dispatches combined flow" "flow_both" install both
+cli_dispatch_expect "update agent dispatches Agent flow" "update_agent_flow:v0.19.0-ios.100" update agent
+cli_dispatch_expect "update hub dispatches Hub flow" "update_hub_flow:v0.19.0-ios.100" update hub
+cli_dispatch_expect "update both dispatches combined flow" "update_both_flow:v0.19.0-ios.100" update both
+cli_dispatch_expect "status default dispatches both" "status_agent
+status_hub" status
+cli_dispatch_expect "status agent dispatches Agent" "status_agent" status agent
+cli_dispatch_expect "status hub dispatches Hub" "status_hub" status hub
+cli_dispatch_expect "status both dispatches both" "status_agent
+status_hub" status both
+cli_dispatch_expect "diagnostics default dispatches both" "diagnose_agent
+diagnose_hub" diagnostics
+cli_dispatch_expect "diagnostics agent dispatches Agent" "diagnose_agent" diagnostics agent
+cli_dispatch_expect "diagnostics hub dispatches Hub" "diagnose_hub" diagnostics hub
+cli_dispatch_expect "diagnostics both dispatches both" "diagnose_agent
+diagnose_hub" diagnostics both
+cli_dispatch_expect "repair agent dispatches Agent flow" "repair_agent_flow" repair agent
+cli_dispatch_expect "repair hub dispatches Hub flow" "repair_hub_flow" repair hub
+cli_dispatch_expect "repair both runs Hub then Agent" "repair_hub_flow
+repair_agent_flow" repair both
+cli_dispatch_expect "reconfigure agent dispatches Agent flow" "reconfigure_agent_flow" reconfigure agent
+cli_dispatch_expect "reconfigure hub dispatches Hub flow" "reconfigure_hub_flow" reconfigure hub
+cli_dispatch_expect "uninstall agent defaults to data preservation" "uninstall_agent_flow:cli-keep-data" uninstall agent
+cli_dispatch_expect "uninstall hub defaults to data preservation" "uninstall_hub_flow:cli-keep-data" uninstall hub
+cli_dispatch_expect "uninstall both defaults to data preservation" "uninstall_both_flow:cli-keep-data" uninstall both
+cli_dispatch_expect "purge agent reaches typed purge flow" "uninstall_agent_flow:cli-purge-data" uninstall agent --purge
+cli_dispatch_expect "purge hub reaches typed purge flow" "uninstall_hub_flow:cli-purge-data" uninstall hub --purge
+: > "$CLI_GATE_LOG"
+cli_dispatch_expect "purge both reaches independent purge flow" "uninstall_both_flow:cli-purge-data" uninstall both --purge
+: > "$CLI_GATE_LOG"
+if cli_dispatch_probe install agent > "$CLI_OUT" 2>&1; then
+	:
+fi
+if grep -q '^root$' "$CLI_GATE_LOG" && grep -q '^deps$' "$CLI_GATE_LOG"; then
+	pass "mutating CLI commands use existing root and dependency gates"
+else
+	fail "mutating CLI commands use existing root and dependency gates"
+fi
+
+rm -f "${BIN_DIR}/${AGENT_BIN}" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+: > "$CLI_DISPATCH_LOG"
+if cli_dispatch_probe update agent > "$CLI_OUT" 2>&1; then
+	fail "update missing Agent fails clearly"
+elif grep -qi 'agent is not installed' "$CLI_OUT" && [ ! -s "$CLI_DISPATCH_LOG" ]; then
+	pass "update missing Agent fails clearly before release dispatch"
+else
+	fail "update missing Agent fails clearly before release dispatch"
+fi
+
+: > "$CLI_DISPATCH_LOG"
+if CLI_TEST_HUB_REPAIR_FAIL=1 cli_dispatch_probe repair both > "$CLI_OUT" 2>&1; then _cli_repair_rc=0; else _cli_repair_rc=$?; fi
+if [ "$_cli_repair_rc" != "0" ] && grep -q '^Hub repair: FAIL$' "$CLI_OUT" && grep -q '^Agent repair: PASS$' "$CLI_OUT" && [ "$(cat "$CLI_DISPATCH_LOG")" = "repair_hub_flow
+repair_agent_flow" ]; then
+	pass "repair both reports Hub failure and still repairs Agent"
+else
+	fail "repair both reports Hub failure and still repairs Agent"
+fi
+: > "$CLI_DISPATCH_LOG"
+if CLI_TEST_AGENT_REPAIR_FAIL=1 cli_dispatch_probe repair both > "$CLI_OUT" 2>&1; then _cli_repair_rc=0; else _cli_repair_rc=$?; fi
+if [ "$_cli_repair_rc" != "0" ] && grep -q '^Hub repair: PASS$' "$CLI_OUT" && grep -q '^Agent repair: FAIL$' "$CLI_OUT"; then
+	pass "repair both returns failure when Agent repair fails"
+else
+	fail "repair both returns failure when Agent repair fails"
+fi
+: > "$CLI_GATE_LOG"
+if ( check_root() { printf 'unexpected root check\n' >> "$CLI_GATE_LOG"; exit 97; }; main status ) > "$CLI_OUT" 2>&1 && ( check_root() { printf 'unexpected root check\n' >> "$CLI_GATE_LOG"; exit 97; }; main diagnostics ) > "$CLI_OUT" 2>&1 && [ ! -s "$CLI_GATE_LOG" ]; then
+	pass "read-only status and diagnostics do not require root"
+else
+	fail "read-only status and diagnostics do not require root"
+fi
+
+printf '== component-aware CLI status and diagnostics ==\n'
+rm -f "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${HUB_BIN}" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+rm -rf "${LIB_DIR}/beszel-agent" "${LIB_DIR}/beszel-hub" "${LIB_DIR}/${STATE_SUBDIR}"
+mock_reset
+BESZEL_TEST_PLIST_VALID=ok
+BESZEL_TEST_HEALTH=ok
+_cli_status_empty=$(main status)
+if printf '%s\n' "$_cli_status_empty" | grep -q '^Agent$' && printf '%s\n' "$_cli_status_empty" | grep -q '^Hub$' && [ "$(printf '%s\n' "$_cli_status_empty" | grep -c 'Installed: no')" = "2" ]; then
+	pass "status succeeds when neither component is installed"
+else
+	fail "status succeeds when neither component is installed"
+fi
+
+cli_write_agent_fixture() {
+	printf 'agent-binary\n' > "${BIN_DIR}/${AGENT_BIN}"
+	write_agent_plist "$CLI_SECRET" "45876" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+	mkdir -p "${LIB_DIR}/beszel-agent"
+	state_write_component agent v0.19.0-ios.7 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa > /dev/null
+}
+cli_write_hub_fixture() {
+	printf 'hub-binary\n' > "${BIN_DIR}/${HUB_BIN}"
+	write_hub_plist 8090 "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+	mkdir -p "${LIB_DIR}/beszel-hub"
+	state_write_component hub v0.19.0-ios.8 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb > /dev/null
+}
+cli_inventory() { find "$CLI_STATUS_ROOT" -type f -exec cksum {} \; | sort; }
+
+cli_write_agent_fixture
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '123' > "${MOCKCTL}/pid_agent"
+_cli_status_mock_before=$(cat "${MOCKCTL}/mock.log")
+_cli_agent_status=$(main status agent)
+if printf '%s\n' "$_cli_agent_status" | grep -q 'Installed: yes' && printf '%s\n' "$_cli_agent_status" | grep -q 'Release: v0.19.0-ios.7' && printf '%s\n' "$_cli_agent_status" | grep -q 'Binary: present' && printf '%s\n' "$_cli_agent_status" | grep -q 'Plist: valid' && printf '%s\n' "$_cli_agent_status" | grep -q 'LaunchDaemon: loaded' && printf '%s\n' "$_cli_agent_status" | grep -q 'Process: running' && printf '%s\n' "$_cli_agent_status" | grep -q 'PID: 123' && printf '%s\n' "$_cli_agent_status" | grep -q 'Port: 45876' && printf '%s\n' "$_cli_agent_status" | grep -q 'Key: configured'; then
+	pass "Agent status reports validated fields and PID without key"
+else
+	fail "Agent status reports validated fields and PID without key"
+fi
+_cli_agent_aggregate=$(main status)
+if printf '%s\n' "$_cli_agent_aggregate" | grep -q '^Agent$' && printf '%s\n' "$_cli_agent_aggregate" | grep -q '^Hub$' && printf '%s\n' "$_cli_agent_aggregate" | grep -q 'Installed: no' && printf '%s\n' "$_cli_agent_aggregate" | grep -q 'Installed: yes'; then
+	pass "aggregate status succeeds when only Agent is installed"
+else
+	fail "aggregate status succeeds when only Agent is installed"
+fi
+rm -f "${BIN_DIR}/${AGENT_BIN}" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "$(state_path)"
+cli_write_hub_fixture
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '456' > "${MOCKCTL}/pid_hub"
+_cli_hub_status=$(main status hub)
+if printf '%s\n' "$_cli_hub_status" | grep -q 'Installed: yes' && printf '%s\n' "$_cli_hub_status" | grep -q 'Release: v0.19.0-ios.8' && printf '%s\n' "$_cli_hub_status" | grep -q 'Binary: present' && printf '%s\n' "$_cli_hub_status" | grep -q 'Plist: valid' && printf '%s\n' "$_cli_hub_status" | grep -q 'LaunchDaemon: loaded' && printf '%s\n' "$_cli_hub_status" | grep -q 'Process: running' && printf '%s\n' "$_cli_hub_status" | grep -q 'PID: 456' && printf '%s\n' "$_cli_hub_status" | grep -q 'Port: 8090' && printf '%s\n' "$_cli_hub_status" | grep -q 'Health: reachable'; then
+	pass "Hub status reports validated fields, PID and health"
+else
+	fail "Hub status reports validated fields, PID and health"
+fi
+_cli_hub_aggregate=$(main status)
+if printf '%s\n' "$_cli_hub_aggregate" | grep -q '^Agent$' && printf '%s\n' "$_cli_hub_aggregate" | grep -q '^Hub$' && printf '%s\n' "$_cli_hub_aggregate" | grep -q 'Installed: no' && printf '%s\n' "$_cli_hub_aggregate" | grep -q 'Installed: yes'; then
+	pass "aggregate status succeeds when only Hub is installed"
+else
+	fail "aggregate status succeeds when only Hub is installed"
+fi
+BESZEL_TEST_HEALTH=fail
+if main status hub | grep -q 'Health: unreachable'; then
+	pass "Hub status reports unreachable health"
+else
+	fail "Hub status reports unreachable health"
+fi
+BESZEL_TEST_HEALTH=ok
+
+cli_write_agent_fixture
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '789' > "${MOCKCTL}/pid_agent"
+_cli_status_before=$(cli_inventory)
+_cli_both_status=$(main status both)
+_cli_status_after=$(cli_inventory)
+_cli_status_mock_after=$(cat "${MOCKCTL}/mock.log")
+if printf '%s\n' "$_cli_both_status" | grep -q '^Agent$' && printf '%s\n' "$_cli_both_status" | grep -q '^Hub$' && printf '%s\n' "$_cli_both_status" | grep -q 'Agent' && printf '%s\n' "$_cli_both_status" | grep -q 'Hub' && [ "$_cli_status_before" = "$_cli_status_after" ] && [ "$_cli_status_mock_before" = "$_cli_status_mock_after" ]; then
+	pass "both status sections are present and status does not mutate files"
+else
+	fail "both status sections are present and status does not mutate files"
+fi
+
+rm -f "${BIN_DIR}/${AGENT_BIN}"
+_cli_broken_status=$(main status agent)
+if printf '%s\n' "$_cli_broken_status" | grep -q 'Installed: yes' && printf '%s\n' "$_cli_broken_status" | grep -q 'Binary: missing' && printf '%s\n' "$_cli_broken_status" | grep -q 'Plist: valid'; then
+	pass "status reports missing binary"
+else
+	fail "status reports missing binary"
+fi
+printf 'agent-binary\n' > "${BIN_DIR}/${AGENT_BIN}"
+rm -f "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+_cli_broken_status=$(main status agent)
+if printf '%s\n' "$_cli_broken_status" | grep -q 'Binary: present' && printf '%s\n' "$_cli_broken_status" | grep -q 'Plist: missing'; then
+	pass "status reports missing plist"
+else
+	fail "status reports missing plist"
+fi
+write_agent_plist "$CLI_SECRET" 45876 "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+BESZEL_TEST_PLIST_VALID=fail
+_cli_broken_status=$(main status agent)
+if printf '%s\n' "$_cli_broken_status" | grep -q 'Plist: invalid' && printf '%s\n' "$_cli_broken_status" | grep -q 'Port: unknown'; then
+	pass "status reports invalid plist without extracting values"
+else
+	fail "status reports invalid plist without extracting values"
+fi
+BESZEL_TEST_PLIST_VALID=ok
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '-' > "${MOCKCTL}/pid_agent"
+_cli_stopped_status=$(main status agent)
+if printf '%s\n' "$_cli_stopped_status" | grep -q 'LaunchDaemon: loaded' && printf '%s\n' "$_cli_stopped_status" | grep -q 'Process: stopped' && printf '%s\n' "$_cli_stopped_status" | grep -q 'PID: none'; then
+	pass "status reports loaded but stopped service"
+else
+	fail "status reports loaded but stopped service"
+fi
+BESZEL_TEST_LIST_FAIL=1
+_cli_unknown_service_status=$(main status agent)
+if printf '%s\n' "$_cli_unknown_service_status" | grep -q 'LaunchDaemon: unknown' && printf '%s\n' "$_cli_unknown_service_status" | grep -q 'Process: unknown'; then
+	pass "status reports unknown service state when launchctl fails"
+else
+	fail "status reports unknown service state when launchctl fails"
+fi
+BESZEL_TEST_LIST_FAIL=0
+rm -f "$(state_path)"
+_cli_legacy_status=$(main status agent)
+if printf '%s\n' "$_cli_legacy_status" | grep -q 'Release: unknown (legacy or missing state)'; then
+	pass "status reports missing legacy release state"
+else
+	fail "status reports missing legacy release state"
+fi
+printf '%s\n' 'AGENT_RELEASE=UNVALIDATED_STATE_MUST_NOT_PRINT' > "$(state_path)"
+_cli_unvalidated_status=$(main status agent)
+if printf '%s\n' "$_cli_unvalidated_status" | grep -q 'Release: unknown' && ! printf '%s\n' "$_cli_unvalidated_status" | grep -Fq 'UNVALIDATED_STATE_MUST_NOT_PRINT'; then
+	pass "status never prints arbitrary installer-state content"
+else
+	fail "status never prints arbitrary installer-state content"
+fi
+rm -f "${BIN_DIR}/${AGENT_BIN}"
+ln -s "${CLI_STATUS_ROOT}/missing-target" "${BIN_DIR}/${AGENT_BIN}"
+_cli_untrusted_status=$(main status agent)
+if printf '%s\n' "$_cli_untrusted_status" | grep -q 'Binary: untrusted'; then
+	pass "status labels symlinked binary untrusted"
+else
+	fail "status labels symlinked binary untrusted"
+fi
+rm -f "${BIN_DIR}/${AGENT_BIN}"
+rm -f "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+printf 'plist-target\n' > "${CLI_STATUS_ROOT}/plist-target"
+ln -s "${CLI_STATUS_ROOT}/plist-target" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+_cli_untrusted_status=$(main status agent)
+if printf '%s\n' "$_cli_untrusted_status" | grep -q 'Plist: untrusted'; then
+	pass "status labels symlinked plist untrusted"
+else
+	fail "status labels symlinked plist untrusted"
+fi
+rm -f "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+
+cli_write_agent_fixture
+cli_write_hub_fixture
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '987' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '654' > "${MOCKCTL}/pid_hub"
+_cli_diag_before=$(cli_inventory)
+_cli_diag_agent=$(main diagnostics agent)
+_cli_diag_hub=$(main diagnostics hub)
+_cli_diag_both=$(main diagnostics both)
+_cli_diag_default=$(main diagnostics)
+_cli_diag_after=$(cli_inventory)
+if printf '%s\n' "$_cli_diag_agent" | grep -q 'Agent diagnostics' && printf '%s\n' "$_cli_diag_hub" | grep -q 'Hub diagnostics' && printf '%s\n' "$_cli_diag_both" | grep -q 'Agent diagnostics' && printf '%s\n' "$_cli_diag_both" | grep -q 'Hub diagnostics' && printf '%s\n' "$_cli_diag_default" | grep -q 'Agent diagnostics' && printf '%s\n' "$_cli_diag_default" | grep -q 'Hub diagnostics' && [ "$_cli_diag_before" = "$_cli_diag_after" ]; then
+	pass "diagnostics scopes dispatch and remain read-only"
+else
+	fail "diagnostics scopes dispatch and remain read-only"
+fi
+cli_reconfigure_safe_probe() (
+	check_root() { :; }
+	check_device() { :; }
+	check_layout() { :; }
+	check_launchctl() { :; }
+	check_deps() { :; }
+	setup_work_dir() { :; }
+	confirm_destructive() { return 1; }
+	confirm_update() { return 0; }
+	ask_tty() {
+		_cli_reconf_var="$2"
+		printf '%s' "${3:-}" > "${MOCKCTL}/ask_one"
+		# Intentional indirection: the lifecycle helper passes the variable name.
+		# shellcheck disable=SC2229
+		IFS= read -r "$_cli_reconf_var" < "${MOCKCTL}/ask_one" || true
+		return 0
+	}
+	main "$@"
+)
+_cli_reconfigure_agent_output=$(cli_reconfigure_safe_probe reconfigure agent)
+_cli_reconfigure_hub_output=$(cli_reconfigure_safe_probe reconfigure hub)
+if ! printf '%s\n%s\n' "$_cli_reconfigure_agent_output" "$_cli_reconfigure_hub_output" | grep -Fq "$CLI_SECRET"; then
+	pass "Agent and Hub reconfigure output never prints the Agent key"
+else
+	fail "Agent and Hub reconfigure output never prints the Agent key"
+fi
+_cli_security_output="${_cli_help}
+${_cli_help_flag}
+${_cli_version}
+${_cli_version_flag}
+${_cli_agent_status}
+${_cli_hub_status}
+${_cli_both_status}
+${_cli_reconfigure_agent_output}
+${_cli_reconfigure_hub_output}
+${_cli_diag_agent}
+${_cli_diag_hub}
+${_cli_diag_both}
+${_cli_diag_default}"
+if printf '%s\n' "$_cli_security_output" | grep -Fq "$CLI_SECRET"; then
+	fail "help/version/status/diagnostics never print Agent key"
+else
+	pass "help/version/status/diagnostics never print Agent key"
+fi
+if ( main status "$CLI_SECRET" ) > "$CLI_OUT" 2>&1; then
+	fail "CLI failure path with key-like argument is rejected"
+elif ! grep -Fq "$CLI_SECRET" "$CLI_OUT"; then
+	pass "CLI failure output does not echo key-like argument"
+else
+	fail "CLI failure output does not echo key-like argument"
+fi
+
+printf '== CLI uninstall and explicit purge ==\n'
+cli_lifecycle_mutation() (
+	check_root() { :; }
+	check_device() { :; }
+	check_layout() { :; }
+	check_launchctl() { :; }
+	confirm_destructive() { return 0; }
+	if [ "${CLI_TEST_PURGE_MODE:-0}" = "1" ]; then
+		confirm_update() { return 1; }
+		ask_tty() {
+			_cli_ask_var="$2"
+			_cli_ask_answer=""
+			IFS= read -r _cli_ask_answer < "${MOCKCTL}/ask_queue" 2> /dev/null || _cli_ask_answer=""
+			tail -n +2 "${MOCKCTL}/ask_queue" > "${MOCKCTL}/ask_queue.tmp" 2> /dev/null || true
+			mv -f "${MOCKCTL}/ask_queue.tmp" "${MOCKCTL}/ask_queue" 2> /dev/null || true
+			printf '%s' "$_cli_ask_answer" > "${MOCKCTL}/ask_one"
+			# Intentional indirection: the lifecycle helper passes the variable name.
+			# shellcheck disable=SC2229
+			IFS= read -r "$_cli_ask_var" < "${MOCKCTL}/ask_one" || true
+			return 0
+		}
+	fi
+	main "$@"
+)
+
+cli_reset_installation() {
+	rm -f "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${HUB_BIN}" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+	rm -rf "${LIB_DIR}/beszel-agent" "${LIB_DIR}/beszel-hub" "${LIB_DIR}/${STATE_SUBDIR}"
+	mkdir -p "$BIN_DIR" "$LIB_DIR" "$LAUNCHD_DIR" "$LOG_DIR"
+	mock_reset
+}
+cli_prepare_both() {
+	cli_write_agent_fixture
+	cli_write_hub_fixture
+	mkdir -p "${LIB_DIR}/beszel-agent" "${LIB_DIR}/beszel-hub"
+	printf 'agent-retained-state\n' > "${LIB_DIR}/beszel-agent/marker"
+	printf 'hub-history-marker\n' > "${LIB_DIR}/beszel-hub/history"
+	printf 'hub-database-marker\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+	printf '1' > "${MOCKCTL}/loaded_agent"
+	printf '123' > "${MOCKCTL}/pid_agent"
+	printf '1' > "${MOCKCTL}/loaded_hub"
+	printf '456' > "${MOCKCTL}/pid_hub"
+}
+
+cli_reset_installation
+cli_prepare_both
+if install_persistent_manager "$SCRIPT"; then
+	pass "CLI uninstall lifecycle fixture has managed CLI"
+else
+	fail "CLI uninstall lifecycle fixture has managed CLI"
+fi
+if cli_lifecycle_mutation uninstall agent > "$CLI_OUT" 2>&1; then _cli_uninstall_rc=0; else _cli_uninstall_rc=$?; fi
+if [ "$_cli_uninstall_rc" = "0" ] && [ "$(component_state agent)" = "ABSENT" ] && [ "$(component_state hub)" = "COMPLETE" ] && [ -f "${LIB_DIR}/beszel-agent/marker" ] && [ -f "${LIB_DIR}/beszel-hub/db.sqlite" ] && [ -x "${BIN_DIR}/beszel-ios" ]; then
+	pass "CLI Agent uninstall preserves data and retains CLI while Hub remains"
+else
+	fail "CLI Agent uninstall preserves data and retains CLI while Hub remains"
+fi
+if cli_lifecycle_mutation uninstall hub > "$CLI_OUT" 2>&1; then _cli_uninstall_rc=0; else _cli_uninstall_rc=$?; fi
+if [ "$_cli_uninstall_rc" = "0" ] && [ "$(component_state hub)" = "ABSENT" ] && [ -f "${LIB_DIR}/beszel-hub/db.sqlite" ] && [ -f "${LIB_DIR}/beszel-hub/history" ] && [ ! -e "${BIN_DIR}/beszel-ios" ] && [ ! -e "${LIB_DIR}/${STATE_SUBDIR}/manager.sh" ]; then
+	pass "CLI Hub uninstall preserves history and removes CLI after final component"
+else
+	fail "CLI Hub uninstall preserves history and removes CLI after final component"
+fi
+
+cli_reset_installation
+cli_prepare_both
+if install_persistent_manager "$SCRIPT" && cli_lifecycle_mutation uninstall both > "$CLI_OUT" 2>&1; then _cli_uninstall_rc=0; else _cli_uninstall_rc=$?; fi
+if [ "$_cli_uninstall_rc" = "0" ] && [ "$(component_state agent)" = "ABSENT" ] && [ "$(component_state hub)" = "ABSENT" ] && [ -f "${LIB_DIR}/beszel-agent/marker" ] && [ -f "${LIB_DIR}/beszel-hub/db.sqlite" ] && [ -f "${LIB_DIR}/beszel-hub/history" ] && [ ! -e "${BIN_DIR}/beszel-ios" ]; then
+	pass "CLI both uninstall preserves both data sets and removes final CLI"
+else
+	fail "CLI both uninstall preserves both data sets and removes final CLI"
+fi
+
+cli_reset_installation
+cli_write_agent_fixture
+mkdir -p "${LIB_DIR}/beszel-agent"
+printf 'agent-data-marker\n' > "${LIB_DIR}/beszel-agent/marker"
+ask_queue_set 'not the phrase'
+if CLI_TEST_PURGE_MODE=1 cli_lifecycle_mutation uninstall agent --purge > "$CLI_OUT" 2>&1; then _cli_purge_rc=0; else _cli_purge_rc=$?; fi
+if [ "$_cli_purge_rc" = "0" ] && [ -f "${LIB_DIR}/beszel-agent/marker" ]; then
+	pass "Agent purge wrong phrase preserves data"
+else
+	fail "Agent purge wrong phrase preserves data"
+fi
+ask_queue_set ''
+if CLI_TEST_PURGE_MODE=1 cli_lifecycle_mutation uninstall agent --purge > "$CLI_OUT" 2>&1; then _cli_purge_rc=0; else _cli_purge_rc=$?; fi
+if [ "$_cli_purge_rc" = "0" ] && [ -f "${LIB_DIR}/beszel-agent/marker" ]; then
+	pass "Agent purge blank confirmation preserves data"
+else
+	fail "Agent purge blank confirmation preserves data"
+fi
+ask_queue_set 'DELETE AGENT DATA'
+if CLI_TEST_PURGE_MODE=1 cli_lifecycle_mutation uninstall agent --purge > "$CLI_OUT" 2>&1; then _cli_purge_rc=0; else _cli_purge_rc=$?; fi
+if [ "$_cli_purge_rc" = "0" ] && [ ! -e "${LIB_DIR}/beszel-agent" ]; then
+	pass "Agent purge removes data only after exact phrase"
+else
+	fail "Agent purge removes data only after exact phrase"
+fi
+
+cli_reset_installation
+cli_write_hub_fixture
+mkdir -p "${LIB_DIR}/beszel-hub"
+printf 'hub-history-marker\n' > "${LIB_DIR}/beszel-hub/history"
+printf 'hub-database-marker\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+ask_queue_set 'wrong phrase'
+if CLI_TEST_PURGE_MODE=1 cli_lifecycle_mutation uninstall hub --purge > "$CLI_OUT" 2>&1; then _cli_purge_rc=0; else _cli_purge_rc=$?; fi
+if [ "$_cli_purge_rc" = "0" ] && [ -f "${LIB_DIR}/beszel-hub/db.sqlite" ] && [ -f "${LIB_DIR}/beszel-hub/history" ]; then
+	pass "Hub purge wrong phrase preserves database and history"
+else
+	fail "Hub purge wrong phrase preserves database and history"
+fi
+ask_queue_set 'DELETE HUB DATA'
+if CLI_TEST_PURGE_MODE=1 cli_lifecycle_mutation uninstall hub --purge > "$CLI_OUT" 2>&1; then _cli_purge_rc=0; else _cli_purge_rc=$?; fi
+if [ "$_cli_purge_rc" = "0" ] && [ ! -e "${LIB_DIR}/beszel-hub" ]; then
+	pass "Hub purge removes data only after exact phrase"
+else
+	fail "Hub purge removes data only after exact phrase"
+fi
+
+cli_reset_installation
+cli_prepare_both
+ask_queue_set 'wrong Hub phrase' 'DELETE AGENT DATA'
+if CLI_TEST_PURGE_MODE=1 cli_lifecycle_mutation uninstall both --purge > "$CLI_OUT" 2>&1; then _cli_purge_rc=0; else _cli_purge_rc=$?; fi
+if [ "$_cli_purge_rc" = "0" ] && [ -f "${LIB_DIR}/beszel-hub/db.sqlite" ] && [ -f "${LIB_DIR}/beszel-hub/history" ] && [ ! -e "${LIB_DIR}/beszel-agent" ]; then
+	pass "both purge protects Hub cancellation and independently confirms Agent"
+else
+	fail "both purge protects Hub cancellation and independently confirms Agent"
+fi
+cli_reset_installation
+cli_prepare_both
+ask_queue_set 'DELETE HUB DATA' 'DELETE AGENT DATA'
+if CLI_TEST_PURGE_MODE=1 cli_lifecycle_mutation uninstall both --purge > "$CLI_OUT" 2>&1; then _cli_purge_rc=0; else _cli_purge_rc=$?; fi
+if [ "$_cli_purge_rc" = "0" ] && [ ! -e "${LIB_DIR}/beszel-hub" ] && [ ! -e "${LIB_DIR}/beszel-agent" ]; then
+	pass "both purge requires separate exact Hub and Agent phrases"
+else
+	fail "both purge requires separate exact Hub and Agent phrases"
 fi
 
 printf '\n%d passed, %d failed\n' "$_pass" "$_fail"
