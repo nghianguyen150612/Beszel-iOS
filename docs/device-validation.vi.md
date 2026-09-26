@@ -15,6 +15,19 @@ File này được cập nhật mỗi khi có lượt kiểm thử hoàn thành.
 | Bộ test Go | Không chạy trong môi trường này (thiếu sẵn asset embed `dist/`; không liên quan installer; không đổi mã Go) |
 | Ma trận end-to-end trên máy thật (gồm kiểm thử khởi động lại) | **Đạt** — xem bên dưới |
 
+### Trạng thái kiểm thử bootstrap (sau khi tách file)
+
+Việc tách `install.sh` (bootstrap) và `scripts/ios/install-beszel.sh` (engine) được
+kiểm chứng **trên host/CI, không phải trên máy tham chiếu**. Các con số ở trên ghi lại
+lượt chạy installer một-file trước đó; bộ test hiện tại là `tests/install-sh-test.sh`
+(814 test), `tests/bootstrap-test.sh` (54 test), `tests/ios-patch-sentinels.sh` (44)
+và `tests/upstream-sync-test.sh` (10), đều xanh trong CI
+(`.github/workflows/ios-installer.yml`) — CI cũng fail nếu `engine_sha` không khớp
+bytes của engine. Hành vi từ chối lệch hash và chặn mạng của bootstrap được test bằng
+fixture với `curl` giả; ngữ nghĩa vòng đời của engine không đổi so với lượt đã kiểm
+thử trên máy. Lượt chạy bootstrap mới (tải → đối chiếu pin → thực thi) trên máy thật
+**chưa được thực hiện** và không được tuyên bố.
+
 ## Kiểm thử trên máy thật
 
 **Kết quả: ĐẠT.**

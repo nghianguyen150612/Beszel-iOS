@@ -60,12 +60,42 @@ For `service both`, start order is Hub then Agent, stop order is Agent then Hub,
 - `agent/system_platform_ios.go` / `agent/system_platform_other.go` — iOS sysctl/plist metadata vs. no-op.
 - `.github/scripts/patch-go-ios-arm64-runtime.py` — A7 `procyield` workaround (build-time, macOS runner).
 - `.github/workflows/ios-build.yml` — consolidated pipeline (Agent + Hub + SHA256SUMS → one artifact; on `v*-ios.*` tags, a dependent job validates the tag and publishes the same three files as a Latest GitHub Release).
+- `.github/workflows/ios-installer.yml` — installer CI: bootstrap/engine POSIX syntax, canonical `iOS` branch references, bootstrap `engine_sha` pin check, and the installer test suites.
+- `install.sh` — pipe-safe bootstrap: downloads the engine over HTTPS, verifies the pinned SHA-256, executes the verified local copy.
+- `scripts/ios/install-beszel.sh` — lifecycle engine executed by the bootstrap and persisted as `/var/lib/beszel-ios/manager.sh`.
+- `tests/bootstrap-test.sh` — bootstrap contract tests, including mismatch-rejected-before-execution.
 
 ## Distribution status
 
-**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `iOS` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean. The `install.sh` one-line installer (v1.0.0) consumes the Latest release for fresh Agent / Hub / Agent+Hub installs (checksum verification, `ldid` signing, on-device LaunchDaemon generation, Hub health check) and for transactional updates: it resolves the Latest tag once per run, pins all downloads to that immutable tag, tracks installed releases in `/var/lib/beszel-ios/install-state` (installed binaries are `ldid`-signed, so their hashes are never compared against `SHA256SUMS`), stages signed binaries before downtime, keeps `/usr/local/bin/*.bak` backups, rolls back automatically on failed health/startup checks, preserves plists byte-for-byte, and never touches `/var/lib/beszel-hub`. It also offers read-only diagnostics (the Agent key value is never displayed), conservative repair, and reconfiguration through validated plist transactions backed up to `/Library/LaunchDaemons/*.plist.bak` with automatic config rollback; reconfiguration and restart-only repair never alter install state, and only repairs that install a freshly downloaded Latest binary record the new release. The persistent `beszel-ios` CLI also provides concise status, aggregate read-only doctor checks, and safe start/stop/restart controls for the two existing LaunchDaemons using iOS-compatible `launchctl load/unload`; it does not create a second supervisor. Application uninstall (Agent, Hub, or Agent+Hub) is transactional with rollback, needs no network or `ldid`, always preserves `/var/lib/beszel-agent` and `/var/lib/beszel-hub` by default, and offers data purge only on exact typed confirmation (`DELETE AGENT DATA` / `DELETE HUB DATA`); per-component state is cleared and empty installer metadata is removed with exact paths only.
+**Existing:** consolidated CI pipeline. Each run produces `build/ios/` with exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`, uploaded as the `beszel-ios-arm64` artifact. Pushing a valid `v<upstream-version>-ios.<revision>` tag (matching `beszel.Version` in `beszel.go`, on `iOS` history) publishes those exact three files as a non-draft, non-prerelease GitHub Release marked Latest. Upstream tag-triggered automation (`release.yml`, `docker-images.yml`) ignores `v*-ios.*` tags so iOS releases stay clean. The root `install.sh` (v1.0.0 pipe-safe bootstrap) downloads `scripts/ios/install-beszel.sh` pinned by `engine_sha`, verifies the SHA-256 before execution, and runs that verified engine, which consumes the Latest release for fresh Agent / Hub / Agent+Hub installs (checksum verification, `ldid` signing, on-device LaunchDaemon generation, Hub health check) and for transactional updates: it resolves the Latest tag once per run, pins all downloads to that immutable tag, tracks installed releases in `/var/lib/beszel-ios/install-state` (installed binaries are `ldid`-signed, so their hashes are never compared against `SHA256SUMS`), stages signed binaries before downtime, keeps `/usr/local/bin/*.bak` backups, rolls back automatically on failed health/startup checks, preserves plists byte-for-byte, and never touches `/var/lib/beszel-hub`. It also offers read-only diagnostics (the Agent key value is never displayed), conservative repair, and reconfiguration through validated plist transactions backed up to `/Library/LaunchDaemons/*.plist.bak` with automatic config rollback; reconfiguration and restart-only repair never alter install state, and only repairs that install a freshly downloaded Latest binary record the new release. The persistent `beszel-ios` CLI also provides concise status, aggregate read-only doctor checks, and safe start/stop/restart controls for the two existing LaunchDaemons using iOS-compatible `launchctl load/unload`; it does not create a second supervisor. Application uninstall (Agent, Hub, or Agent+Hub) is transactional with rollback, needs no network or `ldid`, always preserves `/var/lib/beszel-agent` and `/var/lib/beszel-hub` by default, and offers data purge only on exact typed confirmation (`DELETE AGENT DATA` / `DELETE HUB DATA`); per-component state is cleared and empty installer metadata is removed with exact paths only.
 
 The application install/update/repair/reconfigure/uninstall transactions remain separate from service start/stop/restart commands. The new persistent CLI service and doctor behavior is fixture-tested, not device-tested; remaining acceptance includes real-device validation and additional iOS devices/SoCs.
+
+## Installer bootstrap and manager provenance
+
+```text
+curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/install.sh | sudo sh
+        |
+        v
+install.sh                     small POSIX pipe-safe bootstrap
+        |  downloads scripts/ios/install-beszel.sh over HTTPS only
+        |  (curl --proto '=https', --proto-redir '=https', no pipe execution)
+        |  verifies SHA256(engine) == engine_sha pinned in install.sh
+        |  executes the verified local copy as /tmp/beszel-installer.XXXXXX/manager.sh
+        v
+scripts/ios/install-beszel.sh  lifecycle engine (menu, install/update,
+        |                      repair/reconfigure, uninstall/purge, persistent
+        |                      CLI, status/diagnostics/doctor, service control)
+        v
+/var/lib/beszel-ios/manager.sh byte-for-byte the engine file that ran the
+                               transaction (copied locally, never re-fetched)
+```
+
+Two deliberately separate pinning layers: Beszel application binaries are pinned through the immutable `v<version>-ios.<revision>` release tag plus `SHA256SUMS` (unchanged by this design), while the installer lifecycle engine is pinned by `engine_sha` inside `install.sh`. CI (`.github/workflows/ios-installer.yml`) fails whenever the engine changes without `engine_sha` being updated in the same commit.
+
+Security scope, stated precisely: for a given fetched bootstrap the design provides deterministic engine selection, TOCTOU protection between bootstrap fetch and engine fetch (a mid-run branch change aborts before execution), and verified manager persistence. The bootstrap itself is still fetched over HTTPS from the mutable `iOS` branch, so this is not full cryptographic release signing.
+
+Manager adoption is explicit: re-running the bootstrap command fetches a newer bootstrap carrying the newer pinned digest. Normal `beszel-ios update` refreshes Beszel application binaries only and never replaces the manager. Validation status: existing application lifecycle operations are device-validated (see [device-validation.md](device-validation.md)); CLI service/doctor commands are fixture-tested only; the bootstrap architecture is host/fixture/CI validated.
 
 ## Future distribution architecture (planned, not implemented)
 
@@ -80,14 +110,16 @@ GitHub Release
 ```
 
 ```text
-install.sh
+install.sh (checksum-pinned bootstrap)
      |
-     +-- Install Agent
-     +-- Install Hub
-     +-- Install Both
-     +-- Update (preserve /var/lib/beszel-hub)      [implemented]
-     +-- Repair / reconfigure                       [implemented]
-     +-- Uninstall (data preserved; purge needs typed confirmation) [implemented]
+     +-- verifies and runs scripts/ios/install-beszel.sh
+           |
+           +-- Install Agent
+           +-- Install Hub
+           +-- Install Both
+           +-- Update (preserve /var/lib/beszel-hub)      [implemented]
+           +-- Repair / reconfigure                       [implemented]
+           +-- Uninstall (data preserved; purge needs typed confirmation) [implemented]
 ```
 
-A future `packaging/launchd/` directory will hold the two LaunchDaemon plists; `scripts/` will hold device-side helpers. Neither exists yet — see [ios-port-status.md](ios-port-status.md) and [ios-build-notes.md](ios-build-notes.md).
+A future `packaging/launchd/` directory will hold the two LaunchDaemon plists; `scripts/ios/` already holds the lifecycle engine (`install-beszel.sh`). See [ios-port-status.md](ios-port-status.md) and [ios-build-notes.md](ios-build-notes.md).

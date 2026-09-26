@@ -49,6 +49,40 @@ Chỉ một lệnh, không cần clone hay tải thêm gì khác. Sau đó:
 
 Về sau muốn làm gì — cập nhật, kiểm tra trạng thái, sửa lỗi, cấu hình lại hay gỡ bỏ — bạn chỉ cần chạy lại đúng lệnh trên rồi chọn mục muốn dùng.
 
+## Kiến trúc installer
+
+Lệnh một dòng chỉ là **bootstrap an toàn khi pipe**, không phải chính bộ cài đặt:
+
+```text
+curl .../iOS/install.sh | sudo sh
+        |
+        v
+bootstrap nhỏ (install.sh)
+        |  1. tải scripts/ios/install-beszel.sh qua HTTPS
+        |  2. đối chiếu SHA-256 ghim trong install.sh
+        |  3. chạy bản sao đã xác minh dưới dạng manager.sh
+        v
+engine vòng đời (menu, cài/cập nhật, sửa, cấu hình lại,
+gỡ/purge, CLI beszel-ios bền vững, status/diagnostics/doctor,
+điều khiển service)
+        |
+        v
+đúng tệp engine đã xác minh đó được lưu thành
+/var/lib/beszel-ios/manager.sh
+```
+
+Những gì điều này mang lại:
+
+- **Chọn engine tất định** đối với một bootstrap vừa tải — engine chạy bị cố định bởi `engine_sha` bên trong `install.sh`.
+- **Bảo vệ TOCTOU fail-closed** giữa lúc tải bootstrap và lúc tải engine: nếu nhánh `iOS` đổi giữa hai lượt, checksum không còn khớp và lượt chạy dừng lại *trước khi* engine chạy.
+- **Lưu manager đã xác minh** — cài đặt/cập nhật thành công lưu nguyên vẹn đúng tệp engine cục bộ đã thực hiện giao dịch. Engine không tự tải lại mã nguồn manager từ nhánh, nên `beszel-ios update` làm mới binary ứng dụng Beszel chứ không âm thầm thay manager bằng bản mới hơn.
+
+Điều nó **không** phải: chính bootstrap vẫn được tải qua HTTPS từ nhánh `iOS` có thể thay đổi, nên đây là đường cài có ghim checksum, không phải ký số phát hành đầy đủ. CI (`.github/workflows/ios-installer.yml`) fail khi engine đổi mà `engine_sha` không được cập nhật trong cùng commit.
+
+Muốn nhận manager mới hơn sau khi nhánh `iOS` công bố, hãy chạy lại chính lệnh bootstrap ở trên — nó tải bootstrap mới hơn với digest được ghim tương ứng engine mới. Không có lệnh `self-update`, và cập nhật ứng dụng được tách khỏi cập nhật manager một cách có chủ đích.
+
+Trạng thái kiểm thử, nói cho chính xác: các thao tác vòng đời ứng dụng đã [kiểm thử trên máy thật](docs/device-validation.vi.md) trên chiếc iPad tham chiếu; các lệnh CLI `service`/`doctor` chỉ mới test bằng fixture; kiến trúc bootstrap/ghim checksum mới được kiểm chứng trên host/fixture/CI (`tests/bootstrap-test.sh`, `tests/install-sh-test.sh`, workflow installer) và chưa chạy lại trên thiết bị vật lý.
+
 ## Điều kiện
 
 - Một chiếc iPhone, iPad hoặc iPod touch **arm64** đã jailbreak.
@@ -130,7 +164,7 @@ Các chip mới hơn (kể cả thiết bị arm64e) và các thế hệ iOS m�
 
 Các jailbreak / bootstrap khác, nếu cung cấp đủ môi trường root / bootstrap yêu cầu, *có thể* chạy được, nhưng hiện tại **chưa kiểm chứng** cho tới khi có kết quả thử trên máy thật.
 
-Cụ thể, một jailbreak / bootstrap khác chỉ có cơ hội chạy hợp lý khi nó đáp ứng đủ các điều kiện sau — đây chính là những gì `install.sh` thực sự dùng tới:
+Cụ thể, một jailbreak / bootstrap khác chỉ có cơ hội chạy hợp lý khi nó đáp ứng đủ các điều kiện sau — đây chính là những gì bộ cài đặt (bootstrap `install.sh` cộng engine vòng đời `scripts/ios/install-beszel.sh`) thực sự dùng tới:
 
 - Chạy được lệnh arm64 trực tiếp (chạy được binary Agent / Hub đã tải về).
 - Có quyền root hoặc `sudo` trong lúc cài đặt.
@@ -193,6 +227,8 @@ curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/in
 ```
 
 Chọn **Update**. Cài đặt và dữ liệu Hub của bạn được giữ nguyên, binary mới được kiểm tra trước khi thay thế, bản cũ được giữ làm sao lưu và sẽ tự quay lại nếu bản mới khởi động thất bại.
+
+`beszel-ios update` chỉ làm mới binary **ứng dụng** Beszel. Nó không bao giờ thay Beszel-iOS manager đã cài: muốn nhận engine vòng đời mới hơn, hãy chạy lại lệnh bootstrap ở trên — lệnh đó tải bản bootstrap mang checksum engine tương ứng được ghim (xem [Kiến trúc installer](#kiến-trúc-installer)).
 
 ## Sửa lỗi và cấu hình lại
 

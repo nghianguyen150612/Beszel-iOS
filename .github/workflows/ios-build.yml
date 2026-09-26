@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - ios
+      - iOS
     # NOTE: path filters are NOT evaluated for tag pushes by GitHub Actions,
     # so iOS release tags always run the full build + release pipeline below,
-    # while branch pushes to `ios` still skip docs-only changes.
+    # while branch pushes to `iOS` still skip docs-only changes.
     tags:
       - "v*-ios.*"
     paths:
@@ -221,18 +221,18 @@ jobs:
           fi
           echo "Tag format OK: ${TAG}"
 
-      - name: Verify tag belongs to ios history
+      - name: Verify tag belongs to iOS history
         shell: bash
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
           TAG_SHA="$(git rev-list -n 1 "${TAG}")"
           echo "Tag ${TAG} points at ${TAG_SHA}"
-          git fetch origin ios --no-tags
-          if git merge-base --is-ancestor "${TAG_SHA}" origin/ios; then
-            echo "Tag commit is in ios branch history: OK"
+          git fetch origin iOS --no-tags
+          if git merge-base --is-ancestor "${TAG_SHA}" origin/iOS; then
+            echo "Tag commit is in iOS branch history: OK"
           else
-            echo "ERROR: tag ${TAG} (${TAG_SHA}) is not an ancestor of origin/ios; refusing to release" >&2
+            echo "ERROR: tag ${TAG} (${TAG_SHA}) is not an ancestor of origin/iOS; refusing to release" >&2
             exit 1
           fi
 

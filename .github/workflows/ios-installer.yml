@@ -1,0 +1,129 @@
+name: iOS installer lifecycle
+
+# Focused installer CI: keeps the pipe-safe bootstrap (install.sh), the
+# checksum-pinned lifecycle engine (scripts/ios/install-beszel.sh), their
+# test suites and the installer documentation covered without mixing those
+# responsibilities into the application build workflow (ios-build.yml).
+
+on:
+  push:
+    branches: [iOS]
+    paths:
+      - install.sh
+      - scripts/ios/install-beszel.sh
+      - tests/install-sh-test.sh
+      - tests/bootstrap-test.sh
+      - tests/ios-patch-sentinels.sh
+      - tests/upstream-sync-test.sh
+      - README.md
+      - README.vi.md
+      - docs/architecture.md
+      - docs/architecture.vi.md
+      - docs/device-validation.md
+      - docs/device-validation.vi.md
+      - docs/ios-build-notes.md
+      - docs/ios-build-notes.vi.md
+      - docs/ios-port-status.md
+      - docs/ios-port-status.vi.md
+      - docs/upstream-sync.md
+      - docs/upstream-sync.vi.md
+      - .github/workflows/ios-installer.yml
+      - .github/workflows/ios-build.yml
+  pull_request:
+    branches: [iOS]
+    paths:
+      - install.sh
+      - scripts/ios/install-beszel.sh
+      - tests/install-sh-test.sh
+      - tests/bootstrap-test.sh
+      - tests/ios-patch-sentinels.sh
+      - tests/upstream-sync-test.sh
+      - README.md
+      - README.vi.md
+      - docs/architecture.md
+      - docs/architecture.vi.md
+      - docs/device-validation.md
+      - docs/device-validation.vi.md
+      - docs/ios-build-notes.md
+      - docs/ios-build-notes.vi.md
+      - docs/ios-port-status.md
+      - docs/ios-port-status.vi.md
+      - docs/upstream-sync.md
+      - docs/upstream-sync.vi.md
+      - .github/workflows/ios-installer.yml
+      - .github/workflows/ios-build.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  installer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Canonical iOS branch references
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/scripts/ios/install-beszel.sh'
+          actual=$(sed -n 's/^engine_url=//p' install.sh)
+          if [ "$actual" != "$expected" ]; then
+            echo "ERROR: unexpected engine_url: $actual" >&2
+            exit 1
+          fi
+          # --exclude: this workflow file necessarily contains the patterns below.
+          if grep -REn --exclude='ios-installer.yml' 'Beszel-iOS/ios/' install.sh scripts README.md README.vi.md docs .github; then
+            echo 'ERROR: lowercase ios branch found in a raw URL' >&2
+            exit 1
+          fi
+          if grep -Fn 'badge.svg?branch=ios' README.md README.vi.md; then
+            echo 'ERROR: lowercase ios branch found in a workflow badge' >&2
+            exit 1
+          fi
+          if grep -REn --exclude='ios-installer.yml' 'origin/ios([^A-Za-z0-9_-]|$)' .github/workflows; then
+            echo 'ERROR: lowercase origin/ios reference found in a workflow' >&2
+            exit 1
+          fi
+          if grep -REn --exclude='ios-installer.yml' '^[[:space:]]*-[[:space:]]+ios[[:space:]]*$' .github/workflows; then
+            echo 'ERROR: lowercase ios branch filter found in a workflow' >&2
+            exit 1
+          fi
+
+      - name: POSIX syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh -n install.sh
+          sh -n scripts/ios/install-beszel.sh
+          sh -n tests/install-sh-test.sh
+          sh -n tests/bootstrap-test.sh
+          sh -n tests/ios-patch-sentinels.sh
+          sh -n tests/upstream-sync-test.sh
+
+      - name: Bootstrap checksum pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=$(sed -n 's/^engine_sha=//p' install.sh)
+          if ! printf '%s\n' "$expected" | grep -Eq '^[0-9a-f]{64}$'; then
+            echo "ERROR: engine_sha is not 64 lowercase hex characters: $expected" >&2
+            exit 1
+          fi
+          printf '%s  scripts/ios/install-beszel.sh\n' "$expected" | sha256sum -c -
+
+      - name: Bootstrap tests
+        run: sh tests/bootstrap-test.sh
+
+      - name: Lifecycle engine tests
+        run: sh tests/install-sh-test.sh
+
+      - name: Patch sentinels and upstream sync tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh tests/ios-patch-sentinels.sh
+          sh tests/upstream-sync-test.sh

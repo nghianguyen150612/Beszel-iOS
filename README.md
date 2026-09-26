@@ -57,6 +57,40 @@ beszel-ios version
 
 The curl installer remains available if you need to install or recover the manager again.
 
+## Installer architecture
+
+The one-line command is a **pipe-safe bootstrap**, not the installer itself:
+
+```text
+curl .../iOS/install.sh | sudo sh
+        |
+        v
+small bootstrap (install.sh)
+        |  1. downloads scripts/ios/install-beszel.sh over HTTPS
+        |  2. verifies it against the SHA-256 pinned in install.sh
+        |  3. executes the verified local copy as manager.sh
+        v
+lifecycle engine (menu, install/update, repair, reconfigure,
+uninstall/purge, persistent beszel-ios CLI, status/diagnostics/doctor,
+service control)
+        |
+        v
+that exact verified engine file is persisted as
+/var/lib/beszel-ios/manager.sh
+```
+
+What this provides:
+
+- **Deterministic engine selection** for a given fetched bootstrap — the engine that runs is fixed by `engine_sha` inside `install.sh`.
+- **Fail-closed TOCTOU protection** between fetching the bootstrap and fetching the engine: if the `iOS` branch changes in between, the checksums no longer match and the run aborts *before* the engine executes.
+- **Verified manager persistence** — a successful install/update persists byte-for-byte the same local engine file that performed the transaction. The engine never re-downloads manager source from the branch, so a normal `beszel-ios update` refreshes Beszel application binaries only and never silently swaps the manager for a newer one.
+
+What it is **not**: the bootstrap itself is still fetched over HTTPS from the mutable `iOS` branch, so this is a checksum-pinned install path, not full cryptographic release signing. CI (`.github/workflows/ios-installer.yml`) fails whenever the engine changes without `engine_sha` being updated in the same commit.
+
+To adopt a newer manager after the `iOS` branch publishes one, re-run the same bootstrap command shown above — it fetches a newer bootstrap whose pinned digest corresponds to the newer engine. There is no `self-update` command, and application updates are deliberately decoupled from manager updates.
+
+Validation status, stated precisely: the existing application lifecycle operations are [physically validated](docs/device-validation.md) on the reference iPad; the persistent CLI `service`/`doctor` commands are fixture-tested only; the new bootstrap/checksum-pin architecture is host/fixture/CI validated (`tests/bootstrap-test.sh`, `tests/install-sh-test.sh`, installer workflow) and has not been re-run on a physical device.
+
 ## CLI administration
 
 After the persistent `beszel-ios` command is installed, use it to manage the application and its existing LaunchDaemons:
@@ -186,7 +220,7 @@ Newer chips (including arm64e devices) and newer iOS generations are **not claim
 
 Other jailbreaks and bootstraps that provide the required root / bootstrap environment *may* work, but they are **currently unverified** until tested on real hardware.
 
-Concretely, a different jailbreak / bootstrap has a reasonable chance of working only if it provides all of the following, which is what `install.sh` actually uses:
+Concretely, a different jailbreak / bootstrap has a reasonable chance of working only if it provides all of the following, which is what the installer (the `install.sh` bootstrap plus the `scripts/ios/install-beszel.sh` lifecycle engine) actually uses:
 
 - Native arm64 command execution (ability to run the downloaded Agent / Hub binaries).
 - Root or `sudo` access for the install session.
@@ -249,6 +283,8 @@ curl -fsSL https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/in
 ```
 
 Choose **Update**. Your settings and Hub data are kept, the new binaries are verified before anything is swapped, and the previous version is kept as a backup with automatic rollback if the new one fails to start.
+
+`beszel-ios update` refreshes the Beszel **application** binaries only. It never replaces the installed Beszel-iOS manager: to adopt a newer lifecycle engine, re-run the bootstrap command above, which fetches a bootstrap carrying the matching pinned engine checksum (see [Installer architecture](#installer-architecture)).
 
 ## Repair and reconfigure
 

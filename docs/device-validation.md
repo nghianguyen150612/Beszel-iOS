@@ -15,6 +15,20 @@ port. This file is updated as validation runs complete.
 | Go test suite | Not run in this environment (pre-existing `dist/` embed asset absence; unrelated to installer; no Go source changed) |
 | Real-device end-to-end matrix (incl. reboot validation) | **Passed** — see below |
 
+### Bootstrap validation status (post split)
+
+The `install.sh` bootstrap and `scripts/ios/install-beszel.sh` engine split was
+validated **on host/CI, not on the reference device**. The counts above record
+the earlier single-file installer run; the current suites are
+`tests/install-sh-test.sh` (814 tests), `tests/bootstrap-test.sh` (54 tests),
+`tests/ios-patch-sentinels.sh` (44), and `tests/upstream-sync-test.sh` (10),
+all green in CI (`.github/workflows/ios-installer.yml`), which also fails if
+`engine_sha` does not match the engine bytes. Bootstrap mismatch-rejection and
+network-guard behavior are fixture-tested with a stubbed `curl`; the engine's
+lifecycle semantics are unchanged from the device-validated run. A real-device
+pass of the new bootstrap (download → pin check → execution) has **not** been
+performed and is not claimed.
+
 ## Real-device validation
 
 **Result: PASSED.**

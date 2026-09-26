@@ -68,9 +68,9 @@ reviewed?”
 | 12 | Frontend embed/build requirement | `internal/site/embed.go` embeds `all:dist`; `internal/site/dist` is ignored; the workflow runs `bun install --frozen-lockfile` (pinned Bun 1.4.0) and `bun run build` before either Go build | Embed path, frontend package/build output, Bun/Vite, or generated frontend API/types |
 | 13 | GitHub release workflow | The iOS workflow uploads the three-file payload and only its tag job publishes; it validates source version, iOS history, checksums, asset count, and Latest/non-draft/non-prerelease state | `beszel.go` version declaration, artifact layout, GitHub action behavior, or release permissions |
 | 14 | iOS release-tag format | `v<upstream>-ios.<positive-integer>`, currently `v0.19.0-ios.1`; enforced by `install.sh` and the iOS release job | Upstream version declaration or any change to the release asset/tag contract |
-| 15 | `install.sh` | Installer 1.0.0: fresh Agent/Hub/Both install, checksum-pinned downloads, `ldid`, LaunchDaemons, health checks, and offline lifecycle actions | Release asset names, Latest-release URL shape, or upstream version/tag policy |
-| 16 | Installer tests | `tests/install-sh-test.sh`: 551 baseline tests covering parsing, checksum/state handling, transactions, rollback, diagnostics, repair, reconfiguration, uninstall, data retention, and failure paths | Any installer function contract or asset/state name |
-| 17 | LaunchDaemon handling | Plists are generated on-device by `install.sh` as `dev.beszel.agent` and `dev.beszel.hub`; no repository plist is authoritative | Installer path/label changes or iOS launchd behavior |
+| 15 | `install.sh` + `scripts/ios/install-beszel.sh` | Two-layer installer: `install.sh` (v1.0.0) is a pipe-safe bootstrap that downloads the engine over HTTPS, verifies `engine_sha`, and executes the verified copy; the engine provides Installer 1.0.0 behavior: fresh Agent/Hub/Both install, checksum-pinned downloads, `ldid`, LaunchDaemon setup, health checks, and offline lifecycle actions | Release asset names, Latest-release URL shape, upstream version/tag policy, or any engine edit that is not re-pinned in `install.sh` |
+| 16 | Installer tests | `tests/install-sh-test.sh` (814 baseline tests: parsing, checksum/state handling, transactions, rollback, diagnostics, repair, reconfiguration, uninstall, data retention, failure paths, bootstrap provenance) plus `tests/bootstrap-test.sh` (54 bootstrap contract/pin tests) | Any installer function contract, asset/state name, or bootstrap pin/provenance rule |
+| 17 | LaunchDaemon handling | Plists are generated on-device by the engine (`scripts/ios/install-beszel.sh`, persisted as `/var/lib/beszel-ios/manager.sh`) as `dev.beszel.agent` and `dev.beszel.hub`; no repository plist is authoritative | Installer path/label changes or iOS launchd behavior |
 | 18 | `ldid` signing | Installer signs staged binaries with `ldid -S`, installs under `/usr/local/bin`, and enforces `root:wheel` / mode 755 | Device signing tool or jailbreak environment changes; no upstream source dependency |
 | 19 | State tracking | Installer-owned `/var/lib/beszel-ios/install-state` records per-component release tags and original asset SHA-256 values without storing keys | Installer state format or transactional update logic |
 | 20 | Update / rollback | Signed staging, `/usr/local/bin/*.bak` binary backups, automatic rollback, plist preservation, and no Hub data-directory mutation | Release assets, startup/health behavior, or installer transaction assumptions |
@@ -186,10 +186,16 @@ and does not update `main`.
    sh tests/upstream-sync-test.sh
    git diff --check
    sh -n install.sh
+   sh -n scripts/ios/install-beszel.sh
    sh -n tests/install-sh-test.sh
+   sh -n tests/bootstrap-test.sh
    shellcheck -s sh install.sh
+   shellcheck -s sh scripts/ios/install-beszel.sh
    shellcheck -s sh tests/install-sh-test.sh
+   sh tests/bootstrap-test.sh
    sh tests/install-sh-test.sh
+   expected=$(sed -n 's/^engine_sha=//p' install.sh)
+   printf '%s  scripts/ios/install-beszel.sh\n' "$expected" | sha256sum -c -
    ```
 
 7. On a macOS runner, build both `GOOS=ios GOARCH=arm64` outputs using the

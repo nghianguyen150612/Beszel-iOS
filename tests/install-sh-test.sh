@@ -1,5 +1,5 @@
 #!/bin/sh
-# Lightweight tests for ../install.sh.
+# Lightweight tests for the lifecycle engine (scripts/ios/install-beszel.sh).
 #
 # Runs on a normal dev machine (Linux/macOS) as a non-root user. Nothing here
 # touches /usr/local/bin, /var/lib or /Library/LaunchDaemons: path-dependent
@@ -11,10 +11,10 @@
 set -eu
 
 TEST_DIR=$(dirname "$0")
-SCRIPT="${TEST_DIR}/../install.sh"
+SCRIPT="${TEST_DIR}/../scripts/ios/install-beszel.sh"
 export BESZEL_MANAGER_SOURCE_PATH="$SCRIPT"
 
-# Source install.sh for its functions without running the installer.
+# Source the lifecycle engine for its functions without running the installer.
 export BESZEL_INSTALL_LIB_ONLY=1
 # shellcheck disable=SC1090,SC1091
 . "$SCRIPT"
@@ -174,7 +174,7 @@ mkdir -p "${SANDBOX}/release" "${SANDBOX}/work"
 cp "${SANDBOX}/SHA256SUMS" "${SANDBOX}/release/SHA256SUMS"
 cp "${SANDBOX}/SHA256SUMS" "${SANDBOX}/work/SHA256SUMS"
 cp "${SANDBOX}/beszel-hub-ios-arm64" "${SANDBOX}/release/beszel-hub-ios-arm64"
-# Redirect downloads to a local file:// tree (consumed by install.sh functions).
+# Redirect downloads to a local file:// tree (consumed by engine functions).
 # shellcheck disable=SC2034
 RELEASE_BASE="file://${SANDBOX}/release"
 WORK_DIR="${SANDBOX}/work"
@@ -1799,7 +1799,7 @@ cp "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.bak" "${SANDBOX}/trap-plist-good"
 printf 'definitely-not-a-plist' > "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
 printf '0' > "${MOCKCTL}/loaded_agent"
 printf '-' > "${MOCKCTL}/pid_agent"
-if BESZEL_INSTALL_LIB_ONLY=1 BESZEL_UPDATE_SETTLE_SECS=0 BESZEL_BIN_DIR="$SB_BIN" BESZEL_LIB_DIR="$SB_LIB" BESZEL_LAUNCHD_DIR="$SB_LAUNCHD" BESZEL_LOG_DIR="$SB_LOG" BESZEL_TEST_MOCKCTL="$MOCKCTL" PATH="${MOCKBIN}:$PATH" sh -c '. ./install.sh; _UPDATE_ACTIVE="agent-plist"; _UPDATE_NEED_ROLLBACK=1; update_signal_trap; printf "UNREACHABLE\n"' > "${SANDBOX}/trap.log" 2>&1; then _rc=0; else _rc=$?; fi
+if BESZEL_INSTALL_LIB_ONLY=1 BESZEL_UPDATE_SETTLE_SECS=0 BESZEL_BIN_DIR="$SB_BIN" BESZEL_LIB_DIR="$SB_LIB" BESZEL_LAUNCHD_DIR="$SB_LAUNCHD" BESZEL_LOG_DIR="$SB_LOG" BESZEL_TEST_MOCKCTL="$MOCKCTL" PATH="${MOCKBIN}:$PATH" sh -c '. "$0"; _UPDATE_ACTIVE="agent-plist"; _UPDATE_NEED_ROLLBACK=1; update_signal_trap; printf "UNREACHABLE\n"' "$SCRIPT" > "${SANDBOX}/trap.log" 2>&1; then _rc=0; else _rc=$?; fi
 assert_eq "signal trap exits 130" "130" "$_rc"
 if cmp -s "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${SANDBOX}/trap-plist-good"; then
 	pass "signal trap restores known-good plist"
@@ -2500,7 +2500,7 @@ printf '0' > "${MOCKCTL}/loaded_agent"
 printf '-' > "${MOCKCTL}/pid_agent"
 cp "$_UN_STAGED_BIN_FIX" "${SANDBOX}/trap-u-bin-good"
 cp "$_UN_STAGED_PLIST_FIX" "${SANDBOX}/trap-u-plist-good"
-if BESZEL_INSTALL_LIB_ONLY=1 BESZEL_UPDATE_SETTLE_SECS=0 BESZEL_BIN_DIR="$SB_BIN" BESZEL_LIB_DIR="$SB_LIB" BESZEL_LAUNCHD_DIR="$SB_LAUNCHD" BESZEL_LOG_DIR="$SB_LOG" BESZEL_TEST_MOCKCTL="$MOCKCTL" PATH="${MOCKBIN}:$PATH" sh -c '. ./install.sh; _UPDATE_ACTIVE="uninstall-agent"; _UPDATE_NEED_ROLLBACK=1; _UN_COMP="agent"; _UN_WAS_LOADED=1; _UN_HAD_BIN=1; _UN_HAD_PLIST=1; _UN_STAGED_BIN="'"$_UN_STAGED_BIN_FIX"'"; _UN_STAGED_PLIST="'"$_UN_STAGED_PLIST_FIX"'"; update_signal_trap; printf "UNREACHABLE\n"' > "${SANDBOX}/trap-u.log" 2>&1; then _rc=0; else _rc=$?; fi
+if BESZEL_INSTALL_LIB_ONLY=1 BESZEL_UPDATE_SETTLE_SECS=0 BESZEL_BIN_DIR="$SB_BIN" BESZEL_LIB_DIR="$SB_LIB" BESZEL_LAUNCHD_DIR="$SB_LAUNCHD" BESZEL_LOG_DIR="$SB_LOG" BESZEL_TEST_MOCKCTL="$MOCKCTL" PATH="${MOCKBIN}:$PATH" sh -c '. "$0"; _UPDATE_ACTIVE="uninstall-agent"; _UPDATE_NEED_ROLLBACK=1; _UN_COMP="agent"; _UN_WAS_LOADED=1; _UN_HAD_BIN=1; _UN_HAD_PLIST=1; _UN_STAGED_BIN="'"$_UN_STAGED_BIN_FIX"'"; _UN_STAGED_PLIST="'"$_UN_STAGED_PLIST_FIX"'"; update_signal_trap; printf "UNREACHABLE\n"' "$SCRIPT" > "${SANDBOX}/trap-u.log" 2>&1; then _rc=0; else _rc=$?; fi
 assert_eq "uninstall signal trap exits 130" "130" "$_rc"
 if cmp -s "${BIN_DIR}/${AGENT_BIN}" "${SANDBOX}/trap-u-bin-good" && cmp -s "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${SANDBOX}/trap-u-plist-good"; then
 	pass "signal trap restores staged application"
@@ -2848,19 +2848,35 @@ fi
 BOOT_ROOT="${SANDBOX}/cli-bootstrap-source"
 BIN_DIR="${BOOT_ROOT}/usr/local/bin"
 LIB_DIR="${BOOT_ROOT}/var/lib"
-mkdir -p "$BIN_DIR" "$LIB_DIR"
+mkdir -p "$BIN_DIR" "$LIB_DIR" "${BOOT_ROOT}/guard-bin"
 export BESZEL_BIN_DIR="$BIN_DIR"
 export BESZEL_LIB_DIR="$LIB_DIR"
-_cli_script_path="$(pwd)/install.sh"
-if ( BESZEL_MANAGER_SOURCE_PATH="" MANAGER_SOURCE_URL="file://${_cli_script_path}" install_persistent_manager ) > "$CLI_OUT" 2>&1; then
-	pass "curl-pipe fallback stages manager source from configured URL"
+# Test-only network guard: any attempt to fetch lifecycle manager source from
+# the mutable branch is recorded and fails the call. With no local engine
+# source available, persistence must fail closed instead of downloading.
+export BESZEL_NET_GUARD_LOG="${BOOT_ROOT}/manager-source-fetch.log"
+export BESZEL_NET_GUARD_DELEGATE="$REAL_CURL_BIN"
+cat > "${BOOT_ROOT}/guard-bin/curl" << 'GUARDEOF'
+#!/bin/sh
+case "$*" in
+	*raw.githubusercontent.com/nghianguyen150612/Beszel-iOS*)
+		printf '%s\n' "$*" >> "$BESZEL_NET_GUARD_LOG"
+		exit 99
+		;;
+esac
+exec "$BESZEL_NET_GUARD_DELEGATE" "$@"
+GUARDEOF
+chmod +x "${BOOT_ROOT}/guard-bin/curl"
+: > "$BESZEL_NET_GUARD_LOG"
+if ( PATH="${BOOT_ROOT}/guard-bin:$PATH" BESZEL_MANAGER_SOURCE_PATH="" install_persistent_manager ) > "$CLI_OUT" 2>&1; then
+	fail "manager persistence fails closed with no local engine source"
 else
-	fail "curl-pipe fallback stages manager source from configured URL"
+	pass "manager persistence fails closed with no local engine source"
 fi
-if [ -f "${LIB_DIR}/beszel-ios/manager.sh" ] && [ -f "${BIN_DIR}/beszel-ios" ]; then
-	pass "configured source produces a complete manager and wrapper"
+if [ ! -s "$BESZEL_NET_GUARD_LOG" ] && [ ! -e "${LIB_DIR}/beszel-ios/manager.sh" ] && [ ! -e "${BIN_DIR}/beszel-ios" ]; then
+	pass "no mutable-branch manager fetch is attempted and no partial CLI appears"
 else
-	fail "configured source produces a complete manager and wrapper"
+	fail "no mutable-branch manager fetch is attempted and no partial CLI appears"
 fi
 
 FAIL_ROOT="${SANDBOX}/cli-install-failure"
@@ -4044,6 +4060,174 @@ if [ "$_cli_purge_rc" = "0" ] && [ ! -e "${LIB_DIR}/beszel-hub" ] && [ ! -e "${L
 	pass "both purge requires separate exact Hub and Agent phrases"
 else
 	fail "both purge requires separate exact Hub and Agent phrases"
+fi
+
+printf '== bootstrap manager provenance ==\n'
+# The bootstrap (root install.sh) downloads the engine to a private
+# /tmp/beszel-installer.XXXXXX/manager.sh and runs it as manager.sh. The
+# sections below prove that the persistent manager is then byte-for-byte the
+# local engine file that performed the transaction, and that no secondary
+# manager-source fetch from the mutable branch is ever attempted.
+PROV_ROOT="${SANDBOX}/bootstrap-provenance"
+PROV_BIN="${PROV_ROOT}/usr/local/bin"
+PROV_LIB="${PROV_ROOT}/var/lib"
+PROV_LAUNCHD="${PROV_ROOT}/Library/LaunchDaemons"
+PROV_LOG="${PROV_ROOT}/var/log"
+PROV_OUT="${PROV_ROOT}/command.out"
+mkdir -p "$PROV_BIN" "$PROV_LIB" "$PROV_LAUNCHD" "$PROV_LOG"
+BIN_DIR="$PROV_BIN"
+LIB_DIR="$PROV_LIB"
+LAUNCHD_DIR="$PROV_LAUNCHD"
+LOG_DIR="$PROV_LOG"
+export BESZEL_BIN_DIR="$BIN_DIR"
+export BESZEL_LIB_DIR="$LIB_DIR"
+export BESZEL_LAUNCHD_DIR="$LAUNCHD_DIR"
+export BESZEL_LOG_DIR="$LOG_DIR"
+
+cli_write_agent_fixture
+cli_write_hub_fixture
+mkdir -p "${LIB_DIR}/beszel-agent" "${LIB_DIR}/beszel-hub"
+printf 'agent-retained-state\n' > "${LIB_DIR}/beszel-agent/marker"
+printf 'hub-history-marker\n' > "${LIB_DIR}/beszel-hub/history"
+printf 'hub-database-marker\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '123' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '456' > "${MOCKCTL}/pid_hub"
+if install_persistent_manager "$SCRIPT" > "$PROV_OUT" 2>&1; then
+	pass "provenance fixture starts with a managed CLI"
+else
+	fail "provenance fixture starts with a managed CLI"
+fi
+
+# Test-only guard: records and refuses any request for lifecycle manager
+# source from the mutable branch; all other curl calls (loopback health
+# probes) delegate to the standard test mock.
+export BESZEL_NET_GUARD_LOG="${PROV_ROOT}/manager-source-fetch.log"
+export BESZEL_NET_GUARD_DELEGATE="${MOCKBIN}/curl"
+mkdir -p "${PROV_ROOT}/guard-bin"
+cat > "${PROV_ROOT}/guard-bin/curl" << 'GUARDEOF'
+#!/bin/sh
+case "$*" in
+	*raw.githubusercontent.com/nghianguyen150612/Beszel-iOS*)
+		printf '%s\n' "$*" >> "$BESZEL_NET_GUARD_LOG"
+		exit 99
+		;;
+esac
+exec "$BESZEL_NET_GUARD_DELEGATE" "$@"
+GUARDEOF
+chmod +x "${PROV_ROOT}/guard-bin/curl"
+
+# Installed-manager read-only commands never fetch lifecycle manager source.
+: > "$BESZEL_NET_GUARD_LOG"
+if _prov_help=$(PATH="${PROV_ROOT}/guard-bin:$PATH" BESZEL_INSTALL_LIB_ONLY=0 "${PROV_BIN}/beszel-ios" help 2>&1); then _prov_rc=0; else _prov_rc=$?; fi
+if [ "$_prov_rc" = "0" ] && printf '%s\n' "$_prov_help" | grep -q 'Usage: beszel-ios'; then
+	pass "installed CLI help runs without lifecycle manager fetch"
+else
+	fail "installed CLI help runs without lifecycle manager fetch"
+fi
+if _prov_version=$(PATH="${PROV_ROOT}/guard-bin:$PATH" BESZEL_INSTALL_LIB_ONLY=0 "${PROV_BIN}/beszel-ios" version 2>&1); then _prov_rc=0; else _prov_rc=$?; fi
+if [ "$_prov_rc" = "0" ] && printf '%s\n' "$_prov_version" | grep -q 'Beszel-iOS manager version: 1.0.0'; then
+	pass "installed CLI version runs without lifecycle manager fetch"
+else
+	fail "installed CLI version runs without lifecycle manager fetch"
+fi
+if _prov_status=$(PATH="${PROV_ROOT}/guard-bin:$PATH" BESZEL_INSTALL_LIB_ONLY=0 "${PROV_BIN}/beszel-ios" status 2>&1); then _prov_rc=0; else _prov_rc=$?; fi
+if [ "$_prov_rc" = "0" ] && printf '%s\n' "$_prov_status" | grep -q 'Release: v0.19.0-ios.7' && printf '%s\n' "$_prov_status" | grep -q 'Release: v0.19.0-ios.8'; then
+	pass "installed CLI status runs offline with local release state"
+else
+	fail "installed CLI status runs offline with local release state"
+fi
+if _prov_doctor=$(PATH="${PROV_ROOT}/guard-bin:$PATH" BESZEL_INSTALL_LIB_ONLY=0 "${PROV_BIN}/beszel-ios" doctor both 2>&1); then _prov_rc=0; else _prov_rc=$?; fi
+if printf '%s\n' "$_prov_doctor" | grep -q 'Manager: OK' && printf '%s\n' "$_prov_doctor" | grep -q 'Command wrapper: OK'; then
+	pass "installed CLI doctor reads local manager state without manager fetch"
+else
+	fail "installed CLI doctor reads local manager state without manager fetch"
+fi
+if [ ! -s "$BESZEL_NET_GUARD_LOG" ]; then
+	pass "read-only CLI commands perform no lifecycle manager-source fetch"
+else
+	fail "read-only CLI commands perform no lifecycle manager-source fetch"
+fi
+
+# Bootstrap-style persistence: a verified temporary manager.sh (engine bytes
+# plus a fixture-only marker) executed as $0 must be persisted byte-for-byte.
+PROV_STAGE="${PROV_ROOT}/stage"
+mkdir -p "$PROV_STAGE"
+cp "$SCRIPT" "${PROV_STAGE}/manager.sh"
+printf '\n# BESZEL_BOOTSTRAP_STAGE_FIXTURE\n' >> "${PROV_STAGE}/manager.sh"
+: > "$BESZEL_NET_GUARD_LOG"
+if ( PATH="${PROV_ROOT}/guard-bin:$PATH" BESZEL_MANAGER_SOURCE_PATH="" BESZEL_INSTALL_LIB_ONLY=1 sh -c '. "$0"; install_persistent_manager' "${PROV_STAGE}/manager.sh" ) > "$PROV_OUT" 2>&1; then
+	pass "bootstrap-staged engine persists without network access"
+else
+	fail "bootstrap-staged engine persists without network access"
+fi
+if cmp -s "${PROV_STAGE}/manager.sh" "${LIB_DIR}/beszel-ios/manager.sh"; then
+	pass "persistent manager is byte-for-byte the verified temporary engine"
+else
+	fail "persistent manager is byte-for-byte the verified temporary engine"
+fi
+if grep -q 'BESZEL_BOOTSTRAP_STAGE_FIXTURE' "${LIB_DIR}/beszel-ios/manager.sh"; then
+	pass "persisted manager carries the staged engine fixture marker"
+else
+	fail "persisted manager carries the staged engine fixture marker"
+fi
+if [ ! -s "$BESZEL_NET_GUARD_LOG" ]; then
+	pass "bootstrap-style persistence performs no secondary manager fetch"
+else
+	fail "bootstrap-style persistence performs no secondary manager fetch"
+fi
+
+# Installed-manager refresh: a lifecycle refresh copies the manager already
+# being executed; it never downloads a newer engine from the branch.
+cp "${LIB_DIR}/beszel-ios/manager.sh" "${PROV_ROOT}/manager-before-refresh"
+: > "$BESZEL_NET_GUARD_LOG"
+if ( PATH="${PROV_ROOT}/guard-bin:$PATH" BESZEL_MANAGER_SOURCE_PATH="" BESZEL_INSTALL_LIB_ONLY=1 sh -c '. "$0"; install_persistent_manager' "${LIB_DIR}/beszel-ios/manager.sh" ) > "$PROV_OUT" 2>&1; then
+	pass "installed manager refreshes from the executing manager file"
+else
+	fail "installed manager refreshes from the executing manager file"
+fi
+if cmp -s "${PROV_ROOT}/manager-before-refresh" "${LIB_DIR}/beszel-ios/manager.sh"; then
+	pass "manager refresh keeps the installed manager byte-for-byte"
+else
+	fail "manager refresh keeps the installed manager byte-for-byte"
+fi
+if [ ! -s "$BESZEL_NET_GUARD_LOG" ]; then
+	pass "manager refresh performs no lifecycle manager-source fetch"
+else
+	fail "manager refresh performs no lifecycle manager-source fetch"
+fi
+
+# Fail closed: without a recognised local engine source, persistence refuses
+# (no download, no partial files, existing manager untouched).
+cp "${LIB_DIR}/beszel-ios/manager.sh" "${PROV_ROOT}/manager-before-refusal"
+cp "${BIN_DIR}/beszel-ios" "${PROV_ROOT}/command-before-refusal"
+: > "$BESZEL_NET_GUARD_LOG"
+if ( PATH="${PROV_ROOT}/guard-bin:$PATH" BESZEL_MANAGER_SOURCE_PATH="" install_persistent_manager ) > "$PROV_OUT" 2>&1; then
+	fail "persistence without recognised local engine source fails closed"
+else
+	pass "persistence without recognised local engine source fails closed"
+fi
+if [ ! -s "$BESZEL_NET_GUARD_LOG" ] &&
+	cmp -s "${PROV_ROOT}/manager-before-refusal" "${LIB_DIR}/beszel-ios/manager.sh" &&
+	cmp -s "${PROV_ROOT}/command-before-refusal" "${BIN_DIR}/beszel-ios" &&
+	[ -z "$(find "$LIB_DIR" -name '*.new.*' 2> /dev/null)" ]; then
+	pass "refusal leaves no fetch attempt, no partial staging, existing CLI intact"
+else
+	fail "refusal leaves no fetch attempt, no partial staging, existing CLI intact"
+fi
+
+# Static provenance guards on the engine itself.
+if grep -q 'MANAGER_SOURCE_URL' "$SCRIPT"; then
+	fail "engine defines no mutable manager-source URL"
+else
+	pass "engine defines no mutable manager-source URL"
+fi
+if sed -n '/^stage_manager_source() {/,/^}/p' "$SCRIPT" | grep -q 'curl'; then
+	fail "stage_manager_source performs no download"
+else
+	pass "stage_manager_source performs no download"
 fi
 
 printf '\n%d passed, %d failed\n' "$_pass" "$_fail"

@@ -177,13 +177,22 @@ _require_build_tag "agent/battery/battery_darwin.go" "darwin && !ios" \
 
 # ---- E. Installer release tag expectations --------------------------------------------
 
-_require_in_file "install.sh" \
+_require_in_file "scripts/ios/install-beszel.sh" \
 	"-ios\\." \
-	"E.1 install.sh accepts iOS tag scheme"
+	"E.1 lifecycle engine accepts iOS tag scheme"
+
+_require_in_file "scripts/ios/install-beszel.sh" \
+	"valid_release_tag" \
+	"E.2 lifecycle engine validates release tags"
+
+# The bootstrap must stay a small checksum-pinned downloader of the engine.
+_require_in_file "install.sh" \
+	"engine_sha=" \
+	"E.6 bootstrap pins the lifecycle engine checksum"
 
 _require_in_file "install.sh" \
-	"valid_release_tag" \
-	"E.2 install.sh validates release tags"
+	"scripts/ios/install-beszel.sh" \
+	"E.7 bootstrap targets the canonical engine URL"
 
 _require_grep ".github/workflows/ios-build.yml" \
 	"v\*-ios\.\*" \

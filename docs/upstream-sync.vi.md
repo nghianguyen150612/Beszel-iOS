@@ -67,9 +67,9 @@ Nó trả lời: “Nếu bản gốc đổi X, hành vi iOS nào phải xem l�
 | 12 | Yêu cầu build/embed frontend | `internal/site/embed.go` nhúng `all:dist`; `internal/site/dist` bị ignore; workflow chạy `bun install --frozen-lockfile` (Bun 1.4.0 đã ghim) và `bun run build` trước cả hai lượt build Go | Đường dẫn embed, package/build output frontend, Bun/Vite, hay API/type frontend sinh ra |
 | 13 | Workflow phát hành GitHub | Workflow iOS tải lên payload ba file và chỉ job tag của nó mới phát hành; nó kiểm tra phiên bản nguồn, lịch sử iOS, checksum, số asset, và trạng thái Latest/không draft/không prerelease | Khai báo phiên bản `beszel.go`, bố cục artifact, hành vi action GitHub, hay quyền release |
 | 14 | Định dạng tag phát hành iOS | `v<upstream>-ios.<positive-integer>`, hiện là `v0.19.0-ios.1`; `install.sh` và job phát hành iOS cùng ép | Khai báo phiên bản bản gốc hay đổi contract tag/asset phát hành |
-| 15 | `install.sh` | Installer 1.0.0: cài mới Agent/Hub/Both, tải ghim checksum, `ldid`, LaunchDaemon, kiểm tra health, và các action vòng đời ngoại tuyến | Tên asset phát hành, dạng URL Latest-release, hay chính sách version/tag bản gốc |
-| 16 | Test installer | `tests/install-sh-test.sh`: 551 test baseline bao phủ parsing, xử lý checksum/state, giao dịch, quay lại, chẩn đoán, sửa, cấu hình lại, gỡ, giữ dữ liệu và đường lỗi | Mọi contract hàm installer hay tên asset/state |
-| 17 | Xử lý LaunchDaemon | Plist do `install.sh` sinh trên máy thành `dev.beszel.agent` và `dev.beszel.hub`; không có plist nào trong repo là chuẩn | Đổi đường dẫn/nhãn installer hay hành vi launchd iOS |
+| 15 | `install.sh` + `scripts/ios/install-beszel.sh` | Hai lớp: `install.sh` (v1.0.0) là bootstrap an toàn khi pipe, tải engine qua HTTPS, đối chiếu `engine_sha` rồi mới chạy bản đã xác minh; engine cung cấp hành vi Installer 1.0.0: cài mới Agent/Hub/Both, tải ghim checksum, `ldid`, dựng LaunchDaemon, kiểm tra health, và các action vòng đời ngoại tuyến | Tên asset phát hành, dạng URL Latest-release, chính sách version/tag bản gốc, hoặc mọi sửa engine mà không ghim lại trong `install.sh` |
+| 16 | Test installer | `tests/install-sh-test.sh` (814 test baseline: parsing, xử lý checksum/state, giao dịch, quay lại, chẩn đoán, sửa, cấu hình lại, gỡ, giữ dữ liệu, đường lỗi, chứng minh nguồn gốc bootstrap) cùng `tests/bootstrap-test.sh` (54 test contract/pin của bootstrap) | Mọi contract hàm installer, tên asset/state, hay quy tắc pin/nguồn gốc bootstrap |
+| 17 | Xử lý LaunchDaemon | Plist do engine (`scripts/ios/install-beszel.sh`, được lưu thành `/var/lib/beszel-ios/manager.sh`) sinh trên máy thành `dev.beszel.agent` và `dev.beszel.hub`; không có plist nào trong repo là chuẩn | Đổi đường dẫn/nhãn installer hay hành vi launchd iOS |
 | 18 | Ký `ldid` | Installer ký binary staging bằng `ldid -S`, cài dưới `/usr/local/bin`, và ép `root:wheel` / mode 755 | Đổi công cụ ký hay môi trường jailbreak trên máy; không phụ thuộc mã nguồn bản gốc |
 | 19 | Theo dõi trạng thái | `/var/lib/beszel-ios/install-state` của installer ghi tag từng thành phần và SHA-256 asset gốc, không lưu key | Định dạng state installer hay logic cập nhật giao dịch |
 | 20 | Cập nhật / quay lại | Staging đã ký, sao lưu binary `/usr/local/bin/*.bak`, tự quay lại, giữ plist, và không sửa thư mục dữ liệu Hub | Asset phát hành, hành vi khởi động/health, hay giả định giao dịch installer |
@@ -183,10 +183,16 @@ không cập nhật `main`.
    sh tests/upstream-sync-test.sh
    git diff --check
    sh -n install.sh
+   sh -n scripts/ios/install-beszel.sh
    sh -n tests/install-sh-test.sh
+   sh -n tests/bootstrap-test.sh
    shellcheck -s sh install.sh
+   shellcheck -s sh scripts/ios/install-beszel.sh
    shellcheck -s sh tests/install-sh-test.sh
+   sh tests/bootstrap-test.sh
    sh tests/install-sh-test.sh
+   expected=$(sed -n 's/^engine_sha=//p' install.sh)
+   printf '%s  scripts/ios/install-beszel.sh\n' "$expected" | sha256sum -c -
    ```
 
 7. Trên runner macOS, build cả hai output `GOOS=ios GOARCH=arm64` bằng build frontend

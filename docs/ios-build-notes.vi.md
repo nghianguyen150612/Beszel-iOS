@@ -91,7 +91,7 @@ Mỗi bản phát hành vì vậy cung cấp đúng contract cho installer tươ
 - `.../releases/latest/download/beszel-hub-ios-arm64`
 - `.../releases/latest/download/SHA256SUMS`
 
-Installer (`install.sh`, v1.0.0) đi theo redirect `/releases/latest`
+Engine vòng đời (`scripts/ios/install-beszel.sh`, do bootstrap `install.sh` thực thi, v1.0.0) đi theo redirect `/releases/latest`
 một lần mỗi lượt chạy để resolve tag hiện tại (kiểm tra theo
 `v<upstream>-ios.<rev>`), rồi ghim mọi lượt tải của lượt đó về
 `.../releases/download/<tag>/...` để `SHA256SUMS` và cả hai binary luôn
