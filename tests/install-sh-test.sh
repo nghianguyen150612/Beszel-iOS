@@ -267,6 +267,7 @@ for _a in "$@"; do
 done
 cd "${BESZEL_TEST_MOCKCTL}" || exit 1
 if [ "$_health" = "1" ]; then
+	[ "${1:-}" = "-q" ] || exit 64
 	printf '%s\n' "$_last" >> health.log
 	if [ -f health_fail_remaining ]; then
 		_n=$(cat health_fail_remaining)
@@ -2655,7 +2656,7 @@ export BESZEL_BIN_DIR="$BIN_DIR"
 export BESZEL_LIB_DIR="$LIB_DIR"
 export BESZEL_LAUNCHD_DIR="$LAUNCHD_DIR"
 export BESZEL_LOG_DIR="$LOG_DIR"
-CLI_SECRET='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqM66/yBCvP5nLv8mQuczlB9lXh9B7 CLI_SECRET_MUST_NOT_PRINT'
+CLI_SECRET='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqM66/yBCvP5nLv8mQuczlB9lXh9B7 CLI_SECRET_MUST_NOT_PRINT DOCTOR_SECRET_MUST_NOT_PRINT'
 
 _cli_version_empty=$(main version)
 if printf '%s\n' "$_cli_version_empty" | grep -q 'Agent: not installed' && printf '%s\n' "$_cli_version_empty" | grep -q 'Hub: not installed'; then
@@ -2756,8 +2757,6 @@ cli_expect_fail "unknown command fails with usage" "Unknown command" not-a-comma
 cli_expect_fail "excess arguments fail with usage" "Too many arguments" install agent extra
 cli_expect_fail "unknown component fails with usage" "Unknown component" install toaster
 cli_expect_fail "unsupported option combination fails" "Too many arguments" install agent --force
-cli_expect_fail "service remains deferred to CLI-003" "deferred to CLI-003" service start
-cli_expect_fail "doctor remains deferred to CLI-003" "deferred to CLI-003" doctor agent
 
 if install_persistent_manager "$SCRIPT"; then
 	pass "persistent manager installation succeeds"
@@ -2943,6 +2942,58 @@ cli_expect_usage "uninstall rejects force" uninstall agent --force
 cli_expect_usage "uninstall rejects trailing purge argument" uninstall agent --purge extra
 cli_expect_usage "update rejects extra argument" update agent extra
 cli_expect_usage "diagnostics rejects extra argument" diagnostics agent extra
+
+cli_expect_service_usage() {
+	_cesu_name="$1"
+	shift
+	_cesu_rc=0
+	if ( main "$@" ) > "$CLI_OUT" 2>&1; then
+		fail "$_cesu_name (unexpected success)"
+	else
+		_cesu_rc=$?
+	fi
+	if [ "$_cesu_rc" = "2" ] && grep -Fq 'Usage: beszel-ios service <agent|hub|both> <start|stop|restart|status>' "$CLI_OUT"; then
+		pass "$_cesu_name"
+	else
+		fail "$_cesu_name (expected service usage exit 2, got $_cesu_rc)"
+	fi
+}
+cli_expect_service_usage "service requires complete grammar" service
+cli_expect_service_usage "service requires action" service agent
+cli_expect_service_usage "service hub requires action" service hub
+cli_expect_service_usage "service both requires action" service both
+cli_expect_service_usage "service rejects unknown component" service foo start
+cli_expect_service_usage "service rejects unknown action" service agent foo
+cli_expect_service_usage "service rejects agent install ownership alias" service agent install
+cli_expect_service_usage "service rejects agent uninstall ownership alias" service agent uninstall
+cli_expect_service_usage "service rejects reload alias" service agent reload
+cli_expect_service_usage "service rejects missing component before action" service start
+cli_expect_service_usage "service rejects status without component" service status
+cli_expect_service_usage "service rejects extra start argument" service agent start extra
+cli_expect_service_usage "service rejects extra status argument" service hub status extra
+cli_expect_usage "doctor rejects unknown component" doctor foo
+cli_expect_usage "doctor rejects extra argument" doctor both extra
+
+cli_parser_probe() (
+	cli_service() { printf 'service:%s:%s\n' "$1" "$2"; }
+	cli_doctor() { printf 'doctor:%s\n' "$1"; }
+	main "$@"
+)
+for _cli_parser_comp in agent hub both; do
+	for _cli_parser_action in start stop restart status; do
+		_cli_parser_output=$(cli_parser_probe service "$_cli_parser_comp" "$_cli_parser_action")
+		assert_eq "service grammar dispatches ${_cli_parser_comp} ${_cli_parser_action}" "service:${_cli_parser_comp}:${_cli_parser_action}" "$_cli_parser_output"
+	done
+done
+assert_eq "bare doctor selects installed-component scope" "doctor:auto" "$(cli_parser_probe doctor)"
+assert_eq "doctor Agent grammar dispatches" "doctor:agent" "$(cli_parser_probe doctor agent)"
+assert_eq "doctor Hub grammar dispatches" "doctor:hub" "$(cli_parser_probe doctor hub)"
+assert_eq "doctor both grammar dispatches" "doctor:both" "$(cli_parser_probe doctor both)"
+if printf '%s\n' "$(main help)" | grep -Fq 'beszel-ios                   Open the interactive menu (no arguments)' && printf '%s\n' "$(main help)" | grep -Fq 'service <agent|hub|both> <start|stop|restart|status>' && printf '%s\n' "$(main help)" | grep -Fq 'doctor [agent|hub|both]' && printf '%s\n' "$(main help)" | grep -Fq 'Read-only: status, diagnostics, doctor' && ! printf '%s\n' "$(main help)" | grep -Fq 'deferred to CLI-003'; then
+	pass "help documents completed service/doctor grammar and access"
+else
+	fail "help documents completed service/doctor grammar and access"
+fi
 
 CLI_STATUS_ROOT="${SANDBOX}/cli-component-status"
 BIN_DIR="${CLI_STATUS_ROOT}/usr-local-bin"
@@ -3313,6 +3364,549 @@ elif ! grep -Fq "$CLI_SECRET" "$CLI_OUT"; then
 else
 	fail "CLI failure output does not echo key-like argument"
 fi
+
+printf '== public service management ==\n'
+cli_mutating_command() (
+	check_root() { :; }
+	check_launchctl() { :; }
+	main "$@"
+)
+cli_readonly_command() (
+	check_root() { printf 'unexpected root gate\n' >> "$CLI_GATE_LOG"; exit 97; }
+	main "$@"
+)
+
+mock_reset
+if [ "$(id -u)" != "0" ]; then
+	if BESZEL_INSTALL_LIB_ONLY=0 sh "$SCRIPT" service agent start > "$CLI_OUT" 2>&1; then
+		fail "service mutation requires root"
+	elif grep -qi 'must run as root' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ]; then
+		pass "service start requires root before mutation"
+	else
+		fail "service start requires root before mutation"
+	fi
+else
+	pass "service root gate left for device/root runtime validation"
+fi
+
+_cli_status_match=$(main status agent)
+: > "$CLI_GATE_LOG"
+: > "${MOCKCTL}/mock.log"
+_cli_service_status_match=$(cli_readonly_command service agent status)
+if [ "$_cli_status_match" = "$_cli_service_status_match" ] && [ ! -s "$CLI_GATE_LOG" ] && [ ! -s "${MOCKCTL}/mock.log" ]; then
+	pass "service status matches top-level status and remains read-only"
+else
+	fail "service status matches top-level status and remains read-only"
+fi
+_cli_hub_status_match=$(main status hub)
+_cli_service_hub_status_match=$(cli_readonly_command service hub status)
+assert_eq "Hub service status shares CLI-002 health observations" "$_cli_hub_status_match" "$_cli_service_hub_status_match"
+mv "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.status-saved"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.status-saved"
+if _cli_service_both_missing=$(main service both status) && printf '%s\n' "$_cli_service_both_missing" | grep -q '^Agent$' && printf '%s\n' "$_cli_service_both_missing" | grep -q '^Hub$' && printf '%s\n' "$_cli_service_both_missing" | grep -q 'Installed: no'; then pass "service both status displays a missing component informationally"; else fail "service both status displays a missing component informationally"; fi
+mv "${BIN_DIR}/${HUB_BIN}.status-saved" "${BIN_DIR}/${HUB_BIN}"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist.status-saved" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+
+cli_write_agent_fixture
+cli_write_hub_fixture
+chmod +x "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${HUB_BIN}"
+mkdir -p "${LIB_DIR}/beszel-agent" "${LIB_DIR}/beszel-hub"
+
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '123' > "${MOCKCTL}/pid_agent"
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1 && grep -Fq 'already running' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ]; then
+	pass "Agent start is a safe no-op when already running"
+else
+	fail "Agent start is a safe no-op when already running"
+fi
+
+mock_reset
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/loaded_agent")" = "1" ] && [ "$(cat "${MOCKCTL}/mock.log")" = "load ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ]; then
+	pass "Agent start loads an unloaded managed plist and verifies a live PID"
+else
+	fail "Agent start loads an unloaded managed plist and verifies a live PID"
+fi
+
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '-' > "${MOCKCTL}/pid_agent"
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist
+load ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ]; then
+	pass "Agent start unloads and reloads a loaded-but-stopped service"
+else
+	fail "Agent start unloads and reloads a loaded-but-stopped service"
+fi
+
+mock_reset
+BESZEL_TEST_NO_PID=1
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && grep -Fq 'did not reach a stable running state' "$CLI_OUT" && ! grep -Fq 'running and verified' "$CLI_OUT"; then
+	pass "Agent start verification failure returns non-zero without claiming success"
+else
+	fail "Agent start verification failure returns non-zero without claiming success"
+fi
+BESZEL_TEST_NO_PID=0
+
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '123' > "${MOCKCTL}/pid_agent"
+if cli_mutating_command service agent stop > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/loaded_agent")" = "0" ] && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ]; then
+	pass "Agent stop unloads a running managed service"
+else
+	fail "Agent stop unloads a running managed service"
+fi
+mv "${LIB_DIR}/beszel-agent" "${LIB_DIR}/beszel-agent.service-test-saved"
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '123' > "${MOCKCTL}/pid_agent"
+if cli_mutating_command service agent stop > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/loaded_agent")" = "0" ]; then
+	pass "Agent stop remains available when its data directory is missing"
+else
+	fail "Agent stop remains available when its data directory is missing"
+fi
+mv "${LIB_DIR}/beszel-agent.service-test-saved" "${LIB_DIR}/beszel-agent"
+mock_reset
+if cli_mutating_command service agent stop > "$CLI_OUT" 2>&1 && grep -Fq 'already stopped' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ]; then
+	pass "Agent stop is idempotent when already unloaded"
+else
+	fail "Agent stop is idempotent when already unloaded"
+fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '123' > "${MOCKCTL}/pid_agent"
+if cli_mutating_command service agent restart > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist
+load ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ]; then
+	pass "Agent restart is exactly validated stop then start"
+else
+	fail "Agent restart is exactly validated stop then start"
+fi
+
+_cli_agent_fixture_copy="${CLI_STATUS_ROOT}/agent-service-fixture"
+cp "${BIN_DIR}/${AGENT_BIN}" "$_cli_agent_fixture_copy"
+mock_reset
+mv "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${AGENT_BIN}.saved"
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && grep -Fq 'Refusing service operation' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Agent service refuses a missing binary before launchctl"; else fail "Agent service refuses a missing binary before launchctl"; fi
+mv "${BIN_DIR}/${AGENT_BIN}.saved" "${BIN_DIR}/${AGENT_BIN}"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved"
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && grep -Fq 'Refusing service operation' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Agent service refuses a missing plist before launchctl"; else fail "Agent service refuses a missing plist before launchctl"; fi
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+mv "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${AGENT_BIN}.saved"
+ln -s "$_cli_agent_fixture_copy" "${BIN_DIR}/${AGENT_BIN}"
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Agent service refuses a symlinked binary"; else fail "Agent service refuses a symlinked binary"; fi
+rm -f "${BIN_DIR}/${AGENT_BIN}"
+mv "${BIN_DIR}/${AGENT_BIN}.saved" "${BIN_DIR}/${AGENT_BIN}"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved"
+ln -s "${CLI_STATUS_ROOT}/missing-plist-target" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Agent service refuses a symlinked plist"; else fail "Agent service refuses a symlinked plist"; fi
+rm -f "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+BESZEL_TEST_PLIST_VALID=fail
+mock_reset
+BESZEL_TEST_PLIST_VALID=fail
+if cli_mutating_command service agent start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Agent service refuses an invalid plist"; else fail "Agent service refuses an invalid plist"; fi
+BESZEL_TEST_PLIST_VALID=ok
+
+mock_reset
+write_hub_plist 9123 "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '456' > "${MOCKCTL}/pid_hub"
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1 && grep -Fq 'already running' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ] && [ ! -s "${MOCKCTL}/health.log" ]; then
+	pass "Hub start is a safe no-op when already running"
+else
+	fail "Hub start is a safe no-op when already running"
+fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '-' > "${MOCKCTL}/pid_hub"
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${HUB_LABEL}.plist
+load ${LAUNCHD_DIR}/${HUB_LABEL}.plist" ] && grep -Fq 'http://127.0.0.1:9123/api/health' "${MOCKCTL}/health.log"; then
+	pass "Hub start recovers loaded-but-stopped service and checks configured port"
+else
+	fail "Hub start recovers loaded-but-stopped service and checks configured port"
+fi
+mock_reset
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ] && grep -Fq 'http://127.0.0.1:9123/api/health' "${MOCKCTL}/health.log"; then
+	pass "Hub start verifies health on the configured non-default port"
+else
+	fail "Hub start verifies health on the configured non-default port"
+fi
+mock_reset
+BESZEL_TEST_NO_PID=1
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && grep -Fq 'no live Hub process could be confirmed' "$CLI_OUT" && [ ! -s "${MOCKCTL}/health.log" ]; then pass "Hub start fails if no live Hub process is confirmed"; else fail "Hub start fails if no live Hub process is confirmed"; fi
+BESZEL_TEST_NO_PID=0
+mock_reset
+BESZEL_TEST_HEALTH=fail
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && grep -Fq 'did not pass its loopback health check' "$CLI_OUT" && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ]; then
+	pass "Hub health timeout fails without claiming success"
+else
+	fail "Hub health timeout fails without claiming success"
+fi
+BESZEL_TEST_HEALTH=ok
+mock_reset
+sed 's/0\.0\.0\.0:9123/0.0.0.0:invalid/' "${LAUNCHD_DIR}/${HUB_LABEL}.plist" > "${LAUNCHD_DIR}/${HUB_LABEL}.plist.tmp"
+cat "${LAUNCHD_DIR}/${HUB_LABEL}.plist.tmp" > "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+rm -f "${LAUNCHD_DIR}/${HUB_LABEL}.plist.tmp"
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ ! -s "${MOCKCTL}/mock.log" ] && [ ! -s "${MOCKCTL}/health.log" ]; then
+	pass "Hub service refuses an unparseable configured port without fallback"
+else
+	fail "Hub service refuses an unparseable configured port without fallback"
+fi
+write_hub_plist 9123 "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '456' > "${MOCKCTL}/pid_hub"
+if cli_mutating_command service hub stop > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/loaded_hub")" = "0" ]; then pass "Hub stop unloads its managed service"; else fail "Hub stop unloads its managed service"; fi
+mock_reset
+if cli_mutating_command service hub stop > "$CLI_OUT" 2>&1 && grep -Fq 'already stopped' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Hub stop is idempotent when already unloaded"; else fail "Hub stop is idempotent when already unloaded"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '456' > "${MOCKCTL}/pid_hub"
+if cli_mutating_command service hub restart > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${HUB_LABEL}.plist
+load ${LAUNCHD_DIR}/${HUB_LABEL}.plist" ]; then pass "Hub restart is exactly validated stop then start"; else fail "Hub restart is exactly validated stop then start"; fi
+
+_cli_hub_fixture_copy="${CLI_STATUS_ROOT}/hub-service-fixture"
+cp "${BIN_DIR}/${HUB_BIN}" "$_cli_hub_fixture_copy"
+mock_reset
+mv "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.saved"
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && grep -Fq 'Refusing service operation' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Hub service refuses a missing binary before launchctl"; else fail "Hub service refuses a missing binary before launchctl"; fi
+mv "${BIN_DIR}/${HUB_BIN}.saved" "${BIN_DIR}/${HUB_BIN}"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved"
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && grep -Fq 'Refusing service operation' "$CLI_OUT" && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Hub service refuses a missing plist before launchctl"; else fail "Hub service refuses a missing plist before launchctl"; fi
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+mv "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.saved"
+ln -s "$_cli_hub_fixture_copy" "${BIN_DIR}/${HUB_BIN}"
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Hub service refuses a symlinked binary"; else fail "Hub service refuses a symlinked binary"; fi
+rm -f "${BIN_DIR}/${HUB_BIN}"; mv "${BIN_DIR}/${HUB_BIN}.saved" "${BIN_DIR}/${HUB_BIN}"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved"
+ln -s "${CLI_STATUS_ROOT}/missing-hub-service-plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Hub service refuses a symlinked plist"; else fail "Hub service refuses a symlinked plist"; fi
+rm -f "${LAUNCHD_DIR}/${HUB_LABEL}.plist"; mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+BESZEL_TEST_PLIST_VALID=fail
+mock_reset
+BESZEL_TEST_PLIST_VALID=fail
+if cli_mutating_command service hub start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ ! -s "${MOCKCTL}/mock.log" ]; then pass "Hub service refuses an invalid plist"; else fail "Hub service refuses an invalid plist"; fi
+BESZEL_TEST_PLIST_VALID=ok
+
+printf '== both-service order, failure and preflight ==\n'
+cli_reset_service_fixtures() {
+	rm -f "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${HUB_BIN}" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+	cli_write_agent_fixture
+	cli_write_hub_fixture
+	chmod +x "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${HUB_BIN}"
+	mkdir -p "${LIB_DIR}/beszel-agent" "${LIB_DIR}/beszel-hub"
+}
+cli_reset_service_fixtures
+mock_reset
+if cli_mutating_command service both start > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/mock.log")" = "load ${LAUNCHD_DIR}/${HUB_LABEL}.plist
+load ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ]; then pass "service both starts Hub before Agent"; else fail "service both starts Hub before Agent"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+if cli_mutating_command service both stop > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist
+unload ${LAUNCHD_DIR}/${HUB_LABEL}.plist" ]; then pass "service both stops Agent before Hub"; else fail "service both stops Agent before Hub"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+if cli_mutating_command service both restart > "$CLI_OUT" 2>&1 && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist
+unload ${LAUNCHD_DIR}/${HUB_LABEL}.plist
+load ${LAUNCHD_DIR}/${HUB_LABEL}.plist
+load ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ]; then pass "service both restart uses Agent stop, Hub stop/start, Agent start"; else fail "service both restart ordering"; fi
+
+mock_reset
+BESZEL_TEST_LOAD_FAIL_LABEL=hub
+if cli_mutating_command service both start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ "$(cat "${MOCKCTL}/mock.log")" = "load ${LAUNCHD_DIR}/${HUB_LABEL}.plist" ] && [ "$(cat "${MOCKCTL}/loaded_agent")" = "0" ]; then pass "Hub start failure prevents Agent start"; else fail "Hub start failure prevents Agent start"; fi
+mock_reset
+BESZEL_TEST_LOAD_FAIL_LABEL=agent
+if cli_mutating_command service both start > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ] && [ "$(cat "${MOCKCTL}/loaded_agent")" = "0" ] && grep -Fq 'Hub remains running' "$CLI_OUT"; then pass "Agent start failure reports Hub partial state"; else fail "Agent start failure reports Hub partial state"; fi
+
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_UNLOAD_FAIL_LABEL=agent
+if cli_mutating_command service both stop > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ] && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ]; then pass "Agent stop failure leaves Hub untouched"; else fail "Agent stop failure leaves Hub untouched"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_UNLOAD_FAIL_LABEL=hub
+if cli_mutating_command service both stop > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ "$(cat "${MOCKCTL}/loaded_agent")" = "0" ] && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ]; then pass "Hub stop failure reports Agent stopped and Hub retained"; else fail "Hub stop failure reports Agent stopped and Hub retained"; fi
+
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_UNLOAD_FAIL_LABEL=agent
+if cli_mutating_command service both restart > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ]; then pass "restart aborts when Agent stop fails"; else fail "restart aborts when Agent stop fails"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_UNLOAD_FAIL_LABEL=hub
+if cli_mutating_command service both restart > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist
+unload ${LAUNCHD_DIR}/${HUB_LABEL}.plist" ] && [ "$(cat "${MOCKCTL}/loaded_agent")" = "0" ]; then pass "restart aborts after Hub stop failure with Agent stopped"; else fail "restart aborts after Hub stop failure"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_LOAD_FAIL_LABEL=hub
+if cli_mutating_command service both restart > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist
+unload ${LAUNCHD_DIR}/${HUB_LABEL}.plist
+load ${LAUNCHD_DIR}/${HUB_LABEL}.plist" ] && [ "$(cat "${MOCKCTL}/loaded_agent")" = "0" ]; then pass "restart does not start Agent after Hub start failure"; else fail "restart does not start Agent after Hub start failure"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_LOAD_FAIL_LABEL=agent
+if cli_mutating_command service both restart > "$CLI_OUT" 2>&1; then _cli_service_rc=0; else _cli_service_rc=$?; fi
+if [ "$_cli_service_rc" = "1" ] && [ "$(cat "${MOCKCTL}/mock.log")" = "unload ${LAUNCHD_DIR}/${AGENT_LABEL}.plist
+unload ${LAUNCHD_DIR}/${HUB_LABEL}.plist
+load ${LAUNCHD_DIR}/${HUB_LABEL}.plist
+load ${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ] && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ] && [ "$(cat "${MOCKCTL}/loaded_agent")" = "0" ]; then pass "restart leaves Hub running after Agent start failure"; else fail "restart leaves Hub running after Agent start failure"; fi
+
+cli_service_preflight_case() {
+	_cspc_name="$1"; _cspc_component="$2"; _cspc_shape="$3"; _cspc_action="$4"
+	cli_reset_service_fixtures
+	mock_reset
+	printf '1' > "${MOCKCTL}/loaded_agent"; printf '100' > "${MOCKCTL}/pid_agent"
+	printf '1' > "${MOCKCTL}/loaded_hub"; printf '200' > "${MOCKCTL}/pid_hub"
+	managed_component_paths "$_cspc_component"
+	case "$_cspc_shape" in
+		absent) rm -f "$MANAGED_COMPONENT_BIN" "$MANAGED_COMPONENT_PLIST" ;;
+		incomplete) rm -f "$MANAGED_COMPONENT_BIN" ;;
+		untrusted) mv "$MANAGED_COMPONENT_BIN" "${MANAGED_COMPONENT_BIN}.saved"; ln -s "$_cli_agent_fixture_copy" "$MANAGED_COMPONENT_BIN" ;;
+	esac
+	if cli_mutating_command service both "$_cspc_action" > "$CLI_OUT" 2>&1; then _cspc_rc=0; else _cspc_rc=$?; fi
+	if [ "$_cspc_rc" = "1" ] && [ ! -s "${MOCKCTL}/mock.log" ] && [ "$(cat "${MOCKCTL}/loaded_agent")" = "1" ] && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ]; then
+		pass "service both preflights ${_cspc_name} before mutation"
+	else
+		fail "service both preflights ${_cspc_name} before mutation"
+	fi
+	rm -f "$MANAGED_COMPONENT_BIN" "$MANAGED_COMPONENT_PLIST"
+	if [ -f "${MANAGED_COMPONENT_BIN}.saved" ]; then mv "${MANAGED_COMPONENT_BIN}.saved" "$MANAGED_COMPONENT_BIN"; fi
+	case "$_cspc_component" in
+		agent) cli_write_agent_fixture ;;
+		hub) cli_write_hub_fixture ;;
+	esac
+	chmod +x "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${HUB_BIN}"
+}
+cli_service_preflight_case 'Agent absent on start' agent absent start
+cli_service_preflight_case 'Hub incomplete on start' hub incomplete start
+cli_service_preflight_case 'Agent untrusted on stop' agent untrusted stop
+cli_service_preflight_case 'Hub absent on stop' hub absent stop
+cli_service_preflight_case 'Agent incomplete on restart' agent incomplete restart
+cli_service_preflight_case 'Hub untrusted on restart' hub untrusted restart
+
+printf '== read-only doctor ==\n'
+cli_reset_service_fixtures
+chmod +x "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${HUB_BIN}"
+printf 'agent data marker\n' > "${LIB_DIR}/beszel-agent/marker"
+printf 'hub db marker\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+printf 'hub history marker\n' > "${LIB_DIR}/beszel-hub/history"
+printf 'agent log marker\n' > "${LOG_DIR}/beszel-agent.log"
+printf 'hub log marker\n' > "${LOG_DIR}/beszel-hub.log"
+if install_persistent_manager "$SCRIPT" > "$CLI_OUT" 2>&1; then pass "doctor fixtures have managed manager and wrapper"; else fail "doctor fixtures have managed manager and wrapper"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '321' > "${MOCKCTL}/pid_agent"
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '654' > "${MOCKCTL}/pid_hub"
+
+cli_doctor_test_command() (
+	doctor_platform_report() {
+		printf 'Platform\n  Device: iPad4,4\n  iOS: 12.5.7\n  Architecture: arm64\n  Filesystem layout: OK\n  Validation reference: iPad mini 2 / iPad4,4 / A7 / iOS 12.5.7 / Amethyst + Procursus\n'
+	}
+	main "$@"
+)
+_cli_doctor_platform_probe=$(
+	DOCTOR_FAILED=0
+	DOCTOR_WARNED=0
+	doctor_platform_report
+)
+if printf '%s\n' "$_cli_doctor_platform_probe" | grep -q '^Platform$' && printf '%s\n' "$_cli_doctor_platform_probe" | grep -q 'Device:' && printf '%s\n' "$_cli_doctor_platform_probe" | grep -q 'iOS:' && printf '%s\n' "$_cli_doctor_platform_probe" | grep -q 'Architecture:' && printf '%s\n' "$_cli_doctor_platform_probe" | grep -q 'Filesystem layout:' && printf '%s\n' "$_cli_doctor_platform_probe" | grep -q 'Validation reference: iPad mini 2 / iPad4,4 / A7 / iOS 12.5.7 / Amethyst + Procursus'; then pass "doctor reads platform details and states the validation reference"; else fail "doctor reads platform details and states the validation reference"; fi
+_cli_doctor_mac_platform=$(
+	uname() { printf 'Darwin\n'; }
+	sysctl() {
+		case "$2" in
+			hw.machine) printf 'Mac14,7\n' ;;
+			hw.cputype) printf '16777228\n' ;;
+			*) return 1 ;;
+		esac
+	}
+	sw_vers() { printf '14.0.0\n'; }
+	DOCTOR_FAILED=0
+	DOCTOR_WARNED=0
+	doctor_platform_report
+	printf 'DOCTOR_FAILED=%s\n' "$DOCTOR_FAILED"
+)
+if printf '%s\n' "$_cli_doctor_mac_platform" | grep -q 'device identifier is not an iPhone, iPad, or iPod' && printf '%s\n' "$_cli_doctor_mac_platform" | grep -q '^DOCTOR_FAILED=1$'; then pass "doctor rejects an ARM64 Mac as an unsupported Beszel-iOS platform"; else fail "doctor rejects an ARM64 Mac as an unsupported Beszel-iOS platform"; fi
+_cli_doctor_before=$(cli_inventory)
+_cli_doctor_mock_before=$(find "$MOCKCTL" -type f ! -name health.log -exec cksum {} \; | sort)
+_cli_doctor_agent=$(cli_doctor_test_command doctor agent)
+_cli_doctor_hub=$(cli_doctor_test_command doctor hub)
+_cli_doctor_both=$(cli_doctor_test_command doctor both)
+_cli_doctor_auto=$(cli_doctor_test_command doctor)
+_cli_doctor_after=$(cli_inventory)
+_cli_doctor_mock_after=$(find "$MOCKCTL" -type f ! -name health.log -exec cksum {} \; | sort)
+if printf '%s\n' "$_cli_doctor_both" | grep -q '^Overall: PASS$' && printf '%s\n' "$_cli_doctor_both" | grep -q 'Manager: OK' && printf '%s\n' "$_cli_doctor_both" | grep -q 'Command wrapper: OK' && printf '%s\n' "$_cli_doctor_both" | grep -q 'Version: 1.0.0' && printf '%s\n' "$_cli_doctor_both" | grep -q '^Agent$' && printf '%s\n' "$_cli_doctor_both" | grep -q '^Hub$' && printf '%s\n' "$_cli_doctor_both" | grep -q 'Health: OK' && [ "$_cli_doctor_before" = "$_cli_doctor_after" ] && [ "$_cli_doctor_mock_before" = "$_cli_doctor_mock_after" ] && [ "$(cat "${MOCKCTL}/loaded_agent")" = "1" ] && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ]; then
+	pass "healthy doctor scopes pass without changing files or launchd state"
+else
+	fail "healthy doctor scopes pass without changing files or launchd state"
+fi
+if [ -s "${MOCKCTL}/health.log" ] && ! grep -Ev '^http://127\.0\.0\.1:[0-9]+/api/health$' "${MOCKCTL}/health.log" > /dev/null; then pass "doctor health probes stay on the configured loopback endpoint"; else fail "doctor health probes stay on the configured loopback endpoint"; fi
+if printf '%s\n' "$_cli_doctor_agent" | grep -q '^Agent$' && ! printf '%s\n' "$_cli_doctor_agent" | grep -q '^Hub$' && printf '%s\n' "$_cli_doctor_hub" | grep -q '^Hub$' && ! printf '%s\n' "$_cli_doctor_hub" | grep -q '^Agent$' && printf '%s\n' "$_cli_doctor_auto" | grep -q '^Agent$' && printf '%s\n' "$_cli_doctor_auto" | grep -q '^Hub$'; then pass "doctor component scopes and bare installed-component scope"; else fail "doctor component scopes and bare installed-component scope"; fi
+if printf '%s\n' "$_cli_doctor_both" | grep -Fq 'Key: configured' && ! printf '%s\n' "$_cli_doctor_both" | grep -Fq "$CLI_SECRET" && ! printf '%s\n' "$_cli_doctor_both" | grep -Fq 'DOCTOR_SECRET_MUST_NOT_PRINT'; then pass "doctor reports Agent key state without printing the key"; else fail "doctor reports Agent key state without printing the key"; fi
+
+mv "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.saved"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved"
+_cli_doctor_agent_only=$(cli_doctor_test_command doctor)
+if printf '%s\n' "$_cli_doctor_agent_only" | grep -q 'Agent' && printf '%s\n' "$_cli_doctor_agent_only" | grep -q 'Hub' && printf '%s\n' "$_cli_doctor_agent_only" | grep -q 'Installed: no' && printf '%s\n' "$_cli_doctor_agent_only" | grep -q '^Overall: PASS$'; then pass "bare doctor passes for a healthy Agent-only installation"; else fail "bare doctor passes for a healthy Agent-only installation"; fi
+mv "${BIN_DIR}/${HUB_BIN}.saved" "${BIN_DIR}/${HUB_BIN}"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+mv "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${AGENT_BIN}.saved"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved"
+_cli_doctor_hub_only=$(cli_doctor_test_command doctor)
+if printf '%s\n' "$_cli_doctor_hub_only" | grep -q 'Hub' && printf '%s\n' "$_cli_doctor_hub_only" | grep -q 'Agent' && printf '%s\n' "$_cli_doctor_hub_only" | grep -q 'Installed: no' && printf '%s\n' "$_cli_doctor_hub_only" | grep -q '^Overall: PASS$'; then pass "bare doctor passes for a healthy Hub-only installation"; else fail "bare doctor passes for a healthy Hub-only installation"; fi
+mv "${BIN_DIR}/${AGENT_BIN}.saved" "${BIN_DIR}/${AGENT_BIN}"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_agent"; printf '-' > "${MOCKCTL}/pid_agent"
+_cli_doctor_stopped=$(cli_doctor_test_command doctor agent)
+if printf '%s\n' "$_cli_doctor_stopped" | grep -q 'Service: stopped (loaded but not running)' && printf '%s\n' "$_cli_doctor_stopped" | grep -q '^Overall: WARN$'; then pass "doctor warns when a loaded Agent is stopped"; else fail "doctor warns when a loaded Agent is stopped"; fi
+mock_reset
+_cli_doctor_unloaded=$(cli_doctor_test_command doctor agent)
+if printf '%s\n' "$_cli_doctor_unloaded" | grep -q 'Service: stopped (unloaded)' && printf '%s\n' "$_cli_doctor_unloaded" | grep -q '^Overall: WARN$'; then pass "doctor reports intentionally unloaded Agent as warning"; else fail "doctor reports intentionally unloaded Agent as warning"; fi
+mock_reset
+BESZEL_TEST_LIST_FAIL=1
+_cli_doctor_unknown=$(cli_doctor_test_command doctor agent)
+if printf '%s\n' "$_cli_doctor_unknown" | grep -q 'Service: unknown' && printf '%s\n' "$_cli_doctor_unknown" | grep -q '^Overall: WARN$'; then pass "doctor does not claim pass when launchctl state is unreadable"; else fail "doctor does not claim pass when launchctl state is unreadable"; fi
+BESZEL_TEST_LIST_FAIL=0
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '-' > "${MOCKCTL}/pid_hub"
+_cli_doctor_hub_stopped=$(cli_doctor_test_command doctor hub)
+if printf '%s\n' "$_cli_doctor_hub_stopped" | grep -q 'Service: stopped (loaded but not running)' && printf '%s\n' "$_cli_doctor_hub_stopped" | grep -q 'Health: skipped'; then pass "doctor clearly reports stopped Hub without probing health"; else fail "doctor clearly reports stopped Hub without probing health"; fi
+mock_reset
+_cli_doctor_hub_unloaded=$(cli_doctor_test_command doctor hub)
+if printf '%s\n' "$_cli_doctor_hub_unloaded" | grep -q 'Service: stopped (unloaded)' && printf '%s\n' "$_cli_doctor_hub_unloaded" | grep -q '^Overall: WARN$'; then pass "doctor warns for intentionally unloaded Hub"; else fail "doctor warns for intentionally unloaded Hub"; fi
+mock_reset
+printf '1' > "${MOCKCTL}/loaded_hub"; printf '456' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_HEALTH=fail
+if cli_doctor_test_command doctor hub > "$CLI_OUT" 2>&1; then _cli_doctor_rc=0; else _cli_doctor_rc=$?; fi
+if [ "$_cli_doctor_rc" = "1" ] && grep -q 'Health: FAIL' "$CLI_OUT" && grep -q '^Overall: FAIL$' "$CLI_OUT"; then pass "doctor fails when a running Hub health endpoint is unreachable"; else fail "doctor fails when a running Hub health endpoint is unreachable"; fi
+BESZEL_TEST_HEALTH=ok
+
+cli_doctor_expect_fail() {
+	_cdef_name="$1"; _cdef_need="$2"; shift 2
+	if cli_doctor_test_command "$@" > "$CLI_OUT" 2>&1; then _cdef_rc=0; else _cdef_rc=$?; fi
+	if [ "$_cdef_rc" = "1" ] && grep -Fq "$_cdef_need" "$CLI_OUT" && grep -q '^Overall: FAIL$' "$CLI_OUT"; then pass "$_cdef_name"; else fail "$_cdef_name"; fi
+}
+
+mv "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${AGENT_BIN}.saved"
+cli_doctor_expect_fail 'doctor fails for missing Agent binary' 'Binary: missing' doctor agent
+mv "${BIN_DIR}/${AGENT_BIN}.saved" "${BIN_DIR}/${AGENT_BIN}"
+mv "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.saved"
+cli_doctor_expect_fail 'doctor fails for missing Hub binary' 'Binary: missing' doctor hub
+mv "${BIN_DIR}/${HUB_BIN}.saved" "${BIN_DIR}/${HUB_BIN}"
+mv "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.saved"
+ln -s "$_cli_hub_fixture_copy" "${BIN_DIR}/${HUB_BIN}"
+cli_doctor_expect_fail 'doctor fails for symlinked Hub binary' 'Binary: untrusted' doctor hub
+rm -f "${BIN_DIR}/${HUB_BIN}"; mv "${BIN_DIR}/${HUB_BIN}.saved" "${BIN_DIR}/${HUB_BIN}"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved"
+cli_doctor_expect_fail 'doctor fails for missing Hub plist' 'Plist: missing' doctor hub
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+BESZEL_TEST_PLIST_VALID=fail
+cli_doctor_expect_fail 'doctor fails for invalid Hub plist' 'Plist: invalid' doctor hub
+BESZEL_TEST_PLIST_VALID=ok
+sed 's/0\.0\.0\.0:8090/0.0.0.0:invalid/' "${LAUNCHD_DIR}/${HUB_LABEL}.plist" > "${LAUNCHD_DIR}/${HUB_LABEL}.plist.tmp"
+cat "${LAUNCHD_DIR}/${HUB_LABEL}.plist.tmp" > "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+rm -f "${LAUNCHD_DIR}/${HUB_LABEL}.plist.tmp"
+cli_doctor_expect_fail 'doctor fails for unreadable Hub port' 'Port: unknown' doctor hub
+write_hub_plist 8090 "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+mv "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${AGENT_BIN}.saved"
+ln -s "$_cli_agent_fixture_copy" "${BIN_DIR}/${AGENT_BIN}"
+cli_doctor_expect_fail 'doctor fails for symlinked Agent binary' 'Binary: untrusted' doctor agent
+rm -f "${BIN_DIR}/${AGENT_BIN}"; mv "${BIN_DIR}/${AGENT_BIN}.saved" "${BIN_DIR}/${AGENT_BIN}"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved"
+cli_doctor_expect_fail 'doctor fails for missing Agent plist' 'Plist: missing' doctor agent
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+BESZEL_TEST_PLIST_VALID=fail
+cli_doctor_expect_fail 'doctor fails for invalid Agent plist' 'Plist: invalid' doctor agent
+BESZEL_TEST_PLIST_VALID=ok
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved"
+ln -s "${CLI_STATUS_ROOT}/missing-hub-plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+cli_doctor_expect_fail 'doctor fails for symlinked Hub plist' 'Plist: untrusted' doctor hub
+rm -f "${LAUNCHD_DIR}/${HUB_LABEL}.plist"; mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+
+_cli_manager_path="${LIB_DIR}/${STATE_SUBDIR}/${MANAGER_FILE_NAME}"
+_cli_wrapper_path="${BIN_DIR}/${COMMAND_NAME}"
+mv "$_cli_manager_path" "${_cli_manager_path}.saved"
+cli_doctor_expect_fail 'doctor fails when managed manager is missing' 'Manager: missing' doctor agent
+mv "${_cli_manager_path}.saved" "$_cli_manager_path"
+printf '#!/bin/sh\n' > "$_cli_manager_path"
+cli_doctor_expect_fail 'doctor fails when manager content is corrupted' 'Manager: invalid' doctor agent
+cp "$SCRIPT" "$_cli_manager_path"; chmod 755 "$_cli_manager_path"
+mv "$_cli_wrapper_path" "${_cli_wrapper_path}.saved"
+cli_doctor_expect_fail 'doctor fails when command wrapper is missing' 'Command wrapper: missing' doctor agent
+mv "${_cli_wrapper_path}.saved" "$_cli_wrapper_path"
+printf '#!/bin/sh\nexit 0\n' > "$_cli_wrapper_path"
+cli_doctor_expect_fail 'doctor fails when command wrapper is corrupted' 'Command wrapper: invalid' doctor agent
+write_command_wrapper "$_cli_wrapper_path"; chmod 755 "$_cli_wrapper_path"
+
+mv "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${AGENT_BIN}.saved"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved"
+mv "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.saved"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved"
+if cli_doctor_test_command doctor > "$CLI_OUT" 2>&1; then _cli_doctor_rc=0; else _cli_doctor_rc=$?; fi
+if [ "$_cli_doctor_rc" = "0" ] && grep -q 'Installed: no' "$CLI_OUT" && grep -q '^Overall: PASS$' "$CLI_OUT"; then pass "bare doctor accepts no installed components"; else fail "bare doctor accepts no installed components"; fi
+if cli_doctor_test_command doctor agent > "$CLI_OUT" 2>&1; then _cli_doctor_rc=0; else _cli_doctor_rc=$?; fi
+if [ "$_cli_doctor_rc" = "1" ] && grep -q 'requested component is missing' "$CLI_OUT"; then pass "explicit doctor Agent fails when absent"; else fail "explicit doctor Agent fails when absent"; fi
+if cli_doctor_test_command doctor hub > "$CLI_OUT" 2>&1; then _cli_doctor_rc=0; else _cli_doctor_rc=$?; fi
+if [ "$_cli_doctor_rc" = "1" ] && grep -q 'requested component is missing' "$CLI_OUT"; then pass "explicit doctor Hub fails when absent"; else fail "explicit doctor Hub fails when absent"; fi
+mv "${BIN_DIR}/${AGENT_BIN}.saved" "${BIN_DIR}/${AGENT_BIN}"
+mv "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.saved" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+if cli_doctor_test_command doctor both > "$CLI_OUT" 2>&1; then _cli_doctor_rc=0; else _cli_doctor_rc=$?; fi
+if [ "$_cli_doctor_rc" = "1" ] && grep -q 'Hub (requested component is missing)' "$CLI_OUT"; then pass "doctor both fails when one requested component is absent"; else fail "doctor both fails when one requested component is absent"; fi
+mv "${BIN_DIR}/${HUB_BIN}.saved" "${BIN_DIR}/${HUB_BIN}"
+mv "${LAUNCHD_DIR}/${HUB_LABEL}.plist.saved" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+
+mv "$(state_path)" "${CLI_STATUS_ROOT}/state.saved"
+_cli_doctor_legacy=$(cli_doctor_test_command doctor agent)
+if printf '%s\n' "$_cli_doctor_legacy" | grep -q 'Release: unknown (legacy or missing state)' && printf '%s\n' "$_cli_doctor_legacy" | grep -q '^Overall: WARN$'; then pass "doctor reports legacy or missing install state as warning"; else fail "doctor reports legacy or missing install state as warning"; fi
+printf 'STATE_VERSION=1\nAGENT_RELEASE=DOCTOR_INVALID_RELEASE_MUST_NOT_PRINT\n' > "$(state_path)"
+_cli_doctor_bad_state=$(cli_doctor_test_command doctor agent)
+if printf '%s\n' "$_cli_doctor_bad_state" | grep -q 'Release: unknown' && ! printf '%s\n' "$_cli_doctor_bad_state" | grep -Fq 'DOCTOR_INVALID_RELEASE_MUST_NOT_PRINT'; then pass "doctor never prints an invalid release value"; else fail "doctor never prints an invalid release value"; fi
+rm -f "$(state_path)"
+mv "${CLI_STATUS_ROOT}/state.saved" "$(state_path)"
+
+DOCTOR_MISSING_TOOLS="${SANDBOX}/doctor-missing-tools"
+mkdir -p "$DOCTOR_MISSING_TOOLS"
+for _doctor_tool in sh awk grep sed head tail wc tr stat id uname sort plutil; do
+	_doctor_tool_path=$(command -v "$_doctor_tool" 2> /dev/null || true)
+	if [ -n "$_doctor_tool_path" ]; then ln -s "$_doctor_tool_path" "${DOCTOR_MISSING_TOOLS}/${_doctor_tool}"; fi
+done
+cat > "${SANDBOX}/doctor-apt-get" << 'APTEOF'
+#!/bin/sh
+printf 'apt-get invoked\n' >> "${BESZEL_TEST_MOCKCTL}/apt-get.log"
+exit 1
+APTEOF
+chmod +x "${SANDBOX}/doctor-apt-get"
+ln -s "${SANDBOX}/doctor-apt-get" "${DOCTOR_MISSING_TOOLS}/apt-get"
+if PATH="$DOCTOR_MISSING_TOOLS" cli_doctor_test_command doctor agent > "$CLI_OUT" 2>&1; then _cli_doctor_rc=0; else _cli_doctor_rc=$?; fi
+if [ "$_cli_doctor_rc" = "1" ] && grep -q '^  launchctl: missing$' "$CLI_OUT" && grep -q '^  curl: missing$' "$CLI_OUT" && grep -q '^  ldid: missing$' "$CLI_OUT" && grep -q '^  SHA-256 tool: missing$' "$CLI_OUT" && [ ! -e "${MOCKCTL}/apt-get.log" ]; then pass "doctor reports missing dependencies and never invokes apt-get"; else fail "doctor reports missing dependencies and never invokes apt-get"; fi
 
 printf '== CLI uninstall and explicit purge ==\n'
 cli_lifecycle_mutation() (

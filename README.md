@@ -27,7 +27,7 @@ In short: old iPad in, live system graphs out.
 - **Battery telemetry** — shows battery percentage and charging state alongside the usual server metrics.
 - **Starts automatically** — Agent and Hub run as system services and come back after jailbreak reactivation.
 - **Hub + Agent on one device** — one iPhone or iPad can monitor itself and show its own dashboard.
-- **One-command installer** — install, update, repair, reconfigure, and uninstall from a simple menu. Downloads are checksum-verified, updates keep a backup with automatic rollback, and your data is preserved.
+- **One-command installer and CLI** — install, update, repair, reconfigure, uninstall, inspect health, and control the existing services from the menu or persistent `beszel-ios` command. Downloads are checksum-verified, updates keep a backup with automatic rollback, and your data is preserved.
 - **Safe by default** — normal uninstall removes the app but keeps your data; wiping data always asks for explicit confirmation.
 - **Stays close to upstream** — same Agent + Hub design and protocol as regular Beszel, based on upstream 0.19.0.
 
@@ -59,33 +59,51 @@ The curl installer remains available if you need to install or recover the manag
 
 ## CLI administration
 
-After the persistent `beszel-ios` command is installed, use it to manage Agent and Hub separately or together. Mutating commands need root; `status` and `diagnostics` are read-only:
+After the persistent `beszel-ios` command is installed, use it to manage the application and its existing LaunchDaemons:
 
 ```sh
+beszel-ios help
+beszel-ios version
+
 sudo beszel-ios install agent
 sudo beszel-ios install hub
 sudo beszel-ios install both
-
 sudo beszel-ios update both
 
 beszel-ios status
 beszel-ios diagnostics
+beszel-ios doctor
 
 sudo beszel-ios repair agent
 sudo beszel-ios reconfigure hub
+
+sudo beszel-ios service hub restart
+sudo beszel-ios service agent restart
+beszel-ios service both status
+sudo beszel-ios service both restart
 
 sudo beszel-ios uninstall agent
 sudo beszel-ios uninstall hub
 sudo beszel-ios uninstall both
 ```
 
-Normal uninstall preserves Agent and Hub data. To request the separate purge path, use:
+`status` gives concise component and runtime state. `diagnostics` shows detailed, read-only low-level observations. `doctor` provides a read-only health assessment with `PASS`, `WARN`, or `FAIL`; a warning alone does not make the command fail. Bare `doctor` checks installed components, while `doctor agent`, `doctor hub`, and `doctor both` explicitly require the selected components to be installed. Exit codes are `0` when there are no failures, `1` when a check fails, and `2` for invalid CLI syntax. None of these commands prints the Agent key.
+
+`service ... status` is read-only. Service `start`, `stop`, and `restart` require root. They operate on the LaunchDaemon plists created by application install; the LaunchDaemons remain the only persistent supervisors. For `both`, dependency order is:
+
+```text
+start:   Hub -> Agent
+stop:    Agent -> Hub
+restart: Agent stop -> Hub stop -> Hub start -> Agent start
+```
+
+Normal uninstall removes application and service files but preserves Agent and Hub data. To request the separate destructive purge path, use:
 
 ```sh
 sudo beszel-ios uninstall hub --purge
 ```
 
-The purge path still requires the exact typed confirmation. Deleting the Hub database, accounts, and history is irreversible without an external backup.
+The purge path still requires the exact typed confirmation. Deleting the Hub database, accounts, and history is irreversible without an external backup. The completed service and doctor CLI has fixture-test coverage but has not been validated on a physical iPad.
 
 ## Prerequisites
 
@@ -236,9 +254,11 @@ Choose **Update**. Your settings and Hub data are kept, the new binaries are ver
 
 The same installer menu also offers:
 
-- **Diagnostics** — read-only status checks for the Agent and Hub (installed files, service state, ports, health). Diagnostics never print the Agent key value.
+- **Diagnostics** — detailed read-only observations for Agent and Hub (installed files, service state, ports, health). Diagnostics never print the Agent key value.
 - **Repair** — conservative fixes such as restarting a service in place, restoring a missing binary, or recreating a confirmed-broken configuration, with automatic rollback to the previous configuration if the fix fails.
 - **Reconfigure** — change the Agent port/key or Hub port through a validated transaction that backs up the current configuration first.
+
+The persistent CLI additionally provides the read-only `doctor` health assessment and safe start/stop/restart/status controls for the installed LaunchDaemons; see [CLI administration](#cli-administration).
 
 ## Uninstalling
 

@@ -1045,6 +1045,10 @@ ensure_data_dir() {
 
 # plist_valid <file> — 0 when the file parses as XML with the first
 # available checker. Returns 0 (with no claim) when no checker exists.
+plist_validator_available() {
+	command -v plutil > /dev/null 2>&1 || command -v xmllint > /dev/null 2>&1 || command -v python3 > /dev/null 2>&1
+}
+
 plist_valid() {
 	_pv_file="$1"
 	[ -f "$_pv_file" ] && [ -s "$_pv_file" ] || return 1
@@ -1212,9 +1216,9 @@ svc_load() {
 svc_running() {
 	_sv_label="$1"
 	_sv_out=""
-	_sv_out=$(launchctl list 2> /dev/null || true)
+	if ! _sv_out=$(launchctl list 2> /dev/null); then return 1; fi
 	[ -n "$_sv_out" ] || return 1
-	_sv_line=$(printf '%s\n' "$_sv_out" | grep -F "$_sv_label" | head -n 1 || true)
+	_sv_line=$(printf '%s\n' "$_sv_out" | awk -v label="$_sv_label" '$3 == label { print; found = 1; exit } END { if (!found) exit 1 }' || true)
 	[ -n "$_sv_line" ] || return 1
 	set -f
 	# shellcheck disable=SC2086
@@ -1232,10 +1236,9 @@ svc_running() {
 svc_loaded() {
 	_sl2_label="$1"
 	_sl2_out=""
-	_sl2_out=$(launchctl list 2> /dev/null || true)
+	if ! _sl2_out=$(launchctl list 2> /dev/null); then return 1; fi
 	[ -n "$_sl2_out" ] || return 1
-	printf '%s\n' "$_sl2_out" | grep -q -F "$_sl2_label" || return 1
-	return 0
+	printf '%s\n' "$_sl2_out" | awk -v label="$_sl2_label" '$3 == label { found = 1 } END { exit !found }'
 }
 
 # svc_pid <label> — print the launchd PID for a label, or "none" when no
@@ -1243,8 +1246,11 @@ svc_loaded() {
 svc_pid() {
 	_sp_label="$1"
 	_sp_out=""
-	_sp_out=$(launchctl list 2> /dev/null || true)
-	_sp_line=$(printf '%s\n' "$_sp_out" | grep -F "$_sp_label" | head -n 1 || true)
+	if ! _sp_out=$(launchctl list 2> /dev/null); then
+		printf 'none'
+		return 1
+	fi
+	_sp_line=$(printf '%s\n' "$_sp_out" | awk -v label="$_sp_label" '$3 == label { print; found = 1; exit } END { if (!found) exit 1 }' || true)
 	if [ -z "$_sp_line" ]; then
 		printf 'none'
 		return 1
@@ -1364,12 +1370,201 @@ agent_key_from_plist() {
 	return 0
 }
 
+# plist_strict_valid <plist> — service management must be able to prove that
+# the file parses. The older lifecycle helper intentionally tolerates hosts
+# without a parser; public service controls fail closed instead.
+plist_strict_valid() {
+	_psv_file="$1"
+	[ -f "$_psv_file" ] && [ ! -L "$_psv_file" ] && [ -s "$_psv_file" ] || return 1
+	if command -v plutil > /dev/null 2>&1; then
+		plist_valid "$_psv_file"
+	elif command -v xmllint > /dev/null 2>&1; then
+		plist_valid "$_psv_file"
+	elif command -v python3 > /dev/null 2>&1; then
+		plist_valid "$_psv_file"
+	else
+		return 1
+	fi
+}
+
+# plist_program_arguments <plist> — return the complete, one-string-per-line
+# ProgramArguments array in XML-escaped form. It accepts only the simple XML
+# structure written by this installer and refuses ambiguous arrays.
+plist_program_arguments() {
+	_ppa_file="$1"
+	[ -f "$_ppa_file" ] && [ ! -L "$_ppa_file" ] || return 1
+	awk '
+		/^[[:space:]]*<key>ProgramArguments<\/key>[[:space:]]*$/ {
+			if (seen++) { failed = 1; exit }
+			pending = 1
+			next
+		}
+		pending {
+			if ($0 ~ /^[[:space:]]*<array>[[:space:]]*$/) {
+				inside = 1
+				pending = 0
+				next
+			}
+			failed = 1
+			exit
+		}
+		inside {
+			if ($0 ~ /^[[:space:]]*<\/array>[[:space:]]*$/) {
+				inside = 0
+				finished = 1
+				next
+			}
+			if ($0 ~ /^[[:space:]]*<string>.*<\/string>[[:space:]]*$/) {
+				_value = $0
+				sub(/^[[:space:]]*<string>/, "", _value)
+				sub(/<\/string>[[:space:]]*$/, "", _value)
+				print _value
+				next
+			}
+			if ($0 ~ /^[[:space:]]*$/) next
+			failed = 1
+			exit
+		}
+		END {
+			if (failed || seen != 1 || pending || inside || !finished) exit 1
+		}
+	' "$_ppa_file"
+}
+
+# plist_keys_match <plist> <count> <pipe-delimited-allowed-keys> — reject
+# unknown or repeated dictionary keys in a managed LaunchDaemon.
+plist_keys_match() {
+	_pkm_file="$1"
+	_pkm_count="$2"
+	_pkm_allowed="$3"
+	awk -v allowed="|${_pkm_allowed}|" -v wanted="$_pkm_count" '
+		/^[[:space:]]*<key>[^<]*<\/key>[[:space:]]*$/ {
+			_key = $0
+			sub(/^[[:space:]]*<key>/, "", _key)
+			sub(/<\/key>[[:space:]]*$/, "", _key)
+			if (index(allowed, "|" _key "|") == 0 || seen[_key]++) bad = 1
+			count++
+		}
+		END { if (bad || count != wanted) exit 1 }
+	' "$_pkm_file"
+}
+
+# plist_key_has_tag <plist> <key> <literal-tag> — require an exact next-line
+# scalar such as <true/> or <integer>10</integer>.
+plist_key_has_tag() {
+	_pkht_file="$1"
+	_pkht_key="$2"
+	_pkht_tag="$3"
+	awk -v key="$_pkht_key" -v tag="$_pkht_tag" '
+		$0 ~ "^[[:space:]]*<key>" key "</key>[[:space:]]*$" {
+			if (found++) { bad = 1; exit }
+			pending = 1
+			next
+		}
+		pending { ok = ($0 == "\t" tag); checked = 1; exit }
+		END { if (bad || found != 1 || !checked || !ok) exit 1 }
+	' "$_pkht_file"
+}
+
+managed_component_paths() {
+	_mcp_comp="$1"
+	case "$_mcp_comp" in
+		agent)
+		MANAGED_COMPONENT_BIN="${BIN_DIR}/${AGENT_BIN}"
+		MANAGED_COMPONENT_PLIST="${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+		MANAGED_COMPONENT_LABEL="$AGENT_LABEL"
+		MANAGED_COMPONENT_DATA="${LIB_DIR}/beszel-agent"
+		;;
+		hub)
+			MANAGED_COMPONENT_BIN="${BIN_DIR}/${HUB_BIN}"
+			MANAGED_COMPONENT_PLIST="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+			MANAGED_COMPONENT_LABEL="$HUB_LABEL"
+			MANAGED_COMPONENT_DATA="${LIB_DIR}/beszel-hub"
+			;;
+		*) return 1 ;;
+	esac
+	return 0
+}
+
+managed_binary_validate() {
+	_mbv_comp="$1"
+	managed_component_paths "$_mbv_comp" || return 1
+	[ -d "$BIN_DIR" ] && [ ! -L "$BIN_DIR" ] || return 1
+	[ -f "$MANAGED_COMPONENT_BIN" ] && [ ! -L "$MANAGED_COMPONENT_BIN" ] && [ -s "$MANAGED_COMPONENT_BIN" ] && [ -x "$MANAGED_COMPONENT_BIN" ]
+}
+
+managed_plist_validate() {
+	_mpv_comp="$1"
+	managed_component_paths "$_mpv_comp" || return 1
+	[ -d "$LAUNCHD_DIR" ] && [ ! -L "$LAUNCHD_DIR" ] || return 1
+	plist_strict_valid "$MANAGED_COMPONENT_PLIST" || return 1
+	case "$_mpv_comp" in
+		agent)
+		plist_keys_match "$MANAGED_COMPONENT_PLIST" 13 'Label|ProgramArguments|EnvironmentVariables|DATA_DIR|LISTEN|KEY|LOG_LEVEL|PATH|WorkingDirectory|RunAtLoad|KeepAlive|StandardOutPath|StandardErrorPath' || return 1
+		_pmv_args=$(plist_program_arguments "$MANAGED_COMPONENT_PLIST") || return 1
+		_pmv_expected=$(xml_escape "$MANAGED_COMPONENT_BIN")
+		[ "$_pmv_args" = "$_pmv_expected" ] || return 1
+		plist_value_for "$MANAGED_COMPONENT_PLIST" Label | grep -Fqx "$AGENT_LABEL" || return 1
+		plist_value_for "$MANAGED_COMPONENT_PLIST" DATA_DIR | grep -Fqx "$MANAGED_COMPONENT_DATA" || return 1
+		plist_value_for "$MANAGED_COMPONENT_PLIST" WorkingDirectory | grep -Fqx "$MANAGED_COMPONENT_DATA" || return 1
+		plist_value_for "$MANAGED_COMPONENT_PLIST" PATH | grep -Fqx "$LAUNCHD_PATH_VALUE" || return 1
+		plist_value_for "$MANAGED_COMPONENT_PLIST" LOG_LEVEL | grep -Fqx 'info' || return 1
+		plist_value_for "$MANAGED_COMPONENT_PLIST" StandardOutPath | grep -Fqx "${LOG_DIR}/beszel-agent.log" || return 1
+		plist_value_for "$MANAGED_COMPONENT_PLIST" StandardErrorPath | grep -Fqx "${LOG_DIR}/beszel-agent.err.log" || return 1
+		MANAGED_COMPONENT_PORT=$(agent_port_from_plist "$MANAGED_COMPONENT_PLIST") || return 1
+		agent_key_from_plist "$MANAGED_COMPONENT_PLIST" > /dev/null 2>&1 || return 1
+		plist_key_has_tag "$MANAGED_COMPONENT_PLIST" RunAtLoad '<true/>' || return 1
+		plist_key_has_tag "$MANAGED_COMPONENT_PLIST" KeepAlive '<true/>' || return 1
+		;;
+		hub)
+			plist_keys_match "$MANAGED_COMPONENT_PLIST" 10 'Label|ProgramArguments|EnvironmentVariables|PATH|WorkingDirectory|RunAtLoad|KeepAlive|ThrottleInterval|StandardOutPath|StandardErrorPath' || return 1
+			MANAGED_COMPONENT_PORT=$(hub_port_from_plist "$MANAGED_COMPONENT_PLIST") || return 1
+			_pmv_args=$(plist_program_arguments "$MANAGED_COMPONENT_PLIST") || return 1
+			_pmv_expected=$(printf '%s\n' \
+				"$(xml_escape "$MANAGED_COMPONENT_BIN")" \
+				'serve' '--http' \
+				"$(xml_escape "0.0.0.0:${MANAGED_COMPONENT_PORT}")" \
+				'--dir' \
+				"$(xml_escape "$MANAGED_COMPONENT_DATA")")
+			[ "$_pmv_args" = "$_pmv_expected" ] || return 1
+			plist_value_for "$MANAGED_COMPONENT_PLIST" Label | grep -Fqx "$HUB_LABEL" || return 1
+			plist_value_for "$MANAGED_COMPONENT_PLIST" WorkingDirectory | grep -Fqx "$MANAGED_COMPONENT_DATA" || return 1
+			plist_value_for "$MANAGED_COMPONENT_PLIST" PATH | grep -Fqx "$LAUNCHD_PATH_VALUE" || return 1
+			plist_value_for "$MANAGED_COMPONENT_PLIST" StandardOutPath | grep -Fqx "${LOG_DIR}/beszel-hub.log" || return 1
+			plist_value_for "$MANAGED_COMPONENT_PLIST" StandardErrorPath | grep -Fqx "${LOG_DIR}/beszel-hub.err.log" || return 1
+			plist_key_has_tag "$MANAGED_COMPONENT_PLIST" RunAtLoad '<true/>' || return 1
+			plist_key_has_tag "$MANAGED_COMPONENT_PLIST" KeepAlive '<true/>' || return 1
+			plist_key_has_tag "$MANAGED_COMPONENT_PLIST" ThrottleInterval '<integer>10</integer>' || return 1
+			;;
+	esac
+	return 0
+}
+
+managed_component_validate() {
+	_mcv_comp="$1"
+	managed_binary_validate "$_mcv_comp" || return 1
+	managed_plist_validate "$_mcv_comp"
+}
+
+managed_runtime_paths_validate() {
+	_mrp_comp="$1"
+	managed_component_paths "$_mrp_comp" || return 1
+	[ -d "$LIB_DIR" ] && [ ! -L "$LIB_DIR" ] || return 1
+	[ -d "$LOG_DIR" ] && [ ! -L "$LOG_DIR" ] || return 1
+	[ -d "$MANAGED_COMPONENT_DATA" ] && [ ! -L "$MANAGED_COMPONENT_DATA" ] || return 1
+	_mrp_name="beszel-${_mrp_comp}"
+	for _mrp_log in "${LOG_DIR}/${_mrp_name}.log" "${LOG_DIR}/${_mrp_name}.err.log"; do
+		if [ -L "$_mrp_log" ] || { [ -e "$_mrp_log" ] && [ ! -f "$_mrp_log" ]; }; then return 1; fi
+	done
+	return 0
+}
+
 wait_for_hub() {
 	# $1 = port. Poll the local health endpoint; 0 = healthy.
 	_wh_port="$1"
 	_wh_i=0
 	while [ "$_wh_i" -lt 30 ]; do
-		if curl -fsSL --max-time 3 "http://127.0.0.1:${_wh_port}/api/health" > /dev/null 2>&1; then
+		if curl -q --noproxy '*' -fsSL --max-time 3 "http://127.0.0.1:${_wh_port}/api/health" > /dev/null 2>&1; then
 			return 0
 		fi
 		sleep 2
@@ -1405,18 +1600,28 @@ diag_service_line() {
 	# "not loaded" / "load state unknown".
 	_ds_label="$1"
 	_ds_out=""
-	_ds_out=$(launchctl list 2> /dev/null || true)
+	if ! _ds_out=$(launchctl list 2> /dev/null); then
+		printf 'load state unknown (launchctl unreadable)'
+		return 0
+	fi
 	if [ -z "$_ds_out" ]; then
 		printf 'load state unknown (launchctl unreadable)'
 		return 0
 	fi
-	if ! printf '%s\n' "$_ds_out" | grep -q -F "$_ds_label"; then
+	_ds_line=$(printf '%s\n' "$_ds_out" | awk -v label="$_ds_label" '$3 == label { print; found = 1; exit } END { if (!found) exit 1 }' || true)
+	if [ -z "$_ds_line" ]; then
 		printf 'not loaded'
 		return 0
 	fi
-	_ds_pid=""
-	_ds_pid=$(svc_pid "$_ds_label" 2> /dev/null || true)
-	if [ -n "$_ds_pid" ] && [ "$_ds_pid" != "none" ]; then
+	set -f
+	# shellcheck disable=SC2086
+	set -- $_ds_line
+	set +f
+	_ds_pid="${1:-}"
+	case "$_ds_pid" in
+		'' | '-' | '0' | *[!0-9]*) _ds_pid="" ;;
+	esac
+	if [ -n "$_ds_pid" ]; then
 		printf 'loaded, PID %s' "$_ds_pid"
 	else
 		printf 'loaded, not running'
@@ -1510,7 +1715,7 @@ diagnose_hub() {
 	_dh_port=$(hub_port_from_plist "$_dh_plist" 2> /dev/null || true)
 	if [ -n "$_dh_port" ]; then
 		say_info "Hub port: ${_dh_port}"
-		if curl -fsSL --max-time 3 "http://127.0.0.1:${_dh_port}/api/health" > /dev/null 2>&1; then
+		if curl -q --noproxy '*' -fsSL --max-time 3 "http://127.0.0.1:${_dh_port}/api/health" > /dev/null 2>&1; then
 			say_info "Health: reachable (http://127.0.0.1:${_dh_port}/api/health)"
 		else
 			say_info "Health: unreachable (service may be starting or stopped)"
@@ -2869,7 +3074,7 @@ repair_hub_flow() {
 		COMPLETE)
 			_rph_port=""
 			_rph_port=$(hub_port_from_plist "${LAUNCHD_DIR}/${HUB_LABEL}.plist" 2> /dev/null || true)
-			if [ -n "$_rph_port" ] && svc_running "$HUB_LABEL" && curl -fsSL --max-time 3 "http://127.0.0.1:${_rph_port}/api/health" > /dev/null 2>&1; then
+			if [ -n "$_rph_port" ] && svc_running "$HUB_LABEL" && curl -q --noproxy '*' -fsSL --max-time 3 "http://127.0.0.1:${_rph_port}/api/health" > /dev/null 2>&1; then
 				say_ok "Hub service is already healthy."
 				return 0
 			fi
@@ -3955,19 +4160,23 @@ run_interactive_menu() {
 
 print_cli_help() {
 	cat << 'EOF'
-Usage: beszel-ios [command] [component] [options]
+Usage: beszel-ios [command] [arguments]
 
 Commands:
+  beszel-ios                   Open the interactive menu (no arguments)
   menu                         Open the interactive installer menu
   install <agent|hub|both>     Install selected components
   update <agent|hub|both>      Safely update selected components
   status [agent|hub|both]      Show read-only status (default: both)
   diagnostics [agent|hub|both] Run read-only diagnostics (default: both)
+  doctor [agent|hub|both]      Read-only health report (default: installed)
   repair <agent|hub|both>      Conservatively repair selected components
   reconfigure <agent|hub>      Reconfigure one component
+  service <agent|hub|both> <start|stop|restart|status>
+                               Control installed LaunchDaemons
   uninstall <agent|hub|both>   Remove application files and preserve data
   uninstall <component> --purge
-                               Also request the separately confirmed data purge
+                               Request a separately confirmed data purge
   version                      Show manager and installed component releases
   help                         Show this help
 
@@ -3980,9 +4189,10 @@ Components:
   hub
   both
 
-Deferred to CLI-003:
-  service ...
-  doctor ...
+Read-only: status, diagnostics, doctor, and service ... status.
+Root required: install/update/repair/reconfigure/uninstall and service
+  start/stop/restart. Normal uninstall keeps data; --purge deletes it only
+  after the separate exact confirmation.
 EOF
 }
 
@@ -4193,7 +4403,7 @@ cli_status_component() {
 				_csc_port=$(hub_port_from_plist "$_csc_plist" 2> /dev/null || true)
 				if [ -n "$_csc_port" ]; then printf '  Port: %s\n' "$_csc_port"; else printf '  Port: unknown\n'; fi
 				if [ -n "$_csc_port" ] && command -v curl > /dev/null 2>&1; then
-					if curl -fsS --max-time 3 "http://127.0.0.1:${_csc_port}/api/health" > /dev/null 2>&1; then
+					if curl -q --noproxy '*' -fsS --max-time 3 "http://127.0.0.1:${_csc_port}/api/health" > /dev/null 2>&1; then
 						printf '  Health: reachable\n'
 					else
 						printf '  Health: unreachable\n'
@@ -4232,6 +4442,602 @@ cli_diagnostics() {
 			;;
 		*) return 2 ;;
 	esac
+}
+
+cli_service_preflight_component() {
+	_csp_comp="$1"
+	_csp_action="$2"
+	if ! managed_component_validate "$_csp_comp" || { [ "$_csp_action" != "stop" ] && ! managed_runtime_paths_validate "$_csp_comp"; }; then
+		say_err "Refusing service operation: the managed ${_csp_comp} binary or LaunchDaemon is missing, untrusted, invalid, or has unsafe managed values. Run 'beszel-ios repair ${_csp_comp}' and inspect the installation."
+		return 1
+	fi
+	if [ "$_csp_comp" = "hub" ] && { [ "$_csp_action" = "start" ] || [ "$_csp_action" = "restart" ]; } && ! command -v curl > /dev/null 2>&1; then
+		say_err "Refusing Hub ${_csp_action}: curl is required for the loopback health check. Install the dependency, then retry."
+		return 1
+	fi
+	return 0
+}
+
+cli_service_start_component() {
+	_cssc_comp="$1"
+	if ! managed_component_validate "$_cssc_comp" || ! managed_runtime_paths_validate "$_cssc_comp"; then
+		say_err "Refusing to start: the managed ${_cssc_comp} installation failed validation. Run 'beszel-ios repair ${_cssc_comp}'."
+		return 1
+	fi
+	managed_component_paths "$_cssc_comp" || return 1
+	_cssc_state=$(diag_service_line "$MANAGED_COMPONENT_LABEL")
+	case "$_cssc_state" in
+		"loaded, PID "*)
+			say_ok "${_cssc_comp} service is already running."
+			return 0
+			;;
+		"loaded, not running")
+			if ! svc_unload "$MANAGED_COMPONENT_PLIST"; then
+				say_err "Could not unload the stopped managed ${_cssc_comp} service before recovery."
+				return 1
+			fi
+			if [ "$(diag_service_line "$MANAGED_COMPONENT_LABEL")" != "not loaded" ]; then
+				say_err "Could not confirm that the stopped ${_cssc_comp} service unloaded."
+				return 1
+			fi
+			;;
+		"not loaded") : ;;
+		*)
+			say_err "Cannot safely determine ${_cssc_comp} launchd state; no service change was made."
+			return 1
+			;;
+	esac
+	if ! svc_load "$MANAGED_COMPONENT_PLIST"; then
+		say_err "Failed to load the managed ${_cssc_comp} LaunchDaemon."
+		return 1
+	fi
+	case "$_cssc_comp" in
+		agent)
+			if ! agent_post_update_ok "$MANAGED_COMPONENT_LABEL"; then
+				say_err "Agent load did not reach a stable running state."
+				return 1
+			fi
+			;;
+		hub)
+			if ! svc_running "$MANAGED_COMPONENT_LABEL"; then
+				say_err "Hub loaded but no live Hub process could be confirmed."
+				return 1
+			fi
+			if ! wait_for_hub "$MANAGED_COMPONENT_PORT"; then
+				say_err "Hub did not pass its loopback health check on configured port ${MANAGED_COMPONENT_PORT}."
+				return 1
+			fi
+			;;
+	esac
+	say_ok "${_cssc_comp} service is running and verified."
+	return 0
+}
+
+cli_service_stop_component() {
+	_cssc_comp="$1"
+	if ! managed_component_validate "$_cssc_comp"; then
+		say_err "Refusing to stop: the managed ${_cssc_comp} installation failed validation. Run 'beszel-ios repair ${_cssc_comp}'."
+		return 1
+	fi
+	managed_component_paths "$_cssc_comp" || return 1
+	_cssc_state=$(diag_service_line "$MANAGED_COMPONENT_LABEL")
+	case "$_cssc_state" in
+		"loaded, PID "* | "loaded, not running")
+			if ! svc_unload "$MANAGED_COMPONENT_PLIST"; then
+				say_err "Failed to unload the managed ${_cssc_comp} LaunchDaemon."
+				return 1
+			fi
+			if [ "$(diag_service_line "$MANAGED_COMPONENT_LABEL")" != "not loaded" ]; then
+				say_err "Could not confirm that the ${_cssc_comp} service stopped and unloaded."
+				return 1
+			fi
+			say_ok "${_cssc_comp} service stopped."
+			return 0
+			;;
+		"not loaded")
+			say_ok "${_cssc_comp} service is already stopped."
+			return 0
+			;;
+		*)
+			say_err "Cannot safely determine ${_cssc_comp} launchd state; no service change was made."
+			return 1
+			;;
+	esac
+}
+
+cli_service_one() {
+	_cso_comp="$1"
+	_cso_action="$2"
+	case "$_cso_action" in
+		start) cli_service_start_component "$_cso_comp" ;;
+		stop) cli_service_stop_component "$_cso_comp" ;;
+		restart)
+			cli_service_stop_component "$_cso_comp" || return 1
+			cli_service_start_component "$_cso_comp"
+			;;
+		*) return 2 ;;
+	esac
+}
+
+cli_service_both() {
+	_csb_action="$1"
+	case "$_csb_action" in
+		start)
+			if ! cli_service_start_component hub; then
+				say_err "Hub start failed; Agent was not started."
+				return 1
+			fi
+			if ! cli_service_start_component agent; then
+				say_err "Agent start failed; Hub remains running."
+				return 1
+			fi
+			;;
+		stop)
+			if ! cli_service_stop_component agent; then
+				say_err "Agent stop failed; Hub was not changed."
+				return 1
+			fi
+			if ! cli_service_stop_component hub; then
+				say_err "Hub stop failed after Agent stopped; the Hub state may be unchanged."
+				return 1
+			fi
+			;;
+		restart)
+			if ! cli_service_stop_component agent; then
+				say_err "Agent stop failed; restart was aborted."
+				return 1
+			fi
+			if ! cli_service_stop_component hub; then
+				say_err "Agent is stopped; Hub stop failed, so no service was started."
+				return 1
+			fi
+			if ! cli_service_start_component hub; then
+				say_err "Hub start failed; Agent remains stopped."
+				return 1
+			fi
+			if ! cli_service_start_component agent; then
+				say_err "Agent start failed; Hub remains running and healthy."
+				return 1
+			fi
+			;;
+		*) return 2 ;;
+	esac
+	return 0
+}
+
+cli_service() {
+	_cli_service_scope="$1"
+	_cli_service_action="$2"
+	if [ "$_cli_service_action" = "status" ]; then
+		cli_status "$_cli_service_scope"
+		return $?
+	fi
+	check_root
+	check_launchctl
+	case "$_cli_service_scope" in
+		agent | hub)
+			cli_service_preflight_component "$_cli_service_scope" "$_cli_service_action" || return 1
+			cli_service_one "$_cli_service_scope" "$_cli_service_action"
+			;;
+		both)
+			# Validate every requested component before the first launchctl mutation.
+			case "$_cli_service_action" in
+				start | restart)
+					cli_service_preflight_component hub "$_cli_service_action" || return 1
+					cli_service_preflight_component agent "$_cli_service_action" || return 1
+					;;
+				stop)
+					cli_service_preflight_component agent stop || return 1
+					cli_service_preflight_component hub stop || return 1
+					;;
+			esac
+			cli_service_both "$_cli_service_action"
+			;;
+		*) return 2 ;;
+	esac
+}
+
+doctor_note_warn() {
+	DOCTOR_WARNED=1
+	printf '  %s: WARN\n' "$*"
+}
+
+doctor_note_fail() {
+	DOCTOR_FAILED=1
+	printf '  %s: FAIL\n' "$*"
+}
+
+doctor_platform_report() {
+	_dr_os=$(uname -s 2> /dev/null || true)
+	_dr_device=$(sysctl -n hw.machine 2> /dev/null || true)
+	_dr_ios=""
+	if command -v sw_vers > /dev/null 2>&1; then
+		_dr_ios=$(sw_vers -productVersion 2> /dev/null || true)
+	fi
+	if [ -z "$_dr_ios" ]; then
+		_dr_ios=$(sysctl -n kern.osproductversion 2> /dev/null || true)
+	fi
+	_dr_cputype=$(sysctl -n hw.cputype 2> /dev/null || true)
+	case "$_dr_device" in '') _dr_device="unknown" ;; esac
+	case "$_dr_ios" in '') _dr_ios="unknown" ;; esac
+	case "$_dr_cputype" in
+		16777228) _dr_arch="arm64" ;;
+		'' ) _dr_arch="unknown" ;;
+		*[!0-9]*) _dr_arch="unknown" ;;
+		*) _dr_arch="not arm64" ;;
+	esac
+	printf 'Platform\n'
+	printf '  Device: %s\n' "$_dr_device"
+	printf '  iOS: %s\n' "$_dr_ios"
+	printf '  Architecture: %s\n' "$_dr_arch"
+	if [ "$_dr_os" != "Darwin" ]; then
+		doctor_note_fail "Platform (expected jailbroken iOS / Darwin; found ${_dr_os:-unknown})"
+	elif [ "$_dr_arch" = "not arm64" ]; then
+		doctor_note_fail 'Architecture (the installed binaries require arm64)'
+	elif [ "$_dr_arch" = "unknown" ]; then
+		doctor_note_warn 'Architecture (could not verify arm64)'
+	fi
+	case "$_dr_device" in
+		Mac* | VMware*) doctor_note_fail 'Platform (device identifier is not an iPhone, iPad, or iPod)' ;;
+	esac
+	case "$_dr_ios" in
+		1[0-1].* | [0-9].*) doctor_note_fail 'iOS version (the binaries require iOS 12.0 or newer)' ;;
+		1[2-9].* | [2-9][0-9].*) : ;;
+		unknown) : ;;
+		*) doctor_note_warn 'iOS version (could not establish compatibility)' ;;
+	esac
+	if [ "$_dr_device" = "unknown" ]; then
+		doctor_note_warn 'Device model (unavailable)'
+	elif [ "$_dr_device" != "iPad4,4" ] || [ "$_dr_ios" != "12.5.7" ]; then
+		doctor_note_warn 'Device validation (only iPad mini 2 / iPad4,4 / A7 / iOS 12.5.7 / Amethyst + Procursus is validated)'
+	fi
+	if [ "$_dr_ios" = "unknown" ]; then
+		doctor_note_warn 'iOS version (unavailable)'
+	fi
+	if [ "$BIN_DIR" = "/usr/local/bin" ] && [ "$LIB_DIR" = "/var/lib" ] && [ "$LAUNCHD_DIR" = "/Library/LaunchDaemons" ] && [ "$LOG_DIR" = "/var/log" ]; then
+		_dr_layout="traditional"
+	else
+		_dr_layout="custom configured"
+	fi
+	_dr_layout_bad=0
+	for _dr_dir in "$BIN_DIR" "$LIB_DIR" "$LAUNCHD_DIR" "$LOG_DIR"; do
+		if [ -L "$_dr_dir" ] || { [ -e "$_dr_dir" ] && [ ! -d "$_dr_dir" ]; }; then
+			_dr_layout_bad=1
+		elif [ ! -d "$_dr_dir" ]; then
+			_dr_layout_bad=2
+		fi
+	done
+	case "$_dr_layout_bad" in
+		0)
+			printf '  Filesystem layout: %s paths available\n' "$_dr_layout"
+			if [ "$_dr_layout" = "custom configured" ]; then
+				doctor_note_warn 'Filesystem layout (not the validated traditional paths)'
+			fi
+			;;
+		1)
+			printf '  Filesystem layout: unsafe path\n'
+			doctor_note_fail 'Filesystem layout'
+			;;
+		2)
+			printf '  Filesystem layout: incomplete\n'
+			doctor_note_warn 'Filesystem layout (one or more configured directories are missing)'
+			;;
+	esac
+	printf '  Validation reference: iPad mini 2 / iPad4,4 / A7 / iOS 12.5.7 / Amethyst + Procursus\n'
+	return 0
+}
+
+doctor_dependency_report() {
+	printf 'Dependencies\n'
+	for _dd_tool in launchctl curl ldid; do
+		if command -v "$_dd_tool" > /dev/null 2>&1; then
+			printf '  %s: OK\n' "$_dd_tool"
+		else
+			printf '  %s: missing\n' "$_dd_tool"
+			if [ "$_dd_tool" = "launchctl" ]; then
+				DOCTOR_LAUNCHCTL_MISSING=1
+				doctor_note_warn 'launchctl (service state cannot be inspected)'
+			else
+				doctor_note_warn "${_dd_tool} (some management or health checks are unavailable)"
+			fi
+		fi
+	done
+	if command -v sha256sum > /dev/null 2>&1 || command -v shasum > /dev/null 2>&1 || command -v openssl > /dev/null 2>&1; then
+		printf '  SHA-256 tool: OK\n'
+	else
+		printf '  SHA-256 tool: missing\n'
+		doctor_note_warn 'SHA-256 tool (install/update verification is unavailable)'
+	fi
+	return 0
+}
+
+doctor_owner_is_expected() {
+	_doi_path="$1"
+	_doi_uid=$(path_owner_uid "$_doi_path") || return 1
+	[ "$_doi_uid" = "0" ] && return 0
+	if { [ "$BIN_DIR" != "/usr/local/bin" ] || [ "$LIB_DIR" != "/var/lib" ]; } && [ "$_doi_uid" = "$(id -u)" ]; then
+		return 0
+	fi
+	return 1
+}
+
+doctor_manager_state() {
+	_dms_path="$1"
+	_dms_kind="$2"
+	DOCTOR_MANAGER_VERSION="unknown"
+	case "$_dms_kind" in
+		manager)
+			if [ -L "$LIB_DIR" ] || [ -L "${LIB_DIR}/${STATE_SUBDIR}" ]; then
+				printf 'untrusted'
+				return 0
+			fi
+			;;
+		wrapper)
+			if [ -L "$BIN_DIR" ]; then
+				printf 'untrusted'
+				return 0
+			fi
+			;;
+	esac
+	if [ -L "$_dms_path" ] || { [ -e "$_dms_path" ] && [ ! -f "$_dms_path" ]; }; then
+		printf 'untrusted'
+		return 0
+	fi
+	if [ ! -f "$_dms_path" ]; then
+		printf 'missing'
+		return 0
+	fi
+	if ! doctor_owner_is_expected "$_dms_path"; then
+		printf 'unexpected owner'
+		return 0
+	fi
+	case "$_dms_kind" in
+		manager)
+			if ! grep -Fqx '# BESZEL_IOS_MANAGER_SOURCE_V1' "$_dms_path" 2> /dev/null || ! sh -n "$_dms_path" > /dev/null 2>&1; then
+				printf 'invalid'
+				return 0
+			fi
+			_dms_version=$(sed -n 's/^INSTALLER_VERSION="\([0-9][0-9A-Za-z._-]*\)"$/\1/p' "$_dms_path" | head -n 1)
+			case "$_dms_version" in '' | *[!0-9A-Za-z._-]*) printf 'invalid'; return 0 ;; esac
+			DOCTOR_MANAGER_VERSION="$_dms_version"
+			printf 'OK'
+			;;
+		wrapper)
+			if [ "$(sed -n '1p' "$_dms_path" 2> /dev/null)" = '#!/bin/sh' ] &&
+				[ "$(sed -n '2p' "$_dms_path" 2> /dev/null)" = '# BESZEL_IOS_MANAGED_COMMAND_WRAPPER_V1' ] &&
+				[ "$(sed -n '3p' "$_dms_path" 2> /dev/null)" = '_beszel_lib_dir=${BESZEL_LIB_DIR:-/var/lib}' ] &&
+				[ "$(sed -n '4p' "$_dms_path" 2> /dev/null)" = 'exec /bin/sh "$_beszel_lib_dir/beszel-ios/manager.sh" "$@"' ] &&
+				[ "$(wc -l < "$_dms_path" | tr -d '[:space:]')" = "4" ] && [ -x "$_dms_path" ]; then
+				printf 'OK'
+			else
+				printf 'invalid'
+			fi
+			;;
+		*) printf 'invalid' ;;
+	esac
+	return 0
+}
+
+doctor_manager_report() {
+	_dr_manager_path="${LIB_DIR}/${STATE_SUBDIR}/${MANAGER_FILE_NAME}"
+	_dr_wrapper_path="${BIN_DIR}/${COMMAND_NAME}"
+	_dr_any_component=0
+	if [ -L "$BIN_DIR" ] || [ -L "$LAUNCHD_DIR" ]; then
+		_dr_any_component=1
+	else
+		for _dr_path in "${BIN_DIR}/${AGENT_BIN}" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${BIN_DIR}/${HUB_BIN}" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"; do
+			if [ -e "$_dr_path" ] || [ -L "$_dr_path" ]; then _dr_any_component=1; fi
+		done
+	fi
+	_dr_manager_state=$(doctor_manager_state "$_dr_manager_path" manager)
+	_dr_manager_version="unknown"
+	if [ "$_dr_manager_state" = "OK" ]; then
+		_dr_manager_version=$(sed -n 's/^INSTALLER_VERSION="\([0-9][0-9A-Za-z._-]*\)"$/\1/p' "$_dr_manager_path" | head -n 1)
+	fi
+	_dr_wrapper_state=$(doctor_manager_state "$_dr_wrapper_path" wrapper)
+	printf 'Manager\n'
+	printf '  Manager: %s\n' "$_dr_manager_state"
+	printf '  Command wrapper: %s\n' "$_dr_wrapper_state"
+	printf '  Version: %s\n' "$_dr_manager_version"
+	if [ "$_dr_any_component" = "1" ]; then
+		[ "$_dr_manager_state" = "OK" ] || doctor_note_fail 'Manager (expected for an installed component)'
+		[ "$_dr_wrapper_state" = "OK" ] || doctor_note_fail 'Command wrapper (expected for an installed component)'
+	else
+		case "$_dr_manager_state" in missing) : ;; OK) : ;; *) doctor_note_fail 'Manager' ;; esac
+		case "$_dr_wrapper_state" in missing) : ;; OK) : ;; *) doctor_note_fail 'Command wrapper' ;; esac
+	fi
+	return 0
+}
+
+doctor_component_present() {
+	_dcp_comp="$1"
+	managed_component_paths "$_dcp_comp" || return 1
+	[ ! -L "$BIN_DIR" ] && [ ! -L "$LAUNCHD_DIR" ] || return 1
+	[ -e "$MANAGED_COMPONENT_BIN" ] || [ -L "$MANAGED_COMPONENT_BIN" ] || [ -e "$MANAGED_COMPONENT_PLIST" ] || [ -L "$MANAGED_COMPONENT_PLIST" ]
+}
+
+doctor_component_release() {
+	_dcr_comp="$1"
+	_dcr_state_dir="${LIB_DIR}/${STATE_SUBDIR}"
+	_dcr_state_file=$(state_path)
+	if [ -L "$LIB_DIR" ] || [ -L "$_dcr_state_dir" ] || [ -L "$_dcr_state_file" ] || { [ -e "$_dcr_state_file" ] && [ ! -f "$_dcr_state_file" ]; }; then
+		return 1
+	fi
+	case "$_dcr_comp" in
+		agent) state_agent_release ;;
+		hub) state_hub_release ;;
+		*) return 1 ;;
+	esac
+}
+
+doctor_component() {
+	_dc_comp="$1"
+	_dc_explicit="$2"
+	managed_component_paths "$_dc_comp" || return 1
+	_dc_name="Agent"
+	[ "$_dc_comp" = "hub" ] && _dc_name="Hub"
+	printf '%s\n' "$_dc_name"
+	if ! doctor_component_present "$_dc_comp"; then
+		printf '  Installed: no\n'
+		printf '  Service: not installed\n'
+		if [ "$_dc_explicit" = "1" ]; then
+			doctor_note_fail "${_dc_name} (requested component is missing)"
+		fi
+		return 0
+	fi
+	printf '  Installed: yes\n'
+	_dc_release=""
+	case "$_dc_comp" in
+		agent) _dc_release=$(doctor_component_release agent 2> /dev/null || true) ;;
+		hub) _dc_release=$(doctor_component_release hub 2> /dev/null || true) ;;
+	esac
+	if [ -n "$_dc_release" ]; then
+		printf '  Release: %s\n' "$_dc_release"
+	else
+		printf '  Release: unknown (legacy or missing state)\n'
+		doctor_note_warn "${_dc_name} release state"
+	fi
+	if managed_binary_validate "$_dc_comp"; then
+		_dc_binary_state="OK"
+	else
+		if [ -L "$MANAGED_COMPONENT_BIN" ] || { [ -e "$MANAGED_COMPONENT_BIN" ] && [ ! -f "$MANAGED_COMPONENT_BIN" ]; }; then
+			_dc_binary_state="untrusted"
+		elif [ -f "$MANAGED_COMPONENT_BIN" ]; then
+			_dc_binary_state="invalid"
+		else
+			_dc_binary_state="missing"
+		fi
+	fi
+	printf '  Binary: %s\n' "$_dc_binary_state"
+	if [ "$_dc_binary_state" != "OK" ]; then doctor_note_fail "${_dc_name} binary"; fi
+	if [ -L "$MANAGED_COMPONENT_PLIST" ] || { [ -e "$MANAGED_COMPONENT_PLIST" ] && [ ! -f "$MANAGED_COMPONENT_PLIST" ]; }; then
+		_dc_plist_state="untrusted"
+	elif [ ! -f "$MANAGED_COMPONENT_PLIST" ]; then
+		_dc_plist_state="missing"
+	elif ! plist_validator_available; then
+		_dc_plist_state="unverified"
+	elif ! plist_strict_valid "$MANAGED_COMPONENT_PLIST"; then
+		_dc_plist_state="invalid"
+	elif managed_plist_validate "$_dc_comp"; then
+		_dc_plist_state="OK"
+	else
+		_dc_plist_state="invalid"
+	fi
+	printf '  Plist: %s\n' "$_dc_plist_state"
+	case "$_dc_plist_state" in
+		OK) _dc_port="$MANAGED_COMPONENT_PORT" ;;
+		unverified) _dc_port="unknown"; doctor_note_warn "${_dc_name} plist (no parser is available)" ;;
+		*) _dc_port="unknown"; doctor_note_fail "${_dc_name} plist" ;;
+	esac
+	if [ "$_dc_comp" = "agent" ]; then
+		printf '  Port: %s\n' "$_dc_port"
+		if [ "$_dc_plist_state" = "OK" ] && agent_key_from_plist "$MANAGED_COMPONENT_PLIST" > /dev/null 2>&1; then
+			printf '  Key: configured\n'
+		elif [ "$_dc_plist_state" = "OK" ]; then
+			printf '  Key: missing\n'
+			doctor_note_fail 'Agent key configuration'
+		else
+			printf '  Key: unknown\n'
+		fi
+	else
+		printf '  Port: %s\n' "$_dc_port"
+	fi
+	if [ -L "$LIB_DIR" ] || [ -L "$MANAGED_COMPONENT_DATA" ] || { [ -e "$MANAGED_COMPONENT_DATA" ] && [ ! -d "$MANAGED_COMPONENT_DATA" ]; }; then
+		_dc_data_state="untrusted"
+	elif [ -d "$MANAGED_COMPONENT_DATA" ]; then
+		_dc_data_state="present"
+	else
+		_dc_data_state="missing"
+	fi
+	printf '  Data directory: %s\n' "$_dc_data_state"
+	if [ "$_dc_data_state" != "present" ]; then doctor_note_fail "${_dc_name} data directory"; fi
+	if [ "$_dc_plist_state" = "OK" ]; then
+		cli_status_service "$MANAGED_COMPONENT_LABEL"
+		case "$CLI_STATUS_PROCESS:$CLI_STATUS_LAUNCHD" in
+			running:loaded)
+				_dc_service_state="running"
+				;;
+			stopped:loaded)
+				_dc_service_state="stopped (loaded but not running)"
+				doctor_note_warn "${_dc_name} service is stopped"
+				;;
+			stopped:unloaded)
+				_dc_service_state="stopped (unloaded)"
+				doctor_note_warn "${_dc_name} service is intentionally stopped or unloaded"
+				;;
+			*)
+				_dc_service_state="unknown"
+				doctor_note_warn "${_dc_name} service state (launchctl unavailable or unreadable)"
+				;;
+		esac
+		printf '  Service: %s\n' "$_dc_service_state"
+		printf '  PID: %s\n' "$CLI_STATUS_PID"
+	else
+		printf '  Service: unknown\n'
+		printf '  PID: unknown\n'
+	fi
+	if [ "$_dc_comp" = "hub" ]; then
+		if [ "$_dc_plist_state" != "OK" ]; then
+			printf '  Health: unknown\n'
+		elif [ "$_dc_service_state" != "running" ]; then
+			printf '  Health: skipped (Hub is not confirmed running)\n'
+		elif ! command -v curl > /dev/null 2>&1; then
+			printf '  Health: unknown (curl unavailable)\n'
+			doctor_note_warn 'Hub health check (curl unavailable)'
+		elif curl -q --noproxy '*' -fsS --max-time 3 "http://127.0.0.1:${_dc_port}/api/health" > /dev/null 2>&1; then
+			printf '  Health: OK\n'
+		else
+			printf '  Health: FAIL\n'
+			doctor_note_fail 'Hub loopback health check'
+		fi
+	fi
+	return 0
+}
+
+cli_doctor() {
+	_doctor_scope="$1"
+	DOCTOR_FAILED=0
+	DOCTOR_WARNED=0
+	DOCTOR_LAUNCHCTL_MISSING=0
+	printf 'Beszel-iOS Doctor\n\n'
+	doctor_platform_report
+	printf '\n'
+	doctor_dependency_report
+	printf '\n'
+	doctor_manager_report
+	printf '\n'
+	case "$_doctor_scope" in
+		auto)
+			doctor_component agent 0
+			printf '\n'
+			doctor_component hub 0
+			;;
+		agent)
+			doctor_component agent 1
+			;;
+		hub)
+			doctor_component hub 1
+			;;
+		both)
+			doctor_component agent 1
+			printf '\n'
+			doctor_component hub 1
+			;;
+		*) return 2 ;;
+	esac
+	if [ "$DOCTOR_LAUNCHCTL_MISSING" = "1" ] && { doctor_component_present agent || doctor_component_present hub; }; then
+		doctor_note_fail 'launchctl is required for installed services'
+	fi
+	printf '\n'
+	if [ "$DOCTOR_FAILED" = "1" ]; then
+		printf 'Overall: FAIL\n'
+		return 1
+	elif [ "$DOCTOR_WARNED" = "1" ]; then
+		printf 'Overall: WARN\n'
+		return 0
+	fi
+	printf 'Overall: PASS\n'
+	return 0
 }
 
 cli_repair_both() {
@@ -4290,6 +5096,14 @@ cli_usage_error() {
 	_cli_error="${1:-Invalid command arguments.}"
 	say_err "$_cli_error"
 	say_err "Usage: beszel-ios [command] [component] [options]"
+	say_err "Run 'beszel-ios help' for the supported syntax."
+	exit 2
+}
+
+cli_service_usage_error() {
+	_cli_service_error="${1:-Invalid service arguments.}"
+	say_err "$_cli_service_error"
+	say_err 'Usage: beszel-ios service <agent|hub|both> <start|stop|restart|status>'
 	say_err "Run 'beszel-ios help' for the supported syntax."
 	exit 2
 }
@@ -4363,8 +5177,19 @@ main() {
 			fi
 			cli_uninstall "$2" "$_cli_purge"
 			;;
-		service | doctor)
-			cli_usage_error "The '${_cli_command}' command is deferred to CLI-003."
+		service)
+			[ "$#" = "3" ] || cli_service_usage_error 'Service requires a component and one action.'
+			case "$2" in agent | hub | both) ;; *) cli_service_usage_error 'Unknown service component; use agent, hub, or both.' ;; esac
+			case "$3" in start | stop | restart | status) ;; *) cli_service_usage_error 'Unknown service action; use start, stop, restart, or status.' ;; esac
+			cli_service "$2" "$3"
+			;;
+		doctor)
+			[ "$#" -le "2" ] || cli_usage_error 'Too many arguments for doctor.'
+			if [ "$#" = "1" ]; then
+				cli_doctor auto
+			else
+				case "$2" in agent | hub | both) cli_doctor "$2" ;; *) cli_usage_error 'Unknown component; use agent, hub, or both.' ;; esac
+			fi
 			;;
 		*)
 			cli_usage_error "Unknown command; run 'beszel-ios help' for supported syntax."
