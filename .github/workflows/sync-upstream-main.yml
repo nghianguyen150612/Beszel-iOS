@@ -2,6 +2,8 @@ name: Sync Beszel upstream to main
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '23 0 * * 1' # Mondays 07:23 Asia/Ho_Chi_Minh
 
 concurrency:
   group: sync-upstream-main
