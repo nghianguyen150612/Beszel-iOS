@@ -10,18 +10,29 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Verify upstream sync token is configured
+        shell: bash
+        env:
+          UPSTREAM_SYNC_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+        run: |
+          if [[ -z "$UPSTREAM_SYNC_TOKEN" ]]; then
+            echo "::error::Missing repository secret UPSTREAM_SYNC_TOKEN. Create a fine-grained PAT with Contents: Read and write and Workflows: Read and write for this repository."
+            exit 1
+          fi
+
       - name: Checkout canonical iOS branch
         uses: actions/checkout@v5
         with:
           ref: iOS
           fetch-depth: 0
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
 
       - name: Sync upstream main
         shell: bash
