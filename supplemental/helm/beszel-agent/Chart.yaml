@@ -4,7 +4,7 @@ home: https://github.com/henrygd/beszel/tree/main/supplemental/helm/beszel-agent
 name: beszel-agent
 appVersion: "0.20.0"
 # Bump this version when publishing chart changes.
-version: 0.1.7
+version: 0.1.8
 sources:
   - https://github.com/henrygd/beszel/tree/main/supplemental/helm/beszel-agent
   - https://www.beszel.dev/
