@@ -15,7 +15,9 @@ Cung cấp binary Beszel Agent + Hub chạy trực tiếp cho thiết bị iOS �
 - Base iOS ghi theo `beszel.Version`, còn các commit untagged trên upstream-main
   được audit riêng trước khi tích hợp. Xem
   [docs/upstream-sync.vi.md](upstream-sync.vi.md) để biết snapshot hiện tại,
-  phân loại và quy trình.
+  phân loại và quy trình. Baseline đối chiếu v0.21.0 P001 được đóng băng trong
+  [docs/upstream-v021-baseline.vi.md](upstream-v021-baseline.vi.md); việc audit
+  đầy đủ 178 commit được để dành cho P002.
 
 ## Mô hình nhánh
 

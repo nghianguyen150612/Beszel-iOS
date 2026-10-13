@@ -17,7 +17,18 @@ Beszel without silently dropping an iOS compatibility patch.
 Never turn `upstream/main` into the product branch, and never update `ios` with
 an unattended merge or rebase.
 
-## Audit baseline
+## Current snapshot: P001, 2026-10-13
+
+The frozen upstream v0.21.0 baseline is recorded in
+[`upstream-v021-baseline.md`](upstream-v021-baseline.md). It verifies
+`origin/iOS` at `a6b73365147fc8c3a820552a145d370418e5b680`, `origin/main` and
+`upstream/main` at `bb23f99b3eeaced9608e11e280e7c986dba650be`, merge-base
+`f204dc17e64bba444478c60210d018e43a777193`, and divergence of 35 iOS-only / 178
+upstream-only commits. P001 freezes this baseline only; the 178 commits have
+not yet been individually audited. The September audit below remains historical
+and has not been rewritten as the October snapshot.
+
+## September 2026 audit baseline (historical)
 
 The maintenance audit started from the validated commit `8fed846c`, with
 `HEAD == origin/iOS` and `beszel.Version == "0.19.0"`.
@@ -383,7 +394,11 @@ The validated reference for these checks remains iPad mini 2 / `iPad4,4` /
 `A1489` / Apple A7 / iOS 12.5.7. Other devices and iOS versions remain
 untested.
 
-## Current next-phase decision
+## September 2026 next-phase decision (historical)
+
+This decision describes the September snapshot above. The current frozen
+October snapshot and P002 scope are recorded in
+[`upstream-v021-baseline.md`](upstream-v021-baseline.md).
 
 There is no newer stable upstream release than `v0.19.0`, so no
 stable-base integration is required and no new release is created.

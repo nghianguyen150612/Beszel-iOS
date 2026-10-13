@@ -15,7 +15,9 @@ Provide native Beszel Agent + Hub binaries for jailbroken iOS devices while pres
 - The iOS base is recorded from `beszel.Version`, while untagged upstream-main
   commits are audited separately before integration. See
   [docs/upstream-sync.md](upstream-sync.md) for the current snapshot,
-  classifications, and procedure.
+  classifications, and procedure. The frozen P001 v0.21.0 comparison is in
+  [docs/upstream-v021-baseline.md](upstream-v021-baseline.md); its full
+  178-commit audit is deferred to P002.
 
 ## Branch model
 
