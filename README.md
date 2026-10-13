@@ -24,6 +24,7 @@ In short: old iPad in, live system graphs out.
 
 - **Native Beszel Agent for iOS** — reports CPU, memory, disk, network, load, and system info to any Beszel Hub.
 - **Native Beszel Hub for iOS** — serves the familiar Beszel web dashboard and stores history right on the device.
+- **Network monitor dashboards** — the Hub displays upstream monitor results and history from supported Agents; local iOS probing is not claimed until validated.
 - **Battery telemetry** — shows battery percentage and charging state alongside the usual server metrics.
 - **Starts automatically** — Agent and Hub run as system services and come back after jailbreak reactivation.
 - **Hub + Agent on one device** — one iPhone or iPad can monitor itself and show its own dashboard.
