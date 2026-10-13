@@ -1155,3 +1155,21 @@ func TestModernHubRequestResponse(t *testing.T) {
 	// Wait() returns an *ssh.ExitError on non-zero exit; nil means status 0.
 	require.NoError(t, session.Wait())
 }
+
+func TestModernHubMalformedFallbackSinglePayload(t *testing.T) {
+	client := dialTestAgentClient(t, "SSH-2.0-beszel_0.21.0")
+	// Repeated sessions model retry/fallback on the same authenticated transport.
+	for i := 0; i < 2; i++ {
+		session, err := client.NewSession()
+		require.NoError(t, err)
+		session.Stdin = bytes.NewReader([]byte{0xff})
+		output := waitSessionOutput(t, func() ([]byte, error) { return session.Output("") })
+		decoder := cbor.NewDecoder(bytes.NewReader(output))
+		var data system.CombinedData
+		require.NoError(t, decoder.Decode(&data))
+		require.Equal(t, system.ConnectionTypeSSH, data.Info.ConnectionType)
+		var extra any
+		require.ErrorIs(t, decoder.Decode(&extra), io.EOF)
+		_ = session.Close()
+	}
+}
