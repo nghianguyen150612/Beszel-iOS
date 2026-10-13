@@ -24,6 +24,7 @@ Nói ngắn gọn: iPad cũ vào, biểu đồ hệ thống trực tiếp ra.
 
 - **Agent Beszel chạy trực tiếp trên iOS** — báo cáo CPU, bộ nhớ, ổ đĩa, mạng, tải hệ thống và thông tin thiết bị về bất kỳ Hub Beszel nào.
 - **Hub Beszel chạy trực tiếp trên iOS** — phục vụ bảng điều khiển web quen thuộc của Beszel và lưu lịch sử ngay trên thiết bị.
+- **Bảng điều khiển giám sát mạng** — Hub hiển thị kết quả và lịch sử monitor upstream từ các Agent có hỗ trợ; chưa khẳng định iOS có thể tự dò mạng cho tới khi được kiểm thử.
 - **Theo dõi pin** — hiển thị phần trăm pin và trạng thái sạc ngay cạnh các thông số máy chủ thông thường.
 - **Tự khởi động** — Agent và Hub chạy dưới dạng dịch vụ hệ thống và sẽ quay lại sau khi bạn kích hoạt jailbreak.
 - **Hub + Agent trên cùng một máy** — một chiếc iPhone/iPad vừa tự giám sát chính nó, vừa host bảng điều khiển của mình.

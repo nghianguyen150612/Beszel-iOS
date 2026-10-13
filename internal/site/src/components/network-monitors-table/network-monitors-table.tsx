@@ -677,7 +677,7 @@ function CertExpiry({ cert }: { cert: MonitorCertInfo }) {
 					<Trans>Certificate expired {expires}</Trans>
 				) : (
 					<Trans>
-						Certificate expires {expires} 
+						Certificate expires {expires}
 					</Trans>
 				)}
 			</span>

@@ -12,4 +12,3 @@ Update repository with updates from SUSE Linux Enterprise 15 | openSUSE-SLE-15.5
 Update repository with updates from SUSE Linux Enterprise 15 | openSUSE-SLE-15.5-2024-4359 | security | moderate  | ---         | needed | Security update for curl
 
 4 patches needed (4 security patches)
-

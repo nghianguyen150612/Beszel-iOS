@@ -1,9 +1,9 @@
-//go:build !darwin
+//go:build !darwin || ios
 
 package agent
 
-// startPowermetricsCollector is a no-op on non-darwin platforms; the real implementation is in gpu_darwin.go.
+// startPowermetricsCollector is a no-op outside macOS; the real implementation is in gpu_darwin.go.
 func (gm *GPUManager) startPowermetricsCollector() {}
 
-// startMacmonCollector is a no-op on non-darwin platforms; the real implementation is in gpu_darwin.go.
+// startMacmonCollector is a no-op outside macOS; the real implementation is in gpu_darwin.go.
 func (gm *GPUManager) startMacmonCollector() {}
