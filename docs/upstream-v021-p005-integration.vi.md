@@ -1,6 +1,6 @@
 # Tích hợp Beszel upstream v0.21.0 — P005
 
-**Kết quả: PASS cho tích hợp mã nguồn P005.** P005 tích hợp lịch sử upstream v0.21.0 đã ghim vào nhánh tích hợp được phê duyệt. Đây chưa phải nghiệm thu iOS cuối cùng hay phê duyệt phát hành. Gate B vẫn chờ P006.
+**Kết quả: PASS cho tích hợp mã nguồn P005.** P005 tích hợp lịch sử upstream v0.21.0 đã ghim vào nhánh tích hợp được phê duyệt. Đây chưa phải nghiệm thu iOS cuối cùng hay phê duyệt phát hành. Gate B vẫn chờ P006. Nhánh review là `ios/merge-upstream-stable`, tạo từ `ios/upstream-v021-integration`.
 
 ## Lịch sử Git và phạm vi commit
 
@@ -19,7 +19,7 @@ Bộ SHA P005 chính xác trong ma trận chuẩn khớp với toàn bộ 116 co
 
 Các báo cáo tích hợp và preservation record của P004 được giữ nguyên.
 
-Merge upstream thay đổi 256 đường dẫn. Hai commit theo sau là `1082869c54866a8020c04d33e5d992df6caa48b8` (đối chiếu build tag collector iOS và README bản địa hóa) và `65167c09f9612d8256e0fd39830e5b1d935b8d36` (bài kiểm tra hồi quy khóa status và thiết lập `localStorage` chỉ dành cho môi trường test Bun). Thiết lập Bun sửa môi trường test, không đổi mã chạy sản phẩm hoặc làm yếu assertion.
+Merge upstream thay đổi 256 đường dẫn. Các commit theo sau là `1082869c54866a8020c04d33e5d992df6caa48b8` (đối chiếu build tag collector iOS và README bản địa hóa), `65167c09f9612d8256e0fd39830e5b1d935b8d36` (bài kiểm tra hồi quy khóa status và thiết lập `localStorage` chỉ dành cho môi trường test Bun), và `4f6ddb3a09c48644ce9e992baa23949d655f9422` (sửa validation phiên bản package Helm). Thiết lập Bun sửa môi trường test, không đổi mã chạy sản phẩm hoặc làm yếu assertion. Sửa đổi Helm chỉ nâng phiên bản package chart Agent và Hub từ `0.1.7` lên `0.1.8`; giữ nguyên `appVersion` và phiên bản mã upstream. Lượt kiểm tra chart PR đầu tiên thất bại vì `0.1.7` đã được phát hành. Sau sửa đổi, chart lint/render/package và kiểm tra phiên bản chưa phát hành đều đạt; bước publish được skip.
 
 ## Xung đột merge và cách xử lý
 
@@ -95,12 +95,17 @@ Workflow release và Docker tổng quát tiếp tục loại trừ `v*-ios.*`; �
 | Frontend production build | PASS; tạo asset thật; có cảnh báo import hỗn hợp và chunk lớn |
 | Upstream sync / iOS patch sentinel | PASS; 10 / 44 kiểm tra |
 | Bootstrap / installer tests | PASS; 54 / 814 kiểm tra |
+| Kiểm tra chart Helm qua PR | PASS sau sửa phiên bản; cả hai chart đạt lint, render, package và kiểm tra phiên bản chưa phát hành; không publish |
 | `git diff --check` | PASS |
 
-Các kiểm tra hosted chạy trên mã ứng viên `65167c09f9612d8256e0fd39830e5b1d935b8d36`:
+Các kiểm tra hosted trên mã nguồn đã sửa `4f6ddb3a09c48644ce9e992baa23949d655f9422`:
 
-- [iOS Build — run 38421092219](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38421092219): **success**. Go 1.27.1, Xcode 15.4/iPhoneOS SDK 17.5; artifact Agent và Hub là Mach-O arm64, metadata minimum iOS 12.0; checksum đã xác minh. Job `release-ios` được skip cho nhánh feature này.
-- [iOS installer lifecycle — run 38421092500](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38421092500): **success**. Đã đạt kiểm tra checksum bootstrap, vòng đời installer, patch sentinel và sync.
+- [iOS Build — run 38423366267](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423366267): **success**. Go 1.27.1, Xcode 15.4/iPhoneOS SDK 17.5; artifact Agent và Hub arm64 đạt kiểm tra Mach-O với minimum iOS 12.0; kiểm tra `SHA256SUMS` đạt. Job `release-ios` được skip.
+- [iOS installer lifecycle — run 38423366339](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423366339): **success**. Kiểm tra branch chuẩn, cú pháp POSIX, checksum bootstrap, lifecycle, patch sentinel và upstream sync đều đạt.
+- [Helm charts — run 38423323169](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423323169): **success**. Cả hai chart đạt lint/render/package và kiểm tra phiên bản chưa phát hành; không publish chart.
+- Lượt Helm đầu tiên, [run 38422752023](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38422752023), thất bại vì package chart phiên bản `0.1.7` đã tồn tại. Sửa đổi chỉ phiên bản ở trên đã giải quyết lỗi. Không phát hành chart hay sản phẩm.
+
+Một lượt iOS build và installer lifecycle nữa đã được chạy trên commit tài liệu cuối trước khi review PR; SHA được test và URL run chính xác sẽ được ghi trong PR và báo cáo hoàn tất.
 
 Build hosted xác nhận kiến trúc và metadata triển khai; không chứng minh binary chạy không SIGILL trên thiết bị A7 thật.
 

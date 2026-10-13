@@ -13,8 +13,8 @@
     "11432ec410a6cb03707789b7a871e7985e18d6fe",
     "ec96c134660c998f7eb044e349e3715b65733fe1"
   ],
-  "feature_branch": "ios/p005-upstream-v021-merge",
-  "code_candidate_sha": "65167c09f9612d8256e0fd39830e5b1d935b8d36",
+  "feature_branch": "ios/merge-upstream-stable",
+  "code_candidate_sha": "4f6ddb3a09c48644ce9e992baa23949d655f9422",
   "repair_commits": [
     {
       "sha": "1082869c54866a8020c04d33e5d992df6caa48b8",
@@ -41,6 +41,15 @@
       ],
       "test_only": true,
       "reason": "Bun tests referenced localStorage without a browser global; a scoped in-memory test shim fixes the harness without changing product runtime or assertions."
+    },
+    {
+      "sha": "4f6ddb3a09c48644ce9e992baa23949d655f9422",
+      "subject": "fix(helm): bump chart package versions for validation",
+      "files": [
+        "supplemental/helm/beszel-agent/Chart.yaml",
+        "supplemental/helm/beszel-hub/Chart.yaml"
+      ],
+      "reason": "The PR Helm validation initially rejected already-published package version 0.1.7. Bumped only package chart versions to 0.1.8; appVersion remains the upstream value. The PR validation workflow then passed and skipped publishing."
     }
   ],
   "conflicts": [
@@ -2183,7 +2192,9 @@
       "tests/bootstrap-test.sh": "bdb69ca0f34d06118ead7fdc719f7a6c7fe66be803b82a1337fe096d4aaf2cc4",
       "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
       "tests/ios-patch-sentinels.sh": "1e570da5b52e12f089c1894e2644e29bb40147bb75b531cd0ee7c55c9ac48f6d",
-      "tests/upstream-sync-test.sh": "1c858a6332ab444cfe6f2689ba1aa5293291c6f0849c6c44dcdf06d056faac92"
+      "tests/upstream-sync-test.sh": "1c858a6332ab444cfe6f2689ba1aa5293291c6f0849c6c44dcdf06d056faac92",
+      "supplemental/helm/beszel-agent/Chart.yaml": "f1c1a399f0a10ca046a7bcec0eb598d6bdd1e68d7984da8f59a7d5abfcec99fd",
+      "supplemental/helm/beszel-hub/Chart.yaml": "a38bee4a205c46f559a1793fd0b72bb0565639128a6497725d2d17dd339ed005"
     },
     "missing_paths": [],
     "migration_paths": [
@@ -2247,7 +2258,8 @@
       "cumulative_integrated": 141,
       "total": 178,
       "logical_ios_patches": 13
-    }
+    },
+    "source_candidate_sha": "4f6ddb3a09c48644ce9e992baa23949d655f9422"
   },
   "source_review": {
     "agent_protocol": "Retained v0.21 WebSocket/SSH fallback, reconnect, timeout/cancellation, fresh decode, CBOR/JSON compatibility, version negotiation, slow collector, and monitor configuration synchronization changes.",
@@ -2381,6 +2393,16 @@
       "name": "git whitespace check",
       "command": "git diff --check",
       "result": "PASS"
+    },
+    {
+      "name": "initial Helm chart PR validation",
+      "command": "GitHub Actions pull_request workflow 38422752023",
+      "result": "FAIL on both chart jobs: package version 0.1.7 was already published; publish steps were skipped. Corrected with the package-version-only bump recorded above."
+    },
+    {
+      "name": "Helm chart PR validation after correction",
+      "command": "GitHub Actions pull_request workflow 38423323169",
+      "result": "PASS; agent and hub lint, render, package and unpublished-version checks passed; publish steps skipped."
     }
   ],
   "hosted_ci": [
@@ -2423,6 +2445,81 @@
       "jobs": {
         "installer": "success"
       }
+    },
+    {
+      "workflow": "Helm charts (initial PR validation)",
+      "run_id": 38422752023,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38422752023",
+      "head_sha": "ba1161f5a3e74284e705935d01b53f864120af95",
+      "conclusion": "failure",
+      "jobs": {
+        "Detect changed charts": "success",
+        "Validate beszel-agent": "failure: chart package version 0.1.7 already published",
+        "Validate beszel-hub": "failure: chart package version 0.1.7 already published",
+        "Publish chart": "skipped"
+      },
+      "resolution_commit": "4f6ddb3a09c48644ce9e992baa23949d655f9422"
+    },
+    {
+      "workflow": "Helm charts (corrected PR validation)",
+      "run_id": 38423323169,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423323169",
+      "head_sha": "4f6ddb3a09c48644ce9e992baa23949d655f9422",
+      "conclusion": "success",
+      "jobs": {
+        "Detect changed charts": "success",
+        "Validate beszel-agent": "success",
+        "Validate beszel-hub": "success",
+        "Publish chart": "skipped"
+      },
+      "checks": [
+        "chart lint",
+        "render",
+        "package",
+        "chart version unpublished"
+      ],
+      "published": false
+    },
+    {
+      "workflow": "iOS Build",
+      "run_id": 38423366267,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423366267",
+      "head_sha": "4f6ddb3a09c48644ce9e992baa23949d655f9422",
+      "conclusion": "success",
+      "jobs": {
+        "build-ios": "success",
+        "release-ios": "skipped"
+      },
+      "checks": [
+        "iOS maintenance sentinels",
+        "Go 1.27.1 setup and A7 runtime patch",
+        "Bun 1.4.0 frozen install and frontend build",
+        "Agent iOS arm64 build",
+        "Hub iOS arm64 build",
+        "Mach-O ARM64 and iOS minos 12.0 verification",
+        "SHA256SUMS generation and verification",
+        "artifact beszel-ios-arm64 upload"
+      ],
+      "runner": "macos-14; Xcode 15.4; iPhoneOS SDK 17.5"
+    },
+    {
+      "workflow": "iOS installer lifecycle",
+      "run_id": 38423366339,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423366339",
+      "head_sha": "4f6ddb3a09c48644ce9e992baa23949d655f9422",
+      "conclusion": "success",
+      "jobs": {
+        "installer": "success"
+      },
+      "checks": [
+        "canonical iOS branch references",
+        "POSIX syntax",
+        "bootstrap checksum pin",
+        "bootstrap tests",
+        "lifecycle engine tests",
+        "patch sentinels",
+        "upstream sync tests"
+      ]
     }
   ],
   "deferred": [
@@ -2517,5 +2614,6 @@
     "p0-race-tests.log": "5f33eab8e6809e368f61d17d462fd0aabbc0a5bb8835117aecb1a28ca82cdc20",
     "p0-ssh-transport-tests.log": "b5e12fbe61d43db3d986b71ea7386fd66802fdc7353377b64a575f9cb7b36915",
     "p0-websocket-tests.log": "9cc6057e95992ff9af600d0ec8b11e241ce696c5798642f561e249340c27313b"
-  }
+  },
+  "final_report_note": "The PR source head was later revalidated after this evidence record was committed; exact final-head Actions runs are included in the PR and completion report."
 }

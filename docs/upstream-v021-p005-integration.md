@@ -1,6 +1,6 @@
 # Beszel upstream v0.21.0 integration — P005
 
-**Result: P005 source integration PASS.** P005 integrates the pinned upstream v0.21.0 history into the approved integration branch. This is not final iOS acceptance or release approval. Gate B remains pending P006.
+**Result: P005 source integration PASS.** P005 integrates the pinned upstream v0.21.0 history into the approved integration branch. This is not final iOS acceptance or release approval. Gate B remains pending P006. The review branch is `ios/merge-upstream-stable`, based on `ios/upstream-v021-integration`.
 
 ## Git history and batch coverage
 
@@ -19,7 +19,7 @@ The canonical matrix’s exact P005 set matches all 116 commits in `v0.20.0..v0.
 
 P004’s integration reports and preservation record were left intact.
 
-The merge changed 256 upstream paths. Separate follow-up commits are `1082869c54866a8020c04d33e5d992df6caa48b8` (iOS collector build-tag and localized README reconciliation) and `65167c09f9612d8256e0fd39830e5b1d935b8d36` (status-lock regression test and Bun test-only `localStorage` setup). The Bun setup repairs the test environment; it does not change product runtime code or weaken assertions.
+The merge changed 256 upstream paths. Separate follow-up commits are `1082869c54866a8020c04d33e5d992df6caa48b8` (iOS collector build-tag and localized README reconciliation), `65167c09f9612d8256e0fd39830e5b1d935b8d36` (status-lock regression test and Bun test-only `localStorage` setup), and `4f6ddb3a09c48644ce9e992baa23949d655f9422` (Helm chart package version validation repair). The Bun setup repairs the test environment; it does not change product runtime code or weaken assertions. The Helm repair changes the Agent and Hub chart package versions from `0.1.7` to `0.1.8`; it leaves `appVersion` and upstream source versions unchanged. The initial pull-request chart check failed because `0.1.7` was already published. The corrected chart validation passed lint, render, package, and unpublished-version checks, and skipped publishing.
 
 ## Merge conflicts and resolutions
 
@@ -95,12 +95,17 @@ The generic release and Docker workflows still exclude `v*-ios.*`; installer pat
 | Frontend production build | PASS; genuine generated assets; mixed-import and large-chunk warnings were emitted |
 | Upstream sync tests / iOS patch sentinels | PASS; 10 / 44 checks |
 | Bootstrap / installer tests | PASS; 54 / 814 checks |
+| Helm chart PR validation | PASS after version repair; both charts linted, rendered, packaged, and passed unpublished-version checks; publishing skipped |
 | `git diff --check` | PASS |
 
-Hosted checks ran on code candidate `65167c09f9612d8256e0fd39830e5b1d935b8d36`:
+Hosted checks on repaired code candidate `4f6ddb3a09c48644ce9e992baa23949d655f9422`:
 
-- [iOS Build — run 38421092219](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38421092219): **success**. Go 1.27.1, Xcode 15.4/iPhoneOS SDK 17.5; Agent and Hub artifacts are Mach-O arm64 with minimum iOS 12.0 metadata; checksums verified. The `release-ios` job was skipped for this feature branch.
-- [iOS installer lifecycle — run 38421092500](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38421092500): **success**. Bootstrap checksum, installer lifecycle, patch sentinels, and sync tests passed.
+- [iOS Build — run 38423366267](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423366267): **success**. Go 1.27.1, Xcode 15.4/iPhoneOS SDK 17.5; Agent and Hub arm64 artifacts passed Mach-O checks for minimum iOS 12.0, and `SHA256SUMS` verification passed. `release-ios` was skipped.
+- [iOS installer lifecycle — run 38423366339](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423366339): **success**. Canonical branch references, POSIX syntax, bootstrap checksum, lifecycle tests, patch sentinels, and upstream sync tests passed.
+- [Helm charts — run 38423323169](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38423323169): **success**. Both chart lint/render/package and unpublished-version checks passed; chart publishing was skipped.
+- The first Helm validation, [run 38422752023](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38422752023), failed because chart package version `0.1.7` already existed. The version-only repair above resolved it. No chart or product release was published.
+
+A further iOS build and installer lifecycle run was dispatched on the final documentation commit before PR review; those exact tested SHA and run URLs are recorded in the PR and completion report.
 
 Hosted builds establish target architecture and deployment metadata; they do not establish that the binaries run without SIGILL on a physical A7 device.
 
