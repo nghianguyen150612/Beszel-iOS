@@ -1,0 +1,1096 @@
+===== Go toolchain availability =====
+COMMAND: go version
+EXIT STATUS: 1
+--- stdout ---
+--- stderr ---
+Go: Unknown option: version
+===== Bun availability =====
+COMMAND: bun --version
+EXIT STATUS: 127
+--- stdout ---
+--- stderr ---
+bun: command not found
+===== iOS SDK runner availability =====
+COMMAND: xcodebuild -version
+EXIT STATUS: 127
+--- stdout ---
+--- stderr ---
+xcodebuild: command not found
+===== sh tests/upstream-sync-test.sh =====
+COMMAND: sh tests/upstream-sync-test.sh
+EXIT STATUS: 0
+--- stdout ---
+PASS: in-sync exit status
+PASS: in-sync exit status reports expected status
+PASS: in-sync output names both versions
+PASS: behind exit status
+PASS: behind exit status reports expected status
+PASS: behind output names both versions
+PASS: ahead exit status
+PASS: ahead exit status reports expected status
+PASS: malformed exit status
+PASS: malformed exit status reports expected status
+
+10 passed, 0 failed
+--- stderr ---
+===== sh tests/ios-patch-sentinels.sh =====
+COMMAND: sh tests/ios-patch-sentinels.sh
+EXIT STATUS: 0
+--- stdout ---
+== iOS patch regression sentinels ==
+PASS: A.1 runtime patch script exists
+PASS: procyieldAsm
+PASS: CNTVCT_EL0
+PASS: refusing to patch unknown Go runtime
+PASS: expected_shape
+PASS: CNTFRQ_EL0
+PASS: patch-go-ios-arm64-runtime.py
+PASS: A.8 CI applies runtime patch before go build
+PASS: GOOS=ios
+PASS: GOARCH=arm64
+PASS: **/*.go
+PASS: mios-version-min=12.0
+PASS: B.5 workflow validates Mach-O output
+PASS: arm64
+PASS: LC_BUILD_VERSION
+PASS: B.8 workflow validates 12.0 deployment metadata
+PASS: beszel-agent-ios-arm64
+PASS: beszel-hub-ios-arm64
+PASS: SHA256SUMS
+PASS: ./internal/cmd/agent
+PASS: ./internal/cmd/hub
+PASS: D.1 iOS battery source exists
+PASS: D.2 iOS battery has //go:build ios
+PASS: AppleARMPMUCharger
+PASS: ioreg
+PASS: D.5 Darwin battery source exists
+PASS: D.6 Darwin battery gated darwin && !ios
+PASS: -ios\.
+PASS: valid_release_tag
+PASS: engine_sha=
+PASS: scripts/ios/install-beszel.sh
+PASS: E.3 iOS build triggers on v*-ios.* tags
+PASS: E.4 release.yml excludes iOS tags
+PASS: E.5 docker-images.yml excludes iOS tags
+PASS: F.1 frontend embed source exists
+PASS: //go:embed all:dist
+PASS: F.3 dist/ is gitignored
+PASS: F.4 CI builds frontend before Go build
+PASS: G.1 system.go guards Darwin CPU probe on iOS
+PASS: adjustPlatformSystemDetails
+PASS: G.3 iOS platform file exists
+PASS: G.4 iOS platform file has //go:build ios
+PASS: G.5 non-iOS platform file exists
+PASS: G.6 non-iOS platform file has //go:build !ios
+
+44 passed, 0 failed
+All iOS patch regression checks passed.
+--- stderr ---
+===== sh tests/bootstrap-test.sh =====
+COMMAND: sh tests/bootstrap-test.sh
+EXIT STATUS: 0
+--- stdout ---
+PASS: lifecycle engine exists at scripts/ios/install-beszel.sh
+== bootstrap syntax and shape ==
+PASS: bootstrap passes sh -n (POSIX syntax)
+PASS: bootstrap shebang is /bin/sh
+PASS: bootstrap runs with set -eu
+PASS: bootstrap stays small (128 lines)
+PASS: bootstrap code uses no local/declare/function keywords
+PASS: bootstrap code uses no eval or source
+PASS: bootstrap code has no backtick substitution
+PASS: bootstrap never invokes a package manager
+== bootstrap engine pin ==
+PASS: engine URL is canonical
+PASS: engine URL uses the canonical iOS branch casing
+PASS: engine_sha is exactly 64 lowercase hex characters
+PASS: bootstrap pins exactly one engine_sha
+PASS: bootstrap pins exactly one engine_url
+PASS: engine_sha matches the committed lifecycle engine
+== bootstrap transport policy ==
+PASS: curl restricts the request protocol to HTTPS
+PASS: curl restricts redirects to HTTPS (no downgrade)
+PASS: bootstrap contains no plain-HTTP URL
+PASS: engine execution line is not a pipeline target
+PASS: engine is never executed from a network pipe
+PASS: curl uses explicit connection and overall timeouts
+== bootstrap ordering: download, verify, execute ==
+PASS: ordering is download (line 114) -> verify (line 121/_cmp_line) -> execute (line 128)
+PASS: verified local engine file is executed by /bin/sh as manager.sh
+PASS: bootstrap forwards its arguments to the engine
+PASS: checksum mismatch aborts before execution with a clear error
+== bootstrap staging and cleanup ==
+PASS: bootstrap stages with umask 077
+PASS: bootstrap creates a private temporary directory
+PASS: bootstrap removes only its own staged file and directory
+PASS: bootstrap performs no recursive delete
+PASS: bootstrap handles INT/TERM/HUP conservatively
+== bootstrap contains no lifecycle implementation ==
+PASS: bootstrap contains no lifecycle token 'INSTALLER_VERSION'
+PASS: bootstrap contains no lifecycle token 'BESZEL_IOS_MANAGER_SOURCE_V1'
+PASS: bootstrap contains no lifecycle token 'launchctl'
+PASS: bootstrap contains no lifecycle token 'dev.beszel'
+PASS: bootstrap contains no lifecycle token 'do_install_agent'
+PASS: bootstrap contains no lifecycle token 'flow_agent'
+PASS: bootstrap contains no lifecycle token 'install_persistent_manager'
+PASS: bootstrap contains no lifecycle token 'print_menu'
+PASS: bootstrap contains no lifecycle token 'resolve_latest_tag'
+PASS: bootstrap contains no lifecycle token 'ldid'
+PASS: bootstrap cannot be mistaken for manager source
+== bootstrap behavior: mismatch is rejected before execution ==
+PASS: mismatched engine digest aborts with a non-zero status
+PASS: mismatched engine is never executed (execution marker absent)
+PASS: mismatch case downloads exactly once
+PASS: stub observed the HTTPS-only curl policy
+PASS: download requests the canonical engine URL
+PASS: engine is downloaded into private staging
+PASS: matching engine digest executes successfully
+PASS: verified engine is executed
+PASS: engine executes from /tmp/beszel-installer.XXXXXX/manager.sh
+PASS: bootstrap forwards every argument, including spaces, unchanged
+PASS: missing SHA-256 tool aborts with a clear error
+PASS: missing SHA-256 tool aborts before download and before execution
+== bootstrap staging cleanup ==
+PASS: fixture runs leave no /tmp/beszel-installer.* staging directories behind
+
+54 passed, 0 failed
+--- stderr ---
+===== sh tests/install-sh-test.sh =====
+COMMAND: sh tests/install-sh-test.sh
+EXIT STATUS: 0
+--- stdout ---
+== port validation ==
+PASS: port 1 accepted
+PASS: port 80 accepted
+PASS: port 45876 accepted
+PASS: port 8090 accepted
+PASS: port 65535 accepted
+PASS: empty port rejected
+PASS: port 0 rejected
+PASS: port 65536 rejected
+PASS: port 99999 rejected
+PASS: non-numeric port rejected
+PASS: partially numeric port rejected
+PASS: negative port rejected
+PASS: port with space rejected
+PASS: decimal port rejected
+== ssh key validation ==
+PASS: ed25519 key with comment accepted
+PASS: rsa key accepted
+PASS: ecdsa key accepted
+PASS: key with xml-special comment accepted
+PASS: empty key rejected
+PASS: single field rejected
+PASS: unknown key type rejected
+PASS: bad base64 rejected
+== xml escaping ==
+PASS: xml_escape basic
+PASS: xml_escape key comment
+PASS: xml_escape plain unchanged
+== checksum parsing ==
+PASS: sums_hash_for agent
+PASS: sums_hash_for hub
+PASS: validate_sums_file accepts good file
+PASS: missing hub entry rejected
+PASS: duplicate entry rejected
+PASS: malformed hash rejected
+PASS: unexpected third entry rejected
+== hash computation and file verification ==
+PASS: compute_sha256 matches hashlib oracle
+PASS: verify_file accepts matching digest
+PASS: verify_file rejects wrong digest
+PASS: verify_file rejects tampered file
+PASS: verify_file rejects empty file
+== existing-install detection (sandboxed paths) ==
+PASS: agent not detected when absent
+PASS: hub not detected when absent
+PASS: agent detected via binary
+PASS: agent detected via plist
+PASS: hub detected via binary
+PASS: hub detected via plist
+== plist generation and xml validity ==
+xml parses: dev.beszel.agent.plist
+xml parses: dev.beszel.hub.plist
+PASS: agent key xml-escaped in plist
+PASS: no raw xml-special key text in plist
+PASS: agent key round-trips through xml
+PASS: hub plist contains serve args and throttle
+PASS: plist labels correct
+== fetch and verify over file:// (stdout must carry only the path) ==
+PASS: fetch returns clean verified path
+PASS: fetch of asset missing from sums is refused
+== environment gates (must refuse this non-iOS host) ==
+PASS: check_device refuses non-iOS host
+PASS: check_root refuses non-root caller
+== prompt5: release tag helpers ==
+PASS: tag from standard latest URL
+PASS: tag tolerates trailing slash
+PASS: empty url rejected
+PASS: metachar url rejected
+PASS: dollar url rejected
+PASS: space url rejected
+PASS: release tag accepted
+PASS: multi-digit ios rev accepted
+PASS: bare semver rejected
+PASS: ios rev zero rejected
+PASS: non-numeric rev rejected
+PASS: latest pseudo-tag rejected
+PASS: empty tag rejected
+PASS: traversal tag rejected
+PASS: spaced tag rejected
+PASS: missing v prefix rejected
+PASS: pinned base construction
+PASS: pinned base rejects bad tag
+PASS: pinned base rejects empty tag
+== prompt5: mock commands and sandbox ==
+== prompt5: latest resolution and pinned base ==
+PASS: resolve_latest_tag via redirect
+PASS: resolve fails when redirect fails
+PASS: ensure pins resolved tag
+PASS: ensure pins immutable base
+PASS: current base prefers pin
+PASS: ensure keeps pin without re-resolving
+PASS: current base falls back to latest
+== prompt5: install state ==
+PASS: agent release missing without state
+PASS: hub release missing without state
+PASS: legacy label when state missing
+PASS: state write agent
+PASS: state reads agent release
+PASS: state reads agent sha
+PASS: hub still missing after agent-only write
+PASS: state write hub preserves agent
+PASS: agent preserved after hub write
+PASS: hub recorded
+PASS: state file mode is 644
+PASS: state dir mode is 755
+PASS: state file has expected keys
+PASS: no state temp leftovers
+PASS: unknown keys ignored, hub still readable
+PASS: malicious release value rejected
+PASS: nothing readable as current from evil state
+PASS: malicious state line never executes
+PASS: state rewrite works after evil file
+PASS: state readable after rewrite
+PASS: state write rejects bad tag
+PASS: state write rejects bad sha
+PASS: state write rejects bad component
+PASS: no key material in state file
+PASS: current release detected
+PASS: other release not current
+PASS: empty tag never current
+PASS: missing component never current
+== prompt5: component status ==
+PASS: status missing when absent
+PASS: hub status missing when absent
+PASS: binary without plist is incomplete
+PASS: plist without binary is incomplete
+PASS: binary plus plist is complete
+== prompt5: hub port parsing ==
+PASS: default hub port parsed
+PASS: custom hub port parsed
+PASS: missing plist has no port
+PASS: plist without bind is refused
+PASS: out-of-range port refused
+== prompt5: staging and backup ==
+PASS: staged path is .new file
+PASS: staged binary signed, installed untouched
+PASS: backup created
+PASS: backup matches current binary bytes
+PASS: no backup temp leftovers
+PASS: backup replaced on next update
+PASS: replacement backup tracks current
+PASS: backup of missing binary fails
+PASS: backup refuses symlinked binary
+PASS: ldid failure aborts staging
+PASS: failed staging leaves no .new file
+== prompt5: agent update transactions ==
+PASS: legacy agent update succeeds
+PASS: new agent binary installed and signed
+PASS: agent backup holds exact previous bytes
+PASS: agent plist bytes preserved exactly
+PASS: agent state committed to new tag
+PASS: agent state sha matches release sums
+PASS: agent service loaded after update
+PASS: no staging leftovers after success
+== prompt5: update flows, confirmation, no-op ==
+PASS: pre-write current state
+PASS: already-current agent is a no-op success
+PASS: already-current message shown
+PASS: already-current downloads nothing and touches nothing
+PASS: legacy unknown agent updates via flow
+PASS: legacy flow commits state
+PASS: cancelled update exits zero
+PASS: cancelled update changes nothing
+PASS: cancelled update keeps old binary
+== prompt5: hub update, data preservation ==
+PASS: hub update succeeds
+PASS: health checked on configured custom port
+PASS: new hub binary installed
+PASS: hub backup holds exact previous bytes
+PASS: hub plist bytes preserved exactly
+PASS: hub database bytes untouched
+PASS: hub state committed
+PASS: hub state sha matches sums
+== prompt5: failure injection, pre-stop safety ==
+PASS: download failure exits non-zero
+PASS: download failure leaves install byte-for-byte unchanged
+PASS: download failure preserves plist
+PASS: checksum mismatch exits non-zero
+PASS: checksum mismatch leaves install byte-for-byte unchanged
+PASS: checksum mismatch never touches the service
+PASS: ldid failure exits non-zero
+PASS: ldid failure keeps old service untouched, no backup
+PASS: unparseable hub port aborts
+PASS: port failure message is explicit
+PASS: port failure makes zero changes
+== prompt5: rollback paths ==
+PASS: load failure exits non-zero
+PASS: rollback announced and confirmed
+PASS: rollback restores exact previous binary
+PASS: service loaded again after rollback
+PASS: failed update commits no state
+PASS: dead service exits non-zero
+PASS: failed rollback reports CRITICAL
+PASS: CRITICAL message names binary, backup and plist
+PASS: failed rollback keeps old binary and retains backup
+== prompt5: hub rollback keeps old state ==
+PASS: record old hub release
+PASS: unhealthy hub exits non-zero
+PASS: hub rollback announced and confirmed
+PASS: hub rollback restores exact previous binary
+PASS: old hub state retained after failure
+PASS: failed hub update never touches database
+PASS: unrecoverable hub exits non-zero
+PASS: hub rollback failure reports CRITICAL
+PASS: hub CRITICAL keeps binary and backup
+PASS: hub state still old after CRITICAL
+PASS: rollback load failure exits non-zero
+PASS: rollback load failure reports CRITICAL
+PASS: unload hiccup still updates
+PASS: update proceeds past unload warning
+== prompt5: update both ==
+PASS: both update succeeds
+PASS: both updates hub before agent
+PASS: both commits hub state
+PASS: both commits agent state
+PASS: both aborts when hub fails
+PASS: hub failure leaves agent completely untouched
+PASS: agent state untouched after hub failure
+PASS: hub state untouched after hub failure
+PASS: both all-current is a no-op
+PASS: both all-current downloads nothing
+PASS: hub part succeeds
+PASS: agent part fails and rolls back
+PASS: successful hub kept while agent rolled back
+PASS: hub state new, agent state old
+PASS: agent state still old
+== prompt5: update safety static checks ==
+PASS: menu offers Update, Repair / Reconfigure, Uninstall and Exit
+PASS: uninstall exposed with explicit purge phrases
+PASS: header describes transactional updates
+PASS: agent update never prompts for key
+PASS: agent update never rewrites plist
+PASS: hub update never rewrites plist
+PASS: no installed-binary hash version detection
+PASS: agent health subcommand not used for verification
+PASS: both flow orders hub before agent
+PASS: currency checked before confirmation
+PASS: fresh installs record state
+PASS: hub state recorded only after health success
+PASS: interrupt rollback traps present
+PASS: state and backup paths present
+== prompt6: test doubles ==
+== prompt6: component state ==
+PASS: agent ABSENT when empty
+PASS: hub ABSENT when empty
+PASS: agent COMPLETE with binary+plist
+PASS: agent BINARY_ONLY without plist
+PASS: agent PLIST_ONLY without binary
+PASS: symlinked binary is not trusted
+PASS: symlinked plist is not trusted
+PASS: hub COMPLETE with binary+plist
+PASS: hub BINARY_ONLY without plist
+PASS: unknown component rejected
+== prompt6: service inspection ==
+PASS: loaded service detected
+PASS: live PID reported
+PASS: stopped job still counts as loaded
+PASS: stopped job has no PID
+PASS: unlisted service not loaded
+PASS: unlisted service PID none
+PASS: unreadable launchctl not loaded
+PASS: unreadable launchctl PID none
+== prompt6: diagnostics ==
+PASS: agent diagnostics exit zero
+PASS: agent diag shows: regular file
+PASS: agent diag shows: XML valid
+PASS: agent diag shows: PID 4321
+PASS: agent diag shows: Agent port: 45876
+PASS: agent diag shows: Agent key: configured
+PASS: agent diag shows: v0.19.0-ios.1
+PASS: agent diag shows: Data directory: present
+PASS: agent key value never printed
+PASS: hub diag shows: regular file
+PASS: hub diag shows: XML valid
+PASS: hub diag shows: PID 4322
+PASS: hub diag shows: Hub port: 8123
+PASS: hub diag shows: reachable
+PASS: hub diag shows: v0.19.0-ios.1
+PASS: hub diag shows: Data directory: present
+PASS: diagnostics change no files
+PASS: diagnostics change no service state
+PASS: diagnostics leave hub data alone
+PASS: legacy release displayed
+PASS: unreadable launchctl reported
+== prompt6: plist parsing ==
+PASS: LISTEN extraction
+PASS: KEY entity round-trip
+PASS: hub port extraction
+PASS: duplicated identical hub port accepted
+PASS: ambiguous hub ports rejected
+PASS: duplicated KEY rejected
+PASS: duplicated LISTEN rejected
+PASS: missing KEY rejected
+PASS: truncated plist KEY rejected
+PASS: truncated plist port rejected
+PASS: non-key KEY rejected
+PASS: out-of-range LISTEN rejected
+PASS: colon-less LISTEN rejected
+PASS: missing file rejected
+PASS: command-looking KEY rejected
+PASS: plist parsing never executes content
+PASS: real xml checker accepts good plist
+PASS: real xml checker rejects garbage
+PASS: checker failure fails validation
+== prompt6: agent reconfigure ==
+PASS: keep-key change-port succeeds
+PASS: port changed
+PASS: key kept
+PASS: reconfigure leaves binary untouched
+PASS: plist backup holds previous config
+PASS: reconfigure leaves data alone
+PASS: reconfigure never changes state
+PASS: change-key keep-port succeeds
+PASS: port kept
+PASS: key changed
+PASS: change-both succeeds
+PASS: both: port changed
+PASS: both: key changed
+PASS: no-op exits zero
+PASS: no-op message shown
+PASS: no-op changes nothing
+PASS: load failure exits non-zero
+PASS: plist rollback announced
+PASS: plist rollback restores exact config
+PASS: service running after plist rollback
+PASS: state kept through failed reconfigure
+PASS: dead service exits non-zero
+PASS: failed plist rollback reports CRITICAL
+PASS: CRITICAL keeps restored plist and backup
+PASS: rollback load failure exits non-zero
+PASS: rollback load failure is CRITICAL
+PASS: incomplete install refused
+== prompt6: hub reconfigure ==
+PASS: hub port change succeeds
+PASS: new port active
+PASS: new port health-checked
+PASS: hub reconfigure leaves binary untouched
+PASS: hub reconfigure leaves database alone
+PASS: hub reconfigure never changes state
+PASS: hub plist backup holds previous config
+PASS: hub no-op exits zero
+PASS: hub no-op message shown
+PASS: unhealthy new port exits non-zero
+PASS: hub plist rollback announced
+PASS: hub rollback restores previous port
+PASS: failed hub reconfigure leaves database alone
+PASS: hub state kept through failed reconfigure
+PASS: unrecoverable hub reconfig exits non-zero
+PASS: hub rollback failure is CRITICAL
+PASS: CRITICAL keeps restored hub plist
+== prompt6: agent repair ==
+PASS: restart-only repair succeeds
+PASS: service loaded by restart
+PASS: restart preserves plist bytes
+PASS: restart downloads nothing
+PASS: restart fabricates no release
+PASS: already-running repair is a no-op success
+PASS: missing binary restored
+PASS: restored binary is Latest
+PASS: restore preserves existing plist
+PASS: restore records Latest release
+PASS: service loaded after restore
+PASS: restore asks for no key
+PASS: repair working state is BINARY_ONLY
+PASS: cancelled recreation exits zero
+PASS: cancelled recreation changes nothing
+PASS: recreated config succeeds
+PASS: recreated key stored
+PASS: recreated port stored
+PASS: recreation keeps existing binary
+PASS: recreation fabricates no release
+PASS: service loaded after recreation
+PASS: absent install rejected
+PASS: absent message directs to install
+PASS: broken binary replaced
+PASS: replacement binary is Latest
+PASS: replacement preserves config
+PASS: replacement records release
+PASS: failed replacement exits non-zero
+PASS: failed replacement rolls binary back
+PASS: failed replacement keeps config
+PASS: old state retained after failed repair
+== prompt6: hub repair ==
+PASS: hub restart-only repair succeeds
+PASS: hub loaded by restart
+PASS: hub restart preserves plist bytes
+PASS: hub restart downloads nothing
+PASS: hub restart fabricates no release
+PASS: hub restart leaves database alone
+PASS: missing hub binary restored
+PASS: restored hub is Latest
+PASS: hub restore preserves plist
+PASS: hub restore preserves database
+PASS: hub restore records Latest
+PASS: restored hub health-checked on existing port
+PASS: hub repair working state is BINARY_ONLY
+PASS: hub recreation cancel exits zero
+PASS: hub cancel creates nothing
+PASS: hub recreation succeeds
+PASS: recreated hub port stored
+PASS: hub recreation keeps binary
+PASS: hub recreation keeps database
+PASS: hub recreation fabricates no release
+PASS: absent hub rejected
+PASS: absent hub message directs to install
+PASS: unhealthy hub repair exits non-zero
+PASS: failed hub repair rolls binary back
+PASS: failed hub repair keeps plist
+PASS: failed hub repair keeps database
+PASS: old hub state retained
+== prompt6: plist transaction signal trap ==
+PASS: plist backup for trap test
+PASS: signal trap exits 130
+PASS: signal trap restores known-good plist
+PASS: service reloaded by signal rollback
+== prompt6: repair/reconfigure safety statics ==
+PASS: agent reconfigure touches no binary/state
+PASS: hub reconfigure touches no binary/state
+PASS: binary restore asks for no config
+PASS: rm -rf limited to work/sandbox paths
+PASS: no recursive chown/chmod
+PASS: header summarizes safe uninstall
+PASS: uninstall still marked unimplemented
+PASS: no stale repair/reconfigure TODO text
+PASS: fixed plist backup paths present
+== prompt7: uninstall fixtures ==
+== prompt7: agent uninstall ==
+PASS: agent uninstall succeeds
+PASS: agent state ABSENT after uninstall
+PASS: artifact removed: /tmp/beszel-ios-test.PqMlke/bin/beszel-agent
+PASS: artifact removed: /tmp/beszel-ios-test.PqMlke/bin/beszel-agent.bak
+PASS: artifact removed: /tmp/beszel-ios-test.PqMlke/launchd2/dev.beszel.agent.plist
+PASS: artifact removed: /tmp/beszel-ios-test.PqMlke/launchd2/dev.beszel.agent.plist.bak
+PASS: artifact removed: /tmp/beszel-ios-test.PqMlke/log/beszel-agent.log
+PASS: artifact removed: /tmp/beszel-ios-test.PqMlke/log/beszel-agent.err.log
+PASS: agent data preserved by uninstall
+PASS: service unloaded by uninstall
+PASS: no launchctl load after successful uninstall
+PASS: no staging leftovers
+PASS: agent flow keeps data by default
+PASS: uninstall + preservation reported
+PASS: flow preserves agent data
+PASS: declined uninstall exits zero
+PASS: declined uninstall changes nothing
+== prompt7: hub uninstall preserves db ==
+PASS: hub uninstall succeeds
+PASS: hub state ABSENT after uninstall
+PASS: hub artifact removed: /tmp/beszel-ios-test.PqMlke/bin/beszel-hub
+PASS: hub artifact removed: /tmp/beszel-ios-test.PqMlke/bin/beszel-hub.bak
+PASS: hub artifact removed: /tmp/beszel-ios-test.PqMlke/launchd2/dev.beszel.hub.plist
+PASS: hub artifact removed: /tmp/beszel-ios-test.PqMlke/launchd2/dev.beszel.hub.plist.bak
+PASS: hub artifact removed: /tmp/beszel-ios-test.PqMlke/log/beszel-hub.log
+PASS: hub artifact removed: /tmp/beszel-ios-test.PqMlke/log/beszel-hub.err.log
+PASS: hub database byte-identical after uninstall
+PASS: hub release state cleared
+PASS: agent release state preserved
+== prompt7: uninstall service safety ==
+PASS: loaded-service unload failure aborts
+PASS: aborted uninstall leaves files byte-identical
+PASS: service still loaded, nothing staged
+PASS: already-unloaded uninstall succeeds
+PASS: state ABSENT
+PASS: staging failure exits non-zero
+PASS: staging failure restores files
+PASS: staging failure reloads service
+PASS: staging failure keeps state
+PASS: state failure exits non-zero
+PASS: state failure restores files
+PASS: state failure reloads service
+PASS: blocking state artifact left alone
+PASS: rollback reload failure exits non-zero
+PASS: uninstall rollback failure is CRITICAL
+PASS: CRITICAL keeps files in place
+PASS: finalize failure exits non-zero
+PASS: finalize failure still unloads service
+PASS: finalize failure still clears app state
+PASS: leftover artifacts reported
+== prompt7: incomplete and absent uninstall ==
+PASS: working state BINARY_ONLY
+PASS: binary-only cleanup succeeds
+PASS: state ABSENT
+PASS: binary-only keeps data
+PASS: working state PLIST_ONLY
+PASS: plist-only cleanup succeeds
+PASS: plist-only ends ABSENT
+PASS: plist-only unloads service
+PASS: absent uninstall is a no-op success
+PASS: absent uninstall reports, not claims
+PASS: absent app with data offers purge path
+PASS: absent-app keep default preserves data
+== prompt7: one component preserves the other ==
+PASS: managed CLI installed before one-component uninstall
+PASS: agent-only uninstall succeeds
+PASS: agent ABSENT
+PASS: hub still COMPLETE
+PASS: hub files untouched
+PASS: hub state untouched
+PASS: hub still loaded
+PASS: managed CLI remains while Hub is installed
+PASS: hub db untouched by agent uninstall
+== prompt7: uninstall both ==
+PASS: managed CLI installed before final component removals
+PASS: both uninstall succeeds
+PASS: agent ABSENT
+PASS: hub ABSENT
+PASS: agent removed before hub
+PASS: empty state file removed
+PASS: empty state dir removed via rmdir
+PASS: managed CLI removed after final component uninstall
+PASS: both data sets preserved
+PASS: agent failure aborts both
+PASS: hub untouched after agent failure
+PASS: hub state untouched
+PASS: agent files restored by rollback
+PASS: hub failure exits non-zero
+PASS: agent stays removed
+PASS: agent state cleared
+PASS: hub preserved
+PASS: hub state preserved
+PASS: both uninstall succeeds with sentinel
+PASS: non-empty state dir left alone
+== prompt7: data purge ==
+PASS: uninstall with keep succeeds
+PASS: keep default preserves agent data
+PASS: wrong phrase exits zero
+PASS: wrong phrase preserves agent data
+PASS: exact phrase purges
+PASS: agent data dir absent after purge
+PASS: hub uninstall with keep succeeds
+PASS: weak phrase preserves hub data
+PASS: padded phrase preserves hub data
+PASS: exact hub phrase purges
+PASS: hub data dir absent after purge
+PASS: purge while installed refused
+PASS: installed-app data untouched
+PASS: agent purge while hub installed proceeds (agent absent)
+PASS: app removed for later-purge test
+PASS: later retained-data purge works
+PASS: later purge removes data
+PASS: symlinked data purge refused
+PASS: symlink and target untouched
+PASS: LIB_DIR itself refused
+PASS: root refused
+PASS: empty refused
+PASS: wrong component path refused
+PASS: exact agent path accepted
+== prompt7: symlink and fixture safety ==
+PASS: symlinked binary refused
+PASS: symlink refusal names the path
+PASS: symlink case changes nothing
+PASS: symlinked plist refused
+PASS: plist symlink case changes nothing
+PASS: both uninstall with fixtures succeeds
+PASS: unrelated fixtures untouched
+PASS: no wildcard beszel deletion
+PASS: rm -rf limited to work dir and guarded purge
+PASS: no rm -rf with glob argument
+PASS: no find-delete cleanup
+== prompt7: reinstall reuses retained data ==
+PASS: existing hub data dir accepted
+PASS: reinstall path never wipes hub data
+PASS: missing agent data dir created
+PASS: fresh agent install wipes no data
+PASS: fresh hub install wipes no data
+== prompt7: offline uninstall ==
+PASS: uninstall works with broken network/ldid
+PASS: offline uninstall reaches ABSENT
+PASS: uninstall without dependency gate succeeds
+PASS: uninstall never calls check_deps
+PASS: hub ABSENT without deps
+== prompt7: uninstall signal trap ==
+PASS: uninstall signal trap exits 130
+PASS: signal trap restores staged application
+PASS: service reloaded by uninstall rollback
+== prompt7: uninstall safety statics ==
+PASS: no network/hashing in transact_uninstall
+PASS: no network/hashing in uninstall_agent_flow
+PASS: no network/hashing in uninstall_hub_flow
+PASS: no network/hashing in uninstall_both_flow
+PASS: no network/hashing in offer_agent_data_purge
+PASS: no network/hashing in offer_hub_data_purge
+PASS: no network/hashing in purge_data_dir
+PASS: no ldid in transact_uninstall
+PASS: no ldid in uninstall_agent_flow
+PASS: no ldid in uninstall_hub_flow
+PASS: no ldid in uninstall_both_flow
+PASS: no ldid in offer_agent_data_purge
+PASS: no ldid in offer_hub_data_purge
+PASS: no ldid in purge_data_dir
+PASS: traps disarmed before finalize
+PASS: purge never reinstalls service
+PASS: both uninstall orders agent before hub
+PASS: no DELETE ALL shortcut
+PASS: no dangerous yes flags
+== posix / safety static checks ==
+PASS: shebang is /bin/sh
+PASS: no local/declare/function keywords
+PASS: no bash-only operators
+PASS: no eval/source
+PASS: no backtick substitution
+PASS: installer version constant present
+== prompt8b: iOS arm64 detection regression ==
+PASS: check_device accepts iOS arm64 via hw.cputype (iPad4,4 model)
+PASS: check_device refuses non-arm64 cputype
+PASS: check_device error path references hw.cputype, not uname -m
+PASS: check_device refuses macOS (x86_64 cputype)
+PASS: check_device does not emit legacy uname -m arch message
+== persistent CLI foundation ==
+PASS: version handles no installed components
+PASS: version reports Agent-only installation and release
+PASS: version reports Hub-only installation and release
+PASS: help reserves command menu
+PASS: help reserves command install
+PASS: help reserves command update
+PASS: help reserves command status
+PASS: help reserves command diagnostics
+PASS: help reserves command repair
+PASS: help reserves command reconfigure
+PASS: help reserves command uninstall
+PASS: help reserves command service
+PASS: help reserves command doctor
+PASS: help reserves command version
+PASS: help reserves command help
+PASS: help lists component agent
+PASS: help lists component hub
+PASS: help lists component both
+PASS: help/version flags and both-component versions
+PASS: help and version never print the Agent key
+PASS: help and version do not mutate fixtures
+PASS: unknown command fails with usage
+PASS: excess arguments fail with usage
+PASS: unknown component fails with usage
+PASS: unsupported option combination fails
+PASS: persistent manager installation succeeds
+PASS: manager and sandbox command are regular installed files
+PASS: persistent manager and wrapper ownership markers validate
+PASS: installed command dispatches help and version
+PASS: managed wrapper permission is repaired safely
+PASS: invalid manager update is refused
+PASS: failed manager update leaves working CLI unchanged
+PASS: version handles legacy installs without state
+PASS: final component cleanup runs with retained data present
+PASS: retained data does not keep CLI installed and remains untouched
+PASS: version does not treat retained data as an installed component
+PASS: unrelated occupied command path is refused
+PASS: unrelated command and manager path are untouched
+PASS: manager persistence fails closed with no local engine source
+PASS: no mutable-branch manager fetch is attempted and no partial CLI appears
+PASS: manager installation failure is reported
+PASS: failed manager installation leaves no partial CLI
+PASS: no-argument invocation dispatches to the interactive menu
+PASS: menu command dispatches to the interactive menu
+== component-aware CLI parser ==
+PASS: install requires component
+PASS: install rejects unknown component
+PASS: install rejects extra argument
+PASS: update requires component
+PASS: update rejects unknown component
+PASS: status rejects unknown component
+PASS: diagnostics rejects unknown component
+PASS: repair requires component
+PASS: repair rejects unknown component
+PASS: reconfigure requires component
+PASS: reconfigure rejects both
+PASS: reconfigure rejects unknown component
+PASS: uninstall requires component
+PASS: uninstall rejects unknown component
+PASS: uninstall rejects purge without component
+PASS: status rejects purge
+PASS: repair rejects purge
+PASS: uninstall rejects force
+PASS: uninstall rejects trailing purge argument
+PASS: update rejects extra argument
+PASS: diagnostics rejects extra argument
+PASS: service requires complete grammar
+PASS: service requires action
+PASS: service hub requires action
+PASS: service both requires action
+PASS: service rejects unknown component
+PASS: service rejects unknown action
+PASS: service rejects agent install ownership alias
+PASS: service rejects agent uninstall ownership alias
+PASS: service rejects reload alias
+PASS: service rejects missing component before action
+PASS: service rejects status without component
+PASS: service rejects extra start argument
+PASS: service rejects extra status argument
+PASS: doctor rejects unknown component
+PASS: doctor rejects extra argument
+PASS: service grammar dispatches agent start
+PASS: service grammar dispatches agent stop
+PASS: service grammar dispatches agent restart
+PASS: service grammar dispatches agent status
+PASS: service grammar dispatches hub start
+PASS: service grammar dispatches hub stop
+PASS: service grammar dispatches hub restart
+PASS: service grammar dispatches hub status
+PASS: service grammar dispatches both start
+PASS: service grammar dispatches both stop
+PASS: service grammar dispatches both restart
+PASS: service grammar dispatches both status
+PASS: bare doctor selects installed-component scope
+PASS: doctor Agent grammar dispatches
+PASS: doctor Hub grammar dispatches
+PASS: doctor both grammar dispatches
+PASS: help documents completed service/doctor grammar and access
+PASS: install agent dispatches Agent flow
+PASS: install hub dispatches Hub flow
+PASS: install both dispatches combined flow
+PASS: update agent dispatches Agent flow
+PASS: update hub dispatches Hub flow
+PASS: update both dispatches combined flow
+PASS: status default dispatches both
+PASS: status agent dispatches Agent
+PASS: status hub dispatches Hub
+PASS: status both dispatches both
+PASS: diagnostics default dispatches both
+PASS: diagnostics agent dispatches Agent
+PASS: diagnostics hub dispatches Hub
+PASS: diagnostics both dispatches both
+PASS: repair agent dispatches Agent flow
+PASS: repair hub dispatches Hub flow
+PASS: repair both runs Hub then Agent
+PASS: reconfigure agent dispatches Agent flow
+PASS: reconfigure hub dispatches Hub flow
+PASS: uninstall agent defaults to data preservation
+PASS: uninstall hub defaults to data preservation
+PASS: uninstall both defaults to data preservation
+PASS: purge agent reaches typed purge flow
+PASS: purge hub reaches typed purge flow
+PASS: purge both reaches independent purge flow
+PASS: mutating CLI commands use existing root and dependency gates
+PASS: update missing Agent fails clearly before release dispatch
+PASS: repair both reports Hub failure and still repairs Agent
+PASS: repair both returns failure when Agent repair fails
+PASS: read-only status and diagnostics do not require root
+== component-aware CLI status and diagnostics ==
+PASS: status succeeds when neither component is installed
+PASS: Agent status reports validated fields and PID without key
+PASS: aggregate status succeeds when only Agent is installed
+PASS: Hub status reports validated fields, PID and health
+PASS: aggregate status succeeds when only Hub is installed
+PASS: Hub status reports unreachable health
+PASS: both status sections are present and status does not mutate files
+PASS: status reports missing binary
+PASS: status reports missing plist
+PASS: status reports invalid plist without extracting values
+PASS: status reports loaded but stopped service
+PASS: status reports unknown service state when launchctl fails
+PASS: status reports missing legacy release state
+PASS: status never prints arbitrary installer-state content
+PASS: status labels symlinked binary untrusted
+PASS: status labels symlinked plist untrusted
+PASS: diagnostics scopes dispatch and remain read-only
+PASS: Agent and Hub reconfigure output never prints the Agent key
+PASS: help/version/status/diagnostics never print Agent key
+PASS: CLI failure output does not echo key-like argument
+== public service management ==
+PASS: service start requires root before mutation
+PASS: service status matches top-level status and remains read-only
+PASS: Hub service status shares CLI-002 health observations
+PASS: service both status displays a missing component informationally
+PASS: Agent start is a safe no-op when already running
+PASS: Agent start loads an unloaded managed plist and verifies a live PID
+PASS: Agent start unloads and reloads a loaded-but-stopped service
+PASS: Agent start verification failure returns non-zero without claiming success
+PASS: Agent stop unloads a running managed service
+PASS: Agent stop remains available when its data directory is missing
+PASS: Agent stop is idempotent when already unloaded
+PASS: Agent restart is exactly validated stop then start
+PASS: Agent service refuses a missing binary before launchctl
+PASS: Agent service refuses a missing plist before launchctl
+PASS: Agent service refuses a symlinked binary
+PASS: Agent service refuses a symlinked plist
+PASS: Agent service refuses an invalid plist
+PASS: Hub start is a safe no-op when already running
+PASS: Hub start recovers loaded-but-stopped service and checks configured port
+PASS: Hub start verifies health on the configured non-default port
+PASS: Hub start fails if no live Hub process is confirmed
+PASS: Hub health timeout fails without claiming success
+PASS: Hub service refuses an unparseable configured port without fallback
+PASS: Hub stop unloads its managed service
+PASS: Hub stop is idempotent when already unloaded
+PASS: Hub restart is exactly validated stop then start
+PASS: Hub service refuses a missing binary before launchctl
+PASS: Hub service refuses a missing plist before launchctl
+PASS: Hub service refuses a symlinked binary
+PASS: Hub service refuses a symlinked plist
+PASS: Hub service refuses an invalid plist
+== both-service order, failure and preflight ==
+PASS: service both starts Hub before Agent
+PASS: service both stops Agent before Hub
+PASS: service both restart uses Agent stop, Hub stop/start, Agent start
+PASS: Hub start failure prevents Agent start
+PASS: Agent start failure reports Hub partial state
+PASS: Agent stop failure leaves Hub untouched
+PASS: Hub stop failure reports Agent stopped and Hub retained
+PASS: restart aborts when Agent stop fails
+PASS: restart aborts after Hub stop failure with Agent stopped
+PASS: restart does not start Agent after Hub start failure
+PASS: restart leaves Hub running after Agent start failure
+PASS: service both preflights Agent absent on start before mutation
+PASS: service both preflights Hub incomplete on start before mutation
+PASS: service both preflights Agent untrusted on stop before mutation
+PASS: service both preflights Hub absent on stop before mutation
+PASS: service both preflights Agent incomplete on restart before mutation
+PASS: service both preflights Hub untrusted on restart before mutation
+== read-only doctor ==
+PASS: doctor fixtures have managed manager and wrapper
+PASS: doctor reads platform details and states the validation reference
+PASS: doctor rejects an ARM64 Mac as an unsupported Beszel-iOS platform
+PASS: healthy doctor scopes pass without changing files or launchd state
+PASS: doctor health probes stay on the configured loopback endpoint
+PASS: doctor component scopes and bare installed-component scope
+PASS: doctor reports Agent key state without printing the key
+PASS: bare doctor passes for a healthy Agent-only installation
+PASS: bare doctor passes for a healthy Hub-only installation
+PASS: doctor warns when a loaded Agent is stopped
+PASS: doctor reports intentionally unloaded Agent as warning
+PASS: doctor does not claim pass when launchctl state is unreadable
+PASS: doctor clearly reports stopped Hub without probing health
+PASS: doctor warns for intentionally unloaded Hub
+PASS: doctor fails when a running Hub health endpoint is unreachable
+PASS: doctor fails for missing Agent binary
+PASS: doctor fails for missing Hub binary
+PASS: doctor fails for symlinked Hub binary
+PASS: doctor fails for missing Hub plist
+PASS: doctor fails for invalid Hub plist
+PASS: doctor fails for unreadable Hub port
+PASS: doctor fails for symlinked Agent binary
+PASS: doctor fails for missing Agent plist
+PASS: doctor fails for invalid Agent plist
+PASS: doctor fails for symlinked Hub plist
+PASS: doctor fails when managed manager is missing
+PASS: doctor fails when manager content is corrupted
+PASS: doctor fails when command wrapper is missing
+PASS: doctor fails when command wrapper is corrupted
+PASS: bare doctor accepts no installed components
+PASS: explicit doctor Agent fails when absent
+PASS: explicit doctor Hub fails when absent
+PASS: doctor both fails when one requested component is absent
+PASS: doctor reports legacy or missing install state as warning
+PASS: doctor never prints an invalid release value
+PASS: doctor reports missing dependencies and never invokes apt-get
+== CLI uninstall and explicit purge ==
+PASS: CLI uninstall lifecycle fixture has managed CLI
+PASS: CLI Agent uninstall preserves data and retains CLI while Hub remains
+PASS: CLI Hub uninstall preserves history and removes CLI after final component
+PASS: CLI both uninstall preserves both data sets and removes final CLI
+PASS: Agent purge wrong phrase preserves data
+PASS: Agent purge blank confirmation preserves data
+PASS: Agent purge removes data only after exact phrase
+PASS: Hub purge wrong phrase preserves database and history
+PASS: Hub purge removes data only after exact phrase
+PASS: both purge protects Hub cancellation and independently confirms Agent
+PASS: both purge requires separate exact Hub and Agent phrases
+== bootstrap manager provenance ==
+PASS: provenance fixture starts with a managed CLI
+PASS: installed CLI help runs without lifecycle manager fetch
+PASS: installed CLI version runs without lifecycle manager fetch
+PASS: installed CLI status runs offline with local release state
+PASS: installed CLI doctor reads local manager state without manager fetch
+PASS: read-only CLI commands perform no lifecycle manager-source fetch
+PASS: bootstrap-staged engine persists without network access
+PASS: persistent manager is byte-for-byte the verified temporary engine
+PASS: persisted manager carries the staged engine fixture marker
+PASS: bootstrap-style persistence performs no secondary manager fetch
+PASS: installed manager refreshes from the executing manager file
+PASS: manager refresh keeps the installed manager byte-for-byte
+PASS: manager refresh performs no lifecycle manager-source fetch
+PASS: persistence without recognised local engine source fails closed
+PASS: refusal leaves no fetch attempt, no partial staging, existing CLI intact
+PASS: engine defines no mutable manager-source URL
+PASS: stage_manager_source performs no download
+
+814 passed, 0 failed
+--- stderr ---
+[INFO] Downloading beszel-agent-ios-arm64...
+[OK] Checksum verified: beszel-agent-ios-arm64
+===== python3 scripts/audit/validate-upstream-v021-matrix.py =====
+COMMAND: python3 scripts/audit/validate-upstream-v021-matrix.py
+EXIT STATUS: 0
+--- stdout ---
+Frozen upstream v0.21 matrix validation
+Upstream commits: 178/178
+Historical iOS commits: 35/35
+Release batches: P004=25, P005=116, P006=37
+Priorities: P0=21, P1=74, P2=83, none=0
+Subsystem rows: Agent=63, Agent:CPU/RAM=5, Agent:Cgroups=2, Agent:Containers=6, Agent:Disk I/O=14, Agent:GPU=7, Agent:NVMe SMART=7, Agent:Network=7, Agent:Package updates=5, Agent:Platform collectors=4, Agent:Polling/errors=13, Agent:Systemd=6, Agent:Wi-Fi RSSI=7, Agent:ZFS=6, CI=4, Database=12, Database:History=4, Database:Migrations=7, Database:Records=20, Dependencies=12, Dependencies:Bun/npm=6, Dependencies:Go=6, Documentation=20, Frontend=79, Frontend:Alerts UI=5, Frontend:Charts=18, Frontend:Dashboard=18, Frontend:Dependencies=6, Frontend:Localization=13, Frontend:Logs=3, Frontend:Network monitors=21, Frontend:Package updates UI=6, Frontend:Settings=4, Frontend:Wi-Fi charts=6, Hub=43, Hub:API=12, Hub:Alerts=10, Hub:Authorization=8, Hub:Monitor records=15, Hub:Polling=27, Hub:Sessions/users=3, Platform=8, Platform:Docker/release=6, Platform:Linux=16, Platform:Windows=4, Platform:macOS=2, Protocol=32, Protocol:CBOR/JSON=22, Protocol:Headers/auth=2, Protocol:SSH=8, Protocol:TLS=2, Protocol:WebSocket=18, Tests=97
+Unresolved audit rows: 0
+Validation: PASS
+--- stderr ---
+===== python3 tests/audit/test_validate_upstream_v021_matrix.py =====
+COMMAND: python3 tests/audit/test_validate_upstream_v021_matrix.py
+EXIT STATUS: 0
+--- stdout ---
+--- stderr ---
+test_duplicate_upstream_sha_is_rejected (__main__.MatrixValidatorTests.test_duplicate_upstream_sha_is_rejected) ... ok
+test_incorrect_release_batch_is_rejected (__main__.MatrixValidatorTests.test_incorrect_release_batch_is_rejected) ... ok
+test_invalid_category_is_rejected (__main__.MatrixValidatorTests.test_invalid_category_is_rejected) ... ok
+test_missing_historical_ios_commit_is_rejected (__main__.MatrixValidatorTests.test_missing_historical_ios_commit_is_rejected) ... ok
+test_missing_upstream_row_is_rejected (__main__.MatrixValidatorTests.test_missing_upstream_row_is_rejected) ... ok
+test_unknown_patch_reference_is_rejected (__main__.MatrixValidatorTests.test_unknown_patch_reference_is_rejected) ... ok
+test_valid_synthetic_history_passes (__main__.MatrixValidatorTests.test_valid_synthetic_history_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.806s
+
+OK
+===== sh -n install.sh =====
+COMMAND: sh -n install.sh
+EXIT STATUS: 0
+--- stdout ---
+--- stderr ---
+===== sh -n scripts/ios/install-beszel.sh =====
+COMMAND: sh -n scripts/ios/install-beszel.sh
+EXIT STATUS: 0
+--- stdout ---
+--- stderr ---
+===== git diff --cached --check =====
+COMMAND: git diff --cached --check
+EXIT STATUS: 0
+--- stdout ---
+--- stderr ---
+===== GitHub Actions hosted iOS build workflow =====
+COMMAND: gh run view 38358768044 --repo nghianguyen150612/Beszel-iOS --json databaseId,headSha,event,status,conclusion,url,jobs --jq '{run_id: .databaseId, event, head_sha: .headSha, status, conclusion, url, jobs: [.jobs[] | {name, conclusion, steps: [.steps[] | select(.conclusion != "success") | {name, conclusion}]}]}'
+EXIT STATUS: 0
+--- stdout ---
+{"conclusion":"success","event":"workflow_dispatch","head_sha":"60a70591e290d7ea0f9cfe4181ec6cc37788e8dd","jobs":[{"conclusion":"success","name":"build-ios","steps":[]},{"conclusion":"skipped","name":"release-ios","steps":[]}],"run_id":38358768044,"status":"completed","url":"https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38358768044"}
+--- stderr ---
+===== Final staged report diff validation =====
+COMMAND: git diff --cached --check
+EXIT STATUS: 0
+--- stdout ---
+--- stderr ---
