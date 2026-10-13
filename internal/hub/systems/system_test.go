@@ -5,6 +5,7 @@ package systems
 import (
 	"context"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,6 +14,29 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
+
+func TestSystemStatusAccessSynchronized(t *testing.T) {
+	sys := &System{Status: up}
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < 1000; j++ {
+				if i%2 == 0 {
+					sys.swapStatus([]string{up, down, paused}[j%3])
+				} else {
+					status := sys.GetStatus()
+					if status != up && status != down && status != paused {
+						t.Errorf("unexpected status %q", status)
+						return
+					}
+				}
+			}
+		}(i)
+	}
+	wg.Wait()
+}
 
 func TestCombinedData_MigrateDeprecatedFields(t *testing.T) {
 	t.Run("Migrate NetworkSent and NetworkRecv to Bandwidth", func(t *testing.T) {
