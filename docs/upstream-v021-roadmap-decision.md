@@ -42,6 +42,39 @@ one row for each of the 13 distinct logical iOS patches. Repeated historical
 commits for a logical patch are intentionally collapsed to one patch row; the
 P002 patch map remains the commit-level audit record. No P002 row is rewritten.
 
+## Ownership rules used by the crosswalk
+
+Each upstream row has one primary functional owner based on the commit's main
+behavior and inspected source paths. The history batch owner remains a separate
+field. Cross-cutting test files do not replace the owner of the behavior they
+exercise; test-only commits map to P017. The primary-owner routing is:
+
+* P007 owns iOS target/build configuration, CGO/SDK requirements, and the A7
+  runtime patch.
+* P008 owns Agent CPU/RAM/disk/battery/system telemetry and raw interface
+  counters.
+* P009 owns Agent/Hub transport, WebSocket/SSH lifecycle, TLS, headers, framing,
+  serialization, reconnect, and cancellation.
+* P010 owns monitor probing/schemas/history plus SMART, ZFS, GPU, and local
+  collectors that are unsupported on iOS.
+* P011 owns package-update collection and the future read-only jailbreak
+  package-manager adapter; P012 owns Wi-Fi RSSI collection and its iOS
+  adapter/fallback.
+* P013 owns Hub security, account/record authorization, PocketBase configuration,
+  migrations, and data ownership. P014 owns user-facing dashboard, alert,
+  monitor, settings, and localization behavior.
+* P015 owns dependencies, Bun, frontend embedding, frontend build behavior, and
+  Hub artifact construction. P016 owns installers, CLI/service lifecycle, and
+  release/image publishing. P017 owns test-only changes, CI verification,
+  regression evidence, and documentation needed to audit/review the release
+  candidate.
+
+For a multi-area change, the crosswalk names the prompt responsible for its
+primary behavior; the affected-subsystem and evidence columns retain the other
+areas. This keeps, for example, monitor backend ownership (P010), monitor UI
+(P014), transport reconnect (P009), and migration/authorization controls (P013)
+distinct while preserving P002's original routing labels.
+
 This is a routing decision for P003 onward. It does not begin an upstream
 merge, change production behavior, approve a database upgrade, or authorize a
 release.
