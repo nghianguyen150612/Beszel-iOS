@@ -307,12 +307,21 @@ Detailed command output and exit status are recorded in
 `Unresolved audit rows: 0`. Remaining handoff questions are the absent official
 P003–P018 prompt definitions, whether the iOS Agent should explicitly omit the
 upstream macOS Wi-Fi collector, and five remaining dependency advisory
-findings at the frozen target. The audit ran in a Linux cloud workspace: it
-does not claim an iPhoneOS SDK/Go iOS binary build or a physical iPad test. No
-release, deployment, tag, or upstream merge was performed as part of the audit
-work. Any P002 publication to `iOS` is through the requested PR merge only; no
-direct push was made to `main` or `iOS`.
-
-The available `go` command is a non-Go wrapper (`go version` exits 1 with
-`Go: Unknown option: version`); Bun and `xcodebuild` are not installed. No Go
-toolchain test, frozen Bun install, or iOS binary build is claimed.
+findings at the frozen target. The audit ran in a Linux cloud workspace, where
+the available `go` command is a non-Go wrapper (`go version` exits 1 with
+`Go: Unknown option: version`) and Bun/`xcodebuild` are not installed. To cover
+those local environment limits, the GitHub Actions `iOS Build` workflow was
+manually dispatched on source commit
+`60a70591e290d7ea0f9cfe4181ec6cc37788e8dd` (run:
+[38358768044](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38358768044)).
+It passed Go and Bun setup, frozen frontend install/build, the iOS ARM64 Agent
+and Hub builds, iOS 12 Mach-O checks, checksum generation/verification, and
+artifact upload. The `release-ios` job was skipped because the ref was a branch,
+not a release tag. This workflow-dispatch run is separate from the PR status
+rollup, which reported no checks because audit file paths do not match the PR
+workflow filters. The PR reports `MERGEABLE`/`CLEAN`; the branch-protection API
+returned 403 to this token, so protection settings could not be read directly.
+No Go unit-test suite or physical iPad test is claimed. No release, deployment,
+tag, or upstream merge was performed as part of the audit work. Any P002
+publication to `iOS` is through the requested PR merge only; no direct push was
+made to `main` or `iOS`.

@@ -302,11 +302,18 @@ Output lệnh và exit status chi tiết được ghi trong
 `Unresolved audit rows: 0`. Câu hỏi còn lại để bàn giao là thiếu định nghĩa
 prompt chính thức P003–P018, Agent iOS có nên bỏ hẳn collector Wi-Fi macOS
 upstream hay không, và năm phát hiện advisory dependency còn lại ở target.
-Audit chạy trên Linux cloud workspace: không tuyên bố đã build binary iOS bằng
-iPhoneOS SDK/Go hoặc thử trên iPad thật. Không phát hành, deploy, tạo tag hay
-merge mã upstream trong audit. Mọi publish P002 lên `iOS` sẽ qua merge PR được
-yêu cầu; không push trực tiếp vào `main` hoặc `iOS`.
-
-Lệnh `go` hiện có là wrapper không phải Go (`go version` exit 1 với
-`Go: Unknown option: version`); Bun và `xcodebuild` không được cài. Không tuyên
-bố đã chạy test bằng Go toolchain, frozen Bun install hay build binary iOS.
+Audit chạy trên Linux cloud workspace; lệnh `go` có sẵn là wrapper không phải
+Go (`go version` exit 1 với `Go: Unknown option: version`), Bun và `xcodebuild`
+không được cài. Để kiểm tra phần bị giới hạn bởi môi trường local, workflow
+GitHub Actions `iOS Build` được chạy thủ công trên source commit
+`60a70591e290d7ea0f9cfe4181ec6cc37788e8dd` ([run 38358768044](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38358768044)).
+Workflow thành công ở bước cài Go/Bun, cài/build frontend bằng frozen lockfile,
+build Agent và Hub iOS ARM64, kiểm tra Mach-O iOS 12, tạo/xác minh checksum và
+tải artifact. Job `release-ios` bị bỏ qua vì ref là branch, không phải tag phát
+hành. Lần chạy thủ công này tách biệt với PR status rollup; PR không có check
+nào do đường dẫn audit không khớp filter của workflow PR. PR báo `MERGEABLE` /
+`CLEAN`; API branch protection trả 403 với token này nên không đọc trực tiếp
+được cấu hình bảo vệ. Không tuyên bố chạy Go unit-test suite hoặc thử trên iPad
+thật. Không phát hành, deploy, tạo tag hay merge mã upstream trong audit. Mọi
+publish P002 lên `iOS` sẽ qua merge PR được yêu cầu; không push trực tiếp vào
+`main` hoặc `iOS`.

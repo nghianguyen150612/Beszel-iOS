@@ -1083,3 +1083,14 @@ COMMAND: git diff --cached --check
 EXIT STATUS: 0
 --- stdout ---
 --- stderr ---
+===== GitHub Actions hosted iOS build workflow =====
+COMMAND: gh run view 38358768044 --repo nghianguyen150612/Beszel-iOS --json databaseId,headSha,event,status,conclusion,url,jobs --jq '{run_id: .databaseId, event, head_sha: .headSha, status, conclusion, url, jobs: [.jobs[] | {name, conclusion, steps: [.steps[] | select(.conclusion != "success") | {name, conclusion}]}]}'
+EXIT STATUS: 0
+--- stdout ---
+{"conclusion":"success","event":"workflow_dispatch","head_sha":"60a70591e290d7ea0f9cfe4181ec6cc37788e8dd","jobs":[{"conclusion":"success","name":"build-ios","steps":[]},{"conclusion":"skipped","name":"release-ios","steps":[]}],"run_id":38358768044,"status":"completed","url":"https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38358768044"}
+--- stderr ---
+===== Final staged report diff validation =====
+COMMAND: git diff --cached --check
+EXIT STATUS: 0
+--- stdout ---
+--- stderr ---
