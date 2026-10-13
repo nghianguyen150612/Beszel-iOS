@@ -1264,7 +1264,7 @@
       "changed_files": [],
       "status": "PRESERVED",
       "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml.",
-      "p005_status": "RECONCILED",
+      "p005_status": "RECONCILED WITH TEST EVIDENCE",
       "p005_disposition": "Upstream agent/system.go updates retained together with the iOS CPU probe exclusion and adjustPlatformSystemDetails hook; iOS metadata source selected.",
       "p005_changed_paths_vs_p004": [
         "agent/system.go"
@@ -1303,7 +1303,7 @@
       "changed_files": [],
       "status": "PRESERVED",
       "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml.",
-      "p005_status": "UPSTREAM_UPDATE_VALIDATED",
+      "p005_status": "RECONCILED WITH TEST EVIDENCE",
       "p005_disposition": "Upstream bun.lock update retained; Bun 1.4.0 frozen install passed without install-time lockfile changes, and genuine UI assets built.",
       "p005_changed_paths_vs_p004": [
         "internal/site/bun.lock"
@@ -1645,7 +1645,7 @@
       "changed_files": [],
       "status": "PRESERVED",
       "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml.",
-      "p005_status": "RECONCILED",
+      "p005_status": "RECONCILED WITH TEST EVIDENCE",
       "p005_disposition": "The lowercase upstream README conflict was resolved in favor of localized product README files; monitor text avoids claiming native iOS probing.",
       "p005_changed_paths_vs_p004": [
         "README.md",
@@ -2615,5 +2615,10 @@
     "p0-ssh-transport-tests.log": "b5e12fbe61d43db3d986b71ea7386fd66802fdc7353377b64a575f9cb7b36915",
     "p0-websocket-tests.log": "9cc6057e95992ff9af600d0ec8b11e241ce696c5798642f561e249340c27313b"
   },
-  "final_report_note": "The PR source head was later revalidated after this evidence record was committed; exact final-head Actions runs are included in the PR and completion report."
+  "final_report_note": "The PR source head was later revalidated after this evidence record was committed; exact final-head Actions runs are included in the PR and completion report.",
+  "p005_disposition_vocabulary": [
+    "PRESERVED",
+    "RECONCILED WITH TEST EVIDENCE",
+    "BLOCKED"
+  ]
 }
