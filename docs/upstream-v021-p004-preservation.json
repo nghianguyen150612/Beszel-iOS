@@ -1,0 +1,1348 @@
+{
+  "schema_version": 1,
+  "milestone": "P004",
+  "starting_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+  "starting_integration_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+  "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+  "historical_merge_base": "f204dc17e64bba444478c60210d018e43a777193",
+  "upstream_target_sha": "a0dc19eacf6902d2f6934a3efd7ea7277198c40b",
+  "merge_command": "git merge --no-ff --no-commit a0dc19eacf6902d2f6934a3efd7ea7277198c40b",
+  "merge_commit": "65731f9a86f19b1668d260e49f6d5ee7318453be",
+  "merge_parents": [
+    "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "a0dc19eacf6902d2f6934a3efd7ea7277198c40b"
+  ],
+  "conflicts": [],
+  "upstream_commits": [
+    {
+      "sha": "086091a0fea2a0914bf4db1fc46e575e386f795e",
+      "canonical_csv_row": 2,
+      "priority": "P1",
+      "evidence_paths": "internal/site/src/components/routes/system/use-system-data.ts"
+    },
+    {
+      "sha": "6a7b2772d90c732077a910ca03bb79b13c4fe8c6",
+      "canonical_csv_row": 3,
+      "priority": "P1",
+      "evidence_paths": "internal/site/src/components/login/login.tsx;internal/site/src/components/theme-provider.tsx"
+    },
+    {
+      "sha": "982101743e92acffa4f6bc1b42285aa7b020342e",
+      "canonical_csv_row": 4,
+      "priority": "P1",
+      "evidence_paths": "agent/storage_pool.go;agent/storage_pool_test.go;agent/zfs/zfs.go;agent/zfs/zfs_linux.go;agent/zfs/zfs_linux_test.go;agent/zfs/zfs_nonlinux.go;agent/zfs/zfs_nonlinux_test.go"
+    },
+    {
+      "sha": "a0bf33879605aa28911a4961567e5feb18155d46",
+      "canonical_csv_row": 5,
+      "priority": "P1",
+      "evidence_paths": "internal/hub/hub.go"
+    },
+    {
+      "sha": "50f6fc075d7af0482287acb5c61fbc8a88578335",
+      "canonical_csv_row": 6,
+      "priority": "P0",
+      "evidence_paths": "internal/hub/api_test.go;internal/users/users.go;internal/users/users_test.go"
+    },
+    {
+      "sha": "f0f1f7985c864ab4ad41ff12b6b74dd9f258046d",
+      "canonical_csv_row": 7,
+      "priority": "P1",
+      "evidence_paths": "internal/site/src/components/routes/settings/general.tsx;internal/site/src/components/routes/settings/layout.tsx;internal/site/src/components/routes/system/use-system-data.ts;internal/site/src/components/systems-table/systems-table.tsx;internal/site/src/lib/api.ts;internal/site/src/main.tsx;internal/site/src/types.d.ts"
+    },
+    {
+      "sha": "18f7a4bbc09aed953cf21ec80f4c2612ad2a3beb",
+      "canonical_csv_row": 8,
+      "priority": "P1",
+      "evidence_paths": "agent/smart.go;agent/smart_test.go"
+    },
+    {
+      "sha": "4bf70700f20cc2994774995dca5e725c7173996b",
+      "canonical_csv_row": 9,
+      "priority": "P0",
+      "evidence_paths": "internal/hub/api.go;internal/hub/api_test.go;internal/hub/trusted_proxy_test.go"
+    },
+    {
+      "sha": "bb1b39928e317592159e65dbcac1de12510d49b8",
+      "canonical_csv_row": 10,
+      "priority": "P1",
+      "evidence_paths": ".dockerignore;agent/agent.go;agent/connection_manager.go;agent/gpu_test.go;agent/handlers.go;agent/network_monitor.go;agent/network_monitor_history.go;agent/network_monitor_history_test.go;agent/network_monitor_ping.go;agent/network_monitor_ping_test.go;agent/network_monitor_probe.go;agent/network_monitor_resume.go;agent/network_monitor_resume_test.go;agent/network_monitor_schedule.go;agent/network_monitor_schedule_test.go;agent/network_monitor_task.go;agent/network_monitor_task_test.go;agent/network_monitor_test.go;beszel.go;internal/alerts/alerts.go;internal/alerts/alerts_api.go;internal/alerts/alerts_cache.go;internal/alerts/alerts_history.go;internal/alerts/alerts_network_monitors.go;internal/alerts/alerts_network_monitors_test.go;internal/alerts/alerts_system.go;internal/alerts/alerts_test_helpers.go;internal/alerts/network_monitor_cache.go;internal/common/common-ws.go;internal/entities/monitor/monitor.go;internal/entities/system/system.go;internal/hub/collections.go;internal/hub/hub.go;internal/hub/network_monitors.go;internal/hub/network_monitors_test.go;internal/hub/systems/network_monitor_stats_test.go;internal/hub/systems/network_monitor_sync_test.go;internal/hub/systems/network_monitors.go;internal/hub/systems/system.go;internal/hub/systems/system_manager.go;internal/hub/systems/system_realtime.go;internal/hub/systems/system_smart.go;internal/hub/systems/system_smart_test.go;internal/hub/systems/system_systemd_test.go;internal/hub/systems/system_zfs.go;internal/hub/systems/system_zfs_test.go;internal/hub/utils/utils.go;internal/migrations/0_collections_snapshot_0_19_0.go;internal/migrations/0_collections_snapshot_0_20_0_dev_5.go;internal/records/monitor_averaging_test.go;internal/records/records.go;internal/records/records_deletion.go;internal/records/records_rollup_test.go;internal/site/package.json;internal/site/src/components/active-alerts.tsx;internal/site/src/components/alerts-history-columns.tsx;internal/site/src/components/alerts/alerts-sheet.tsx;internal/site/src/components/charts/area-chart.tsx;internal/site/src/components/charts/chart-time-select.tsx;internal/site/src/components/charts/line-chart.tsx;internal/site/src/components/command-palette.tsx;internal/site/src/components/containers-table/containers-table-columns.tsx;internal/site/src/components/navbar.tsx;internal/site/src/components/network-monitors-table/monitor-dialog.tsx;internal/site/src/components/network-monitors-table/network-monitors-columns.tsx;internal/site/src/components/network-monitors-table/network-monitors-table.tsx;internal/site/src/components/router.tsx;internal/site/src/components/routes/monitors.tsx;internal/site/src/components/routes/settings/alerts-history-data-table.tsx;internal/site/src/components/routes/system.tsx;internal/site/src/components/routes/system/chart-card.tsx;internal/site/src/components/routes/system/chart-data.ts;internal/site/src/components/routes/system/charts/monitors-charts.tsx;internal/site/src/components/routes/system/lazy-tables.tsx;internal/site/src/components/routes/system/smart-table.tsx;internal/site/src/components/routes/system/use-system-data.ts;internal/site/src/components/systems-table/systems-table-columns.tsx;internal/site/src/components/ui/chart.tsx;internal/site/src/components/ui/dropdown-menu.tsx;internal/site/src/components/ui/table.tsx;internal/site/src/lib/alerts.ts;internal/site/src/lib/api.ts;internal/site/src/lib/network-monitor-utils.ts;internal/site/src/lib/stores.ts;internal/site/src/lib/systemsManager.ts;internal/site/src/lib/use-network-monitors.ts;internal/site/src/lib/utils.ts;internal/site/src/main.tsx;internal/site/src/types.d.ts;internal/site/tests/network-monitor-utils.test.ts"
+    },
+    {
+      "sha": "6e5440c21f9f1798b469f1c473e8f12d14323443",
+      "canonical_csv_row": 11,
+      "priority": "P2",
+      "evidence_paths": "internal/site/src/locales/ar/ar.po;internal/site/src/locales/bg/bg.po;internal/site/src/locales/cs/cs.po;internal/site/src/locales/da/da.po;internal/site/src/locales/de/de.po;internal/site/src/locales/el/el.po;internal/site/src/locales/es/es.po;internal/site/src/locales/fa/fa.po;internal/site/src/locales/fr/fr.po;internal/site/src/locales/he/he.po;internal/site/src/locales/hr/hr.po;internal/site/src/locales/hu/hu.po;internal/site/src/locales/id/id.po;internal/site/src/locales/it/it.po;internal/site/src/locales/ja/ja.po;internal/site/src/locales/ko/ko.po;internal/site/src/locales/nl/nl.po;internal/site/src/locales/no/no.po;internal/site/src/locales/pl/pl.po;internal/site/src/locales/pt/pt.po;internal/site/src/locales/ru/ru.po;internal/site/src/locales/sl/sl.po;internal/site/src/locales/sr/sr.po;internal/site/src/locales/sv/sv.po;internal/site/src/locales/tr/tr.po;internal/site/src/locales/uk/uk.po;internal/site/src/locales/uz/uz.po;internal/site/src/locales/vi/vi.po;internal/site/src/locales/zh-CN/zh-CN.po;internal/site/src/locales/zh-HK/zh-HK.po;internal/site/src/locales/zh/zh.po"
+    },
+    {
+      "sha": "b34759992828f097df9ff12d18bfccdf82c22848",
+      "canonical_csv_row": 12,
+      "priority": "P1",
+      "evidence_paths": "internal/site/src/components/containers-table/containers-table-columns.tsx;internal/site/src/components/network-monitors-table/monitor-dialog.tsx;internal/site/src/components/network-monitors-table/network-monitors-table.tsx;internal/site/src/components/routes/system/chart-card.tsx;internal/site/src/components/routes/system/charts/monitors-charts.tsx"
+    },
+    {
+      "sha": "db3afeabd949eb3b58fb0acd65724a37212376b0",
+      "canonical_csv_row": 13,
+      "priority": "P2",
+      "evidence_paths": "internal/site/src/locales/ar/ar.po;internal/site/src/locales/bg/bg.po;internal/site/src/locales/cs/cs.po;internal/site/src/locales/da/da.po;internal/site/src/locales/de/de.po;internal/site/src/locales/el/el.po;internal/site/src/locales/en/en.po;internal/site/src/locales/es/es.po;internal/site/src/locales/fa/fa.po;internal/site/src/locales/fr/fr.po;internal/site/src/locales/he/he.po;internal/site/src/locales/hr/hr.po;internal/site/src/locales/hu/hu.po;internal/site/src/locales/id/id.po;internal/site/src/locales/it/it.po;internal/site/src/locales/ja/ja.po;internal/site/src/locales/ko/ko.po;internal/site/src/locales/nl/nl.po;internal/site/src/locales/no/no.po;internal/site/src/locales/pl/pl.po;internal/site/src/locales/pt/pt.po;internal/site/src/locales/ru/ru.po;internal/site/src/locales/sl/sl.po;internal/site/src/locales/sr/sr.po;internal/site/src/locales/sv/sv.po;internal/site/src/locales/tr/tr.po;internal/site/src/locales/uk/uk.po;internal/site/src/locales/uz/uz.po;internal/site/src/locales/vi/vi.po;internal/site/src/locales/zh-CN/zh-CN.po;internal/site/src/locales/zh-HK/zh-HK.po;internal/site/src/locales/zh/zh.po"
+    },
+    {
+      "sha": "f7fd3ef403085b64dc8a21a02011105b2251333a",
+      "canonical_csv_row": 14,
+      "priority": "P0",
+      "evidence_paths": "internal/hub/hub.go;internal/users/oauth_test.go;internal/users/users.go;internal/users/users_test.go"
+    },
+    {
+      "sha": "d2352e888231484a83d4fd3d592a0e56554f66bb",
+      "canonical_csv_row": 15,
+      "priority": "P1",
+      "evidence_paths": "go.mod;go.sum"
+    },
+    {
+      "sha": "bd7e359dcdbf4a14f3978d7d149682c0806f10e5",
+      "canonical_csv_row": 16,
+      "priority": "P2",
+      "evidence_paths": "internal/site/src/locales/ar/ar.po;internal/site/src/locales/bg/bg.po;internal/site/src/locales/cs/cs.po;internal/site/src/locales/da/da.po;internal/site/src/locales/de/de.po;internal/site/src/locales/el/el.po;internal/site/src/locales/es/es.po;internal/site/src/locales/fa/fa.po;internal/site/src/locales/fr/fr.po;internal/site/src/locales/he/he.po;internal/site/src/locales/hr/hr.po;internal/site/src/locales/hu/hu.po;internal/site/src/locales/id/id.po;internal/site/src/locales/it/it.po;internal/site/src/locales/ja/ja.po;internal/site/src/locales/ko/ko.po;internal/site/src/locales/nl/nl.po;internal/site/src/locales/no/no.po;internal/site/src/locales/pl/pl.po;internal/site/src/locales/pt/pt.po;internal/site/src/locales/ro/ro.po;internal/site/src/locales/ru/ru.po;internal/site/src/locales/sl/sl.po;internal/site/src/locales/sr/sr.po;internal/site/src/locales/sv/sv.po;internal/site/src/locales/th/th.po;internal/site/src/locales/tr/tr.po;internal/site/src/locales/ug/ug.po;internal/site/src/locales/uk/uk.po;internal/site/src/locales/uz/uz.po;internal/site/src/locales/vi/vi.po;internal/site/src/locales/zh-CN/zh-CN.po;internal/site/src/locales/zh-HK/zh-HK.po;internal/site/src/locales/zh/zh.po"
+    },
+    {
+      "sha": "97de1471d7ddb92d3138d9baaecb1f58db0bc06b",
+      "canonical_csv_row": 17,
+      "priority": "P2",
+      "evidence_paths": ".github/workflows/docker-images.yml"
+    },
+    {
+      "sha": "6937453282f33e43bd5b5473291b9208c0398ee5",
+      "canonical_csv_row": 18,
+      "priority": "P2",
+      "evidence_paths": "supplemental/CHANGELOG.md"
+    },
+    {
+      "sha": "b0bc72741126b2eadaf284e803827261eac82d54",
+      "canonical_csv_row": 19,
+      "priority": "P0",
+      "evidence_paths": "internal/migrations/0_collections_snapshot_0_20_0.go;internal/migrations/0_collections_snapshot_0_20_0_dev_5.go;internal/migrations/1788955200_pool_updates.go;internal/migrations/1789079746_container_update_available.go"
+    },
+    {
+      "sha": "27844606215ef535c86ecb868178692a817c0397",
+      "canonical_csv_row": 20,
+      "priority": "P2",
+      "evidence_paths": "agent/mdraid_linux.go;agent/mdraid_linux_test.go;supplemental/CHANGELOG.md"
+    },
+    {
+      "sha": "187dc886a96f7124090f7e5a258c9c720bd2cb2c",
+      "canonical_csv_row": 21,
+      "priority": "P0",
+      "evidence_paths": "internal/hub/systems/network_monitor_ssh_test.go;internal/hub/systems/network_monitor_sync_test.go;internal/hub/systems/network_monitors.go;internal/hub/systems/system.go;internal/hub/systems/system_manager.go"
+    },
+    {
+      "sha": "0509053a69e7af4b88a6b0cdc90e6c493e65bb6b",
+      "canonical_csv_row": 22,
+      "priority": "P2",
+      "evidence_paths": "internal/hub/agent_connect_test.go"
+    },
+    {
+      "sha": "dd3f7d58b543d1016d84e3d0478753d2a6afd7fe",
+      "canonical_csv_row": 23,
+      "priority": "P2",
+      "evidence_paths": "internal/alerts/alerts_api_test.go;internal/alerts/notification_client_test.go"
+    },
+    {
+      "sha": "c54dbfba7cf8bd572c9437adc363e62964cd1fd4",
+      "canonical_csv_row": 24,
+      "priority": "P2",
+      "evidence_paths": "internal/hub/agent_connect_test.go"
+    },
+    {
+      "sha": "912bc50874ac4bf20cbefa4a6b8859898223e859",
+      "canonical_csv_row": 25,
+      "priority": "P2",
+      "evidence_paths": "internal/dockerfile_agent;internal/dockerfile_agent_alpine;internal/dockerfile_agent_intel;internal/dockerfile_agent_nvidia;internal/dockerfile_agent_nvidia_slim;internal/dockerfile_hub"
+    },
+    {
+      "sha": "a0dc19eacf6902d2f6934a3efd7ea7277198c40b",
+      "canonical_csv_row": 26,
+      "priority": "P1",
+      "evidence_paths": "internal/site/src/components/containers-table/containers-table-columns.tsx"
+    }
+  ],
+  "coverage": {
+    "P004_integrated": 25,
+    "P005_pending": 116,
+    "P006_pending": 37,
+    "ios_patches_preserved": 13
+  },
+  "merge_changed_files": [
+    ".dockerignore",
+    ".github/workflows/docker-images.yml",
+    "agent/agent.go",
+    "agent/connection_manager.go",
+    "agent/gpu_test.go",
+    "agent/handlers.go",
+    "agent/mdraid_linux.go",
+    "agent/mdraid_linux_test.go",
+    "agent/network_monitor.go",
+    "agent/network_monitor_history.go",
+    "agent/network_monitor_history_test.go",
+    "agent/network_monitor_ping.go",
+    "agent/network_monitor_ping_test.go",
+    "agent/network_monitor_probe.go",
+    "agent/network_monitor_resume.go",
+    "agent/network_monitor_resume_test.go",
+    "agent/network_monitor_schedule.go",
+    "agent/network_monitor_schedule_test.go",
+    "agent/network_monitor_task.go",
+    "agent/network_monitor_task_test.go",
+    "agent/network_monitor_test.go",
+    "agent/smart.go",
+    "agent/smart_test.go",
+    "agent/storage_pool.go",
+    "agent/storage_pool_test.go",
+    "agent/zfs/zfs.go",
+    "agent/zfs/zfs_linux.go",
+    "agent/zfs/zfs_linux_test.go",
+    "agent/zfs/zfs_nonlinux.go",
+    "agent/zfs/zfs_nonlinux_test.go",
+    "beszel.go",
+    "go.mod",
+    "go.sum",
+    "internal/alerts/alerts.go",
+    "internal/alerts/alerts_api.go",
+    "internal/alerts/alerts_api_test.go",
+    "internal/alerts/alerts_cache.go",
+    "internal/alerts/alerts_history.go",
+    "internal/alerts/alerts_network_monitors.go",
+    "internal/alerts/alerts_network_monitors_test.go",
+    "internal/alerts/alerts_system.go",
+    "internal/alerts/alerts_test_helpers.go",
+    "internal/alerts/network_monitor_cache.go",
+    "internal/alerts/notification_client_test.go",
+    "internal/common/common-ws.go",
+    "internal/dockerfile_agent",
+    "internal/dockerfile_agent_alpine",
+    "internal/dockerfile_agent_intel",
+    "internal/dockerfile_agent_nvidia",
+    "internal/dockerfile_agent_nvidia_slim",
+    "internal/dockerfile_hub",
+    "internal/entities/monitor/monitor.go",
+    "internal/entities/system/system.go",
+    "internal/hub/agent_connect_test.go",
+    "internal/hub/api.go",
+    "internal/hub/api_test.go",
+    "internal/hub/collections.go",
+    "internal/hub/hub.go",
+    "internal/hub/network_monitors.go",
+    "internal/hub/network_monitors_test.go",
+    "internal/hub/systems/network_monitor_ssh_test.go",
+    "internal/hub/systems/network_monitor_stats_test.go",
+    "internal/hub/systems/network_monitor_sync_test.go",
+    "internal/hub/systems/network_monitors.go",
+    "internal/hub/systems/system.go",
+    "internal/hub/systems/system_manager.go",
+    "internal/hub/systems/system_realtime.go",
+    "internal/hub/systems/system_smart.go",
+    "internal/hub/systems/system_smart_test.go",
+    "internal/hub/systems/system_systemd_test.go",
+    "internal/hub/systems/system_zfs.go",
+    "internal/hub/systems/system_zfs_test.go",
+    "internal/hub/trusted_proxy_test.go",
+    "internal/hub/utils/utils.go",
+    "internal/migrations/0_collections_snapshot_0_20_0.go",
+    "internal/migrations/1788955200_pool_updates.go",
+    "internal/migrations/1789079746_container_update_available.go",
+    "internal/records/monitor_averaging_test.go",
+    "internal/records/records.go",
+    "internal/records/records_deletion.go",
+    "internal/records/records_rollup_test.go",
+    "internal/site/package.json",
+    "internal/site/src/components/active-alerts.tsx",
+    "internal/site/src/components/alerts-history-columns.tsx",
+    "internal/site/src/components/alerts/alerts-sheet.tsx",
+    "internal/site/src/components/charts/area-chart.tsx",
+    "internal/site/src/components/charts/chart-time-select.tsx",
+    "internal/site/src/components/charts/line-chart.tsx",
+    "internal/site/src/components/command-palette.tsx",
+    "internal/site/src/components/containers-table/containers-table-columns.tsx",
+    "internal/site/src/components/login/login.tsx",
+    "internal/site/src/components/navbar.tsx",
+    "internal/site/src/components/network-monitors-table/monitor-dialog.tsx",
+    "internal/site/src/components/network-monitors-table/network-monitors-columns.tsx",
+    "internal/site/src/components/network-monitors-table/network-monitors-table.tsx",
+    "internal/site/src/components/router.tsx",
+    "internal/site/src/components/routes/monitors.tsx",
+    "internal/site/src/components/routes/settings/alerts-history-data-table.tsx",
+    "internal/site/src/components/routes/settings/general.tsx",
+    "internal/site/src/components/routes/settings/layout.tsx",
+    "internal/site/src/components/routes/system.tsx",
+    "internal/site/src/components/routes/system/chart-data.ts",
+    "internal/site/src/components/routes/system/charts/monitors-charts.tsx",
+    "internal/site/src/components/routes/system/lazy-tables.tsx",
+    "internal/site/src/components/routes/system/smart-table.tsx",
+    "internal/site/src/components/routes/system/use-system-data.ts",
+    "internal/site/src/components/systems-table/systems-table-columns.tsx",
+    "internal/site/src/components/systems-table/systems-table.tsx",
+    "internal/site/src/components/theme-provider.tsx",
+    "internal/site/src/components/ui/chart.tsx",
+    "internal/site/src/components/ui/dropdown-menu.tsx",
+    "internal/site/src/components/ui/table.tsx",
+    "internal/site/src/lib/alerts.ts",
+    "internal/site/src/lib/api.ts",
+    "internal/site/src/lib/network-monitor-utils.ts",
+    "internal/site/src/lib/stores.ts",
+    "internal/site/src/lib/systemsManager.ts",
+    "internal/site/src/lib/use-network-monitors.ts",
+    "internal/site/src/lib/utils.ts",
+    "internal/site/src/locales/ar/ar.po",
+    "internal/site/src/locales/bg/bg.po",
+    "internal/site/src/locales/cs/cs.po",
+    "internal/site/src/locales/da/da.po",
+    "internal/site/src/locales/de/de.po",
+    "internal/site/src/locales/el/el.po",
+    "internal/site/src/locales/en/en.po",
+    "internal/site/src/locales/es/es.po",
+    "internal/site/src/locales/fa/fa.po",
+    "internal/site/src/locales/fr/fr.po",
+    "internal/site/src/locales/he/he.po",
+    "internal/site/src/locales/hr/hr.po",
+    "internal/site/src/locales/hu/hu.po",
+    "internal/site/src/locales/id/id.po",
+    "internal/site/src/locales/it/it.po",
+    "internal/site/src/locales/ja/ja.po",
+    "internal/site/src/locales/ko/ko.po",
+    "internal/site/src/locales/nl/nl.po",
+    "internal/site/src/locales/no/no.po",
+    "internal/site/src/locales/pl/pl.po",
+    "internal/site/src/locales/pt/pt.po",
+    "internal/site/src/locales/ro/ro.po",
+    "internal/site/src/locales/ru/ru.po",
+    "internal/site/src/locales/sl/sl.po",
+    "internal/site/src/locales/sr/sr.po",
+    "internal/site/src/locales/sv/sv.po",
+    "internal/site/src/locales/th/th.po",
+    "internal/site/src/locales/tr/tr.po",
+    "internal/site/src/locales/ug/ug.po",
+    "internal/site/src/locales/uk/uk.po",
+    "internal/site/src/locales/uz/uz.po",
+    "internal/site/src/locales/vi/vi.po",
+    "internal/site/src/locales/zh-CN/zh-CN.po",
+    "internal/site/src/locales/zh-HK/zh-HK.po",
+    "internal/site/src/locales/zh/zh.po",
+    "internal/site/src/main.tsx",
+    "internal/site/src/types.d.ts",
+    "internal/site/tests/network-monitor-utils.test.ts",
+    "internal/users/oauth_test.go",
+    "internal/users/users.go",
+    "internal/users/users_test.go",
+    "supplemental/CHANGELOG.md"
+  ],
+  "target_tree_differences_on_merge_changed_paths": [
+    ".github/workflows/docker-images.yml"
+  ],
+  "patches": [
+    {
+      "id": "IOS-A7-RUNTIME",
+      "owner": "P007",
+      "files": [
+        ".github/scripts/patch-go-ios-arm64-runtime.py",
+        ".github/workflows/ios-build.yml"
+      ],
+      "historical_absent_paths": [
+        ".github/workflows/ios-agent-probe.yml",
+        ".github/workflows/ios-hub-probe.yml"
+      ],
+      "pre_merge_sha256": {
+        ".github/scripts/patch-go-ios-arm64-runtime.py": "1142a3718c3062cfdb32c07d1f3a74d05d2ebe19eee5a26a4f164744125ca623",
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96"
+      },
+      "post_merge_sha256": {
+        ".github/scripts/patch-go-ios-arm64-runtime.py": "1142a3718c3062cfdb32c07d1f3a74d05d2ebe19eee5a26a4f164744125ca623",
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-AGENT-BATTERY",
+      "owner": "P008",
+      "files": [
+        "agent/battery/battery_ios.go"
+      ],
+      "historical_absent_paths": [],
+      "pre_merge_sha256": {
+        "agent/battery/battery_ios.go": "0d15da4e09c3d168c7d09f639d8934d20a6cde06f7cb4bcdd77c73b14fd16d11"
+      },
+      "post_merge_sha256": {
+        "agent/battery/battery_ios.go": "0d15da4e09c3d168c7d09f639d8934d20a6cde06f7cb4bcdd77c73b14fd16d11"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-AGENT-BUILD-PROBE",
+      "owner": "P007",
+      "files": [
+        ".github/workflows/ios-build.yml"
+      ],
+      "historical_absent_paths": [
+        ".github/workflows/ios-agent-probe.yml"
+      ],
+      "pre_merge_sha256": {
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96"
+      },
+      "post_merge_sha256": {
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-AGENT-SYSTEM-HOOK",
+      "owner": "P008",
+      "files": [
+        "agent/battery/battery_darwin.go",
+        "agent/battery/battery_ios.go",
+        "agent/system.go",
+        "agent/system_platform_ios.go",
+        "agent/system_platform_other.go"
+      ],
+      "historical_absent_paths": [],
+      "pre_merge_sha256": {
+        "agent/battery/battery_darwin.go": "dd1ff8d19fdba55e45f5fe77039b43bedd1b02d5821a4f2c7e4372aae491ad75",
+        "agent/battery/battery_ios.go": "0d15da4e09c3d168c7d09f639d8934d20a6cde06f7cb4bcdd77c73b14fd16d11",
+        "agent/system.go": "1612ccc6ccd14295dfa3c65651ad07777d095280551e3df7732fd4d5e810cbbf",
+        "agent/system_platform_ios.go": "0c4986a08f2dc826e64031dbd4d9d37f57f5543ae0fe2c69861b5a6f958a20a4",
+        "agent/system_platform_other.go": "07aa4a2789d2b07e9ef07bc84ad9750784c985bb499896a5c4a0053e2a9a1da7"
+      },
+      "post_merge_sha256": {
+        "agent/battery/battery_darwin.go": "dd1ff8d19fdba55e45f5fe77039b43bedd1b02d5821a4f2c7e4372aae491ad75",
+        "agent/battery/battery_ios.go": "0d15da4e09c3d168c7d09f639d8934d20a6cde06f7cb4bcdd77c73b14fd16d11",
+        "agent/system.go": "1612ccc6ccd14295dfa3c65651ad07777d095280551e3df7732fd4d5e810cbbf",
+        "agent/system_platform_ios.go": "0c4986a08f2dc826e64031dbd4d9d37f57f5543ae0fe2c69861b5a6f958a20a4",
+        "agent/system_platform_other.go": "07aa4a2789d2b07e9ef07bc84ad9750784c985bb499896a5c4a0053e2a9a1da7"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-FRONTEND-BUILD",
+      "owner": "P015",
+      "files": [
+        ".github/workflows/ios-build.yml",
+        "docs/ios-build-notes.md",
+        "docs/upstream-sync.md",
+        "internal/site/bun.lock"
+      ],
+      "historical_absent_paths": [],
+      "pre_merge_sha256": {
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+        "internal/site/bun.lock": "6dfa8103c252f3ca22c65be1fb53cdec721f97430a8d63879d8a9dd03d47d808"
+      },
+      "post_merge_sha256": {
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+        "internal/site/bun.lock": "6dfa8103c252f3ca22c65be1fb53cdec721f97430a8d63879d8a9dd03d47d808"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-HUB-BUILD-PIPELINE",
+      "owner": "P015",
+      "files": [
+        ".github/workflows/ios-build.yml",
+        "docs/architecture.md",
+        "docs/ios-build-notes.md",
+        "docs/ios-port-status.md"
+      ],
+      "historical_absent_paths": [
+        ".github/workflows/ios-hub-probe.yml",
+        "readme.md"
+      ],
+      "pre_merge_sha256": {
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c"
+      },
+      "post_merge_sha256": {
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-INSTALLER-ARCH-DETECTION",
+      "owner": "P016",
+      "files": [
+        "install.sh",
+        "scripts/ios/install-beszel.sh",
+        "tests/install-sh-test.sh"
+      ],
+      "historical_absent_paths": [],
+      "pre_merge_sha256": {
+        "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+        "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+        "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+      },
+      "post_merge_sha256": {
+        "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+        "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+        "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-INSTALLER-BOOTSTRAP-INTEGRITY",
+      "owner": "P016",
+      "files": [
+        ".github/workflows/ios-build.yml",
+        ".github/workflows/ios-installer.yml",
+        "README.md",
+        "README.vi.md",
+        "docs/architecture.md",
+        "docs/architecture.vi.md",
+        "docs/device-validation.md",
+        "docs/device-validation.vi.md",
+        "docs/ios-build-notes.md",
+        "docs/ios-build-notes.vi.md",
+        "docs/ios-port-status.md",
+        "docs/ios-port-status.vi.md",
+        "docs/upstream-sync.md",
+        "docs/upstream-sync.vi.md",
+        "install.sh",
+        "scripts/ios/install-beszel.sh",
+        "tests/bootstrap-test.sh",
+        "tests/install-sh-test.sh",
+        "tests/ios-patch-sentinels.sh"
+      ],
+      "historical_absent_paths": [],
+      "pre_merge_sha256": {
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        ".github/workflows/ios-installer.yml": "b0814ac8d1ef84b22f914aacb1cd02d9ef2f66020231f47f03e787dc836bbc04",
+        "README.md": "62abc4350eb681473797deb512ff3b52b8d4de6f2ba36dffed1530d474ca7c0c",
+        "README.vi.md": "a7d92ed43562df317150458411dea65261a449256dd7c2f89da969d5e5292974",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/architecture.vi.md": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+        "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+        "docs/device-validation.vi.md": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-build-notes.vi.md": "e3e62ef34e639fc085b26a203027bc6b2efa75dd85b5c5c58d2b89ab426a1109",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+        "docs/ios-port-status.vi.md": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+        "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+        "docs/upstream-sync.vi.md": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb",
+        "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+        "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+        "tests/bootstrap-test.sh": "bdb69ca0f34d06118ead7fdc719f7a6c7fe66be803b82a1337fe096d4aaf2cc4",
+        "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+        "tests/ios-patch-sentinels.sh": "1e570da5b52e12f089c1894e2644e29bb40147bb75b531cd0ee7c55c9ac48f6d"
+      },
+      "post_merge_sha256": {
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        ".github/workflows/ios-installer.yml": "b0814ac8d1ef84b22f914aacb1cd02d9ef2f66020231f47f03e787dc836bbc04",
+        "README.md": "62abc4350eb681473797deb512ff3b52b8d4de6f2ba36dffed1530d474ca7c0c",
+        "README.vi.md": "a7d92ed43562df317150458411dea65261a449256dd7c2f89da969d5e5292974",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/architecture.vi.md": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+        "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+        "docs/device-validation.vi.md": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-build-notes.vi.md": "e3e62ef34e639fc085b26a203027bc6b2efa75dd85b5c5c58d2b89ab426a1109",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+        "docs/ios-port-status.vi.md": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+        "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+        "docs/upstream-sync.vi.md": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb",
+        "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+        "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+        "tests/bootstrap-test.sh": "bdb69ca0f34d06118ead7fdc719f7a6c7fe66be803b82a1337fe096d4aaf2cc4",
+        "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+        "tests/ios-patch-sentinels.sh": "1e570da5b52e12f089c1894e2644e29bb40147bb75b531cd0ee7c55c9ac48f6d"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-INSTALLER-LIFECYCLE",
+      "owner": "P016",
+      "files": [
+        "README.md",
+        "docs/architecture.md",
+        "docs/ios-build-notes.md",
+        "docs/ios-port-status.md",
+        "install.sh",
+        "scripts/ios/install-beszel.sh",
+        "tests/install-sh-test.sh"
+      ],
+      "historical_absent_paths": [
+        "readme.md"
+      ],
+      "pre_merge_sha256": {
+        "README.md": "62abc4350eb681473797deb512ff3b52b8d4de6f2ba36dffed1530d474ca7c0c",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+        "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+        "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+        "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+      },
+      "post_merge_sha256": {
+        "README.md": "62abc4350eb681473797deb512ff3b52b8d4de6f2ba36dffed1530d474ca7c0c",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+        "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+        "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+        "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-INSTALLER-VALIDATION",
+      "owner": "P017",
+      "files": [
+        "docs/architecture.md",
+        "docs/device-validation.md",
+        "docs/ios-port-status.md",
+        "install.sh",
+        "scripts/ios/install-beszel.sh",
+        "tests/install-sh-test.sh"
+      ],
+      "historical_absent_paths": [
+        "readme.md"
+      ],
+      "pre_merge_sha256": {
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+        "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+        "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+        "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+      },
+      "post_merge_sha256": {
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+        "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+        "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+        "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-PORT-DOCUMENTATION",
+      "owner": "P017",
+      "files": [
+        "README.md",
+        "README.vi.md",
+        "SECURITY.md",
+        "docs/architecture.md",
+        "docs/architecture.vi.md",
+        "docs/device-validation.md",
+        "docs/device-validation.vi.md",
+        "docs/ios-build-notes.md",
+        "docs/ios-build-notes.vi.md",
+        "docs/ios-port-status.md",
+        "docs/ios-port-status.vi.md",
+        "docs/upstream-sync.md",
+        "docs/upstream-sync.vi.md"
+      ],
+      "historical_absent_paths": [
+        "readme.md"
+      ],
+      "pre_merge_sha256": {
+        "README.md": "62abc4350eb681473797deb512ff3b52b8d4de6f2ba36dffed1530d474ca7c0c",
+        "README.vi.md": "a7d92ed43562df317150458411dea65261a449256dd7c2f89da969d5e5292974",
+        "SECURITY.md": "132cdbdbba8dafe26a98a5b806da63e6e6b8a1642f2fa8dae4a185bc0a6eff4c",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/architecture.vi.md": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+        "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+        "docs/device-validation.vi.md": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-build-notes.vi.md": "e3e62ef34e639fc085b26a203027bc6b2efa75dd85b5c5c58d2b89ab426a1109",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+        "docs/ios-port-status.vi.md": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+        "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+        "docs/upstream-sync.vi.md": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb"
+      },
+      "post_merge_sha256": {
+        "README.md": "62abc4350eb681473797deb512ff3b52b8d4de6f2ba36dffed1530d474ca7c0c",
+        "README.vi.md": "a7d92ed43562df317150458411dea65261a449256dd7c2f89da969d5e5292974",
+        "SECURITY.md": "132cdbdbba8dafe26a98a5b806da63e6e6b8a1642f2fa8dae4a185bc0a6eff4c",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/architecture.vi.md": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+        "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+        "docs/device-validation.vi.md": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-build-notes.vi.md": "e3e62ef34e639fc085b26a203027bc6b2efa75dd85b5c5c58d2b89ab426a1109",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+        "docs/ios-port-status.vi.md": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+        "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+        "docs/upstream-sync.vi.md": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    },
+    {
+      "id": "IOS-RELEASE-ISOLATION",
+      "owner": "P016",
+      "files": [
+        ".github/workflows/docker-images.yml",
+        ".github/workflows/ios-build.yml",
+        ".github/workflows/release.yml",
+        "docs/architecture.md",
+        "docs/ios-build-notes.md",
+        "docs/ios-port-status.md"
+      ],
+      "historical_absent_paths": [
+        ".github/workflows/ios-agent-probe.yml",
+        ".github/workflows/ios-hub-probe.yml",
+        "readme.md"
+      ],
+      "pre_merge_sha256": {
+        ".github/workflows/docker-images.yml": "af435291d1248af297c87827622d34a733e31fc506a2276273d3d71ae30bd63b",
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        ".github/workflows/release.yml": "d5adc4efd3f0da0924f97982e0c9ef70cf373e2a95e383dfc66325ed58d8b500",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c"
+      },
+      "post_merge_sha256": {
+        ".github/workflows/docker-images.yml": "00ec3f02ac920b4fb72163924dc4eb5a5be6d4071b6c5fbf482e4cd6268395ad",
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        ".github/workflows/release.yml": "d5adc4efd3f0da0924f97982e0c9ef70cf373e2a95e383dfc66325ed58d8b500",
+        "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+        "docs/ios-build-notes.md": "fbf3dcd1ddd9ea1a0da727a7a3eb1d79e1f02087aeb9c11499a50864b7968bc3",
+        "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c"
+      },
+      "changed_files": [
+        ".github/workflows/docker-images.yml"
+      ],
+      "status": "PRESERVED",
+      "resolution": "Automatic merge retains upstream variant latest=false logic and existing !v*-ios.* tag exclusion."
+    },
+    {
+      "id": "IOS-UPSTREAM-SYNC-CI",
+      "owner": "P017",
+      "files": [
+        ".github/scripts/check-upstream-drift.sh",
+        ".github/scripts/patch-go-ios-arm64-runtime.py",
+        ".github/workflows/ios-build.yml",
+        ".github/workflows/sync-upstream-main.yml",
+        ".github/workflows/upstream-drift.yml",
+        "tests/ios-patch-sentinels.sh",
+        "tests/upstream-sync-test.sh"
+      ],
+      "historical_absent_paths": [],
+      "pre_merge_sha256": {
+        ".github/scripts/check-upstream-drift.sh": "b5e7c9f50e2468055928f02262a3a1375e60f7afeb02cda82e7af36ae221af36",
+        ".github/scripts/patch-go-ios-arm64-runtime.py": "1142a3718c3062cfdb32c07d1f3a74d05d2ebe19eee5a26a4f164744125ca623",
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        ".github/workflows/sync-upstream-main.yml": "af70e4cbfcc88f6426d83378d94c1636ec3949f5366ad5ea1deb1adf0a322ef1",
+        ".github/workflows/upstream-drift.yml": "6f2e1d6e69219080b68806dcaabce5070e2130dab99fb812a8a24b59431cae8c",
+        "tests/ios-patch-sentinels.sh": "1e570da5b52e12f089c1894e2644e29bb40147bb75b531cd0ee7c55c9ac48f6d",
+        "tests/upstream-sync-test.sh": "1c858a6332ab444cfe6f2689ba1aa5293291c6f0849c6c44dcdf06d056faac92"
+      },
+      "post_merge_sha256": {
+        ".github/scripts/check-upstream-drift.sh": "b5e7c9f50e2468055928f02262a3a1375e60f7afeb02cda82e7af36ae221af36",
+        ".github/scripts/patch-go-ios-arm64-runtime.py": "1142a3718c3062cfdb32c07d1f3a74d05d2ebe19eee5a26a4f164744125ca623",
+        ".github/workflows/ios-build.yml": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+        ".github/workflows/sync-upstream-main.yml": "af70e4cbfcc88f6426d83378d94c1636ec3949f5366ad5ea1deb1adf0a322ef1",
+        ".github/workflows/upstream-drift.yml": "6f2e1d6e69219080b68806dcaabce5070e2130dab99fb812a8a24b59431cae8c",
+        "tests/ios-patch-sentinels.sh": "1e570da5b52e12f089c1894e2644e29bb40147bb75b531cd0ee7c55c9ac48f6d",
+        "tests/upstream-sync-test.sh": "1c858a6332ab444cfe6f2689ba1aa5293291c6f0849c6c44dcdf06d056faac92"
+      },
+      "changed_files": [],
+      "status": "PRESERVED",
+      "resolution": "Existing implementation byte-identical; historical probe workflow behavior lives in ios-build.yml."
+    }
+  ],
+  "baseline_tests": [
+    {
+      "command": "python3 scripts/audit/validate-upstream-v021-matrix.py",
+      "exit": 0,
+      "log": "before-0.log"
+    },
+    {
+      "command": "python3 scripts/audit/validate-upstream-v021-readiness.py",
+      "exit": 0,
+      "log": "before-1.log"
+    },
+    {
+      "command": "python3 -m unittest discover -s tests/audit -p 'test_*.py' -v",
+      "exit": 0,
+      "log": "before-2.log"
+    },
+    {
+      "command": "sh tests/upstream-sync-test.sh",
+      "exit": 0,
+      "log": "before-3.log"
+    },
+    {
+      "command": "sh tests/ios-patch-sentinels.sh",
+      "exit": 0,
+      "log": "before-4.log"
+    },
+    {
+      "command": "sh tests/bootstrap-test.sh",
+      "exit": 0,
+      "log": "before-5.log"
+    },
+    {
+      "command": "sh tests/install-sh-test.sh",
+      "exit": 0,
+      "log": "before-6.log"
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0,
+      "log": "before-7.log"
+    }
+  ],
+  "runtime_fixture_tests": [
+    {
+      "case": "known",
+      "exit": 0,
+      "result": "PASS"
+    },
+    {
+      "case": "missing-start",
+      "exit": 1,
+      "result": "PASS"
+    },
+    {
+      "case": "duplicate-start",
+      "exit": 1,
+      "result": "PASS"
+    },
+    {
+      "case": "unknown-shape",
+      "exit": 1,
+      "result": "PASS"
+    },
+    {
+      "case": "missing-end",
+      "exit": 1,
+      "result": "PASS"
+    }
+  ],
+  "gate_p004": "PASS",
+  "gate_b": "PENDING_P005_P006",
+  "no_production_deployment": true,
+  "after_tests": [
+    {
+      "command": "python3 scripts/audit/validate-upstream-v021-matrix.py",
+      "exit": 0,
+      "log": "after-0.log"
+    },
+    {
+      "command": "python3 scripts/audit/validate-upstream-v021-readiness.py",
+      "exit": 0,
+      "log": "after-1.log"
+    },
+    {
+      "command": "python3 -m unittest discover -s tests/audit -p 'test_*.py' -v",
+      "exit": 0,
+      "log": "after-2.log"
+    },
+    {
+      "command": "sh tests/upstream-sync-test.sh",
+      "exit": 0,
+      "log": "after-3.log"
+    },
+    {
+      "command": "sh tests/ios-patch-sentinels.sh",
+      "exit": 0,
+      "log": "after-4.log"
+    },
+    {
+      "command": "sh tests/bootstrap-test.sh",
+      "exit": 0,
+      "log": "after-5.log"
+    },
+    {
+      "command": "sh tests/install-sh-test.sh",
+      "exit": 0,
+      "log": "after-6.log"
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0,
+      "log": "after-7.log"
+    }
+  ],
+  "validation_repair": {
+    "file": "internal/entities/systemd/systemd_test.go",
+    "reason": "Preexisting eight-core CPU fixture exceeded 100% on the three-CPU cloud runner; use half a CPU-second per runtime.NumCPU, retaining original assertions. No production change."
+  },
+  "go_validation": {
+    "toolchain": "go1.27.1 linux/amd64",
+    "canonical_command": "env -u NETWORK go test -tags 'testing no_ui' ./...",
+    "final_result": "PASS",
+    "baseline_result": "FAIL: existing CPU fixture assumes eight cores; remaining canonical packages passed",
+    "preliminary_invocations": [
+      {
+        "command": "go test ./...",
+        "result": "FAIL: testing-tag helpers excluded, on both snapshots"
+      },
+      {
+        "command": "go test -tags testing ./...",
+        "result": "FAIL: requires documented no_ui; cloud NETWORK pollution and eight-core fixture, on both snapshots"
+      }
+    ],
+    "final_output_sha256": "5faf228e66d57eeff174217da4cedcd50f94dde863ed3cdc2515b5b6d35c6221"
+  },
+  "frontend_validation": {
+    "bun": "1.4.0",
+    "frozen_install": "PASS before and after",
+    "build": "PASS before and after; genuine dist generation",
+    "bun_test": "PASS: 4 after; no tests before, not a pass",
+    "lock_changed": false
+  },
+  "linux_builds": {
+    "agent": "PASS",
+    "hub": "PASS after genuine embedded frontend generation"
+  },
+  "hosted_ci": [
+    {
+      "conclusion": "success",
+      "headSha": "65731f9a86f19b1668d260e49f6d5ee7318453be",
+      "jobs": [
+        {
+          "completedAt": "2026-10-13T11:29:25Z",
+          "conclusion": "success",
+          "databaseId": 115271385166,
+          "name": "build-ios",
+          "startedAt": "2026-10-13T11:27:09Z",
+          "status": "completed",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run iOS maintenance sentinels",
+              "number": 3,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Setup Go",
+              "number": 4,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Patch Go runtime for legacy iOS ARM64",
+              "number": 5,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Setup Bun",
+              "number": 6,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build web UI",
+              "number": 7,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Show environment",
+              "number": 8,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Create iOS clang wrapper",
+              "number": 9,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build Beszel agent for iOS arm64",
+              "number": 10,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build Beszel hub for iOS arm64",
+              "number": 11,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Verify Mach-O outputs",
+              "number": 12,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Generate SHA256SUMS",
+              "number": 13,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Verify SHA256SUMS",
+              "number": 14,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Upload iOS release payload",
+              "number": 15,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Setup Bun",
+              "number": 28,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Setup Go",
+              "number": 29,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 30,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 31,
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38390065511/job/115271385166"
+        },
+        {
+          "completedAt": "2026-10-13T11:29:25Z",
+          "conclusion": "skipped",
+          "databaseId": 115273036399,
+          "name": "release-ios",
+          "startedAt": "2026-10-13T11:29:25Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38390065511/job/115273036399"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38390065511"
+    },
+    {
+      "conclusion": "success",
+      "headSha": "65731f9a86f19b1668d260e49f6d5ee7318453be",
+      "jobs": [
+        {
+          "completedAt": "2026-10-13T11:29:47Z",
+          "conclusion": "success",
+          "databaseId": 115271400868,
+          "name": "installer",
+          "startedAt": "2026-10-13T11:29:26Z",
+          "status": "completed",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Canonical iOS branch references",
+              "number": 3,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "POSIX syntax",
+              "number": 4,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Bootstrap checksum pin",
+              "number": 5,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Bootstrap tests",
+              "number": 6,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Lifecycle engine tests",
+              "number": 7,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Patch sentinels and upstream sync tests",
+              "number": 8,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 16,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38390070057/job/115271400868"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38390070057"
+    }
+  ],
+  "deferred": [
+    {
+      "component": "0.19 synthetic DB upgrade / complete backup / restore / interruption",
+      "status": "DEFERRED",
+      "reason": "Full seeded application upgrade/restore/failure-injection harness not yet implemented; synthetic test-app results do not satisfy these acceptance cases. No real database opened.",
+      "owners": [
+        "P013",
+        "P017"
+      ],
+      "blocking_gates": [
+        "D",
+        "E"
+      ],
+      "acceptance_ids": [
+        "DB-BACKUP-01",
+        "DB-MIG-01",
+        "DB-RESTORE-01",
+        "DB-INTERRUPT-01"
+      ]
+    },
+    {
+      "component": "iOS ICMP",
+      "status": "DEFERRED",
+      "reason": "Native socket permissions untested; upstream pingCommand rejects ios exec fallback and reports probe failure/loss. Shared source retained.",
+      "owners": [
+        "P010",
+        "P017",
+        "P018"
+      ],
+      "blocking_gates": [
+        "C",
+        "F"
+      ]
+    },
+    {
+      "component": "A7 runtime and reference-device metrics/services",
+      "status": "DEFERRED",
+      "reason": "Hosted build is not physical A7 execution; prior 0.19 device evidence is historical.",
+      "owners": [
+        "P007",
+        "P008",
+        "P018"
+      ],
+      "blocking_gates": [
+        "C",
+        "F"
+      ]
+    },
+    {
+      "component": "Final auth/cache, legacy protocol pairs, unsupported collectors, remote OS/browser fixtures, adapters, installer migrated-data rollback",
+      "status": "DEFERRED",
+      "reason": "P003 exact acceptance matrix and remaining frozen history require later prompt implementation/validation.",
+      "owners": [
+        "P009",
+        "P010",
+        "P011",
+        "P012",
+        "P013",
+        "P014",
+        "P015",
+        "P016",
+        "P017"
+      ],
+      "blocking_gates": [
+        "C",
+        "D",
+        "E"
+      ]
+    }
+  ],
+  "evidence_logs": {
+    "after-0.log": {
+      "sha256": "46667426fb1e020f6530ec66ab2f201b438edc255b8a2287f63294eb02729ad5",
+      "bytes": 1253
+    },
+    "after-1.log": {
+      "sha256": "9d153cd76ea6080ba376b102d2fd52c172c5a450e412b428f57b3248cccf9e12",
+      "bytes": 180
+    },
+    "after-2.log": {
+      "sha256": "8173d538b372ffad95556a7cba7f6f88d25e44f07baa856505b29c002ebd6222",
+      "bytes": 2097
+    },
+    "after-3.log": {
+      "sha256": "95aad086addce56f54ee0443f59f9aa1725ee12a708f47a68b50c2ab52b51a13",
+      "bytes": 404
+    },
+    "after-4.log": {
+      "sha256": "a3608e3aee7247fbb5fddf7e1291421d73261bdcbf14afa6e18fa1cab79293fe",
+      "bytes": 1493
+    },
+    "after-5.log": {
+      "sha256": "178e2737b3f9bdc44fbff924393ab58d17ec7eb3db8f7647fd6c9360ee563abb",
+      "bytes": 3309
+    },
+    "after-6.log": {
+      "sha256": "252420699fef1b532b62feb8224b3c6da526f69957b93350d39bcb9eaf52d73c",
+      "bytes": 36435
+    },
+    "after-7.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "after-bun-install.log": {
+      "sha256": "8c6e39d2bab9d3d37f95dc42364173714e3e393c46e66dc970851870c2bfcd34",
+      "bytes": 1367
+    },
+    "after-bun-tests.log": {
+      "sha256": "0e79faf10e0d6a70b57198fa0cb444fedaf86a1b620caee57b11f91508b3fd73",
+      "bytes": 551
+    },
+    "after-frontend.log": {
+      "sha256": "fb64d17285019139e5f2b262f31a47ae665da0882fd857c171ceca141617446a",
+      "bytes": 10352
+    },
+    "after-go-canonical-tests.log": {
+      "sha256": "b6792a37602a3e3fe25af0ed83692c9b9182ab5a2fdad7e7bc887d600cdb903d",
+      "bytes": 2440
+    },
+    "after-go-download.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "after-go-final-tests.log": {
+      "sha256": "5faf228e66d57eeff174217da4cedcd50f94dde863ed3cdc2515b5b6d35c6221",
+      "bytes": 1985
+    },
+    "after-go-tagged-tests.log": {
+      "sha256": "610a633389cc10beba074bf57f46090133f94b6ca0c006e508273a31f66ef745",
+      "bytes": 25020
+    },
+    "after-go-tests.log": {
+      "sha256": "a1ec7d1f5903f64f2d2dc282e8ad59c1da7e31291af8e4d744701f59d9b16d6c",
+      "bytes": 7177
+    },
+    "before-0.log": {
+      "sha256": "46667426fb1e020f6530ec66ab2f201b438edc255b8a2287f63294eb02729ad5",
+      "bytes": 1253
+    },
+    "before-1.log": {
+      "sha256": "9d153cd76ea6080ba376b102d2fd52c172c5a450e412b428f57b3248cccf9e12",
+      "bytes": 180
+    },
+    "before-2.log": {
+      "sha256": "7c171048202de04d56a353f8b7ffd90baab4545f07013faac6d2b0c291bdfa43",
+      "bytes": 2097
+    },
+    "before-3.log": {
+      "sha256": "95aad086addce56f54ee0443f59f9aa1725ee12a708f47a68b50c2ab52b51a13",
+      "bytes": 404
+    },
+    "before-4.log": {
+      "sha256": "a3608e3aee7247fbb5fddf7e1291421d73261bdcbf14afa6e18fa1cab79293fe",
+      "bytes": 1493
+    },
+    "before-5.log": {
+      "sha256": "178e2737b3f9bdc44fbff924393ab58d17ec7eb3db8f7647fd6c9360ee563abb",
+      "bytes": 3309
+    },
+    "before-6.log": {
+      "sha256": "3fb456570b1c9d2eb6f3ad1d3788fe2d61efc04b78f9ae22a4d64e484d14307b",
+      "bytes": 36435
+    },
+    "before-7.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "before-bun-install.log": {
+      "sha256": "b93f5ed9bae25edbe6c1fdd6584d7f80c7327b0d5d24ce279d082ffce923e1d0",
+      "bytes": 1370
+    },
+    "before-bun-tests.log": {
+      "sha256": "984127f0eba92b99a47cd2f05dd8577876c54d4f56476a1aa2ac67a035b9feb9",
+      "bytes": 191
+    },
+    "before-frontend.log": {
+      "sha256": "30c7f27b7fcacb673b634f7d61ad111f2ac88510ca2410ad52defb98418033df",
+      "bytes": 9932
+    },
+    "before-go-canonical-tests.log": {
+      "sha256": "b754452b283a3629dedb25e78e88888199796f0a143b1c9dc6c0d8144f133f2e",
+      "bytes": 2386
+    },
+    "before-go-tagged-tests.log": {
+      "sha256": "af8cdec42005c66bac0877b18f44a1ae5f163460c508099f81a7796734a7f06f",
+      "bytes": 23326
+    },
+    "before-go-tests.log": {
+      "sha256": "42e7bef5dc264be4ac54c9ee522b37fde6968ec8bdf1da72f62eef5e13cd77f7",
+      "bytes": 7334
+    },
+    "installer-ci.log": {
+      "sha256": "33026a85f6e7f19a26b81f459d7fbd2c6d09df69d0b5ff197513e52faa0aab78",
+      "bytes": 123570
+    },
+    "ios-ci.log": {
+      "sha256": "4077b23d5e3e6f10b17ef959e4f993c55f894d5f75eb35b02f6af28f9781eedc",
+      "bytes": 83060
+    }
+  }
+}
