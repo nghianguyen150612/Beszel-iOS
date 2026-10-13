@@ -28,6 +28,37 @@ upstream-only commits. P001 freezes this baseline only; the 178 commits have
 not yet been individually audited. The September audit below remains historical
 and has not been rewritten as the October snapshot.
 
+## P003 readiness snapshot, 2026-10-13
+
+P003 verified the current `origin/iOS` tip at
+`7e29c185458f79be274bb09ca57a0be9fc1b63f7`, frozen `origin/main` and
+`upstream/main` at `bb23f99b3eeaced9608e11e280e7c986dba650be`, and merge-base
+`f204dc17e64bba444478c60210d018e43a777193`. P002 is an ancestor of this iOS
+tip. The P002 audit remains unchanged: 178 upstream commits, 35 historical iOS
+commits, 13 logical iOS patches, 21 P0 / 74 P1 / 83 P2 changes, and 11 upstream
+commits touching iOS-owned paths. Its release batches remain P004 (25), P005
+(116), and P006 (37).
+
+P003 adds readiness artifacts without beginning an upstream merge:
+
+* [Compatibility matrix (CSV)](upstream-v021-compatibility-matrix.csv) and
+  [compatibility notes (EN)](upstream-v021-compatibility.md) /
+  [compatibility notes (VI)](upstream-v021-compatibility.vi.md).
+* [Risk register (CSV)](upstream-v021-risk-register.csv) and
+  [scoring method](upstream-v021-risk-register.md).
+* [Implementation ownership crosswalk](upstream-v021-implementation-crosswalk.csv)
+  and [roadmap decision](upstream-v021-roadmap-decision.md).
+* [Database backup/rollback plan (EN)](upstream-v021-db-rollback.md) /
+  [plan (VI)](upstream-v021-db-rollback.vi.md).
+* [Acceptance plan (EN)](upstream-v021-acceptance.md) /
+  [plan (VI)](upstream-v021-acceptance.vi.md).
+* Read-only validator:
+  `scripts/audit/validate-upstream-v021-readiness.py` with negative tests in
+  `tests/audit/test_validate_upstream_v021_readiness.py`.
+
+P003 does not modify production Agent/Hub/migration/installer/release code, run
+a production migration, move the frozen upstream target, or authorize release.
+
 ## September 2026 audit baseline (historical)
 
 The maintenance audit started from the validated commit `8fed846c`, with
