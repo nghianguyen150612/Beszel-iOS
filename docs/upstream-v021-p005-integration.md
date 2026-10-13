@@ -68,14 +68,14 @@ The generic release and Docker workflows still exclude `v*-ios.*`; installer pat
 | `IOS-A7-RUNTIME` | P007 | PRESERVED; Go 1.27.1 positive and fail-closed fixtures passed |
 | `IOS-AGENT-BATTERY` | P008 | PRESERVED; iOS parser and Darwin exclusion retained |
 | `IOS-AGENT-BUILD-PROBE` | P007 | PRESERVED; hosted Agent/Hub build passed |
-| `IOS-AGENT-SYSTEM-HOOK` | P008 | RECONCILED; upstream `system.go` changes retain iOS CPU guard and platform hook |
-| `IOS-FRONTEND-BUILD` | P015 | UPSTREAM UPDATE VALIDATED; frozen Bun 1.4.0 install and genuine build passed |
+| `IOS-AGENT-SYSTEM-HOOK` | P008 | RECONCILED WITH TEST EVIDENCE; upstream `system.go` changes retain iOS CPU guard and platform hook |
+| `IOS-FRONTEND-BUILD` | P015 | RECONCILED WITH TEST EVIDENCE; upstream Bun lockfile update passed frozen install and genuine build |
 | `IOS-HUB-BUILD-PIPELINE` | P015 | PRESERVED; frontend embed and hosted build passed |
 | `IOS-INSTALLER-ARCH-DETECTION` | P016 | PRESERVED; installer checks passed |
 | `IOS-INSTALLER-BOOTSTRAP-INTEGRITY` | P016 | PRESERVED; SHA-pinned bootstrap checks passed |
 | `IOS-INSTALLER-LIFECYCLE` | P016 | PRESERVED; 814 lifecycle checks passed |
 | `IOS-INSTALLER-VALIDATION` | P017 | PRESERVED; local and hosted installer suites passed |
-| `IOS-PORT-DOCUMENTATION` | P017 | RECONCILED; localized READMEs retained through the README conflict |
+| `IOS-PORT-DOCUMENTATION` | P017 | RECONCILED WITH TEST EVIDENCE; localized READMEs retained through the README conflict |
 | `IOS-RELEASE-ISOLATION` | P016 | PRESERVED; generic release and Docker iOS-tag exclusions remain |
 | `IOS-UPSTREAM-SYNC-CI` | P017 | PRESERVED; sync tests and patch sentinels passed |
 

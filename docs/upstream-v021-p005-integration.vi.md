@@ -68,14 +68,14 @@ Workflow release và Docker tổng quát tiếp tục loại trừ `v*-ios.*`; �
 | `IOS-A7-RUNTIME` | P007 | PRESERVED; fixture Go 1.27.1 đúng và fail-closed đều đạt |
 | `IOS-AGENT-BATTERY` | P008 | PRESERVED; parser iOS và loại trừ Darwin được giữ |
 | `IOS-AGENT-BUILD-PROBE` | P007 | PRESERVED; build Agent/Hub hosted đạt |
-| `IOS-AGENT-SYSTEM-HOOK` | P008 | RECONCILED; thay đổi `system.go` upstream vẫn giữ CPU guard và hook iOS |
-| `IOS-FRONTEND-BUILD` | P015 | UPSTREAM UPDATE VALIDATED; frozen install Bun 1.4.0 và build thật đạt |
+| `IOS-AGENT-SYSTEM-HOOK` | P008 | RECONCILED WITH TEST EVIDENCE; thay đổi `system.go` upstream vẫn giữ CPU guard và hook iOS |
+| `IOS-FRONTEND-BUILD` | P015 | RECONCILED WITH TEST EVIDENCE; lockfile Bun upstream đạt frozen install 1.4.0 và build thật |
 | `IOS-HUB-BUILD-PIPELINE` | P015 | PRESERVED; embed frontend và hosted build đạt |
 | `IOS-INSTALLER-ARCH-DETECTION` | P016 | PRESERVED; installer checks đạt |
 | `IOS-INSTALLER-BOOTSTRAP-INTEGRITY` | P016 | PRESERVED; kiểm tra bootstrap ghim SHA đạt |
 | `IOS-INSTALLER-LIFECYCLE` | P016 | PRESERVED; 814 lifecycle checks đạt |
 | `IOS-INSTALLER-VALIDATION` | P017 | PRESERVED; bộ installer local và hosted đạt |
-| `IOS-PORT-DOCUMENTATION` | P017 | RECONCILED; README bản địa hóa được giữ khi xử lý xung đột |
+| `IOS-PORT-DOCUMENTATION` | P017 | RECONCILED WITH TEST EVIDENCE; README bản địa hóa được giữ khi xử lý xung đột |
 | `IOS-RELEASE-ISOLATION` | P016 | PRESERVED; loại trừ tag iOS khỏi workflow release/Docker còn nguyên |
 | `IOS-UPSTREAM-SYNC-CI` | P017 | PRESERVED; sync tests và patch sentinel đạt |
 
