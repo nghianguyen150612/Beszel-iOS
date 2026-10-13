@@ -17,7 +17,18 @@ không làm rơi lặng lẽ bản vá tương thích iOS nào.
 Không bao giờ biến `upstream/main` thành nhánh sản phẩm, và không bao giờ cập nhật `ios`
 bằng merge hay rebase không có người xem.
 
-## Baseline audit
+## Snapshot hiện tại: P001, 2026-10-13
+
+Baseline upstream v0.21.0 đã đóng băng được ghi trong
+[`upstream-v021-baseline.vi.md`](upstream-v021-baseline.vi.md). Tài liệu xác
+minh `origin/iOS` ở `a6b73365147fc8c3a820552a145d370418e5b680`, `origin/main` và
+`upstream/main` ở `bb23f99b3eeaced9608e11e280e7c986dba650be`, merge-base
+`f204dc17e64bba444478c60210d018e43a777193`, và chênh lệch 35 commit chỉ có ở
+iOS / 178 commit chỉ có ở upstream. P001 chỉ đóng băng baseline này; 178
+commit chưa được audit riêng từng commit. Audit tháng 9 bên dưới vẫn là bằng
+chứng lịch sử, không bị viết lại thành snapshot tháng 10.
+
+## Baseline audit tháng 9 năm 2026 (lịch sử)
 
 Đợt audit bảo trì bắt đầu từ commit đã kiểm thử `8fed846c`, với
 `HEAD == origin/iOS` và `beszel.Version == "0.19.0"`.
@@ -374,7 +385,11 @@ Tham chiếu kiểm thử cho các mục này vẫn là iPad mini 2 / `iPad4,4` 
 `A1489` / Apple A7 / iOS 12.5.7. Máy và iOS khác vẫn
 chưa thử.
 
-## Quyết định giai đoạn tiếp theo hiện tại
+## Quyết định giai đoạn tiếp theo tháng 9 năm 2026 (lịch sử)
+
+Quyết định này mô tả snapshot tháng 9 bên trên. Snapshot tháng 10 hiện được
+đóng băng và phạm vi P002 ghi trong
+[`upstream-v021-baseline.vi.md`](upstream-v021-baseline.vi.md).
 
 Không có bản ổn định bản gốc nào mới hơn `v0.19.0`, nên không cần
 tích hợp base ổn định và không tạo bản phát hành mới.
