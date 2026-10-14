@@ -140,6 +140,13 @@ func (pm *MonitorManager) runNow(task *monitorTask) *monitor.Result {
 	wg.Go(func() { task.refreshCert(pm.certCheck) })
 	result := task.runProbe(pm.probe)
 	wg.Wait()
+	// Cancellation can occur after the health probe, while certificate I/O
+	// is still running. Serialize this final publication with task cancellation.
+	task.runMu.Lock()
+	defer task.runMu.Unlock()
+	if task.ctx.Err() != nil {
+		return nil
+	}
 	if result != nil {
 		result.Cert = task.certInfo()
 	}
