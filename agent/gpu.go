@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -777,7 +778,12 @@ func isGpuSensorKey(key string) bool {
 }
 
 // NewGPUManager creates and initializes a new GPUManager
-func NewGPUManager() (*GPUManager, error) {
+func NewGPUManager() (*GPUManager, error) { return newGPUManagerForPlatform(runtime.GOOS) }
+
+func newGPUManagerForPlatform(goos string) (*GPUManager, error) {
+	if goos == "ios" {
+		return nil, errors.ErrUnsupported
+	}
 	if skipGPU, _ := utils.GetEnv("SKIP_GPU"); skipGPU == "true" {
 		slog.Info("SKIP_GPU enabled, skipping GPU monitoring (collectors, temperatures, and fans)")
 		return nil, nil

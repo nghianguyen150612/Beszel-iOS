@@ -1210,7 +1210,12 @@ func isNvmeControllerPath(path string) bool {
 }
 
 // NewSmartManager creates and initializes a new SmartManager
-func NewSmartManager() (*SmartManager, error) {
+func NewSmartManager() (*SmartManager, error) { return newSmartManagerForPlatform(runtime.GOOS) }
+
+func newSmartManagerForPlatform(goos string) (*SmartManager, error) {
+	if goos == "ios" {
+		return nil, errors.ErrUnsupported
+	}
 	sm := &SmartManager{
 		SmartDataMap: make(map[string]*smart.SmartData),
 	}
