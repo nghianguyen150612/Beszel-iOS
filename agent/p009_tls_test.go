@@ -101,6 +101,9 @@ func TestP009TLSCertificateMatrix(t *testing.T) {
 			u, _ := url.Parse(addr)
 			c := &WebSocketClient{hubURL: u, tlsConfig: cfg}
 			conn, _, err := gws.NewClient(&gws.BuiltinEventHandler{}, c.getOptions())
+			if conn != nil {
+				defer conn.NetConn().Close()
+			}
 			if kind == "expired" || kind == "hostname" || kind == "purpose" || kind == "unknown" {
 				require.Error(t, err)
 				require.Nil(t, conn)

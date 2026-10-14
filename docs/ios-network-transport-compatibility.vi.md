@@ -175,7 +175,9 @@ có một setup serialize và một shared client. Giữ ticker retry 10s, attem
 thiểu 5s; setup tổng 10s/TCP 5s; shutdown hủy chờ retry. Dừng ticker health/retry.
 Mỗi request có tối đa một message chờ, abandoned pending bị xóa. Stress fixture
 có 12 chu kỳ recovery mỗi lần lặp, 64 request đồng thời và 200 race response/hủy
-mỗi lần lặp. Không quan sát leak/race tồn tại dai dẳng trong phạm vi này. Đây là
+mỗi lần lặp. Assertion fatal của fixture nằm ngoài monitor lock; cleanup listener có hạn
+chờ và socket TLS được đăng ký cleanup cả khi test lỗi. Không quan sát leak/race
+tồn tại dai dẳng trong phạm vi này. Đây là
 giới hạn nguồn/test, không phải đo CPU/power/RAM/reconnect storm trên A7 thật.
 
 ## Native hosted và quyết định cổng

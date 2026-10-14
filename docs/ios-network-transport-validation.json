@@ -251,6 +251,12 @@
       "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws -run 'TestP009(WebSocketRepeated|ConcurrentOutOfOrder|TimeoutLate|RequestSend)' -count=10 -timeout=60s",
       "exit_code": 0,
       "log_sha256": "268624b087c98dfa573c7e2101782224b9721b9b3f70689883f8909c8de2af21"
+    },
+    {
+      "name": "review_failure_cleanup_race",
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP009(MonitorTransport|TLSCertificate)' -count=10 -timeout=90s",
+      "exit_code": 0,
+      "log_sha256": "abdc9ef739af2f5875ad58fda5409f0ec91ca5da7d10b8069d6605bde9ed5041"
     }
   ],
   "websocket_fault_matrix": [
@@ -955,7 +961,8 @@
     "SSH fixture fixed after concurrent canonical/race processes exposed leaked fixed ports; unauthorized-key assertion strengthened",
     "TLS rotation fixture corrected to send localhost SNI so httptest certificate fallback cannot mask GetCertificate",
     "All new environment fixtures restore state; NUL header is tested via parser because OS environment disallows NUL",
-    "GitHub CLI PR edit hit deprecated projectCards query; REST PATCH used with exact JSON body; no content lost"
+    "GitHub CLI PR edit hit deprecated projectCards query; REST PATCH used with exact JSON body; no content lost",
+    "Final review moved fatal monitor assertions outside locks, bounded SSH fixture cleanup and registered TLS socket cleanup before assertions. Superseded final-head native run 38561052520 was cancelled before native compilation; replacement final-head runs are recorded in PR #11."
   ],
   "latest_test_checkpoint_sha": "ed6d3c788d746c9fc249d531041e4178f72b77cf",
   "production_source_hashes": {

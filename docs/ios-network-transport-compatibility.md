@@ -200,8 +200,9 @@ and one shared SSH client per transport. WS retries retain the 10s ticker and
 cancels the retry delay. Health/retry tickers are stopped. Request cleanup retains
 at most one queued message per request and removes abandoned pending entries.
 The stress fixtures exercise 12 recovery cycles per repetition, 64 concurrent
-requests and 200 response/cancel races per repetition. No persistent leak or race
-was observed in these bounded tests. This is a source/test bound, not a physical
+requests and 200 response/cancel races per repetition. Fatal fixture assertions run outside monitor locks; listener cleanup is bounded
+and TLS sockets are registered for failure-path cleanup. No persistent leak or
+race was observed in these bounded tests. This is a source/test bound, not a physical
 A7 CPU, power, memory or reconnect-storm measurement.
 
 ## Hosted native evidence and gate

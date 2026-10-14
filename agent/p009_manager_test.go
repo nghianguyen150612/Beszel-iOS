@@ -129,7 +129,14 @@ func TestP009MonitorTransportConvergence(t *testing.T) {
 	server.AddHostKey(hostSigner)
 	served := make(chan struct{})
 	go func() { _ = h.a.serveSSHServer(server, ln); close(served) }()
-	t.Cleanup(func() { h.a.StopServer(); <-served })
+	t.Cleanup(func() {
+		h.a.StopServer()
+		select {
+		case <-served:
+		case <-time.After(2 * time.Second):
+			t.Error("SSH listener cleanup did not finish")
+		}
+	})
 	host, port, err := net.SplitHostPort(ln.Addr().String())
 	require.NoError(t, err)
 	tr := transport.NewSSHTransport(transport.SSHTransportConfig{Host: host, Port: port, Config: &ssh.ClientConfig{User: "u", ClientVersion: "SSH-2.0-beszel_0.21.0", Auth: []ssh.AuthMethod{ssh.PublicKeys(h.signer)}, HostKeyCallback: ssh.FixedHostKey(hostSigner.PublicKey()), Timeout: time.Second}})
@@ -141,8 +148,9 @@ func TestP009MonitorTransportConvergence(t *testing.T) {
 	require.NotNil(t, task)
 	syncConfig(tr, []monitor.Config{cfg})
 	h.a.monitorManager.mu.RLock()
-	require.Same(t, task, h.a.monitorManager.monitors[cfg.ID])
+	duplicateTask := h.a.monitorManager.monitors[cfg.ID]
 	h.a.monitorManager.mu.RUnlock()
+	require.Same(t, task, duplicateTask)
 	tr.Close()
 	syncConfig(tr, []monitor.Config{cfg})
 	wc, _ := h.connect(t)
@@ -151,13 +159,17 @@ func TestP009MonitorTransportConvergence(t *testing.T) {
 	cfg.Target = "updated"
 	syncConfig(wsTr, []monitor.Config{cfg})
 	h.a.monitorManager.mu.RLock()
-	require.Len(t, h.a.monitorManager.monitors, 1)
-	require.Equal(t, "updated", h.a.monitorManager.monitors[cfg.ID].config.Target)
+	count := len(h.a.monitorManager.monitors)
+	updatedTask := h.a.monitorManager.monitors[cfg.ID]
 	h.a.monitorManager.mu.RUnlock()
+	require.Equal(t, 1, count)
+	require.NotNil(t, updatedTask)
+	require.Equal(t, "updated", updatedTask.config.Target)
 	syncConfig(wsTr, nil)
 	h.a.monitorManager.mu.RLock()
-	require.Empty(t, h.a.monitorManager.monitors)
+	count = len(h.a.monitorManager.monitors)
 	h.a.monitorManager.mu.RUnlock()
+	require.Zero(t, count)
 	h.c.Close()
 	wc, _ = h.connect(t)
 	h.authenticate(t, wc)
