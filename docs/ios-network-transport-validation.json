@@ -1,0 +1,985 @@
+{
+  "milestone": "P009",
+  "status": "PASS_SOURCE_FIXTURE_NATIVE",
+  "starting_integration_sha": "212227f53d1e14ae164e0b5be77b88680b3566e0",
+  "production_source_candidate_sha": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba",
+  "branch": "ios/network-transport-compatibility",
+  "base": "ios/upstream-v021-integration",
+  "pr": {
+    "number": 11,
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/11",
+    "state": "DRAFT_PENDING_FINAL_HEAD_CHECKS"
+  },
+  "protected_baselines": {
+    "iOS": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "main": "bb23f99b3eeaced9608e11e280e7c986dba650be"
+  },
+  "toolchain": {
+    "go": "go1.27.1 linux/amd64",
+    "bun": "1.4.0",
+    "native_target": {
+      "GOOS": "ios",
+      "GOARCH": "arm64",
+      "GOARM64": "v8.0",
+      "CGO_ENABLED": "1",
+      "minimum_ios": "12.0"
+    }
+  },
+  "preservation": {
+    "starting_integration": "212227f53d1e14ae164e0b5be77b88680b3566e0",
+    "candidate": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba",
+    "upstream_total": 178,
+    "upstream_reachable": 178,
+    "upstream_commit_set_sha256": "065b39101ae64dfb4f18ec8564dbb0dc0a222d6c903374da0a926466f4044826",
+    "logical_patches": [
+      "IOS-A7-RUNTIME",
+      "IOS-AGENT-BATTERY",
+      "IOS-AGENT-BUILD-PROBE",
+      "IOS-AGENT-SYSTEM-HOOK",
+      "IOS-FRONTEND-BUILD",
+      "IOS-HUB-BUILD-PIPELINE",
+      "IOS-INSTALLER-ARCH-DETECTION",
+      "IOS-INSTALLER-BOOTSTRAP-INTEGRITY",
+      "IOS-INSTALLER-LIFECYCLE",
+      "IOS-INSTALLER-VALIDATION",
+      "IOS-PORT-DOCUMENTATION",
+      "IOS-RELEASE-ISOLATION",
+      "IOS-UPSTREAM-SYNC-CI"
+    ],
+    "logical_patch_count": 13,
+    "prior_docs_unchanged": true,
+    "prior_document_count": 45,
+    "prior_documents_byte_unchanged": true,
+    "unchanged_prior_document_count": 45
+  },
+  "architecture": {
+    "agent": "Existing WS-preferred manager, SSH fallback and connection-level SSH session count preserved",
+    "hub": "One SSH owner per system; captured-client cancellation; per-WS request manager",
+    "authentication": "Hub signature over token, configured public keys, fingerprint response before readiness, per-connection authorization",
+    "version_thresholds": {
+      "MinVersionCbor": "0.12.0",
+      "MinVersionAgentResponse": "0.13.0",
+      "MinVersionNetworkMonitors": "0.20.0"
+    }
+  },
+  "reproduced_regressions": [
+    {
+      "log": "reproduced-defects.log",
+      "sha256": "16e3e57c5701ac7d8d7b0497f69668279bbd1dbc1ca942fc7b69c86e4c06752d"
+    },
+    {
+      "log": "reproduced-ssh-close.log",
+      "sha256": "64a6e559c6dafe4cbb54b65338aac90e4b31bc450efa6df711298743741a3c8d"
+    },
+    {
+      "log": "reproduced-fingerprint-send.log",
+      "sha256": "245bff48a6f9405f6736ef598a721857fffd9dd0448351b62b744bd2b0568dc7"
+    },
+    {
+      "log": "reproduced-queued-connect.log",
+      "sha256": "87951e089d5f62f7b838cd70e532f3de776566ba1449eb0825e9cd467805c9d9"
+    }
+  ],
+  "repairs": [
+    "Preserve WSS and validate endpoint scheme",
+    "Nonblocking coalesced WS callbacks; no event-loop dial blocking",
+    "Cancellable bounded setup/retry/queued setup; stopped tickers and joined manager attempts",
+    "Fingerprint send and identity check before readiness",
+    "Carrying-connection authentication; ignore old auth/close",
+    "Atomic response claim, nonblocking delivery, abandoned message cleanup and terminal request-manager close",
+    "Serialize legacy no-ID requests and retire connection on abandonment",
+    "Serialize/cancel unpublished SSH setup while preserving captured-client cleanup",
+    "Reject header controls before trim and bound configuration at 64 KiB",
+    "Repair leaking fixed-port SSH fixture without weakening key rejection"
+  ],
+  "local_checks": [
+    {
+      "name": "matrix",
+      "command": "python3 scripts/audit/validate-upstream-v021-matrix.py",
+      "started": "2026-10-14T11:48:34.125529+00:00",
+      "exit_code": 0,
+      "log_sha256": "46667426fb1e020f6530ec66ab2f201b438edc255b8a2287f63294eb02729ad5"
+    },
+    {
+      "name": "readiness",
+      "command": "python3 scripts/audit/validate-upstream-v021-readiness.py",
+      "started": "2026-10-14T11:48:34.407118+00:00",
+      "exit_code": 0,
+      "log_sha256": "9d153cd76ea6080ba376b102d2fd52c172c5a450e412b428f57b3248cccf9e12"
+    },
+    {
+      "name": "audit",
+      "command": "python3 -m unittest discover -s tests/audit -p 'test_*.py' -v",
+      "started": "2026-10-14T11:48:34.585788+00:00",
+      "exit_code": 0,
+      "log_sha256": "15a17fb1ebf2f9c31d855bbc6a66bf52c3a9052e3ff70faff47d405a7d1f9c51"
+    },
+    {
+      "name": "sync",
+      "command": "sh tests/upstream-sync-test.sh",
+      "started": "2026-10-14T11:48:42.115177+00:00",
+      "exit_code": 0,
+      "log_sha256": "95aad086addce56f54ee0443f59f9aa1725ee12a708f47a68b50c2ab52b51a13"
+    },
+    {
+      "name": "sentinels",
+      "command": "sh tests/ios-patch-sentinels.sh",
+      "started": "2026-10-14T11:48:42.464632+00:00",
+      "exit_code": 0,
+      "log_sha256": "2445c4b2035b0743cb67f6a93ba9bfa3724f9b418dcede49d6da9455fa5645b5"
+    },
+    {
+      "name": "bootstrap",
+      "command": "sh tests/bootstrap-test.sh",
+      "started": "2026-10-14T11:48:42.616587+00:00",
+      "exit_code": 0,
+      "log_sha256": "178e2737b3f9bdc44fbff924393ab58d17ec7eb3db8f7647fd6c9360ee563abb"
+    },
+    {
+      "name": "installer",
+      "command": "sh tests/install-sh-test.sh",
+      "started": "2026-10-14T11:48:42.993614+00:00",
+      "exit_code": 0,
+      "log_sha256": "a8155b91f57824dd9a768c1afedbd2cea807dfb748224f53caeed9d44183a099"
+    },
+    {
+      "name": "diff",
+      "command": "git diff --check",
+      "started": "2026-10-14T11:49:16.211190+00:00",
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "canonical_go",
+      "command": "env -u NETWORK go test -tags 'testing no_ui' ./...",
+      "exit_code": 0,
+      "log_file": "go-candidate.log",
+      "log_sha256": "ccad5e7f9c2aa6a86da9eaf9fcff41eb6afd9d81124404672b1740ee361109c3"
+    },
+    {
+      "name": "transport_race",
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems",
+      "exit_code": 0,
+      "log_file": "race-candidate.log",
+      "log_sha256": "5dbe09fe4817505e79b62fd799c3b3da8ea1c5b51dd9adaaf4f540ec3a494f68"
+    },
+    {
+      "name": "repeated_fault_race",
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport -run TestP009 -count=10 -timeout=240s",
+      "exit_code": 0,
+      "log_file": "faults-final-repeat.log",
+      "log_sha256": "e93e19eb670a71c2c500b694c1d55def0ab08fc15bcfad4d48f1134ae2cbc914"
+    },
+    {
+      "name": "queued_connect_and_fixture_race",
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'Test(P009QueuedConnect|StartServer)' -count=10 -timeout=90s",
+      "exit_code": 0,
+      "log_file": "final-repairs-race.log",
+      "log_sha256": "9a2c4eabec1b8ebb08b69d68ccb20cd2b50d3bc2c44658753d6d105455ad220b"
+    },
+    {
+      "name": "source_selection",
+      "command": "python3 .github/scripts/check-ios-source-selection.py --output source-selection.json",
+      "exit_code": 0,
+      "log_file": "source-selection.log",
+      "log_sha256": "7868572e52b892385a2a92f2bbb815ee5eeb0ef089c093d359a858342a02bd8c"
+    },
+    {
+      "name": "linux_builds",
+      "command": "go build -trimpath -o beszel-agent ./internal/cmd/agent; go build -trimpath -o beszel-hub ./internal/cmd/hub",
+      "exit_code": 0,
+      "log_file": "linux-build-final.log",
+      "log_sha256": "db501c99102acb33677ee0465f35a0d73dd92c6dedc4e51d06d35ffef25baa02"
+    },
+    {
+      "name": "frontend_install",
+      "command": "bun install --frozen-lockfile",
+      "exit_code": 0,
+      "log_file": "frontend-install.log",
+      "log_sha256": "251d5bef176103c20809326edf2c6765cfbe63e92343cb5b84a793f0b72bedfa"
+    },
+    {
+      "name": "frontend_catalogs",
+      "command": "bun run sync",
+      "exit_code": 0,
+      "log_file": "frontend-sync.log",
+      "log_sha256": "3422f0af63c24197ec524a09d05a39df31bc64ad5437370311c35b6c85a97e87"
+    },
+    {
+      "name": "frontend_tests",
+      "command": "bun test",
+      "exit_code": 0,
+      "log_file": "frontend-test.log",
+      "log_sha256": "8206a01fe5fd6452e4025259cfa9aaa89431e3dc10311ecdfb662178ec1200f8"
+    },
+    {
+      "name": "frontend_build",
+      "command": "bun run build",
+      "exit_code": 0,
+      "log_file": "frontend-build.log",
+      "log_sha256": "9c50b8af1a5e04258bd8119fbfb4bae2f0c86c0e4132f75463f4bbfe2722c744"
+    },
+    {
+      "name": "current_agent_current_hub_transport",
+      "command": "go run ./scripts/audit/transport-agent-smoke --agent <current-agent> --version 0.21.0",
+      "exit_code": 0,
+      "log_file": "current-binary-integration.log",
+      "log_sha256": "d6b2896f4d38d610f79d0e807042870a9678e9b24417e8890165a94891385090"
+    },
+    {
+      "name": "historical_agent_current_hub_transport",
+      "command": "go run ./scripts/audit/transport-agent-smoke --agent <historical-agent> --version 0.19.0",
+      "exit_code": 0,
+      "log_file": "historical-019-integration.log",
+      "log_sha256": "899aad4944d489509a0aee8bf027c37980f6318214eb12cfcbe345cdb3012778"
+    },
+    {
+      "name": "current_agent_historical_hub_transport",
+      "command": "(historical worktree) go run ./scripts/audit/transport-agent-smoke --agent <current-agent> --version 0.21.0",
+      "exit_code": 0,
+      "log_file": "new-agent-old-hub-transports-final.log",
+      "log_sha256": "f2d63b705e38e9d540e1facd07205b779b9a720c21cef5a2f284fafa44c39189"
+    },
+    {
+      "name": "routing_isolation_race",
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws -run 'TestP009(WebSocketAuth|NoCrossConnection)' -count=20 -timeout=60s",
+      "exit_code": 0,
+      "log_sha256": "4fc19b308ea70fc93ed4ec6b8793f45fb4d8c650dbb907ea317a4188a4562f30"
+    },
+    {
+      "name": "negative_protocol_race",
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws -run 'TestP009(WebSocketRepeated|ConcurrentOutOfOrder|TimeoutLate|RequestSend)' -count=10 -timeout=60s",
+      "exit_code": 0,
+      "log_sha256": "268624b087c98dfa573c7e2101782224b9721b9b3f70689883f8909c8de2af21"
+    },
+    {
+      "name": "review_failure_cleanup_race",
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP009(MonitorTransport|TLSCertificate)' -count=10 -timeout=90s",
+      "exit_code": 0,
+      "log_sha256": "abdc9ef739af2f5875ad58fda5409f0ec91ca5da7d10b8069d6605bde9ed5041"
+    }
+  ],
+  "websocket_fault_matrix": [
+    {
+      "scenario": "connection_refused",
+      "tests": "TestP009DialFaults/refused",
+      "evidence_level": "synthetic dial-boundary error",
+      "result": "PASS"
+    },
+    {
+      "scenario": "dns_failure",
+      "tests": "TestP009DialFaults/dns",
+      "evidence_level": "synthetic net.DNSError; no Internet resolver",
+      "result": "PASS"
+    },
+    {
+      "scenario": "tcp_timeout",
+      "tests": "TestP009DialFaults/connect-timeout",
+      "evidence_level": "synthetic dial-boundary timeout; production TCP bounded at 5s",
+      "result": "PASS"
+    },
+    {
+      "scenario": "upgrade_rejection",
+      "tests": "TestP009WebSocketRepeatedRecoveryAndFreshData",
+      "evidence_level": "real loopback 503",
+      "result": "PASS"
+    },
+    {
+      "scenario": "upgrade_then_immediate_close",
+      "tests": "TestP009ManagerRetriesAsynchronousFailure",
+      "evidence_level": "real loopback close before auth; production 10s retry",
+      "result": "PASS"
+    },
+    {
+      "scenario": "challenge_never_arrives",
+      "tests": "TestP009ChallengeSilenceExpires",
+      "evidence_level": "real loopback deadline reduced after ping/pong synchronization",
+      "result": "PASS"
+    },
+    {
+      "scenario": "invalid_signature",
+      "tests": "TestP009WebSocketAuthAndFaultRecovery",
+      "evidence_level": "real production verification and disconnect",
+      "result": "PASS"
+    },
+    {
+      "scenario": "malformed_cbor",
+      "tests": "TestP009WebSocketAuthAndFaultRecovery",
+      "evidence_level": "real binary frame",
+      "result": "PASS"
+    },
+    {
+      "scenario": "unexpected_text",
+      "tests": "TestP009WebSocketAuthAndFaultRecovery",
+      "evidence_level": "real text frame",
+      "result": "PASS"
+    },
+    {
+      "scenario": "broken_pipe",
+      "tests": "TestP009AuthenticationWaitsForFingerprintSend",
+      "evidence_level": "closed real socket, failed send cannot authorize",
+      "result": "PASS"
+    },
+    {
+      "scenario": "idle_timeout",
+      "tests": "TestP009ChallengeSilenceExpires",
+      "evidence_level": "real deadline and subsequent recovery",
+      "result": "PASS"
+    },
+    {
+      "scenario": "slow_collection",
+      "tests": "TestFetchDataTimeoutKeepsWebSocketOpen;TestSlowAgentKeepsConnectionAcrossPolls",
+      "evidence_level": "existing production Hub transport/poll fixtures; assertions unchanged",
+      "result": "PASS"
+    },
+    {
+      "scenario": "repeated_disconnection",
+      "tests": "TestP009WebSocketRepeatedRecoveryAndFreshData",
+      "evidence_level": "12 recovery cycles per repetition",
+      "result": "PASS"
+    },
+    {
+      "scenario": "network_recovery",
+      "tests": "TestP009WebSocketRepeatedRecoveryAndFreshData",
+      "evidence_level": "real loopback close/reject then authenticated replacement and fresh synthetic counters",
+      "result": "PASS"
+    },
+    {
+      "scenario": "concurrent_connect_disconnect",
+      "tests": "TestP009ConcurrentConnectClose",
+      "evidence_level": "10 concurrent setup/close pairs and recovery",
+      "result": "PASS"
+    },
+    {
+      "scenario": "old_close_after_replacement",
+      "tests": "TestP009WebSocketAuthAndFaultRecovery;TestWebSocketClient_IgnoresStaleClose",
+      "evidence_level": "current owner remains authenticated",
+      "result": "PASS"
+    },
+    {
+      "scenario": "failed_attempts_then_success",
+      "tests": "TestP009WebSocketRepeatedRecoveryAndFreshData;TestP009ManagerRetriesAsynchronousFailure",
+      "evidence_level": "real rejections, production retry and success",
+      "result": "PASS"
+    },
+    {
+      "scenario": "shutdown_during_setup",
+      "tests": "TestP009ManagerShutdownDuringSetup;TestP009ShutdownDuringWebSocketUpgrade;TestP009QueuedConnectCancellation",
+      "evidence_level": "bounded cancellation and joined attempts",
+      "result": "PASS"
+    }
+  ],
+  "ssh": {
+    "result": "PASS",
+    "coverage": [
+      "TCP failure",
+      "silent banner and bounded handshake",
+      "invalid pinned host key and correct key",
+      "unauthorized and authorized Agent public keys",
+      "session creation timeout",
+      "blocked shell/write/read/exit",
+      "context cancellation",
+      "concurrent sessions",
+      "shared connection cancellation and predictable peer-session failure",
+      "reconnection",
+      "late old-client cleanup after replacement",
+      "Close during setup",
+      "Agent shutdown",
+      "SSH to authenticated WS takeover",
+      "listener stop/restart",
+      "version extraction before publication"
+    ],
+    "upstream_host_key_policy": "Hub createSSHClientConfig uses ssh.InsecureIgnoreHostKey and Agent auto-generates host keys. Unchanged upstream policy; strict supplied HostKeyCallback is tested. Production host-key pinning is not claimed."
+  },
+  "tls": {
+    "result": "PASS generated loopback trust/rejection fixtures",
+    "verification_default_on": true,
+    "custom_ca_extends_system_roots": true,
+    "monitor_skip_tls_isolated": true,
+    "tested": [
+      "private CA",
+      "multiple CAs",
+      "valid IP identity",
+      "valid DNS identity",
+      "invalid PEM",
+      "empty/missing/unreadable CA file",
+      "expired certificate",
+      "unknown issuer",
+      "hostname mismatch",
+      "wrong EKU",
+      "rotation",
+      "trust correction",
+      "unavailable/nil system roots fail closed",
+      "WSS retained",
+      "unsupported scheme rejected"
+    ],
+    "source_only": [
+      "publicly issued default system trust delegated to Go; no live Internet certificate used",
+      "Darwin-family x509/Security framework selection on iOS"
+    ],
+    "device_deferred": [
+      "actual iOS 12 CLI system roots and Security API availability",
+      "CA file permissions and private/public trust behavior on jailbroken device"
+    ]
+  },
+  "headers_and_tokens": {
+    "result": "PASS",
+    "reserved": [
+      "X-Token",
+      "X-Beszel"
+    ],
+    "header_limit_bytes": 65536,
+    "preserved_separators": [
+      "comma",
+      "CR",
+      "LF"
+    ],
+    "tested": [
+      "single/multiple/repeated/case-normalized headers",
+      "empty values",
+      "colons in values",
+      "missing colon",
+      "invalid name",
+      "CR/LF separated entries",
+      "control rejection before trim",
+      "oversized input",
+      "repeated reserved override",
+      "sanitized errors",
+      "TOKEN precedence",
+      "single TOKEN_FILE token with blank/comments",
+      "multiple-token rejection",
+      "valid/invalid/missing token",
+      "correct/wrong/stale signatures"
+    ],
+    "empty_token_file": "upstream empty result retained; Hub rejects missing required token"
+  },
+  "requests": {
+    "result": "PASS",
+    "max_concurrency_tested": 64,
+    "response_cancel_races_per_iteration": 200,
+    "modern": "ID based, late responses released without retiring healthy peer",
+    "legacy": "one in-flight request; close after timeout/cancel to avoid misrouting late ID-less reply",
+    "pending_cleanup": "maps return to zero; cancellation drains queued pooled messages",
+    "cross_system": "equal IDs on distinct real WS connections cannot cross-route"
+  },
+  "keepalive": {
+    "result": "PASS existing scaled production tests",
+    "hub_request_seconds": 30,
+    "hub_connection_seconds": 100,
+    "agent_connection_seconds": 120,
+    "stale_peer_seconds": 180,
+    "production_timing_constants_unchanged": true,
+    "fresh_struct_decode_regression": true
+  },
+  "monitor_sync": {
+    "result": "PASS",
+    "coverage": [
+      "initial",
+      "updated",
+      "deleted/disabled",
+      "empty",
+      "failed first sync and retry",
+      "SSH reconnect",
+      "WS reconnect",
+      "SSH to WS",
+      "duplicate task identity retained",
+      "empty set after another recovery"
+    ],
+    "native_probes": "Not implemented or expanded; P010"
+  },
+  "compatibility_pairings": [
+    {
+      "scenario_id": "COMP-PAIR-001",
+      "category": "Agent/Hub pair",
+      "agent_version_platform": "0.19.0 iOS arm64 (A7)",
+      "hub_version_platform": "0.19.0 iOS arm64 (A7)",
+      "required_capability": "Legacy stats over WebSocket and SSH fallback",
+      "expected_behavior": "Historical 0.19 pair reports telemetry and Hub health; use only as historical baseline.",
+      "protocol_api_dependency": "0.19 WebSocket/SSH + CBOR/legacy responses",
+      "minimum_supported_version_if_established": "Historical implementation; source thresholds in 0.21 are >=0.12.0 CBOR and >=0.13.0 AgentResponse.",
+      "required_test": "HIST-019-001",
+      "test_fixture_environment": "iPad mini 2 A1489/iPad4,4, iOS 12.5.7, Amethyst/Procursus",
+      "evidence_currently_available": "P002 device-validation and ios-port-status records; not a 0.21 result.",
+      "result": "historically validated",
+      "owning_prompt": "P017",
+      "blocking_condition": "No 0.21 upgrade approval derives from this record.",
+      "p009_evidence_level": "historical reference retained",
+      "p009_result": "Existing 0.19 physical evidence only; not rerun",
+      "canonical_p003_result_unchanged": "historically validated"
+    },
+    {
+      "scenario_id": "COMP-PAIR-002",
+      "category": "Agent/Hub pair",
+      "agent_version_platform": "0.19.0 iOS arm64 (A7)",
+      "hub_version_platform": "0.21.0 upstream Hub target on supported Hub host",
+      "required_capability": "Legacy stats; old Agent network-monitor behavior",
+      "expected_behavior": "Base stats should continue through legacy-compatible response path; Hub must skip monitor sync because Agent <0.20.0.",
+      "protocol_api_dependency": "Hub version parsing; AgentResponse/CBOR; MinVersionNetworkMonitors guard",
+      "minimum_supported_version_if_established": "Stats path thresholds >=0.12.0 CBOR / >=0.13.0 AgentResponse; monitor sync >=0.20.0 only.",
+      "required_test": "PROTO-VERSION-01; PROTO-MON-01",
+      "test_fixture_environment": "Disposable 0.19 Agent + upstream Hub build; network-monitor fixture; no production DB",
+      "evidence_currently_available": "Source: upstream/main beszel.go, internal/hub/systems/network_monitors.go, Agent/Hub response handlers; pair not run.",
+      "result": "planned",
+      "owning_prompt": "P009",
+      "blocking_condition": "Requires P004–P006 integration and P017 protocol pair tests.",
+      "p009_evidence_level": "real portable local integration",
+      "p009_result": "Product-commit 0.19 Linux Agent binary to current Hub WS/SSH transports; exact iOS pair deferred P017/P018",
+      "canonical_p003_result_unchanged": "planned"
+    },
+    {
+      "scenario_id": "COMP-PAIR-003",
+      "category": "Agent/Hub pair",
+      "agent_version_platform": "0.21.0 iOS arm64 (A7), not yet implemented",
+      "hub_version_platform": "Existing 0.19.0 iOS Hub",
+      "required_capability": "Stats and legacy Hub response compatibility",
+      "expected_behavior": "New Agent must negotiate legacy Hub behavior, send one compatible payload, and avoid unsupported monitor operations.",
+      "protocol_api_dependency": "Version negotiation; SSH/WS; legacy payload framing; CBOR/JSON",
+      "minimum_supported_version_if_established": "No end-to-end minimum established; protocol code has 0.12/0.13 thresholds.",
+      "required_test": "PROTO-VERSION-01; PROTO-LEGACY-01",
+      "test_fixture_environment": "Disposable 0.19 Hub + candidate 0.21 Agent, synthetic data only",
+      "evidence_currently_available": "Upstream Agent server version branches and P0 36c14e9 contract; candidate binary absent.",
+      "result": "planned",
+      "owning_prompt": "P009",
+      "blocking_condition": "Requires P007/P009 Agent build and P017 exact pair test.",
+      "p009_evidence_level": "real portable local integration",
+      "p009_result": "Current Linux Agent binary to unchanged product-commit 0.19 Hub WS/SSH transport source; exact iOS pair deferred P017/P018",
+      "canonical_p003_result_unchanged": "planned"
+    },
+    {
+      "scenario_id": "COMP-PAIR-004",
+      "category": "Agent/Hub pair",
+      "agent_version_platform": "0.21.0 iOS arm64 (A7), not yet implemented",
+      "hub_version_platform": "0.21.0 iOS arm64 Hub, not yet implemented",
+      "required_capability": "Full local telemetry, monitors, alerts, auth and API",
+      "expected_behavior": "Both binaries start; local supported metrics work; Hub schema/auth and UI behavior pass; unsupported metrics remain absent.",
+      "protocol_api_dependency": "WebSocket/SSH; CBOR/JSON v2; PocketBase; monitor API/migrations",
+      "minimum_supported_version_if_established": "Monitor sync requires Agent >=0.20.0; other exact pair minimum requires validation.",
+      "required_test": "A7-AGENT-01; A7-HUB-01; DB-MIG-01",
+      "test_fixture_environment": "Candidate binaries, disposable DB, then physical A7 at P018",
+      "evidence_currently_available": "Source only; 0.21 iOS binaries do not exist at P003.",
+      "result": "planned",
+      "owning_prompt": "P018",
+      "blocking_condition": "Blocked until P007–P017 gates and safe disposable migration/restore pass.",
+      "p009_evidence_level": "real portable local integration; native iOS binaries compiled and independently verified",
+      "p009_result": "Current Linux Agent and Hub transports; physical iOS pair deferred P013/P017/P018",
+      "canonical_p003_result_unchanged": "planned"
+    },
+    {
+      "scenario_id": "COMP-PAIR-005",
+      "category": "Agent/Hub pair",
+      "agent_version_platform": "0.21.0 Linux arm64/amd64",
+      "hub_version_platform": "0.21.0 iOS Hub, not yet implemented",
+      "required_capability": "Remote Linux metrics and supported Linux collectors",
+      "expected_behavior": "iOS Hub accepts and displays remote Linux telemetry; unsupported local iOS collectors do not remove Hub-side fields.",
+      "protocol_api_dependency": "WebSocket/SSH; CBOR; Hub entities, history, frontend",
+      "minimum_supported_version_if_established": "Network monitor Agent threshold >=0.20.0.",
+      "required_test": "REMOTE-OS-01",
+      "test_fixture_environment": "Disposable Linux Agent fixture connected to candidate iOS Hub build",
+      "evidence_currently_available": "Upstream shared entity/Hub source; iOS candidate absent.",
+      "result": "planned",
+      "owning_prompt": "P014",
+      "blocking_condition": "Requires candidate Hub/API/frontend and P017 remote-OS fixtures.",
+      "p009_evidence_level": "real Linux transport integration",
+      "p009_result": "Exact native iOS Hub API/history/UI remains P014/P017/P018",
+      "canonical_p003_result_unchanged": "planned"
+    },
+    {
+      "scenario_id": "COMP-PAIR-006",
+      "category": "Agent/Hub pair",
+      "agent_version_platform": "0.21.0 Windows amd64",
+      "hub_version_platform": "0.21.0 iOS Hub, not yet implemented",
+      "required_capability": "Remote Windows metrics and supported Windows collectors",
+      "expected_behavior": "iOS Hub accepts and displays supported Windows telemetry without assuming iOS collectors exist on the remote Agent.",
+      "protocol_api_dependency": "WebSocket/SSH; CBOR/JSON; Hub entities/API/frontend",
+      "minimum_supported_version_if_established": "Network monitor Agent threshold >=0.20.0.",
+      "required_test": "REMOTE-OS-01",
+      "test_fixture_environment": "Disposable Windows Agent fixture connected to candidate iOS Hub build",
+      "evidence_currently_available": "Upstream shared entity/Hub source; iOS candidate absent.",
+      "result": "planned",
+      "owning_prompt": "P014",
+      "blocking_condition": "Requires candidate Hub/API/frontend and P017 remote-OS fixtures.",
+      "p009_evidence_level": "source review; Windows transport tests cross-compiled",
+      "p009_result": "No Windows execution; complete Agent binary blocked by missing generated LHM assets; P014/P017/P018",
+      "canonical_p003_result_unchanged": "planned"
+    },
+    {
+      "scenario_id": "COMP-PAIR-007",
+      "category": "Agent/Hub pair",
+      "agent_version_platform": "0.21.0 macOS arm64/amd64",
+      "hub_version_platform": "0.21.0 iOS Hub, not yet implemented",
+      "required_capability": "Remote macOS metrics, battery/Wi-Fi where supported",
+      "expected_behavior": "iOS Hub accepts macOS telemetry; macOS JXA/osascript Wi-Fi applies to macOS only and is not an iOS collector.",
+      "protocol_api_dependency": "WebSocket/SSH; CBOR/JSON; Hub entities/API/frontend",
+      "minimum_supported_version_if_established": "Network monitor Agent threshold >=0.20.0.",
+      "required_test": "REMOTE-OS-01; IOS-WIFI-01",
+      "test_fixture_environment": "Disposable macOS Agent fixture plus candidate iOS Hub; no physical iOS substitution",
+      "evidence_currently_available": "upstream/main agent/wifi/wifi_darwin.go invokes /usr/bin/osascript; iOS candidate absent.",
+      "result": "planned",
+      "owning_prompt": "P014",
+      "blocking_condition": "Requires candidate Hub and P017 cross-platform fixtures; iOS RSSI remains separately owned by P012.",
+      "p009_evidence_level": "source review; hosted macOS transport/race tests and Agent/Hub builds PASS",
+      "p009_result": "Exact remote macOS to physical iOS Hub remains P014/P017/P018",
+      "canonical_p003_result_unchanged": "planned"
+    },
+    {
+      "scenario_id": "COMP-PAIR-008",
+      "category": "Agent/Hub pair",
+      "agent_version_platform": "Older supported Linux/Windows/macOS Agents, versions to enumerate in P017",
+      "hub_version_platform": "0.21.0 iOS Hub, not yet implemented",
+      "required_capability": "Backward-compatible stats and auth",
+      "expected_behavior": "Hub retains supported legacy stats paths; monitor operations are skipped where source version guard requires it.",
+      "protocol_api_dependency": "Version parsing; MinVersionAgentResponse; MinVersionCbor; MinVersionNetworkMonitors",
+      "minimum_supported_version_if_established": "AgentResponse >=0.13.0 and CBOR >=0.12.0 source branches; monitor sync >=0.20.0.",
+      "required_test": "PROTO-VERSION-01; PROTO-MON-01; REMOTE-OS-01",
+      "test_fixture_environment": "Version-pinned Agent matrix on disposable Hub; include unknown/malformed version negative cases",
+      "evidence_currently_available": "Upstream source guards only; full matrix not run.",
+      "result": "planned",
+      "owning_prompt": "P009",
+      "blocking_condition": "P017 must define exact lowest supported pair and test it; no guarantee inferred from constants alone.",
+      "p009_evidence_level": "synthetic protocol fixtures",
+      "p009_result": "Legacy JSON/CBOR/typed/no-ID/unknown version branches; exact oldest supported versions remain P017",
+      "canonical_p003_result_unchanged": "planned"
+    }
+  ],
+  "real_binary_integrations": {
+    "historical_source_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "historical_binary_vcs_modified": false,
+    "current_binary_source_sha": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba",
+    "current_binary_vcs_modified": false,
+    "historical_agent_current_hub_transports": [
+      {
+        "transport": "websocket",
+        "agent_version": "0.19.0",
+        "sample_received_utc": [
+          "2026-10-14T11:42:23.572593115Z",
+          "2026-10-14T11:42:23.573417532Z"
+        ],
+        "os": 0,
+        "uptime": 13250
+      },
+      {
+        "transport": "ssh",
+        "agent_version": "0.19.0",
+        "sample_received_utc": [
+          "2026-10-14T11:42:23.654482179Z",
+          "2026-10-14T11:42:23.65559476Z"
+        ],
+        "os": 0,
+        "uptime": 13250
+      }
+    ],
+    "current_agent_historical_hub_transports": [
+      {
+        "transport": "websocket",
+        "agent_version": "0.21.0",
+        "sample_received_utc": [
+          "2026-10-14T11:49:24.121062147Z",
+          "2026-10-14T11:49:24.122785819Z"
+        ],
+        "os": 0,
+        "uptime": 13670
+      },
+      {
+        "transport": "ssh",
+        "agent_version": "0.21.0",
+        "sample_received_utc": [
+          "2026-10-14T11:49:24.288270903Z",
+          "2026-10-14T11:49:24.290056798Z"
+        ],
+        "os": 0,
+        "uptime": 13670
+      }
+    ],
+    "current_agent_current_hub_transports": [
+      {
+        "transport": "websocket",
+        "agent_version": "0.21.0",
+        "sample_received_utc": [
+          "2026-10-14T11:48:14.51051881Z",
+          "2026-10-14T11:48:14.511492637Z"
+        ],
+        "os": 0,
+        "uptime": 13601
+      },
+      {
+        "transport": "ssh",
+        "agent_version": "0.21.0",
+        "sample_received_utc": [
+          "2026-10-14T11:48:14.590434436Z",
+          "2026-10-14T11:48:14.591414458Z"
+        ],
+        "os": 0,
+        "uptime": 13601
+      }
+    ],
+    "scope": "Linux Agent processes and real Hub transport packages; no full native iOS Hub/API/DB claim",
+    "subprocess_fixture_host_key": "First ephemeral loopback host key pinned for the disposable process only"
+  },
+  "frontend": {
+    "bun": "1.4.0",
+    "tests_passed": 44,
+    "tests_failed": 0,
+    "expect_calls": 151,
+    "assets": 95,
+    "bun_lock_sha256": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa",
+    "lock_unchanged_from_start": true,
+    "dist": "genuine bun run build; no fabricated assets"
+  },
+  "linux_binaries": {
+    "beszel-hub": {
+      "sha256": "99928834287ea23a2380463cf743637b4ef48a5b83c11e0952449dbf1a4de674",
+      "bytes": 46155252
+    },
+    "beszel-agent": {
+      "sha256": "64b206b67888e54e7002f1484efaef3bc178d51048076ba3d884f1f0ecca7b81",
+      "bytes": 15794673
+    },
+    "beszel-agent-019": {
+      "sha256": "ae7a3ca7d4f70ddb89b591af13056f594d56dc4f9c8ea9e0fcd35405e2b05b08",
+      "bytes": 14830965
+    }
+  },
+  "windows": {
+    "transport_test_cross_compile": "PASS SSH and WS, GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
+    "binary_execution": "NOT RUN",
+    "complete_agent_build": "BLOCKED preexisting missing generated agent/lhm/bin/Release/net48",
+    "build_log_sha256": "e8c346b963816533987e0ba03dff4cb2c8b6691b1e81232d207bdf13b3154c79"
+  },
+  "resource_bounds": {
+    "manager_attempts": 1,
+    "active_ws_owners": 1,
+    "ssh_setups_per_transport": 1,
+    "shared_ssh_clients_per_transport": 1,
+    "ws_retry_ticker_seconds": 10,
+    "minimum_attempt_interval_seconds": 5,
+    "tcp_setup_seconds": 5,
+    "ws_setup_total_seconds": 10,
+    "queued_response_capacity_per_request": 1,
+    "recovery_cycles_per_test_repetition": 12,
+    "physical_a7_cpu_ram_power_measurements": null,
+    "finding": "No persistent leak/race observed in bounded tests; not proof of all long-running network storms"
+  },
+  "hosted_ci": [
+    {
+      "workflow": "iOS Build",
+      "run_id": 38559144606,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38559144606",
+      "head_sha": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba",
+      "conclusion": "success",
+      "release_job": "skipped"
+    },
+    {
+      "workflow": "iOS installer lifecycle",
+      "run_id": 38559149068,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38559149068",
+      "head_sha": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba",
+      "conclusion": "success"
+    }
+  ],
+  "native_artifacts": {
+    "status": "PASS",
+    "tested_source_sha": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba",
+    "downloaded_upload_digests_verified": true,
+    "github_artifacts": [
+      {
+        "id": 11891943763,
+        "node_id": "MDg6QXJ0aWZhY3QxMTg5MTk0Mzc2Mw==",
+        "name": "ios-native-validation",
+        "size_in_bytes": 6298,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11891943763",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11891943763/zip",
+        "expired": false,
+        "digest": "sha256:419bc66a4fab377f61d2755e467a4ca21e967f934e2d2bbe715b7607778afc33",
+        "created_at": "2026-10-14T12:00:27Z",
+        "updated_at": "2026-10-14T12:00:27Z",
+        "expires_at": "2027-01-12T11:48:12Z",
+        "workflow_run": {
+          "id": 38559144606,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/network-transport-compatibility",
+          "head_sha": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba"
+        }
+      },
+      {
+        "id": 11891928806,
+        "node_id": "MDg6QXJ0aWZhY3QxMTg5MTkyODgwNg==",
+        "name": "beszel-ios-arm64",
+        "size_in_bytes": 16236814,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11891928806",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11891928806/zip",
+        "expired": false,
+        "digest": "sha256:9cf61947115957ee3616b07044f170854f4cff7aa5ddb862695da7d637cfbcb2",
+        "created_at": "2026-10-14T12:00:26Z",
+        "updated_at": "2026-10-14T12:00:26Z",
+        "expires_at": "2027-01-12T11:48:12Z",
+        "workflow_run": {
+          "id": 38559144606,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/network-transport-compatibility",
+          "head_sha": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba"
+        }
+      }
+    ],
+    "independent_validation": {
+      "beszel-agent-ios-arm64": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "command": "LC_BUILD_VERSION",
+        "platform": 2,
+        "minos": "12.0",
+        "sdk": 1115392,
+        "entry_kind": "file",
+        "entry": 549376,
+        "sha256": "8e2bd287dd4404d90d4b3dd29bfd81ee0270d0344845d3532dba00d807ebd609",
+        "bytes": 9477456,
+        "build_info": {
+          "go": "go1.27.1",
+          "entry_package": "github.com/henrygd/beszel/internal/cmd/agent",
+          "settings": {
+            "CGO_ENABLED": "1",
+            "GOARCH": "arm64",
+            "GOOS": "ios",
+            "GOARM64": "v8.0",
+            "vcs": "git",
+            "vcs.revision": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba",
+            "vcs.time": "2026-10-14T11:47:30Z",
+            "vcs.modified": "false"
+          }
+        }
+      },
+      "beszel-hub-ios-arm64": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "command": "LC_BUILD_VERSION",
+        "platform": 2,
+        "minos": "12.0",
+        "sdk": 1115392,
+        "entry_kind": "file",
+        "entry": 565872,
+        "sha256": "6f8610584e192436320af922b4d75d9f4a5558a3492ed2b55f4491706213356c",
+        "bytes": 31927840,
+        "build_info": {
+          "go": "go1.27.1",
+          "entry_package": "github.com/henrygd/beszel/internal/cmd/hub",
+          "settings": {
+            "CGO_ENABLED": "1",
+            "GOARCH": "arm64",
+            "GOOS": "ios",
+            "GOARM64": "v8.0",
+            "vcs": "git",
+            "vcs.revision": "7472f3e86ab8b5825d64cf5ef461c8dae98491ba",
+            "vcs.time": "2026-10-14T11:47:30Z",
+            "vcs.modified": "false"
+          }
+        },
+        "embedded_asset_count": 95
+      }
+    },
+    "runtime_agent": {
+      "symbol": "runtime.procyieldAsm.abi0",
+      "instructions": [
+        "b9400be0",
+        "b4000080",
+        "d503203f",
+        "51000400",
+        "b5ffffc0",
+        "d65f03c0",
+        "00000000",
+        "00000000"
+      ],
+      "counter_access": false,
+      "status": "PASS"
+    },
+    "runtime_hub": {
+      "symbol": "runtime.procyieldAsm.abi0",
+      "instructions": [
+        "b9400be0",
+        "b4000080",
+        "d503203f",
+        "51000400",
+        "b5ffffc0",
+        "d65f03c0",
+        "00000000",
+        "00000000"
+      ],
+      "counter_access": false,
+      "status": "PASS"
+    },
+    "runtime_patch": {
+      "status": "PASS",
+      "go": "go1.27.1",
+      "path": "/Users/runner/work/_temp/go-ios-a7/src/runtime/asm_arm64.s",
+      "source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+      "patched_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f",
+      "replacement": "zero-guarded YIELD loop; no CNTFRQ_EL0/CNTVCT_EL0 reads"
+    },
+    "repeat_clean_cache_builds_byte_identical": true,
+    "source_goroot_unchanged": true,
+    "release_job": "skipped",
+    "ci_log_sha256": "029468143b89a92c51850947f27cf5394d7f0c470cb02d01bf451a23629aeb7c",
+    "independent_log_sha256": "acfa6093d00f4952cd8464cd9f0efb466bf8bce56574e0619ecb7a3be909d9bf"
+  },
+  "final_documentation_head_ci": {
+    "required_before_merge": true,
+    "tested_sha_and_run_urls_location": "https://github.com/nghianguyen150612/Beszel-iOS/pull/11",
+    "reason": "Avoid evidence self-reference; final SHA is recorded outside its own commit"
+  },
+  "acceptance": {
+    "IOS-AGENT-05": "PASS source/fixture/real portable integration/native compilation; physical iOS deferred P018",
+    "P009": "PASS source/fixture/native-build gate; final documentation-head checks and normal merge decision recorded in PR #11",
+    "Gate C": "PENDING P010-P012",
+    "A7-DEVICE-01 / Gate F": "PENDING P018",
+    "database_migration_restore": "DEFERRED P013/P017"
+  },
+  "limitations": [
+    "No physical iPad execution or connectivity",
+    "No iOS trust-store/device networking result",
+    "No eight real-device pairing claim",
+    "Existing upstream Hub does not pin SSH host keys",
+    "No live publicly issued certificate test",
+    "Windows native execution not run; complete binary blocked by missing LHM assets",
+    "Exact oldest supported remote versions remain P017",
+    "No physical A7 resource measurement"
+  ],
+  "safety": {
+    "production_database_access_or_changes": false,
+    "physical_device_access_or_changes": false,
+    "release_tag_or_deployment": false,
+    "main_or_ios_changes": false,
+    "migrations_changed": false,
+    "protocol_constants_or_entity_schema_changed": false,
+    "P010_started": false,
+    "normal_merge_required": true,
+    "release_job_skipped": true
+  },
+  "execution_notes": [
+    "Fresh iOS clone; original workspace preserved",
+    "Initial baseline lacked embedded frontend; exact integration baseline rerun with genuine generated assets passed",
+    "Full queue, duplicate response, no-ID ambiguity, WSS, SSH setup close, fingerprint send and queued setup defects reproduced before focused repairs",
+    "SSH fixture fixed after concurrent canonical/race processes exposed leaked fixed ports; unauthorized-key assertion strengthened",
+    "TLS rotation fixture corrected to send localhost SNI so httptest certificate fallback cannot mask GetCertificate",
+    "All new environment fixtures restore state; NUL header is tested via parser because OS environment disallows NUL",
+    "GitHub CLI PR edit hit deprecated projectCards query; REST PATCH used with exact JSON body; no content lost",
+    "Final review moved fatal monitor assertions outside locks, bounded SSH fixture cleanup and registered TLS socket cleanup before assertions. Superseded final-head native run 38561052520 was cancelled before native compilation; replacement final-head runs are recorded in PR #11."
+  ],
+  "latest_test_checkpoint_sha": "ed6d3c788d746c9fc249d531041e4178f72b77cf",
+  "production_source_hashes": {
+    "agent/client.go": "f4ad18f3d6b0f74d63f35b96a6145e88dcbde9f6419d6abe1e8880fa3b11684b",
+    "agent/connection_manager.go": "5952368c7e3706166fac69d74b9f8728c3b559088732e5c4ce4da2528cc6aa19",
+    "internal/hub/ws/request_manager.go": "2643cd8037e61ee3ab747d17090a1926d654b961f41dc8732ee734af3db45c99",
+    "internal/hub/ws/ws.go": "2814b08aced4aeb1dd440726b5f44c181f30b271c4a388112561163a86078f3c",
+    "internal/hub/transport/ssh.go": "31df7230ad17766b42846ef7653bb5496026bba197edc25f7656dba8fc57400b"
+  },
+  "production_source_unchanged_since_native_candidate": true,
+  "implementation_commits": [
+    "22108e78b38b11093dd1247e44ff86b6a7a8f5a9 fix(ios): harden websocket lifecycle and reconnect recovery",
+    "e08f6ca3503f6df096f4e7d81ac0c9d8b0bf97cf test(ios): cover manager shutdown and transport monitor convergence",
+    "dd5f6dd18f49fab272ba179a35537557e8f98006 fix(ios): require fingerprint delivery before websocket readiness",
+    "7472f3e86ab8b5825d64cf5ef461c8dae98491ba test(ios): validate legacy agent transport and repair isolated ssh fixtures",
+    "3d8f592df71a1718f01e2608e0ac1e7447d4539f test(ios): assert stale authentication and cross-system response isolation",
+    "f608d9409e93b07925405fca0426b6ab363258a7 docs(ios): checkpoint network transport evidence pending native verification",
+    "ed6d3c788d746c9fc249d531041e4178f72b77cf test(ios): exercise malformed replies and consecutive transport failures"
+  ]
+}

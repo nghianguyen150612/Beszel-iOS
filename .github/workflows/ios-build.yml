@@ -83,6 +83,14 @@ jobs:
           env -u NETWORK go test -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system
           env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system -run 'Test(P008|IOSBattery|CalculateHostMemory|CpuMetrics|GetAllBusy|Disk|SumAndTrack|SkipNetwork|Serialization|Battery|Primary|Normalize)' -count=1
 
+      - name: Test transport faults and races
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u NETWORK go test -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems ./internal/common
+          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems
+          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport -run TestP009 -count=3 -timeout=180s
+
       - name: Preserve macOS build and GPU parser tests
         shell: bash
         run: |

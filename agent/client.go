@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -59,6 +60,8 @@ type WebSocketClient struct {
 	gws.BuiltinEventHandler
 	options            *gws.ClientOption                   // WebSocket client configuration options
 	agent              *Agent                              // Reference to the parent agent
+	connectSlot        chan struct{}                       // Serializes upgrade attempts
+	connectCancel      context.CancelFunc                  // Cancels in-flight TCP/TLS/upgrade
 	connMu             sync.RWMutex                        // Guards Conn and hubVerified across callbacks
 	Conn               *gws.Conn                           // Active WebSocket connection
 	hubURL             *url.URL                            // Parsed hub URL for connection
@@ -82,8 +85,8 @@ func newWebSocketClient(agent *Agent) (client *WebSocketClient, err error) {
 	client = &WebSocketClient{}
 
 	client.hubURL, err = url.Parse(hubURLStr)
-	if err != nil || client.hubURL.Host == "" {
-		return nil, fmt.Errorf("invalid HUB_URL %q: must include scheme and host (e.g. http://hub.example.com:8090)", hubURLStr)
+	if err != nil || client.hubURL.Host == "" || (client.hubURL.Scheme != "http" && client.hubURL.Scheme != "https" && client.hubURL.Scheme != "ws" && client.hubURL.Scheme != "wss") {
+		return nil, errors.New("invalid HUB_URL: must use http, https, ws or wss and include a host")
 	}
 	// get registration token
 	client.token, err = getToken()
@@ -161,9 +164,16 @@ func getTLSConfig() (*tls.Config, error) {
 		return nil, &caCertFileError{fmt.Errorf("read CA_CERT_FILE %q: %w", caCertFile, err)}
 	}
 
-	rootCAs, err := x509.SystemCertPool()
+	return tlsConfigWithRoots(caCertPEM, caCertFile, x509.SystemCertPool)
+}
+
+func tlsConfigWithRoots(caCertPEM []byte, caCertFile string, load func() (*x509.CertPool, error)) (*tls.Config, error) {
+	rootCAs, err := load()
 	if err != nil {
 		return nil, &caCertFileError{fmt.Errorf("load system CA certificate pool: %w", err)}
+	}
+	if rootCAs == nil {
+		return nil, &caCertFileError{errors.New("system CA certificate pool unavailable")}
 	}
 	if !rootCAs.AppendCertsFromPEM(caCertPEM) {
 		return nil, &caCertFileError{fmt.Errorf("CA_CERT_FILE %q does not contain any valid PEM certificates", caCertFile)}
@@ -180,6 +190,19 @@ func getTLSConfig() (*tls.Config, error) {
 //	HUB_HEADERS="CF-Access-Client-Id: abc.access, CF-Access-Client-Secret: def456"
 func getHubHeaders() (http.Header, error) {
 	raw, _ := utils.GetEnv("HUB_HEADERS")
+	return parseHubHeaders(raw)
+}
+
+func parseHubHeaders(raw string) (http.Header, error) {
+	// Bound configuration and reject controls before whitespace normalization.
+	if len(raw) > 64*1024 {
+		return nil, fmt.Errorf("%w: exceeds 64 KiB", errInvalidHubHeaders)
+	}
+	for _, r := range raw {
+		if (r < 32 && r != '\t' && r != '\r' && r != '\n') || r == 127 {
+			return nil, fmt.Errorf("%w: control character", errInvalidHubHeaders)
+		}
+	}
 	if strings.TrimSpace(raw) == "" {
 		return nil, nil
 	}
@@ -212,7 +235,7 @@ func (client *WebSocketClient) getOptions() *gws.ClientOption {
 	}
 
 	// update the hub url to use websocket scheme and api path
-	if client.hubURL.Scheme == "https" {
+	if client.hubURL.Scheme == "https" || client.hubURL.Scheme == "wss" {
 		client.hubURL.Scheme = "wss"
 	} else {
 		client.hubURL.Scheme = "ws"
@@ -233,7 +256,7 @@ func (client *WebSocketClient) getOptions() *gws.ClientOption {
 			"X-Beszel":   []string{beszel.Version},
 		},
 		NewDialer: func() (gws.Dialer, error) {
-			return proxy.FromEnvironment(), nil
+			return proxy.FromEnvironmentUsing(&net.Dialer{Timeout: 5 * time.Second}), nil
 		},
 	}
 
@@ -251,24 +274,92 @@ func (client *WebSocketClient) getOptions() *gws.ClientOption {
 
 // Connect establishes a WebSocket connection to the hub.
 // It closes any existing connection before attempting to reconnect.
-func (client *WebSocketClient) Connect() (err error) {
-	client.lastConnectAttempt = time.Now()
+func (client *WebSocketClient) Connect() error {
+	return client.ConnectContext(context.Background())
+}
 
-	// make sure previous connection is closed
+// ConnectContext bounds setup and lets shutdown interrupt DNS, TCP, TLS and upgrade.
+// The existing proxy dialer is retained; no direct-network fallback is used.
+func (client *WebSocketClient) ConnectContext(parent context.Context) error {
+	client.connMu.Lock()
+	if client.connectSlot == nil {
+		client.connectSlot = make(chan struct{}, 1)
+	}
+	slot := client.connectSlot
+	client.connMu.Unlock()
+	select {
+	case slot <- struct{}{}:
+	case <-parent.Done():
+		return parent.Err()
+	}
+	defer func() { <-slot }()
+	if err := parent.Err(); err != nil {
+		return err
+	}
 	client.Close()
+	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
+	defer cancel()
+	client.connMu.Lock()
+	client.lastConnectAttempt = time.Now()
+	client.connectCancel = cancel
+	client.connMu.Unlock()
+	defer func() { client.connMu.Lock(); client.connectCancel = nil; client.connMu.Unlock() }()
 
-	conn, _, err := gws.NewClient(client, client.getOptions())
+	options := *client.getOptions()
+	if options.TlsConfig != nil {
+		options.TlsConfig = options.TlsConfig.Clone()
+	}
+	dialerFactory := options.NewDialer
+	var stop func() bool
+	var stopped chan struct{}
+	options.NewDialer = func() (gws.Dialer, error) {
+		dialer, err := dialerFactory()
+		if err != nil {
+			return nil, err
+		}
+		return wsContextDialer{dial: func(network, addr string) (net.Conn, error) {
+			cd, ok := dialer.(proxy.ContextDialer)
+			if !ok {
+				return nil, errors.New("WebSocket proxy does not support cancellation")
+			}
+			conn, err := cd.DialContext(ctx, network, addr)
+			if err == nil {
+				stopped = make(chan struct{})
+				stop = context.AfterFunc(ctx, func() { _ = conn.Close(); close(stopped) })
+			}
+			return conn, err
+		}}, nil
+	}
+	conn, _, err := gws.NewClient(client, &options)
+	if stop != nil && !stop() {
+		<-stopped
+	}
 	if err != nil {
 		return err
 	}
 	client.connMu.Lock()
+	if ctx.Err() != nil {
+		client.connMu.Unlock()
+		_ = conn.NetConn().Close()
+		return ctx.Err()
+	}
 	client.Conn = conn
 	client.hubVerified = false
 	client.connMu.Unlock()
-
 	go conn.ReadLoop()
-
 	return nil
+}
+
+type wsContextDialer struct {
+	dial func(string, string) (net.Conn, error)
+}
+
+func (d wsContextDialer) Dial(network, addr string) (net.Conn, error) { return d.dial(network, addr) }
+
+func (client *WebSocketClient) timeSinceConnectAttempt() time.Duration {
+	client.connMu.RLock()
+	defer client.connMu.RUnlock()
+	return time.Since(client.lastConnectAttempt)
 }
 
 // OnOpen handles WebSocket connection establishment.
@@ -291,7 +382,7 @@ func (client *WebSocketClient) OnClose(conn *gws.Conn, err error) {
 	if err != nil {
 		slog.Warn("Connection closed", "err", strings.TrimPrefix(err.Error(), "gws: "))
 	}
-	client.agent.connectionManager.eventChan <- WebSocketDisconnect
+	client.agent.connectionManager.notifyWebSocketChange()
 }
 
 // OnMessage handles incoming WebSocket messages from the hub.
@@ -335,6 +426,9 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 	}
 
 	if err := client.verifySignature(authRequest.Signature); err != nil {
+		if conn != nil {
+			_ = conn.NetConn().Close()
+		}
 		return err
 	}
 
@@ -343,9 +437,7 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 		client.connMu.Unlock()
 		return gws.ErrConnClosed
 	}
-	client.hubVerified = true
 	client.connMu.Unlock()
-	client.agent.connectionManager.eventChan <- WebSocketConnect
 
 	response := &common.FingerprintResponse{
 		Fingerprint: client.fingerprint,
@@ -358,10 +450,21 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 		_, response.Port, _ = net.SplitHostPort(serverAddr)
 	}
 
-	if conn != nil {
-		return client.sendResponseOnConn(conn, response, requestID)
+	if conn == nil {
+		conn = client.getConn()
 	}
-	return client.sendResponse(response, requestID)
+	if err := client.sendResponseOnConn(conn, response, requestID); err != nil {
+		return err
+	}
+	client.connMu.Lock()
+	if client.Conn != conn || conn == nil {
+		client.connMu.Unlock()
+		return gws.ErrConnClosed
+	}
+	client.hubVerified = true
+	client.connMu.Unlock()
+	client.agent.connectionManager.notifyWebSocketChange()
+	return nil
 }
 
 // verifySignature verifies the signature of the token using the public keys.
@@ -381,8 +484,20 @@ func (client *WebSocketClient) verifySignature(signature []byte) (err error) {
 // Close closes the WebSocket connection gracefully.
 // This method is safe to call multiple times.
 func (client *WebSocketClient) Close() {
-	if conn := client.getConn(); conn != nil {
+	client.connMu.Lock()
+	if client.connectCancel != nil {
+		client.connectCancel()
+	}
+	conn := client.Conn
+	client.Conn = nil
+	client.hubVerified = false
+	client.connMu.Unlock()
+	if conn != nil {
+		// Bound graceful close even if a send is blocked; always release the socket.
+		_ = conn.SetWriteDeadline(time.Now().Add(time.Second))
 		_ = conn.WriteClose(1000, nil)
+		_ = conn.NetConn().Close()
+		client.agent.connectionManager.notifyWebSocketChange()
 	}
 }
 
@@ -401,7 +516,7 @@ func (client *WebSocketClient) isVerified() bool {
 // handleHubRequest routes the request to the appropriate handler using the handler registry.
 func (client *WebSocketClient) handleHubRequest(msg *common.HubRequest[cbor.RawMessage], requestID *uint32, conn *gws.Conn) error {
 	client.connMu.RLock()
-	verified := client.hubVerified
+	verified := client.hubVerified && (conn == nil || client.Conn == conn)
 	client.connMu.RUnlock()
 	sendResponse := client.sendResponse
 	if conn != nil {

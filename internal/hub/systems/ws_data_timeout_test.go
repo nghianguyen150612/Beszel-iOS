@@ -188,6 +188,9 @@ const timelineScale = 100
 // the reconnect loop from #2294. An agent silent for longer than
 // maxAgentSilence is no longer pinged, so its connection is allowed to expire.
 func TestSlowAgentKeepsConnectionAcrossPolls(t *testing.T) {
+	// This fixture intentionally has no SSH manager. A remote close now cancels
+	// pending WS requests immediately, allowing fallback during the same poll.
+	t.Setenv("BESZEL_HUB_DISABLE_SSH", "true")
 	tick := time.Duration(interval) * time.Millisecond / timelineScale
 
 	tests := []struct {
