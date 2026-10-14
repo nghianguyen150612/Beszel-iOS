@@ -1,7 +1,8 @@
 # P009 — Network transport compatibility
 
-**P009 integration gate: PENDING native artifact validation and final HEAD CI.**
-Local source, loopback integration, fault injection and race checks pass.
+**P009 source/fixture/native-build gate: PASS** at `7472f3e86ab8b5825d64cf5ef461c8dae98491ba`.
+Final documentation-inclusive HEAD checks and the integration merge decision are
+recorded in PR #11. Source, loopback integration, fault injection and race checks pass.
 [PR #11](https://github.com/nghianguyen150612/Beszel-iOS/pull/11) records the final
 tested SHA and merge verification without a self-referential evidence commit.
 Gate C remains pending P010–P012. Physical A7 execution remains P018 / Gate F;
@@ -167,10 +168,10 @@ precise scenario IDs; none of these rows is promoted to a physical iOS pass.
 | COMP-PAIR-001, iOS 0.19 ↔ iOS 0.19 | Existing historical device record retained | Historical reference only; not rerun |
 | COMP-PAIR-002, iOS 0.19 → upgraded Hub | Real product-commit 0.19 Agent compiled/run on Linux against current WS/SSH transports | Exact iOS/native Hub execution P017/P018 |
 | COMP-PAIR-003, upgraded Agent → iOS 0.19 Hub | Current Linux Agent against unchanged product-commit 0.19 WS/SSH Hub transport code | Exact iOS Hub/device execution P017/P018 |
-| COMP-PAIR-004, upgraded iOS pair | Current Linux binary/real transport integration; iOS binaries require native gate below | Physical iOS pair and full DB/API acceptance P013/P017/P018 |
+| COMP-PAIR-004, upgraded iOS pair | Current Linux binary/real transport integration; both iOS binaries compiled and verified | Physical iOS pair and full DB/API acceptance P013/P017/P018 |
 | COMP-PAIR-005, Linux 0.21 → iOS Hub | Real Linux Agent and shared Hub transport integration | Native iOS Hub API/history/UI P014/P017/P018 |
 | COMP-PAIR-006, Windows 0.21 → iOS Hub | Shared source/schema regressions; Windows WS/SSH test binaries cross-compiled | Native Windows Agent/runtime and iOS Hub P014/P017/P018; full binary blocked by existing missing LHM assets |
-| COMP-PAIR-007, macOS 0.21 → iOS Hub | Shared source and hosted macOS transport/build validation required below | Exact remote macOS → physical iOS Hub P014/P017/P018 |
+| COMP-PAIR-007, macOS 0.21 → iOS Hub | Shared source and hosted macOS transport/race tests and Agent/Hub builds pass | Exact remote macOS → physical iOS Hub P014/P017/P018 |
 | COMP-PAIR-008, older remote Agent → upgraded Hub | Legacy/no-ID, one-shot SSH, malformed/unknown-version and typed/generic response fixtures | Exact lowest supported remote versions P017 |
 
 `MinVersionCbor=0.12.0`, `MinVersionAgentResponse=0.13.0` and
@@ -183,7 +184,8 @@ trust, kernel behavior or all eight native pairings.
 ## Validation and resource bounds
 
 Canonical Go suite and all four applicable transport race packages pass with
-`env -u NETWORK` and tags `testing no_ui`. Fault tests were repeated ten times;
+`env -u NETWORK` and tags `testing no_ui`. Fault tests were repeated ten times, including three consecutive failed
+upgrades before recovery and malformed/empty/duplicate response rejection;
 queued-connect/SSH fixture repairs separately ten times, and strengthened stale
 signature/cross-system assertions twenty times under race detection. All audit,
 readiness/matrix, 49 Python tests, sync/sentinels/bootstrap and 814 installer
@@ -208,12 +210,20 @@ Source-candidate native run:
 [38559144606](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38559144606),
 SHA `7472f3e86ab8b5825d64cf5ef461c8dae98491ba`.
 Installer [38559149068](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38559149068): PASS.
-Native artifact validation: **PENDING**. Exact artifact hashes, Mach-O/runtime and
-frontend findings are recorded in the JSON when complete. The final tested
+Native artifact validation: **PASS**. Both downloaded ZIPs match GitHub's upload
+digests. Independent Linux-side payload validation confirms ARM64 MH_EXECUTE,
+iOS platform 2/minimum 12.0, Go 1.27.1, CGO=1, clean source-candidate VCS metadata,
+checksums and all 95 embedded frontend assets. Native Agent/Hub repeat builds are
+byte-identical; unstripped runtime instruction checks find the guarded YIELD
+loop and no counter-register access. The source toolchain remains unchanged;
+the runner uses its own patched GOROOT and the iPhoneOS SDK. Release job skipped.
+Exact payload hashes and runtime/source reports are in the JSON. The final tested
 feature SHA and final-head workflow URLs belong in PR #11 and the final report.
 
 IOS-AGENT-05 has passing cloud source, fixture and portable integration evidence.
-P009 completion remains blocked until native and final-head CI gates pass.
+Native Agent/Hub acceptance passes at the source-candidate level. Normal merge
+requires final-head checks and review recorded in PR #11; the final SHA is
+recorded outside its own evidence commit.
 Physical iPad connectivity, intermittent jailbreak networking, iOS DNS/socket
 behavior, trust-store access and reboot/reactivation remain A7-DEVICE-01 / P018.
 No production database or device was accessed or modified. No release, tag,

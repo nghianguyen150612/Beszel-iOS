@@ -1,6 +1,7 @@
 # P009 — Tương thích truyền tải mạng
 
-**Cổng tích hợp P009: CHỜ xác minh artifact native và CI trên HEAD cuối.**
+**Cổng source/fixture/native-build P009: PASS** tại `7472f3e86ab8b5825d64cf5ef461c8dae98491ba`.
+PR #11 ghi kiểm tra HEAD cuối có tài liệu và quyết định merge integration.
 Kiểm tra mã nguồn, loopback, chèn lỗi và race tại cloud đã đạt.
 [PR #11](https://github.com/nghianguyen150612/Beszel-iOS/pull/11) ghi SHA kiểm thử
 cuối và kết quả xác minh merge, tránh vòng tự tham chiếu trong commit bằng chứng.
@@ -146,10 +147,10 @@ Không nâng các cặp thành pass iOS vật lý.
 | COMP-PAIR-001, iOS 0.19 ↔ iOS 0.19 | Giữ ghi nhận thiết bị lịch sử | Chỉ tham chiếu lịch sử, không chạy lại |
 | COMP-PAIR-002, iOS 0.19 → Hub nâng cấp | Agent 0.19 đúng product commit build/chạy Linux với WS/SSH transport hiện tại | Chạy iOS/native Hub P017/P018 |
 | COMP-PAIR-003, Agent mới → iOS Hub 0.19 | Linux Agent mới với mã WS/SSH Hub 0.19 nguyên trạng | iOS Hub/device P017/P018 |
-| COMP-PAIR-004, cặp iOS mới | Linux binary/transport thật; binary iOS chờ native gate dưới | Cặp iOS thật và DB/API P013/P017/P018 |
+| COMP-PAIR-004, cặp iOS mới | Linux binary/transport thật; cả hai binary iOS đã compile và xác minh | Cặp iOS thật và DB/API P013/P017/P018 |
 | COMP-PAIR-005, Linux 0.21 → iOS Hub | Linux Agent thật và shared Hub transport | iOS Hub API/history/UI P014/P017/P018 |
 | COMP-PAIR-006, Windows 0.21 → iOS Hub | Shared source/schema, cross-compile test WS/SSH Windows | Runtime Windows/iOS Hub P014/P017/P018; full binary bị chặn bởi LHM asset cũ thiếu |
-| COMP-PAIR-007, macOS 0.21 → iOS Hub | Shared source và hosted macOS transport/build chờ xác nhận dưới | Remote macOS → iOS Hub vật lý P014/P017/P018 |
+| COMP-PAIR-007, macOS 0.21 → iOS Hub | Shared source và hosted macOS transport/race và build Agent/Hub đã pass | Remote macOS → iOS Hub vật lý P014/P017/P018 |
 | COMP-PAIR-008, Agent remote cũ → Hub mới | Fixture no-ID, SSH one-shot, unknown/malformed version, typed/generic response | Phiên bản remote tối thiểu cụ thể do P017 xác nhận |
 
 Giữ `MinVersionCbor=0.12.0`, `MinVersionAgentResponse=0.13.0`,
@@ -161,7 +162,8 @@ không chứng minh trust/kernel iOS hoặc đủ tám cặp native.
 ## Validation và giới hạn tài nguyên
 
 Canonical Go và cả bốn package race transport pass với `env -u NETWORK`, tag
-`testing no_ui`. Fault suite lặp 10 lần; queued-connect/SSH fixture repair lặp
+`testing no_ui`. Fault suite lặp 10 lần, gồm ba upgrade lỗi liên tiếp trước phục hồi và từ chối
+response malformed/empty/trùng; queued-connect/SSH fixture repair lặp
 riêng 10 lần; stale signature/cross-system assertion lặp 20 lần dưới race.
 Audit/readiness/matrix, 49 Python tests, sync/sentinels/bootstrap và 814 assertion
 installer đều pass. P007 target/A7 source fixture/source selection và P008
@@ -182,12 +184,18 @@ Native source-candidate:
 [38559144606](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38559144606),
 SHA `7472f3e86ab8b5825d64cf5ef461c8dae98491ba`.
 Installer [38559149068](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38559149068): PASS.
-Xác minh artifact native: **CHỜ**. JSON sẽ ghi hash artifact, Mach-O/runtime và
-frontend khi hoàn tất. SHA feature cuối và URL CI trên HEAD cuối nằm tại PR #11
+Xác minh artifact native: **PASS**. Cả hai ZIP tải về khớp upload digest GitHub.
+Validator độc lập trên Linux xác nhận ARM64 MH_EXECUTE, iOS platform 2/minimum
+12.0, Go 1.27.1, CGO=1, VCS source-candidate sạch, checksum và đủ 95 asset frontend
+nhúng. Hai lượt build native Agent/Hub byte-identical; kiểm tra instruction ở
+binary không strip tìm thấy YIELD có zero guard, không đọc counter register.
+Toolchain nguồn không đổi; runner dùng GOROOT patch riêng và iPhoneOS SDK.
+Release job bị skip. JSON ghi hash payload và báo cáo runtime/source cụ thể. SHA feature cuối và URL CI trên HEAD cuối nằm tại PR #11
 và báo cáo cuối.
 
-IOS-AGENT-05 đã có source, fixture và portable integration cloud pass. Hoàn tất
-P009 còn chờ native và final-head CI. Kết nối iPad, mạng jailbreak gián đoạn,
+IOS-AGENT-05 đã có source, fixture và portable integration cloud pass. Native Agent/Hub đã pass ở cấp source-candidate.
+Normal merge yêu cầu final-head CI và review được ghi tại PR #11; SHA cuối nằm
+ngoài commit bằng chứng của chính nó. Kết nối iPad, mạng jailbreak gián đoạn,
 DNS/socket/trust-store iOS và reboot/reactivation vẫn là A7-DEVICE-01 / P018.
 Không truy cập/sửa DB production hoặc thiết bị. P009 không thực hiện release,
 tag, deployment hay thay nhánh production.
