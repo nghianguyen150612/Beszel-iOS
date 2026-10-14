@@ -103,6 +103,24 @@ class PayloadTests(unittest.TestCase):
             (self.root / 'SHA256SUMS').write_text(manifest)
             with self.subTest(manifest=manifest), self.assertRaises(ValueError):artifacts.verify(self.root)
 
+    def test_vite_relative_assets_and_complete_embedding(self):
+        with tempfile.TemporaryDirectory() as temp:
+            frontend = Path(temp)
+            (frontend / 'assets').mkdir()
+            (frontend / 'index.html').write_text('<script type="module" src="./assets/index.js"></script><link rel="stylesheet" href="./assets/index.css">')
+            (frontend / 'assets/index.js').write_text('console.log("built frontend");')
+            (frontend / 'assets/index.css').write_text('body { color: black; }')
+            assets = artifacts.frontend_assets(frontend)
+            hub = self.root / artifacts.NAMES[1]
+            hub.write_bytes(binary() + b''.join(asset.read_bytes() for asset in assets))
+            manifest = ''.join(hashlib.sha256((self.root / name).read_bytes()).hexdigest() + '  ' + name + '\n' for name in artifacts.NAMES)
+            (self.root / 'SHA256SUMS').write_text(manifest)
+            result = artifacts.verify(self.root, frontend)
+            self.assertEqual(result[artifacts.NAMES[1]]['embedded_asset_count'], 3)
+            (frontend / 'assets/index.js').unlink()
+            with self.assertRaisesRegex(ValueError, 'missing or empty frontend asset'):
+                artifacts.verify(self.root, frontend)
+
     def test_frontend_must_be_real_and_embedded(self):
         with tempfile.TemporaryDirectory() as temp:
             frontend = Path(temp)

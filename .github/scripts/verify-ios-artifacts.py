@@ -71,7 +71,7 @@ def frontend_assets(directory):
     html = directory / 'index.html'
     if not html.is_file() or not html.stat().st_size:
         raise ValueError('missing real frontend index.html')
-    references = re.findall(r'(?:src|href)="(/assets/[^"?#]+)"', html.read_text())
+    references = re.findall(r'(?:src|href)="((?:\./|/)?assets/[^"?#]+)"', html.read_text())
     if not any(p.endswith('.js') for p in references) or not any(p.endswith('.css') for p in references):
         raise ValueError('frontend index must reference production JS and CSS')
     for reference in references:
