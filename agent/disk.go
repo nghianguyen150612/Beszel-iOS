@@ -16,6 +16,15 @@ import (
 	"github.com/shirou/gopsutil/v4/disk"
 )
 
+var diskUsage = disk.Usage
+var diskIOCounters = func(names ...string) (map[string]disk.IOCountersStat, error) {
+	if runtime.GOOS == "ios" {
+		return unavailableIOSDiskIO(names...)
+	}
+	return disk.IOCounters(names...)
+}
+var diskNow = time.Now
+
 // fsRegistrationContext holds the shared lookup state needed to resolve a
 // filesystem into the tracked fsStats key and metadata.
 type fsRegistrationContext struct {
@@ -353,7 +362,13 @@ func (a *Agent) initializeDiskInfo() {
 		}
 	}
 
-	diskIoCounters, err := disk.IOCounters()
+	if runtime.GOOS == "ios" {
+		extra, _ := utils.GetEnv("EXTRA_FILESYSTEMS")
+		d := diskDiscovery{agent: a, partitions: partitions, usageFn: diskUsage, ctx: fsRegistrationContext{filesystem: filesystem, filesystemName: filesystemName}}
+		d.addIOSFilesystems(extra)
+		return
+	}
+	diskIoCounters, err := diskIOCounters()
 	if err != nil {
 		slog.Error("Error getting diskstats", "err", err)
 	}
@@ -371,7 +386,7 @@ func (a *Agent) initializeDiskInfo() {
 		agent:          a,
 		rootMountPoint: a.getRootMountPoint(),
 		partitions:     partitions,
-		usageFn:        disk.Usage,
+		usageFn:        diskUsage,
 		ctx:            ctx,
 	}
 
@@ -423,7 +438,7 @@ func (a *Agent) pruneDuplicateRootExtraFilesystems() {
 	if rootMountpoint == "" {
 		return
 	}
-	rootUsage, err := disk.Usage(rootMountpoint)
+	rootUsage, err := diskUsage(rootMountpoint)
 	if err != nil {
 		return
 	}
@@ -431,7 +446,7 @@ func (a *Agent) pruneDuplicateRootExtraFilesystems() {
 		if stats == nil || stats.Root {
 			continue
 		}
-		extraUsage, err := disk.Usage(stats.Mountpoint)
+		extraUsage, err := diskUsage(stats.Mountpoint)
 		if err != nil {
 			continue
 		}
@@ -656,10 +671,12 @@ func (a *Agent) updateDiskUsage(systemStats *system.Stats) {
 			if total > 0 {
 				usedPct = float64(used) / float64(total) * 100
 			}
-		} else if d, err := disk.Usage(stats.Mountpoint); err == nil {
+		} else if d, err := diskUsage(stats.Mountpoint); err == nil && d != nil {
 			total = d.Total
-			used = d.Used
-			usedPct = d.UsedPercent
+			used = min(d.Used, d.Total)
+			if total > 0 {
+				usedPct = clampPercent(d.UsedPercent)
+			}
 		} else {
 			// reset stats if error (likely unmounted)
 			slog.Error("Error getting disk stats", "name", stats.Mountpoint, "err", err)
@@ -686,13 +703,32 @@ func (a *Agent) updateDiskUsage(systemStats *system.Stats) {
 
 // Updates disk I/O statistics for all monitored filesystems
 func (a *Agent) updateDiskIo(cacheTimeMs uint16, systemStats *system.Stats) {
+	// Reset transient values before acquisition; missing devices/errors cannot
+	// leak a previous interval's throughput into a fresh ExtraFs payload.
+	for _, stats := range a.fsStats {
+		stats.DiskReadPs, stats.DiskWritePs = 0, 0
+		stats.DiskReadBytes, stats.DiskWriteBytes = 0, 0
+		stats.DiskIoStats = [6]float64{}
+		stats.TotalRead, stats.TotalWrite = 0, 0
+	}
+	if len(a.fsNames) == 0 {
+		return
+	}
 	// disk i/o (cache-aware per interval)
-	if ioCounters, err := disk.IOCounters(a.fsNames...); err == nil {
+	if ioCounters, err := diskIOCounters(a.fsNames...); err == nil {
 		// Ensure map for this interval exists
 		if _, ok := a.diskPrev[cacheTimeMs]; !ok {
 			a.diskPrev[cacheTimeMs] = make(map[string]prevDisk)
 		}
-		now := time.Now()
+		now := diskNow()
+		for _, name := range a.fsNames {
+			if _, ok := ioCounters[name]; !ok {
+				for _, previous := range a.diskPrev {
+					delete(previous, name)
+				}
+				delete(a.diskBaseline, name)
+			}
+		}
 		for name, d := range ioCounters {
 			stats := a.fsStats[d.Name]
 			if stats == nil {
@@ -710,11 +746,24 @@ func (a *Agent) updateDiskIo(cacheTimeMs uint16, systemStats *system.Stats) {
 				}
 			}
 
-			msElapsed := uint64(now.Sub(prev.at).Milliseconds())
+			elapsed := now.Sub(prev.at).Milliseconds()
+			var msElapsed uint64
+			if elapsed > 0 {
+				msElapsed = uint64(elapsed)
+			}
 
 			// Update per-interval snapshot
 			a.diskPrev[cacheTimeMs][name] = prevDiskFromCounter(d, now)
 
+			// Cumulative totals are valid even when a rate baseline is unavailable.
+			stats.TotalRead, stats.TotalWrite = d.ReadBytes, d.WriteBytes
+			if stats.Root {
+				systemStats.DiskIOTotal = [2]uint64{d.ReadBytes, d.WriteBytes}
+			}
+			if d.ReadBytes < prev.readBytes || d.WriteBytes < prev.writeBytes || d.ReadCount < prev.readCount || d.WriteCount < prev.writeCount {
+				a.setDiskBaseline(name, prevDiskFromCounter(d, now))
+				continue
+			}
 			// Avoid division by zero or clock issues
 			if msElapsed < 100 {
 				continue
@@ -726,8 +775,8 @@ func (a *Agent) updateDiskIo(cacheTimeMs uint16, systemStats *system.Stats) {
 				continue
 			}
 
-			diskIORead := (d.ReadBytes - prev.readBytes) * 1000 / msElapsed
-			diskIOWrite := (d.WriteBytes - prev.writeBytes) * 1000 / msElapsed
+			diskIORead := rateFromCounters(d.ReadBytes, prev.readBytes, msElapsed)
+			diskIOWrite := rateFromCounters(d.WriteBytes, prev.writeBytes, msElapsed)
 			readMbPerSecond := utils.BytesToMegabytes(float64(diskIORead))
 			writeMbPerSecond := utils.BytesToMegabytes(float64(diskIOWrite))
 
@@ -762,10 +811,10 @@ func (a *Agent) updateDiskIo(cacheTimeMs uint16, systemStats *system.Stats) {
 			// r_await / w_await: average time per read/write operation in milliseconds.
 			// Equivalent to r_await and w_await in iostat.
 			var rAwait, wAwait float64
-			if deltaReadCount := d.ReadCount - prev.readCount; deltaReadCount > 0 {
+			if deltaReadCount := saturatingSub(d.ReadCount, prev.readCount); deltaReadCount > 0 {
 				rAwait = utils.TwoDecimals(float64(deltaReadTime) / float64(deltaReadCount))
 			}
-			if deltaWriteCount := d.WriteCount - prev.writeCount; deltaWriteCount > 0 {
+			if deltaWriteCount := saturatingSub(d.WriteCount, prev.writeCount); deltaWriteCount > 0 {
 				wAwait = utils.TwoDecimals(float64(deltaWriteTime) / float64(deltaWriteCount))
 			}
 
@@ -799,6 +848,9 @@ func (a *Agent) updateDiskIo(cacheTimeMs uint16, systemStats *system.Stats) {
 				systemStats.DiskIoStats[5] = diskWeightedIO
 			}
 		}
+	} else {
+		a.diskPrev = make(map[uint16]map[string]prevDisk)
+		a.diskBaseline = make(map[string]prevDisk)
 	}
 }
 
@@ -830,6 +882,9 @@ func ioTimeDelta(current, previous uint64) uint64 {
 // On Windows it returns the system drive (e.g. "C:").
 // For immutable systems like Fedora Silverblue, it returns /sysroot instead of /
 func (a *Agent) getRootMountPoint() string {
+	if runtime.GOOS == "ios" {
+		return "/"
+	}
 	if runtime.GOOS == "windows" {
 		if sd := os.Getenv("SystemDrive"); sd != "" {
 			return sd

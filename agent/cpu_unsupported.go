@@ -3,7 +3,7 @@
 package agent
 
 // containerCpuMetrics is Linux-only (cgroup accounting). Other platforms keep
-// the gopsutil /proc path.
+// gopsutil host accounting (Mach on Darwin/iOS).
 func containerCpuMetrics(uint16, bool) (CpuMetrics, bool) {
 	return CpuMetrics{}, false
 }

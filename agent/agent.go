@@ -23,17 +23,18 @@ import (
 const defaultDataCacheTimeMs uint16 = 60_000
 
 type Agent struct {
-	sync.Mutex                                                                      // Used to lock agent while collecting data
-	debug                     bool                                                  // true if LOG_LEVEL is set to debug
-	zfs                       bool                                                  // true if system has arcstats
-	memCalc                   string                                                // Memory calculation formula
-	forceUseCgroup            bool                                                  // Explicitly use the cgroup mount root for CPU accounting
-	fsNames                   []string                                              // List of filesystem device names being monitored
-	fsStats                   map[string]*system.FsStats                            // Keeps track of disk stats for each filesystem
-	diskPrev                  map[uint16]map[string]prevDisk                        // Previous disk I/O counters per cache interval
-	diskBaseline              map[string]prevDisk                                   // Latest disk I/O counters of any interval, seeds a new interval
-	diskUsageCacheDuration    time.Duration                                         // How long to cache disk usage (to avoid waking sleeping disks)
-	lastDiskUsageUpdate       time.Time                                             // Last time disk usage was collected
+	sync.Mutex                                               // Used to lock agent while collecting data
+	debug                     bool                           // true if LOG_LEVEL is set to debug
+	zfs                       bool                           // true if system has arcstats
+	memCalc                   string                         // Memory calculation formula
+	forceUseCgroup            bool                           // Explicitly use the cgroup mount root for CPU accounting
+	fsNames                   []string                       // List of filesystem device names being monitored
+	fsStats                   map[string]*system.FsStats     // Keeps track of disk stats for each filesystem
+	diskPrev                  map[uint16]map[string]prevDisk // Previous disk I/O counters per cache interval
+	diskBaseline              map[string]prevDisk            // Latest disk I/O counters of any interval, seeds a new interval
+	diskUsageCacheDuration    time.Duration                  // How long to cache disk usage (to avoid waking sleeping disks)
+	lastDiskUsageUpdate       time.Time                      // Last time disk usage was collected
+	nicConfig                 *NicConfig
 	netInterfaces             map[string]bool                                       // Valid network interfaces; true if byte counters come from MAC stats (Jetson nvethernet)
 	netIoStats                map[uint16]system.NetIoStats                          // Keeps track of bandwidth usage per cache interval
 	netInterfaceDeltaTrackers map[uint16]*deltatracker.DeltaTracker[string, uint64] // Per-cache-time NIC delta trackers
@@ -256,7 +257,8 @@ func (a *Agent) gatherStats(options common.DataRequestOptions) *system.CombinedD
 			if stats.Name != "" {
 				key = stats.Name
 			}
-			data.Stats.ExtraFs[key] = stats
+			snapshot := *stats
+			data.Stats.ExtraFs[key] = &snapshot
 			// Add percentages to Info struct for dashboard
 			if stats.DiskTotal > 0 {
 				pct := utils.TwoDecimals((stats.DiskUsed / stats.DiskTotal) * 100)

@@ -162,11 +162,11 @@ _require_file "agent/battery/battery_ios.go" \
 _require_build_tag "agent/battery/battery_ios.go" "ios" \
 	"D.2 iOS battery has //go:build ios"
 
-_require_in_file "agent/battery/battery_ios.go" \
+_require_in_file "agent/battery/ios_ioreg.go" \
 	"AppleARMPMUCharger" \
 	"D.3 iOS battery uses AppleARMPMUCharger"
 
-_require_in_file "agent/battery/battery_ios.go" \
+_require_in_file "agent/battery/ios_ioreg.go" \
 	"ioreg" \
 	"D.4 iOS battery uses ioreg"
 
@@ -175,6 +175,10 @@ _require_file "agent/battery/battery_darwin.go" \
 
 _require_build_tag "agent/battery/battery_darwin.go" "darwin && !ios" \
 	"D.6 Darwin battery gated darwin && !ios"
+
+_require_in_file "agent/battery/battery_ios.go" \
+ "runIOSIoreg" \
+ "D.7 iOS entry calls the tested bounded acquisition"
 
 # ---- E. Installer release tag expectations --------------------------------------------
 
