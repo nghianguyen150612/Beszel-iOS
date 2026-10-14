@@ -200,7 +200,7 @@ func validCpuTimes(t cpu.TimesStat) bool {
 	return true
 }
 func validCpuDelta(a, b cpu.TimesStat) bool {
-	if !validCpuTimes(a) || !validCpuTimes(b) {
+	if !validCpuTimes(a) || !validCpuTimes(b) || (a.CPU != "" && b.CPU != "" && a.CPU != b.CPU) {
 		return false
 	}
 	before, after := cpuCounters(a), cpuCounters(b)

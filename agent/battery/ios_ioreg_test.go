@@ -90,6 +90,7 @@ func TestIOSBatteryParserEdges(t *testing.T) {
 		{"empty", nil},
 		{"oversized", []byte(strings.Repeat("x", iosBatteryOutputLimit+1))},
 		{"unexpected registry", iosFixture(`"Other" = 42`)},
+		{"wrong registry class", []byte(strings.ReplaceAll(string(iosFixture(base)), "AppleARMPMUCharger", "OtherCharger"))},
 	} {
 		t.Run(tt.name, func(t *testing.T) { _, err := parseIOSBatteryOutput(tt.out); require.Error(t, err) })
 	}

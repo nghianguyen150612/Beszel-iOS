@@ -77,10 +77,15 @@ func parseIOSBatteryOutput(out []byte) ([]Battery, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	scanner.Buffer(make([]byte, 4096), iosBatteryOutputLimit)
 	depth := 0
+	expectedRegistry := false
 	props := map[string]string{}
 	var candidates []Battery
 	for scanner.Scan() {
 		line := strings.TrimSpace(strings.TrimLeft(scanner.Text(), " |"))
+		if depth == 0 && strings.HasPrefix(line, "+-o ") {
+			_, class, found := strings.Cut(line, "<class ")
+			expectedRegistry = found && (strings.HasPrefix(class, "AppleARMPMUCharger,") || strings.HasPrefix(class, "AppleARMPMUCharger>"))
+		}
 		if depth == 1 && strings.HasPrefix(line, `"`) {
 			key, value, found := strings.Cut(line, " = ")
 			key = strings.Trim(key, `"`)
@@ -119,6 +124,9 @@ func parseIOSBatteryOutput(out []byte) ([]Battery, error) {
 				}
 				if depth == 0 {
 					if _, ok := props["CurrentCapacity"]; ok {
+						if !expectedRegistry {
+							return nil, errNoBatteries
+						}
 						b, err := iosBatteryFromProperties(props)
 						if err != nil {
 							return nil, err
@@ -126,6 +134,7 @@ func parseIOSBatteryOutput(out []byte) ([]Battery, error) {
 						candidates = append(candidates, b)
 					}
 					props = map[string]string{}
+					expectedRegistry = false
 				}
 			}
 		}

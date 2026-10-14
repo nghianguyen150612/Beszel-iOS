@@ -120,6 +120,20 @@ func TestP008CPUAcquisitionRecoveryAndCores(t *testing.T) {
 	cores, err = getPerCoreCpuUsage(60000)
 	require.Error(t, err)
 	assert.Nil(t, cores)
+	// Unchanged, malformed and reset per-core counters remain unavailable.
+	_, err = getPerCoreCpuUsage(60000)
+	require.Error(t, err)
+	sample.User = math.NaN()
+	cores, err = getPerCoreCpuUsage(60000)
+	require.Error(t, err)
+	assert.Nil(t, cores)
+	sample = cpu.TimesStat{User: 10, System: 5, Idle: 85}
+	_, err = getPerCoreCpuUsage(60000)
+	require.Error(t, err)
+	sample = cpu.TimesStat{User: 20, System: 10, Idle: 170}
+	_, err = getPerCoreCpuUsage(60000)
+	require.NoError(t, err)
+	assert.False(t, validCpuDelta(cpu.TimesStat{CPU: "cpu0"}, cpu.TimesStat{CPU: "cpu1", Idle: 100}))
 	empty = true
 	_, err = getCpuMetrics(60000, false)
 	require.Error(t, err)

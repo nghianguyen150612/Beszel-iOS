@@ -111,7 +111,7 @@ func (a *Agent) refreshSystemDetails() {
 	// total memory
 	a.systemDetails.MemoryTotal = hostInfo.MemTotal
 	hostMemoryTotal := hostInfo.MemTotal
-	if v, err := memoryVirtualMemory(); err == nil {
+	if v, err := memoryVirtualMemory(); err == nil && v != nil {
 		hostMemoryTotal = v.Total
 		if a.systemDetails.MemoryTotal == 0 {
 			a.systemDetails.MemoryTotal = v.Total
