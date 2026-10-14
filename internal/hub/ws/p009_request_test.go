@@ -153,6 +153,9 @@ func TestP009ConcurrentOutOfOrderResponses(t *testing.T) {
 	}
 	for i := len(received) - 1; i >= 0; i-- {
 		p009Reply(t, conn, received[i].Id, *received[i].Id)
+		if i == 0 {
+			p009Reply(t, conn, received[i].Id, *received[i].Id)
+		}
 	}
 	for _, r := range pending {
 		select {
@@ -183,6 +186,9 @@ func TestP009TimeoutLateResponseAndShutdown(t *testing.T) {
 	second, err := wc.SendRequest(t.Context(), common.GetData, nil)
 	require.NoError(t, err)
 	wireSecond := <-requests
+	require.NoError(t, conn.WriteMessage(gws.OpcodeBinary, []byte{0xff}))
+	require.NoError(t, conn.WriteMessage(gws.OpcodeText, []byte("unexpected")))
+	require.NoError(t, conn.WriteMessage(gws.OpcodeBinary, nil))
 	p009Reply(t, conn, wireFirst.Id, "late")
 	p009Reply(t, conn, wireSecond.Id, "current")
 	select {
@@ -303,4 +309,22 @@ func TestP009NoCrossConnectionResponseRouting(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("system B response lost")
 	}
+}
+
+func TestP009RequestSendFailureCleanup(t *testing.T) {
+	rm := NewRequestManager(nil)
+	req, err := rm.SendRequest(t.Context(), common.GetData, nil)
+	require.Nil(t, req)
+	require.Error(t, err)
+	require.Zero(t, rm.GetPendingCount())
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	req, err = rm.SendRequest(ctx, common.GetData, nil)
+	require.Nil(t, req)
+	require.ErrorIs(t, err, context.Canceled)
+	rm.Close()
+	req, err = rm.SendRequest(t.Context(), common.GetData, nil)
+	require.Nil(t, req)
+	require.ErrorIs(t, err, gws.ErrConnClosed)
+	require.Zero(t, rm.GetPendingCount())
 }

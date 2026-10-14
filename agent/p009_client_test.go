@@ -174,7 +174,9 @@ func TestP009WebSocketRepeatedRecoveryAndFreshData(t *testing.T) {
 	h := newP009Hub(t)
 	for i := range 12 {
 		h.reject.Store(true)
-		require.Error(t, h.c.ConnectContext(t.Context()))
+		for range 3 {
+			require.Error(t, h.c.ConnectContext(t.Context()))
+		}
 		require.Nil(t, h.c.getConn())
 		h.reject.Store(false)
 		wc, raw := h.connect(t)
