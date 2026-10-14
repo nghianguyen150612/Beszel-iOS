@@ -36,6 +36,13 @@ func TestSerializationPresenceContracts(t *testing.T) {
 			require.Equal(t, "true", string(object(ZfsPool{Raw: true})["raw"]))
 			updates := object(PackageUpdates{Packages: []PackageUpdate{}})
 			require.Equal(t, "[]", string(updates["packages"]), "successful empty inventory stays explicit")
+			// JSON v2's default nil-slice representation differs from v1. The
+			// scalar omission repair must not silently normalize this contract.
+			nilInventory := "null"
+			if name == "json_v2" {
+				nilInventory = "[]"
+			}
+			require.Equal(t, nilInventory, string(object(PackageUpdates{})["packages"]))
 			require.NotContains(t, updates, "securityKnown")
 			require.NotContains(t, updates, "checkedAt")
 			require.NotContains(t, object(PackageUpdate{}), "security")
@@ -43,6 +50,15 @@ func TestSerializationPresenceContracts(t *testing.T) {
 			combined := object(CombinedData{Containers: []*container.Stats{}})
 			require.Equal(t, "[]", string(combined["container"]))
 			require.NotContains(t, combined, "systemdUpdated")
+			ctr := object(container.Stats{})
+			require.Equal(t, `""`, string(ctr["n"]), "required empty name remains explicit")
+			require.Equal(t, "0", string(ctr["c"]))
+			for _, key := range []string{"ns", "nr", "b", "u"} {
+				require.NotContains(t, ctr, key)
+			}
+			ctr = object(container.Stats{NetworkSent: 1, UpdateAvailable: true})
+			require.Equal(t, "1", string(ctr["ns"]), "old-Agent deprecated network field remains readable")
+			require.Equal(t, "true", string(ctr["u"]))
 			require.NotContains(t, object(zfs.PoolDetail{}), "scrub")
 			require.JSONEq(t, `{"state":"NONE"}`, string(object(zfs.PoolDetail{Scrub: &zfs.Scrub{State: "NONE"}})["scrub"]))
 		})

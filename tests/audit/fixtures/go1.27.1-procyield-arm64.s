@@ -1,3 +1,5 @@
+// Copyright 2015 The Go Authors. All rights reserved.
+// BSD license: see LICENSE.go-runtime in this directory.
 // Go 1.27.1 runtime/asm_arm64.s fragment; Go Authors, BSD license.
 TEXT runtime·procyieldAsm(SB),NOSPLIT,$0-0
 	MOVWU	cycles+0(FP), R0
