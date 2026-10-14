@@ -427,9 +427,7 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 		client.connMu.Unlock()
 		return gws.ErrConnClosed
 	}
-	client.hubVerified = true
 	client.connMu.Unlock()
-	client.agent.connectionManager.notifyWebSocketChange()
 
 	response := &common.FingerprintResponse{
 		Fingerprint: client.fingerprint,
@@ -442,10 +440,21 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 		_, response.Port, _ = net.SplitHostPort(serverAddr)
 	}
 
-	if conn != nil {
-		return client.sendResponseOnConn(conn, response, requestID)
+	if conn == nil {
+		conn = client.getConn()
 	}
-	return client.sendResponse(response, requestID)
+	if err := client.sendResponseOnConn(conn, response, requestID); err != nil {
+		return err
+	}
+	client.connMu.Lock()
+	if client.Conn != conn || conn == nil {
+		client.connMu.Unlock()
+		return gws.ErrConnClosed
+	}
+	client.hubVerified = true
+	client.connMu.Unlock()
+	client.agent.connectionManager.notifyWebSocketChange()
+	return nil
 }
 
 // verifySignature verifies the signature of the token using the public keys.

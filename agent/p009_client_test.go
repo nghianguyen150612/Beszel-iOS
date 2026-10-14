@@ -128,7 +128,7 @@ func (h *p009Hub) authenticate(t *testing.T, wc *hubws.WsConn) {
 	fp, err := wc.GetFingerprint(ctx, "p009-synthetic", h.signer, false)
 	require.NoError(t, err)
 	require.Equal(t, h.c.fingerprint, fp.Fingerprint)
-	require.True(t, h.c.isVerified())
+	require.Eventually(t, h.c.isVerified, time.Second, time.Millisecond)
 	h.a.connectionManager.handleWebSocketChange()
 	require.Equal(t, WebSocketConnected, h.a.connectionManager.getState())
 }
@@ -260,4 +260,22 @@ func (h *p009HubHandler) OnPong(_ *gws.Conn, _ []byte) {
 	case h.pong <- struct{}{}:
 	default:
 	}
+}
+
+func TestP009AuthenticationWaitsForFingerprintSend(t *testing.T) {
+	h := newP009Hub(t)
+	// Leave the read loop stopped so the close callback cannot mask the state
+	// transition after a failed fingerprint write.
+	conn, _, err := gws.NewClient(&gws.BuiltinEventHandler{}, h.c.getOptions())
+	require.NoError(t, err)
+	h.c.connMu.Lock()
+	h.c.Conn = conn
+	h.c.connMu.Unlock()
+	require.NoError(t, conn.NetConn().Close())
+	sig, err := h.signer.Sign(rand.Reader, []byte(h.c.token))
+	require.NoError(t, err)
+	data, err := cbor.Marshal(common.FingerprintRequest{Signature: sig.Blob})
+	require.NoError(t, err)
+	require.Error(t, h.c.handleAuthChallenge(&common.HubRequest[cbor.RawMessage]{Data: data}, nil, conn))
+	require.False(t, h.c.isVerified(), "a failed fingerprint send must not announce polling readiness")
 }
