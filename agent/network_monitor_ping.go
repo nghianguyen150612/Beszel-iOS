@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"golang.org/x/net/icmp"
@@ -48,14 +50,18 @@ const (
 
 // icmpFamily holds the network parameters and cached detection result for one address family.
 type icmpFamily struct {
-	rawNetwork   string    // e.g. "ip4:icmp" or "ip6:ipv6-icmp"
-	dgramNetwork string    // e.g. "udp4" or "udp6"
-	listenAddr   string    // "0.0.0.0" or "::"
-	echoType     icmp.Type // outgoing echo request type
-	replyType    icmp.Type // expected echo reply type
-	proto        int       // IANA protocol number for parsing replies
-	isIPv6       bool
-	mode         icmpMethod // cached detection result (guarded by icmpModeMu)
+	rawNetwork             string    // e.g. "ip4:icmp" or "ip6:ipv6-icmp"
+	dgramNetwork           string    // e.g. "udp4" or "udp6"
+	listenAddr             string    // "0.0.0.0" or "::"
+	echoType               icmp.Type // outgoing echo request type
+	replyType              icmp.Type // expected echo reply type
+	proto                  int       // IANA protocol number for parsing replies
+	isIPv6                 bool
+	mode                   icmpMethod // cached detection result (guarded by mu)
+	mu                     sync.Mutex
+	retryAt                time.Time
+	rawFailed, dgramFailed bool
+	fallbackErr            error
 }
 
 var (
@@ -76,7 +82,6 @@ var (
 		proto:        58,
 		isIPv6:       true,
 	}
-	icmpModeMu sync.Mutex
 	icmpListen = func(network, listenAddr string) (icmpPacketConn, error) {
 		return icmp.ListenPacket(network, listenAddr)
 	}
@@ -96,23 +101,82 @@ func monitorICMP(ctx context.Context, target string) (int64, error) {
 		return -1, err
 	}
 
-	icmpModeMu.Lock()
+	return monitorICMPFamily(ctx, family, ip, icmpListen, monitorICMPNative, monitorICMPExec)
+}
+
+const icmpCapabilityRetry = 5 * time.Minute
+
+// Cache permissions per family, not endpoint packet loss. A rejected native
+// method is skipped until the retry window; a different method can be detected
+// on the next probe. No root/CAP_NET_RAW assumption or privilege escalation.
+func monitorICMPFamily(ctx context.Context, family *icmpFamily, ip net.IP,
+	listen func(string, string) (icmpPacketConn, error),
+	native func(context.Context, string, *icmpFamily, net.Addr) (int64, error),
+	fallback func(context.Context, string, bool) (int64, error)) (int64, error) {
+	if err := ctx.Err(); err != nil {
+		return -1, err
+	}
+	family.mu.Lock()
+	if !family.retryAt.IsZero() && !time.Now().Before(family.retryAt) {
+		family.mode, family.rawFailed, family.dgramFailed, family.fallbackErr = icmpUntried, false, false, nil
+		family.retryAt = time.Time{}
+	}
+	if family.fallbackErr != nil {
+		err := family.fallbackErr
+		family.mu.Unlock()
+		return -1, err
+	}
 	if family.mode == icmpUntried {
-		family.mode = detectICMPMode(family, icmpListen)
+		family.mode = detectICMPMode(family, func(network, address string) (icmpPacketConn, error) {
+			if (network == family.rawNetwork && family.rawFailed) || (network == family.dgramNetwork && family.dgramFailed) {
+				return nil, errors.ErrUnsupported
+			}
+			return listen(network, address)
+		})
+		if family.mode == icmpExecFallback && family.retryAt.IsZero() {
+			family.retryAt = time.Now().Add(icmpCapabilityRetry)
+		}
 	}
 	mode := family.mode
-	icmpModeMu.Unlock()
-
+	family.mu.Unlock()
+	var us int64
+	var err error
 	switch mode {
 	case icmpRaw:
-		return monitorICMPNative(ctx, family.rawNetwork, family, &net.IPAddr{IP: ip})
+		us, err = native(ctx, family.rawNetwork, family, &net.IPAddr{IP: ip})
 	case icmpDatagram:
-		return monitorICMPNative(ctx, family.dgramNetwork, family, &net.UDPAddr{IP: ip})
+		us, err = native(ctx, family.dgramNetwork, family, &net.UDPAddr{IP: ip})
 	case icmpExecFallback:
-		return monitorICMPExec(ctx, ip.String(), family.isIPv6)
+		us, err = fallback(ctx, ip.String(), family.isIPv6)
 	default:
 		return -1, errors.New("unsupported ICMP mode")
 	}
+	if err != nil && icmpCapabilityError(err) {
+		family.mu.Lock()
+		if family.mode == mode {
+			family.mode = icmpUntried
+			family.retryAt = time.Now().Add(icmpCapabilityRetry)
+			switch mode {
+			case icmpRaw:
+				family.rawFailed = true
+			case icmpDatagram:
+				family.dgramFailed = true
+			case icmpExecFallback:
+				family.fallbackErr = err
+			}
+		}
+		family.mu.Unlock()
+	}
+	if err != nil {
+		return -1, err
+	}
+	return us, nil
+}
+
+func icmpCapabilityError(err error) bool {
+	return errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) ||
+		errors.Is(err, syscall.EPROTONOSUPPORT) || errors.Is(err, syscall.EAFNOSUPPORT) ||
+		errors.Is(err, exec.ErrNotFound) || errors.Is(err, os.ErrNotExist) || errors.Is(err, errors.ErrUnsupported)
 }
 
 // resolveICMPTarget resolves a target hostname or IP to determine the address
@@ -126,8 +190,11 @@ func resolveICMPTarget(ctx context.Context, target string) (*icmpFamily, net.IP,
 	}
 
 	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", target)
-	if err != nil || len(ips) == 0 {
+	if err != nil {
 		return nil, nil, err
+	}
+	if len(ips) == 0 {
+		return nil, nil, errors.New("no addresses resolved for ICMP monitor")
 	}
 	for _, ip := range ips {
 		if v4 := ip.To4(); v4 != nil {
@@ -160,9 +227,11 @@ func detectICMPMode(family *icmpFamily, listen func(network, listenAddr string) 
 	return icmpExecFallback
 }
 
+var icmpNativeListen = func(network, address string) (net.PacketConn, error) { return icmp.ListenPacket(network, address) }
+
 // monitorICMPNative sends an ICMP echo request using Go's x/net/icmp package.
 func monitorICMPNative(ctx context.Context, network string, family *icmpFamily, dst net.Addr) (int64, error) {
-	conn, err := icmp.ListenPacket(network, family.listenAddr)
+	conn, err := icmpNativeListen(network, family.listenAddr)
 	if err != nil {
 		return -1, err
 	}
@@ -207,7 +276,11 @@ func monitorICMPPacket(ctx context.Context, conn net.PacketConn, family *icmpFam
 	}
 
 	// Set deadline before sending
-	if err := conn.SetDeadline(time.Now().Add(3 * time.Second)); err != nil {
+	deadline := time.Now().Add(3 * time.Second)
+	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
+		deadline = d
+	}
+	if err := conn.SetDeadline(deadline); err != nil {
 		return -1, err
 	}
 
@@ -222,6 +295,9 @@ func monitorICMPPacket(ctx context.Context, conn net.PacketConn, family *icmpFam
 		n, peer, err := conn.ReadFrom(buf)
 		received := time.Now()
 		if err != nil {
+			return -1, err
+		}
+		if err := ctx.Err(); err != nil {
 			return -1, err
 		}
 		if !targetIP.Equal(icmpAddrIP(peer)) {
@@ -265,6 +341,14 @@ func pingCommand(goos, target string, isIPv6 bool) (string, []string, error) {
 		return "ping", []string{family, "-n", "1", "-w", "3000", target}, nil
 	case "linux":
 		return "ping", []string{family, "-n", "-c", "1", target}, nil
+	case "ios":
+		// Procursus network-cmds packages Apple ping and ping6. Availability and
+		// the common -n/-c arguments are validated at runtime, separately per family.
+		command := "ping"
+		if isIPv6 {
+			command = "ping6"
+		}
+		return command, []string{"-n", "-c", "1", target}, nil
 	case "darwin", "freebsd", "openbsd":
 		command := "ping"
 		if isIPv6 {
@@ -284,17 +368,91 @@ func monitorICMPExec(ctx context.Context, target string, isIPv6 bool) (int64, er
 	if err != nil {
 		return -1, err
 	}
+	if runtime.GOOS == "ios" {
+		name, err = validatedIOSPing(ctx, isIPv6)
+		if err != nil {
+			return -1, err
+		}
+	}
+	return runPingCommand(ctx, name, args)
+}
+
+const pingOutputLimit = 64 << 10
+
+var errPingOutputLimit = errors.New("ping output exceeds limit")
+
+type limitedPingOutput struct{ bytes.Buffer }
+
+func (b *limitedPingOutput) Write(p []byte) (int, error) {
+	if b.Len()+len(p) > pingOutputLimit {
+		return 0, errPingOutputLimit
+	}
+	return b.Buffer.Write(p)
+}
+
+func runPingCommand(ctx context.Context, name string, args []string) (int64, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 	cmd := exec.CommandContext(ctx, name, args...)
-	// Keep Unix output and decimal formatting stable. Windows ignores LC_ALL.
 	cmd.Env = append(os.Environ(), "LC_ALL=C")
-	output, err := cmd.Output()
+	var output limitedPingOutput
+	cmd.Stdout, cmd.Stderr = &output, io.Discard
+	cmd.WaitDelay = 250 * time.Millisecond
+	err := cmd.Run()
 	if ctx.Err() != nil {
 		return -1, ctx.Err()
 	}
 	if err != nil {
 		return -1, fmt.Errorf("%s failed: %w", name, err)
 	}
-	return parsePingResponse(output)
+	return parsePingResponse(output.Bytes())
+}
+
+type iosPingCapability struct {
+	mu   sync.Mutex
+	at   time.Time
+	path string
+	err  error
+}
+
+var iosPingV4, iosPingV6 iosPingCapability
+
+func validatedIOSPing(ctx context.Context, isIPv6 bool) (string, error) {
+	capability := &iosPingV4
+	if isIPv6 {
+		capability = &iosPingV6
+	}
+	return capability.command(ctx, isIPv6, exec.LookPath, runPingCommand)
+}
+
+func (c *iosPingCapability) command(ctx context.Context, isIPv6 bool,
+	look func(string) (string, error), run func(context.Context, string, []string) (int64, error)) (string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.at.IsZero() && time.Since(c.at) < icmpCapabilityRetry {
+		return c.path, c.err
+	}
+	target := "127.0.0.1"
+	if isIPv6 {
+		target = "::1"
+	}
+	name, args, _ := pingCommand("ios", target, isIPv6)
+	path, err := look(name)
+	if err == nil {
+		validationCtx, cancel := context.WithTimeout(ctx, time.Second)
+		_, err = run(validationCtx, path, args)
+		cancel()
+	}
+	// A caller cancellation does not poison the capability cache.
+	if ctx.Err() != nil {
+		return "", ctx.Err()
+	}
+	c.at, c.path, c.err = time.Now(), path, nil
+	if err != nil {
+		c.path = ""
+		c.err = fmt.Errorf("iOS %s fallback unavailable: %w: %v", name, errors.ErrUnsupported, err)
+	}
+	return c.path, c.err
 }
 
 // parsePingResponse returns the reported RTT, never subprocess execution time.
