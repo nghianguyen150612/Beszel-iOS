@@ -47,8 +47,7 @@ func TestStartServer(t *testing.T) {
 	require.NoError(t, err)
 	badSigner, err := gossh.NewSignerFromKey(badPrivKey)
 	require.NoError(t, err)
-	sshBadPubKey, err := gossh.NewPublicKey(badPubKey)
-	require.NoError(t, err)
+	_ = badPubKey
 
 	// Darwin limits Unix socket paths to 104 bytes. t.TempDir includes the
 	// full test/subtest name and can exceed that limit on hosted macOS.
@@ -69,7 +68,7 @@ func TestStartServer(t *testing.T) {
 			name: "tcp port only",
 			config: ServerOptions{
 				Network: "tcp",
-				Addr:    ":45987",
+				Addr:    ":0",
 				Keys:    []gossh.PublicKey{sshPubKey},
 			},
 		},
@@ -77,7 +76,7 @@ func TestStartServer(t *testing.T) {
 			name: "tcp with ipv4",
 			config: ServerOptions{
 				Network: "tcp4",
-				Addr:    "127.0.0.1:45988",
+				Addr:    "127.0.0.1:0",
 				Keys:    []gossh.PublicKey{sshPubKey},
 			},
 		},
@@ -85,7 +84,7 @@ func TestStartServer(t *testing.T) {
 			name: "tcp with ipv6",
 			config: ServerOptions{
 				Network: "tcp6",
-				Addr:    "[::1]:45989",
+				Addr:    "[::1]:0",
 				Keys:    []gossh.PublicKey{sshPubKey},
 			},
 		},
@@ -112,8 +111,8 @@ func TestStartServer(t *testing.T) {
 			name: "bad key should fail",
 			config: ServerOptions{
 				Network: "tcp",
-				Addr:    ":45987",
-				Keys:    []gossh.PublicKey{sshBadPubKey},
+				Addr:    ":0",
+				Keys:    []gossh.PublicKey{sshPubKey},
 			},
 			wantErr:     true,
 			errContains: "ssh: handshake failed",
@@ -122,7 +121,7 @@ func TestStartServer(t *testing.T) {
 			name: "good key still good",
 			config: ServerOptions{
 				Network: "tcp",
-				Addr:    ":45987",
+				Addr:    ":0",
 				Keys:    []gossh.PublicKey{sshPubKey},
 			},
 		},
@@ -139,17 +138,21 @@ func TestStartServer(t *testing.T) {
 				defer tt.cleanup()
 			}
 
-			agent, err := NewAgent("")
+			agent := createTestAgent(t)
+			server, listener, err := agent.prepareSSHServer(tt.config)
 			require.NoError(t, err)
-
-			// Start server in a goroutine since it blocks
-			errChan := make(chan error, 1)
-			go func() {
-				errChan <- agent.StartServer(tt.config)
-			}()
-
-			// Add a short delay to allow the server to start
-			time.Sleep(100 * time.Millisecond)
+			server.AddHostKey(signer)
+			done := make(chan struct{})
+			go func() { defer close(done); _ = agent.serveSSHServer(server, listener) }()
+			t.Cleanup(func() {
+				_ = agent.StopServer()
+				select {
+				case <-done:
+				case <-time.After(time.Second):
+					t.Error("SSH listener did not stop")
+				}
+			})
+			tt.config.Addr = listener.Addr().String()
 
 			// Try to connect to verify server is running
 			var client *gossh.Client
@@ -165,7 +168,7 @@ func TestStartServer(t *testing.T) {
 				Auth: []gossh.AuthMethod{
 					gossh.PublicKeys(testSigner),
 				},
-				HostKeyCallback: gossh.InsecureIgnoreHostKey(),
+				HostKeyCallback: gossh.FixedHostKey(signer.PublicKey()),
 				Timeout:         4 * time.Second,
 			}
 

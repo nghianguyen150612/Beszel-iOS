@@ -279,3 +279,30 @@ func TestP009AuthenticationWaitsForFingerprintSend(t *testing.T) {
 	require.Error(t, h.c.handleAuthChallenge(&common.HubRequest[cbor.RawMessage]{Data: data}, nil, conn))
 	require.False(t, h.c.isVerified(), "a failed fingerprint send must not announce polling readiness")
 }
+
+func TestP009QueuedConnectCancellation(t *testing.T) {
+	h := newP009Hub(t)
+	entered := make(chan struct{})
+	blocker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { close(entered); <-r.Context().Done() }))
+	defer blocker.Close()
+	u, _ := url.Parse(blocker.URL)
+	h.c.hubURL = u
+	first := make(chan error, 1)
+	go func() { first <- h.c.ConnectContext(t.Context()) }()
+	<-entered
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	second := make(chan error, 1)
+	go func() { second <- h.c.ConnectContext(ctx) }()
+	select {
+	case err := <-second:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(50 * time.Millisecond):
+		h.c.Close()
+		<-first
+		<-second
+		t.Fatal("queued connection ignored cancellation")
+	}
+	h.c.Close()
+	<-first
+}

@@ -60,7 +60,7 @@ type WebSocketClient struct {
 	gws.BuiltinEventHandler
 	options            *gws.ClientOption                   // WebSocket client configuration options
 	agent              *Agent                              // Reference to the parent agent
-	connectMu          sync.Mutex                          // Serializes upgrade attempts
+	connectSlot        chan struct{}                       // Serializes upgrade attempts
 	connectCancel      context.CancelFunc                  // Cancels in-flight TCP/TLS/upgrade
 	connMu             sync.RWMutex                        // Guards Conn and hubVerified across callbacks
 	Conn               *gws.Conn                           // Active WebSocket connection
@@ -281,8 +281,18 @@ func (client *WebSocketClient) Connect() error {
 // ConnectContext bounds setup and lets shutdown interrupt DNS, TCP, TLS and upgrade.
 // The existing proxy dialer is retained; no direct-network fallback is used.
 func (client *WebSocketClient) ConnectContext(parent context.Context) error {
-	client.connectMu.Lock()
-	defer client.connectMu.Unlock()
+	client.connMu.Lock()
+	if client.connectSlot == nil {
+		client.connectSlot = make(chan struct{}, 1)
+	}
+	slot := client.connectSlot
+	client.connMu.Unlock()
+	select {
+	case slot <- struct{}{}:
+	case <-parent.Done():
+		return parent.Err()
+	}
+	defer func() { <-slot }()
 	if err := parent.Err(); err != nil {
 		return err
 	}
