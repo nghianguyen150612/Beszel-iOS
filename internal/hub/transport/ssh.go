@@ -33,13 +33,15 @@ var sshHandshakeTimeout = 10 * time.Second
 // SSHTransport implements Transport over SSH connections. It owns the single
 // SSH connection to an agent, which is shared by all requests and sessions.
 type SSHTransport struct {
-	mu        sync.Mutex
-	client    *ssh.Client
-	config    *ssh.ClientConfig
-	host      string
-	port      string
-	timeout   time.Duration
-	onConnect func(agentVersion semver.Version)
+	mu          sync.Mutex
+	setupSlot   chan struct{}
+	setupCancel context.CancelFunc
+	client      *ssh.Client
+	config      *ssh.ClientConfig
+	host        string
+	port        string
+	timeout     time.Duration
+	onConnect   func(agentVersion semver.Version)
 }
 
 // SSHTransportConfig holds configuration for creating an SSH transport.
@@ -62,6 +64,7 @@ func NewSSHTransport(cfg SSHTransportConfig) *SSHTransport {
 		timeout = 4 * time.Second
 	}
 	return &SSHTransport{
+		setupSlot: make(chan struct{}, 1),
 		config:    cfg.Config,
 		host:      cfg.Host,
 		port:      cfg.Port,
@@ -150,7 +153,16 @@ func (t *SSHTransport) IsConnected() bool {
 
 // Close terminates the SSH connection.
 func (t *SSHTransport) Close() {
-	t.CloseClient(t.GetClient())
+	t.mu.Lock()
+	if t.setupCancel != nil {
+		t.setupCancel()
+	}
+	client := t.client
+	t.client = nil
+	t.mu.Unlock()
+	if client != nil {
+		_ = client.Close()
+	}
 }
 
 // CloseClient closes client and clears it if it is still the current
@@ -184,6 +196,28 @@ func closeOnCancellation(ctx context.Context, closeConn func()) func() {
 // Connect returns the current client or establishes a new cancellable SSH
 // connection, calling OnConnect when a new connection is stored.
 func (t *SSHTransport) Connect(ctx context.Context) (*ssh.Client, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	t.mu.Lock()
+	if t.setupSlot == nil {
+		t.setupSlot = make(chan struct{}, 1)
+	}
+	t.mu.Unlock()
+	// Serialize setup, while queued callers remain cancellable. Only one TCP/SSH
+	// handshake is needed for concurrent sessions on the shared owner.
+	select {
+	case t.setupSlot <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	defer func() { <-t.setupSlot }()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	t.mu.Lock()
+	t.setupCancel = cancel
+	t.mu.Unlock()
+	defer func() { t.mu.Lock(); t.setupCancel = nil; t.mu.Unlock() }()
 	if client := t.GetClient(); client != nil {
 		return client, nil
 	}
@@ -221,6 +255,11 @@ func (t *SSHTransport) Connect(ctx context.Context) (*ssh.Client, error) {
 	client := ssh.NewClient(sshConn, chans, reqs)
 
 	t.mu.Lock()
+	if ctx.Err() != nil {
+		t.mu.Unlock()
+		client.Close()
+		return nil, ctx.Err()
+	}
 	if existing := t.client; existing != nil {
 		t.mu.Unlock()
 		client.Close()

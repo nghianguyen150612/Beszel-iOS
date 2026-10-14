@@ -30,6 +30,9 @@ type RequestManager struct {
 	conn        *gws.Conn
 	pendingReqs map[RequestID]*PendingRequest
 	nextID      atomic.Uint32
+	closed      bool
+	legacy      bool // No-ID peers permit exactly one in-flight operation.
+	legacySlot  chan struct{}
 }
 
 // NewRequestManager creates a new request manager for a WebSocket connection
@@ -37,13 +40,29 @@ func NewRequestManager(conn *gws.Conn) *RequestManager {
 	rm := &RequestManager{
 		conn:        conn,
 		pendingReqs: make(map[RequestID]*PendingRequest),
+		legacySlot:  make(chan struct{}, 1),
 	}
 	return rm
 }
 
 // SendRequest sends a request and returns a channel for the response
 func (rm *RequestManager) SendRequest(ctx context.Context, action common.WebSocketAction, data any) (*PendingRequest, error) {
-	reqID := RequestID(rm.nextID.Add(1))
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if rm.legacy {
+		select {
+		case rm.legacySlot <- struct{}{}:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	release := func() {
+		if rm.legacy {
+			<-rm.legacySlot
+		}
+	}
+	var reqID RequestID
 
 	// Respect any caller-provided deadline. If none is set, apply a reasonable default
 	// so pending requests don't live forever if the agent never responds.
@@ -64,8 +83,23 @@ func (rm *RequestManager) SendRequest(ctx context.Context, action common.WebSock
 	}
 
 	rm.Lock()
+	if rm.closed {
+		rm.Unlock()
+		cancel()
+		release()
+		return nil, gws.ErrConnClosed
+	}
+	for {
+		reqID = RequestID(rm.nextID.Add(1))
+		if _, exists := rm.pendingReqs[reqID]; !exists {
+			break
+		}
+	}
+	req.ID = reqID
 	rm.pendingReqs[reqID] = req
 	rm.Unlock()
+	// Watch before sending, so cancellation also bounds a blocked socket write.
+	go func() { rm.cleanupRequest(req); release() }()
 
 	hubReq := common.HubRequest[any]{
 		Id:     (*uint32)(&reqID),
@@ -74,13 +108,24 @@ func (rm *RequestManager) SendRequest(ctx context.Context, action common.WebSock
 	}
 
 	// Send the request
-	if err := rm.sendMessage(hubReq); err != nil {
+	// Cancellation during a blocked send must release the shared socket; stop
+	// this callback before waiting for a response, where modern cancellation is
+	// request-local and IDs make late replies safe.
+	sendClosed := make(chan struct{})
+	stopSend := context.AfterFunc(reqCtx, func() {
+		if rm.conn != nil {
+			_ = rm.conn.NetConn().Close()
+		}
+		close(sendClosed)
+	})
+	sendErr := rm.sendMessage(hubReq)
+	if !stopSend() {
+		<-sendClosed
+	}
+	if err := sendErr; err != nil {
 		rm.cancelRequest(reqID)
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-
-	// Start cleanup watcher for timeout/cancellation
-	go rm.cleanupRequest(req)
 
 	return req, nil
 }
@@ -101,71 +146,84 @@ func (rm *RequestManager) sendMessage(data any) error {
 
 // handleResponse processes a single response message
 func (rm *RequestManager) handleResponse(message *gws.Message) {
-	var response common.AgentResponse
-	if err := cbor.Unmarshal(message.Data.Bytes(), &response); err != nil {
-		// Legacy response without ID - route to first pending request of any type
-		rm.routeLegacyResponse(message)
-		return
-	}
-
-	if response.Id == nil {
-		rm.routeLegacyResponse(message)
-		return
-	}
-
-	reqID := RequestID(*response.Id)
-
-	rm.RLock()
-	req, exists := rm.pendingReqs[reqID]
-	rm.RUnlock()
-
-	if !exists {
-		// Request not found (might have timed out) - close the message
+	if cbor.Valid(message.Data.Bytes()) != nil {
 		message.Close()
 		return
 	}
+	if rm.legacy {
+		rm.routeLegacyResponse(message)
+		return
+	}
+	var response common.AgentResponse
+	if cbor.Unmarshal(message.Data.Bytes(), &response) != nil || response.Id == nil {
+		message.Close()
+		return
+	}
+	rm.Lock()
+	req := rm.pendingReqs[RequestID(*response.Id)]
+	if req != nil {
+		delete(rm.pendingReqs, req.ID)
+	}
+	rm.Unlock()
+	rm.deliver(req, message)
+}
 
+// No-ID messages are only meaningful on an explicitly serialized legacy peer.
+func (rm *RequestManager) routeLegacyResponse(message *gws.Message) {
+	rm.Lock()
+	var req *PendingRequest
+	if rm.legacy && len(rm.pendingReqs) == 1 {
+		for _, r := range rm.pendingReqs {
+			req = r
+			delete(rm.pendingReqs, r.ID)
+		}
+	}
+	rm.Unlock()
+	rm.deliver(req, message)
+}
+
+func (rm *RequestManager) deliver(req *PendingRequest, message *gws.Message) {
+	if req == nil {
+		message.Close()
+		return
+	}
+	// Keep cancellation cleanup and delivery ordered: cancellation cannot drain
+	// the slot before a concurrent delivery enqueues an abandoned pooled message.
+	rm.Lock()
+	defer rm.Unlock()
+	if req.Context.Err() != nil {
+		message.Close()
+		return
+	}
 	select {
 	case req.ResponseCh <- message:
-		// Message successfully delivered - the receiver will close it
-		rm.deleteRequest(reqID)
-	case <-req.Context.Done():
-		// Request was cancelled/timed out - close the message
+	default:
 		message.Close()
 	}
 }
 
-// routeLegacyResponse handles responses that don't have request IDs (backwards compatibility)
-func (rm *RequestManager) routeLegacyResponse(message *gws.Message) {
-	// Snapshot the oldest pending request without holding the lock during send
-	rm.RLock()
-	var oldestReq *PendingRequest
-	for _, req := range rm.pendingReqs {
-		if oldestReq == nil || req.CreatedAt.Before(oldestReq.CreatedAt) {
-			oldestReq = req
-		}
-	}
-	rm.RUnlock()
-
-	if oldestReq != nil {
-		select {
-		case oldestReq.ResponseCh <- message:
-			// Message successfully delivered - the receiver will close it
-			rm.deleteRequest(oldestReq.ID)
-		case <-oldestReq.Context.Done():
-			// Request was cancelled - close the message
-			message.Close()
-		}
-	} else {
-		// No pending requests - close the message
-		message.Close()
-	}
-}
-
-// cleanupRequest handles request timeout and cleanup
+// cleanupRequest releases even a delivered response if its consumer cancels.
 func (rm *RequestManager) cleanupRequest(req *PendingRequest) {
 	<-req.Context.Done()
-	rm.cancelRequest(req.ID)
+	rm.Lock()
+	pending := rm.pendingReqs[req.ID] == req
+	if pending {
+		delete(rm.pendingReqs, req.ID)
+	}
+	select {
+	case msg := <-req.ResponseCh:
+		msg.Close()
+	default:
+	}
+	rm.Unlock()
+	// A late no-ID response cannot be distinguished from the next request.
+	// Retire that connection on abandonment; modern ID peers remain reusable.
+	if pending && rm.legacy {
+		rm.Close()
+		if rm.conn != nil {
+			_ = rm.conn.NetConn().Close()
+		}
+	}
 }
 
 // cancelRequest removes a request and cancels its context
@@ -191,6 +249,7 @@ func (rm *RequestManager) Close() {
 	rm.Lock()
 	defer rm.Unlock()
 
+	rm.closed = true
 	// Cancel all pending requests
 	for _, req := range rm.pendingReqs {
 		req.Cancel()

@@ -66,6 +66,7 @@ func NewWsConnection(conn *gws.Conn, agentVersion semver.Version) *WsConn {
 		DownChan:       make(chan struct{}, 1),
 		agentVersion:   agentVersion,
 	}
+	ws.requestManager.legacy = agentVersion.LT(beszel.MinVersionAgentResponse)
 	ws.conn.Store(conn)
 	ws.lastMessage.Store(time.Now().UnixNano())
 	return ws
@@ -80,10 +81,12 @@ func (h *Handler) OnOpen(conn *gws.Conn) {
 func (h *Handler) OnMessage(conn *gws.Conn, message *gws.Message) {
 	conn.SetDeadline(time.Now().Add(deadline))
 	if message.Opcode != gws.OpcodeBinary || message.Data.Len() == 0 {
+		message.Close()
 		return
 	}
 	wsConn, ok := conn.Session().Load("wsConn")
 	if !ok {
+		message.Close()
 		_ = conn.WriteClose(1000, nil)
 		return
 	}
@@ -97,14 +100,18 @@ func (h *Handler) OnClose(conn *gws.Conn, err error) {
 	if !ok {
 		return
 	}
-	wsConn.(*WsConn).conn.Store(nil)
+	wsConn.(*WsConn).conn.CompareAndSwap(conn, nil)
+	wsConn.(*WsConn).requestManager.Close()
 	// wait 5 seconds to allow reconnection before setting system down
 	// use a weak pointer to avoid keeping references if the system is removed
 	go func(downChan weak.Pointer[chan struct{}]) {
 		time.Sleep(5 * time.Second)
 		downChanValue := downChan.Value()
 		if downChanValue != nil {
-			*downChanValue <- struct{}{}
+			select {
+			case *downChanValue <- struct{}{}:
+			default:
+			}
 		}
 	}(weak.Make(&wsConn.(*WsConn).DownChan))
 }
