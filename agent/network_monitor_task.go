@@ -55,7 +55,7 @@ func newMonitorTaskFromExisting(config monitor.Config, existing *monitorTask) *m
 		}
 		// Keep the last known certificate, but check again soon for the new config.
 		// The hub already stores it, so it is not marked unsent.
-		if config.Target == existing.config.Target {
+		if config.Target == existing.config.Target && certCheckEnabled(config) && certCheckEnabled(existing.config) {
 			task.cert = existing.certInfo()
 		}
 	}
