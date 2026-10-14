@@ -337,7 +337,7 @@ func TestP008NetworkDiscoveryPollingRecovery(t *testing.T) {
 	assert.Contains(t, stats.NetworkInterfaces, "en0")
 	assert.NotContains(t, stats.NetworkInterfaces, "inactive")
 	assert.NotContains(t, stats.NetworkInterfaces, "lo0")
-	assert.NotContains(t, stats.NetworkInterfaces, "awdl0")
+	assert.Contains(t, stats.NetworkInterfaces, "awdl0", "preserve existing active-interface policy; NICS can exclude it")
 	assert.Zero(t, stats.Bandwidth)
 	counters = append(counters, psnet.IOCountersStat{Name: "utun8", BytesRecv: 1000}, psnet.IOCountersStat{Name: "pdp_ip0", BytesSent: 1000})
 	stats = poll()

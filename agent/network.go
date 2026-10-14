@@ -239,7 +239,6 @@ func skipNetworkInterface(v psutilNet.IOCountersStat, nicCfg *NicConfig) bool {
 		strings.HasPrefix(v.Name, "veth"),
 		strings.HasPrefix(v.Name, "bond"),
 		strings.HasPrefix(v.Name, "cali"),
-		v.Name == "awdl0",
 		(v.BytesRecv == 0 && v.BytesSent == 0):
 		return true
 	default:
