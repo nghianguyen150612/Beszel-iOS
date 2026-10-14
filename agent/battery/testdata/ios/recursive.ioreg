@@ -1,0 +1,11 @@
++-o AppleARMPMUCharger <class AppleARMPMUCharger>
+  {
+    "BatteryData" = {"CurrentCapacity"=1,"MaxCapacity"=2}
+    "CurrentCapacity" = 42
+    "MaxCapacity" = 100
+    "AppleRawMaxCapacity" = 3989
+    "ExternalConnected" = Yes
+    "IsCharging" = Yes
+    "FullyCharged" = No
+    "BatteryInstalled" = Yes
+  }

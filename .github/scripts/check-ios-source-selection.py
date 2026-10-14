@@ -65,6 +65,9 @@ def validate(packages, target):
             alternatives[0] if target == 'linux' else alternatives[1])
         if agent.intersection(alternatives) != {expected}:
             raise ValueError(f'{target}: invalid {family} implementations: {agent.intersection(alternatives)}')
+    if target == 'ios':
+        require(MODULE + '/agent', ['memory_platform_ios.go', 'ios_memory.go', 'ios_metadata.go', 'ios_disk.go'])
+    require(MODULE + '/agent/battery', ['ios_ioreg.go'])
     for subsystem in ['battery', 'wifi']:
         package, files = require(MODULE + '/agent/' + subsystem, [subsystem + '.go'])
         expected = f'{subsystem}_{target}.go'

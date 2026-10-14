@@ -36,7 +36,7 @@ func (a *Agent) refreshSystemDetails() {
 		a.systemDetails.Podman = a.dockerManager.IsPodman()
 		// Docker's host info describes the machine its daemon runs on. On macOS and
 		// Windows that is a Linux VM, so its CPU and memory totals are not this host's.
-		if runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
+		if runtime.GOOS != "darwin" && runtime.GOOS != "ios" && runtime.GOOS != "windows" {
 			hostInfo, _ = a.dockerManager.GetHostInfo()
 		}
 	}
@@ -92,7 +92,7 @@ func (a *Agent) refreshSystemDetails() {
 	// gopsutil doesn't parse the "cpu model" field from /proc/cpuinfo, which
 	// is the only source of the CPU model name on MIPS. Fall back to reading
 	// it directly when ModelName is empty.
-	if a.systemDetails.CpuModel == "" {
+	if runtime.GOOS == "linux" && a.systemDetails.CpuModel == "" {
 		a.systemDetails.CpuModel = getCpuModelFromCpuinfo()
 	}
 	// cores / threads
@@ -111,7 +111,7 @@ func (a *Agent) refreshSystemDetails() {
 	// total memory
 	a.systemDetails.MemoryTotal = hostInfo.MemTotal
 	hostMemoryTotal := hostInfo.MemTotal
-	if v, err := memoryVirtualMemory(); err == nil {
+	if v, err := memoryVirtualMemory(); err == nil && v != nil {
 		hostMemoryTotal = v.Total
 		if a.systemDetails.MemoryTotal == 0 {
 			a.systemDetails.MemoryTotal = v.Total
@@ -186,7 +186,8 @@ func (a *Agent) getSystemStats(cacheTimeMs uint16) system.Stats {
 	// per-core /proc/stat counters there describe shared host cores, not the
 	// guest, and would contradict the total.
 	if !cpuMetrics.fromCgroup {
-		if perCoreUsage, err := getPerCoreCpuUsage(cacheTimeMs); err == nil {
+		if perCoreUsage, err := getPerCoreCpuUsage(cacheTimeMs); err == nil &&
+			(runtime.GOOS != "ios" || a.systemDetails.Threads == 0 || len(perCoreUsage) == a.systemDetails.Threads) {
 			systemStats.CpuCoresUsage = perCoreUsage
 		}
 	}

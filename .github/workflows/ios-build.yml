@@ -76,6 +76,13 @@ jobs:
       - name: Verify iOS, macOS and Linux source selection
         run: python3 .github/scripts/check-ios-source-selection.py --output "$RUNNER_TEMP/source-selection.json"
 
+      - name: Test portable telemetry and macOS regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u NETWORK go test -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system
+          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system -run 'Test(P008|IOSBattery|CalculateHostMemory|CpuMetrics|GetAllBusy|Disk|SumAndTrack|SkipNetwork|Serialization|Battery|Primary|Normalize)' -count=1
+
       - name: Preserve macOS build and GPU parser tests
         shell: bash
         run: |

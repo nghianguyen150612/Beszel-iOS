@@ -60,3 +60,25 @@ corresponding gate. Feature feasibility questions such as native iOS Wi-Fi RSSI
 may remain deferred only with an owner and a defined absent/no-op fallback.
 P004 may begin only after Gate A is structurally complete; no production upgrade
 is authorized by that decision.
+
+
+## P008 source, fixture and native-build evidence
+
+The companion [P008 compatibility report](ios-system-metrics-compatibility.md)
+and [machine-readable validation](ios-system-metrics-validation.json) record
+source fixes, deterministic/error/recovery fixtures, shared regressions and
+native build results. These do not replace the physical procedures above:
+
+| Case | Cloud-verifiable P008 portion | Device-dependent portion |
+| --- | --- | --- |
+| `IOS-AGENT-01` | Exact A7 mapping, unknown/missing sysctl/plist/count fixtures, platform selection and native linkage | Compare actual iPad sysctl/plist and payload in P018 |
+| `IOS-AGENT-02` | CPU baselines/resets/errors, Mach memory arithmetic, filesystem usage selection, unavailable physical I/O, dynamic interface/rate/reset/cache fixtures | Observe actual iOS CPU/RAM, root/data mount semantics and Wi-Fi/VPN byte counters in P018 |
+| `IOS-AGENT-03` | Production ioreg parser, unknown states, bounded subprocess cleanup, cache/error/recovery and payload fixtures | Compare current ioreg output and real charging-state transitions in P018 |
+
+The original device acceptance rows remain **planned** until those physical
+comparisons run. Required scalar defaults do not establish measured zeros for
+unavailable sources; optional battery, swap and physical disk I/O fields remain
+absent according to the existing protocol. P008 can pass its integration gate
+with explicit unavailable physical I/O; it does not claim that collector is
+supported. Gate C remains pending P009–P012 and applicable device evidence;
+Gate F remains P018. The historical 0.19 device record is unchanged.

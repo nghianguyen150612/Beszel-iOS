@@ -13,6 +13,9 @@ import (
 	psutilNet "github.com/shirou/gopsutil/v4/net"
 )
 
+var networkIOCounters = psutilNet.IOCounters
+var networkInterfaces = psutilNet.Interfaces
+
 // NicConfig controls inclusion/exclusion of network interfaces via the NICS env var
 //
 // Behavior mirrors SensorConfig's matching logic:
@@ -82,10 +85,15 @@ func (a *Agent) updateNetworkStats(cacheTimeMs uint16, systemStats *system.Stats
 
 	a.ensureNetworkInterfacesMap(systemStats)
 
-	if netIO, err := psutilNet.IOCounters(true); err == nil {
+	if netIO, err := networkIOCounters(true); err == nil {
+		a.reconcileNetworkInterfaces(netIO)
 		nis, msElapsed := a.loadAndTickNetBaseline(cacheTimeMs)
 		bytesSentPerSecond, bytesRecvPerSecond := a.sumAndTrackPerNicDeltas(cacheTimeMs, msElapsed, netIO, systemStats)
 		a.applyNetworkTotals(cacheTimeMs, netIO, systemStats, nis, bytesSentPerSecond, bytesRecvPerSecond)
+	} else {
+		// Failure breaks continuity; recovery establishes fresh per-interval baselines.
+		a.netIoStats = make(map[uint16]system.NetIoStats)
+		a.netInterfaceDeltaTrackers = make(map[uint16]*deltatracker.DeltaTracker[string, uint64])
 	}
 }
 
@@ -100,21 +108,9 @@ func (a *Agent) initializeNetIoStats() {
 		nicCfg = newNicConfig(nicsEnvVal)
 	}
 
-	// get current network I/O stats and record valid interfaces
-	if netIO, err := psutilNet.IOCounters(true); err == nil {
-		for _, v := range netIO {
-			if skipNetworkInterface(v, nicCfg) {
-				continue
-			}
-			// driver is checked only here so updates don't pay for it on non-Jetson systems
-			useMacCounters := isNvidiaEthernet(v.Name)
-			if useMacCounters {
-				correctNvethernetCounters(&v)
-			}
-			slog.Info("Detected network interface", "name", v.Name, "sent", v.BytesSent, "recv", v.BytesRecv)
-			// store as a valid network interface
-			a.netInterfaces[v.Name] = useMacCounters
-		}
+	a.nicConfig = nicCfg
+	if netIO, err := networkIOCounters(true); err == nil {
+		a.reconcileNetworkInterfaces(netIO)
 	}
 
 	// Reset per-cache-time trackers and baselines so they will reinitialize on next use
@@ -122,13 +118,9 @@ func (a *Agent) initializeNetIoStats() {
 	a.netIoStats = make(map[uint16]system.NetIoStats)
 }
 
-// ensureNetInterfacesInitialized re-initializes NICs if none are currently tracked
+// ensureNetInterfacesInitialized parses policy and initializes state once.
 func (a *Agent) ensureNetInterfacesInitialized() {
-	if len(a.netInterfaces) == 0 {
-		// if no network interfaces, initialize again
-		// this is a fix if agent started before network is online (#466)
-		// maybe refactor this in the future to not cache interface names at all so we
-		// don't miss an interface that's been added after agent started in any circumstance
+	if a.netInterfaces == nil {
 		a.initializeNetIoStats()
 	}
 }
@@ -147,7 +139,10 @@ func (a *Agent) loadAndTickNetBaseline(cacheTimeMs uint16) (netIoStat system.Net
 		netIoStat.Time = time.Now()
 		msElapsed = 0
 	} else {
-		msElapsed = uint64(time.Since(netIoStat.Time).Milliseconds())
+		elapsed := time.Since(netIoStat.Time).Milliseconds()
+		if elapsed > 0 {
+			msElapsed = uint64(elapsed)
+		}
 		netIoStat.Time = time.Now()
 	}
 	return netIoStat, msElapsed
@@ -177,28 +172,17 @@ func (a *Agent) sumAndTrackPerNicDeltas(cacheTimeMs uint16, msElapsed uint64, ne
 		tracker.Set(upKey, v.BytesSent)
 		tracker.Set(downKey, v.BytesRecv)
 		if msElapsed > 0 {
-			if prevVal, ok := tracker.Previous(upKey); ok {
-				var deltaBytes uint64
-				if v.BytesSent >= prevVal {
-					deltaBytes = v.BytesSent - prevVal
-				} else {
-					deltaBytes = v.BytesSent
-				}
-				upDelta = deltaBytes * 1000 / msElapsed
+			if prev, ok := tracker.Previous(upKey); ok {
+				upDelta = rateFromCounters(v.BytesSent, prev, msElapsed)
 			}
-			if prevVal, ok := tracker.Previous(downKey); ok {
-				var deltaBytes uint64
-				if v.BytesRecv >= prevVal {
-					deltaBytes = v.BytesRecv - prevVal
-				} else {
-					deltaBytes = v.BytesRecv
-				}
-				downDelta = deltaBytes * 1000 / msElapsed
+			if prev, ok := tracker.Previous(downKey); ok {
+				downDelta = rateFromCounters(v.BytesRecv, prev, msElapsed)
 			}
 		}
+
 		systemStats.NetworkInterfaces[v.Name] = [4]uint64{upDelta, downDelta, v.BytesSent, v.BytesRecv}
-		bytesSentPerSecond += upDelta
-		bytesRecvPerSecond += downDelta
+		bytesSentPerSecond = saturatingAdd(bytesSentPerSecond, upDelta)
+		bytesRecvPerSecond = saturatingAdd(bytesRecvPerSecond, downDelta)
 	}
 
 	return bytesSentPerSecond, bytesRecvPerSecond
@@ -224,6 +208,10 @@ func (a *Agent) applyNetworkTotals(
 		delete(a.netIoStats, cacheTimeMs)
 		delete(a.netInterfaceDeltaTrackers, cacheTimeMs)
 		systemStats.Bandwidth[0], systemStats.Bandwidth[1] = 0, 0
+		for name, values := range systemStats.NetworkInterfaces {
+			values[0], values[1] = 0, 0
+			systemStats.NetworkInterfaces[name] = values
+		}
 		return
 	}
 
@@ -251,10 +239,61 @@ func skipNetworkInterface(v psutilNet.IOCountersStat, nicCfg *NicConfig) bool {
 		strings.HasPrefix(v.Name, "veth"),
 		strings.HasPrefix(v.Name, "bond"),
 		strings.HasPrefix(v.Name, "cali"),
-		v.BytesRecv == 0,
-		v.BytesSent == 0:
+		(v.BytesRecv == 0 && v.BytesSent == 0):
 		return true
 	default:
 		return false
 	}
+}
+
+// Refresh identities from the already collected counters; driver lookup is only
+// paid for new interfaces. Zero-counter interfaces require UP and an address,
+// or explicit NICS inclusion. Idle tracked interfaces retain their baselines.
+func (a *Agent) reconcileNetworkInterfaces(counters []psutilNet.IOCountersStat) {
+	present := make(map[string]bool, len(counters))
+	var identities []psutilNet.InterfaceStat
+	loaded := false
+	for _, v := range counters {
+		present[v.Name] = true
+		if _, ok := a.netInterfaces[v.Name]; ok {
+			continue
+		}
+		if skipNetworkInterface(v, a.nicConfig) {
+			probe := v
+			probe.BytesSent, probe.BytesRecv = 1, 1
+			if v.BytesSent != 0 || v.BytesRecv != 0 || skipNetworkInterface(probe, a.nicConfig) {
+				continue
+			}
+			if !loaded {
+				identities, _ = networkInterfaces()
+				loaded = true
+			}
+			active := false
+			for _, iface := range identities {
+				if iface.Name == v.Name && len(iface.Addrs) > 0 {
+					for _, flag := range iface.Flags {
+						if flag == "up" {
+							active = true
+						}
+					}
+				}
+			}
+			if !active {
+				continue
+			}
+		}
+		a.netInterfaces[v.Name] = isNvidiaEthernet(v.Name)
+	}
+	for name := range a.netInterfaces {
+		if !present[name] {
+			delete(a.netInterfaces, name)
+		}
+	}
+}
+func saturatingAdd(a, b uint64) uint64 {
+	const maximum = ^uint64(0)
+	if b > maximum-a {
+		return maximum
+	}
+	return a + b
 }

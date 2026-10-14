@@ -150,10 +150,11 @@ def packages(target):
              'gpu_darwin.go' if target == 'darwin' else 'gpu_darwin_unsupported.go',
              'systemd.go' if target == 'linux' else 'systemd_nonlinux.go']
     files += [name + ('_linux.go' if target == 'linux' else '_unsupported.go') for name in ['cpu','memory','network_counters']]
+    if target == 'ios':files += ['memory_platform_ios.go','ios_memory.go','ios_metadata.go','ios_disk.go']
     add(prefix + '/agent', files)
     for name in ['battery','wifi']:
         suffix = 'unsupported' if name == 'wifi' and target == 'ios' else target
-        add(prefix + '/agent/' + name, [name + '.go', name + '_' + suffix + '.go'])
+        add(prefix + '/agent/' + name, [name + '.go', name + '_' + suffix + '.go'] + (['ios_ioreg.go'] if name == 'battery' else []))
     for name in ['cpu','mem','disk','net','host','load','sensors']:
         suffix = 'linux' if target == 'linux' else 'darwin'
         if name == 'sensors' and suffix == 'darwin':suffix += '_arm64'

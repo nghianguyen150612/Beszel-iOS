@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"runtime"
+
 	"github.com/henrygd/beszel/agent/utils"
 	"github.com/henrygd/beszel/agent/zfs"
 	"github.com/henrygd/beszel/internal/entities/system"
@@ -18,19 +20,20 @@ var memoryVirtualMemory = mem.VirtualMemory
 func (a *Agent) updateMemoryStats(stats *system.Stats) {
 	v, err := memoryVirtualMemory()
 	var hostTotal uint64
-	if err == nil {
+	if err == nil && v != nil {
 		hostTotal = v.Total
-		// Swap retains its existing /proc/meminfo source in both memory paths.
+		// Swap fields are populated only when supplied by the platform source.
+		// iOS acquisition leaves unsupported swap fields absent.
 		stats.Swap = utils.BytesToGigabytes(v.SwapTotal)
 		stats.SwapUsed = utils.BytesToGigabytes(saturatingSub(v.SwapTotal, v.SwapFree))
 	}
 
 	metrics, fromCgroup := containerMemoryMetrics(hostTotal, a.forceUseCgroup)
 	if !fromCgroup {
-		if err != nil {
+		if err != nil || v == nil {
 			return
 		}
-		used, cacheBuff, _ := calculateHostMemoryUsage(v, a.memCalc == "htop")
+		used, cacheBuff := platformMemoryUsage(v, a.memCalc == "htop", runtime.GOOS)
 		metrics = memoryMetrics{Total: v.Total, Used: used, BuffCache: cacheBuff}
 		// Host ARC must not be subtracted from container-scoped accounting.
 		if a.zfs {
@@ -52,4 +55,14 @@ func (a *Agent) updateMemoryStats(stats *system.Stats) {
 			details.MemoryTotal = metrics.Total
 		})
 	}
+}
+
+// iOS has no equivalent cache/buffer measurement in this acquisition path.
+// MEM_CALC=htop is a Linux formula and must not reclassify iOS inactive pages.
+func platformMemoryUsage(v *mem.VirtualMemoryStat, htop bool, platform string) (uint64, uint64) {
+	if platform == "ios" {
+		return min(v.Used, v.Total), 0
+	}
+	used, cache, _ := calculateHostMemoryUsage(v, htop)
+	return used, cache
 }

@@ -1,12 +1,18 @@
 package agent
 
 import (
+	"errors"
 	"math"
 	"runtime"
+	"sync"
 
 	"github.com/henrygd/beszel/internal/entities/system"
 	"github.com/shirou/gopsutil/v4/cpu"
 )
+
+var cpuTimes = cpu.Times
+var cpuTimesMu sync.Mutex
+var errCpuSample = errors.New("CPU sample unavailable: baseline, reset or invalid counters")
 
 var lastCpuTimes = make(map[uint16]cpu.TimesStat)
 var lastPerCoreCpuTimes = make(map[uint16][]cpu.TimesStat)
@@ -14,10 +20,10 @@ var lastPerCoreCpuTimes = make(map[uint16][]cpu.TimesStat)
 // init initializes the CPU monitoring by storing the initial CPU times
 // for the default 60-second cache interval.
 func init() {
-	if times, err := cpu.Times(false); err == nil && len(times) > 0 {
+	if times, err := cpuTimes(false); err == nil && len(times) > 0 {
 		lastCpuTimes[60000] = times[0]
 	}
-	if perCoreTimes, err := cpu.Times(true); err == nil && len(perCoreTimes) > 0 {
+	if perCoreTimes, err := cpuTimes(true); err == nil && len(perCoreTimes) > 0 {
 		lastPerCoreCpuTimes[60000] = perCoreTimes
 	}
 }
@@ -44,32 +50,45 @@ func getCpuMetrics(cacheTimeMs uint16, forceUseCgroup bool) (CpuMetrics, error) 
 		metrics.fromCgroup = true
 		return metrics, nil
 	}
-	times, err := cpu.Times(false)
+	cpuTimesMu.Lock()
+	defer cpuTimesMu.Unlock()
+	times, err := cpuTimes(false)
 	if err != nil || len(times) == 0 {
+		delete(lastCpuTimes, cacheTimeMs)
+		if cacheTimeMs != 60000 {
+			delete(lastCpuTimes, 60000)
+		}
+		if err == nil {
+			err = errCpuSample
+		}
 		return CpuMetrics{}, err
 	}
-	return cpuMetricsFromTimes(cacheTimeMs, times[0]), nil
+	return cpuMetricsSample(cacheTimeMs, times[0])
 }
 
 // cpuMetricsFromTimes calculates host CPU usage from the latest counters.
 func cpuMetricsFromTimes(cacheTimeMs uint16, current cpu.TimesStat) CpuMetrics {
-	// if cacheTimeMs is not in lastCpuTimes, use 60000 as fallback lastCpuTime
-	if _, ok := lastCpuTimes[cacheTimeMs]; !ok {
-		lastCpuTimes[cacheTimeMs] = lastCpuTimes[60000]
+	metrics, _ := cpuMetricsSample(cacheTimeMs, current)
+	return metrics
+}
+
+// Caller holds cpuTimesMu for runtime collection; pure fixture callers are serial.
+func cpuMetricsSample(cacheTimeMs uint16, current cpu.TimesStat) (CpuMetrics, error) {
+	previous, ok := lastCpuTimes[cacheTimeMs]
+	if !ok {
+		previous, ok = lastCpuTimes[60000]
 	}
-
-	t1 := lastCpuTimes[cacheTimeMs]
-	t2 := current
-	// A counter reset or wrap must establish a new baseline even if this
-	// sample cannot produce a valid delta.
 	lastCpuTimes[cacheTimeMs] = current
-
+	if !validCpuTimes(current) {
+		delete(lastCpuTimes, cacheTimeMs)
+		return CpuMetrics{}, errCpuSample
+	}
+	t1, t2 := previous, current
 	t1All, _ := getAllBusy(t1)
 	t2All, _ := getAllBusy(t2)
-
 	totalDelta := t2All - t1All
-	if totalDelta <= 0 {
-		return CpuMetrics{}
+	if !ok || !validCpuDelta(t1, t2) || totalDelta <= 0 || math.IsInf(totalDelta, 0) {
+		return CpuMetrics{}, errCpuSample
 	}
 
 	metrics := CpuMetrics{
@@ -81,19 +100,31 @@ func cpuMetricsFromTimes(cacheTimeMs uint16, current cpu.TimesStat) CpuMetrics {
 		Idle:   clampPercent((t2.Idle - t1.Idle) / totalDelta * 100),
 	}
 
-	return metrics
+	return metrics, nil
 }
 
 // clampPercent ensures the percentage is between 0 and 100
 func clampPercent(value float64) float64 {
+	if math.IsNaN(value) || math.IsInf(value, 0) {
+		return 0
+	}
 	return math.Min(100, math.Max(0, value))
 }
 
 // getPerCoreCpuUsage calculates per-core CPU busy usage as integer percentages (0-100).
 // It uses cached previous measurements for the provided cache interval.
 func getPerCoreCpuUsage(cacheTimeMs uint16) (system.Uint8Slice, error) {
-	perCoreTimes, err := cpu.Times(true)
+	cpuTimesMu.Lock()
+	defer cpuTimesMu.Unlock()
+	perCoreTimes, err := cpuTimes(true)
 	if err != nil || len(perCoreTimes) == 0 {
+		delete(lastPerCoreCpuTimes, cacheTimeMs)
+		if cacheTimeMs != 60000 {
+			delete(lastPerCoreCpuTimes, 60000)
+		}
+		if err == nil {
+			err = errCpuSample
+		}
 		return nil, err
 	}
 
@@ -104,8 +135,18 @@ func getPerCoreCpuUsage(cacheTimeMs uint16) (system.Uint8Slice, error) {
 
 	lastTimes := lastPerCoreCpuTimes[cacheTimeMs]
 
-	// Limit to the number of cores available in both samples
-	length := min(len(lastTimes), len(perCoreTimes))
+	lastPerCoreCpuTimes[cacheTimeMs] = perCoreTimes
+	if len(lastTimes) != len(perCoreTimes) {
+		return nil, errCpuSample
+	}
+	length := len(perCoreTimes)
+	for i := range perCoreTimes {
+		a, _ := getAllBusy(lastTimes[i])
+		b, _ := getAllBusy(perCoreTimes[i])
+		if !validCpuDelta(lastTimes[i], perCoreTimes[i]) || b <= a || math.IsInf(b-a, 0) {
+			return nil, errCpuSample
+		}
+	}
 
 	usage := make([]uint8, length)
 	for i := 0; i < length; i++ {
@@ -125,7 +166,7 @@ func calculateBusy(t1, t2 cpu.TimesStat) float64 {
 	t1All, t1Busy := getAllBusy(t1)
 	t2All, t2Busy := getAllBusy(t2)
 
-	if t2All <= t1All || t2Busy <= t1Busy {
+	if !validCpuDelta(t1, t2) || t2All <= t1All || t2Busy <= t1Busy {
 		return 0
 	}
 	return clampPercent((t2Busy - t1Busy) / (t2All - t1All) * 100)
@@ -145,4 +186,28 @@ func getAllBusy(t cpu.TimesStat) (float64, float64) {
 	busy := tot - t.Idle - t.Iowait
 
 	return tot, busy
+}
+
+func cpuCounters(t cpu.TimesStat) [10]float64 {
+	return [10]float64{t.User, t.System, t.Idle, t.Nice, t.Iowait, t.Irq, t.Softirq, t.Steal, t.Guest, t.GuestNice}
+}
+func validCpuTimes(t cpu.TimesStat) bool {
+	for _, v := range cpuCounters(t) {
+		if v < 0 || math.IsNaN(v) || math.IsInf(v, 0) {
+			return false
+		}
+	}
+	return true
+}
+func validCpuDelta(a, b cpu.TimesStat) bool {
+	if !validCpuTimes(a) || !validCpuTimes(b) || (a.CPU != "" && b.CPU != "" && a.CPU != b.CPU) {
+		return false
+	}
+	before, after := cpuCounters(a), cpuCounters(b)
+	for i := range before {
+		if after[i] < before[i] {
+			return false
+		}
+	}
+	return true
 }

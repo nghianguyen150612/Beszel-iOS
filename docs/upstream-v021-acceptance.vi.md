@@ -59,3 +59,24 @@ chứng runtime A7 hoặc rủi ro nghiêm trọng chưa xử lý sẽ chặn ga
 Câu hỏi khả thi như Wi-Fi RSSI native có thể hoãn nếu có owner và fallback
 absent/no-op rõ ràng. Chỉ bắt đầu P004 sau khi Gate A hoàn tất về cấu trúc; quyết
 định đó không cho phép nâng cấp production.
+
+
+## Bằng chứng nguồn, fixture và native build của P008
+
+[Báo cáo tương thích P008](ios-system-metrics-compatibility.vi.md) và
+[JSON xác minh](ios-system-metrics-validation.json) ghi sửa nguồn, fixture
+xác định/lỗi/phục hồi, hồi quy dùng chung và native build. Chúng không thay thế
+quy trình vật lý ở trên:
+
+| Trường hợp | Phần P008 xác minh được trên cloud | Phần phụ thuộc thiết bị |
+| --- | --- | --- |
+| `IOS-AGENT-01` | Mapping A7 chính xác, fixture sysctl/plist/count thiếu hoặc chưa biết, source selection và native linkage | P018 đối chiếu sysctl/plist iPad thật với payload |
+| `IOS-AGENT-02` | Baseline/reset/lỗi CPU, phép tính RAM Mach, chọn usage filesystem, I/O vật lý không có, fixture interface động/rate/reset/cache | P018 quan sát CPU/RAM iOS thật, mount root/data và counter byte Wi-Fi/VPN |
+| `IOS-AGENT-03` | Parser ioreg production, unknown state, cleanup subprocess có giới hạn, cache/lỗi/phục hồi và fixture payload | P018 đối chiếu output ioreg hiện tại và chuyển trạng thái sạc thật |
+
+Các hàng nghiệm thu vật lý gốc vẫn **planned** đến khi thực hiện đối chiếu.
+Mặc định scalar bắt buộc không xác nhận số 0 đo được khi nguồn không có;
+field pin, swap và I/O đĩa vật lý tùy chọn vắng theo protocol hiện có. P008 có
+thể đạt gate integration khi ghi rõ I/O vật lý không có; không khẳng định
+collector đó được hỗ trợ. Gate C còn chờ P009–P012 và bằng chứng thiết bị áp
+dụng; Gate F vẫn là P018. Không đổi bản ghi thiết bị 0.19 lịch sử.
