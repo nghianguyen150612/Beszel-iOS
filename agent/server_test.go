@@ -50,7 +50,12 @@ func TestStartServer(t *testing.T) {
 	sshBadPubKey, err := gossh.NewPublicKey(badPubKey)
 	require.NoError(t, err)
 
-	socketFile := filepath.Join(t.TempDir(), "beszel-test.sock")
+	// Darwin limits Unix socket paths to 104 bytes. t.TempDir includes the
+	// full test/subtest name and can exceed that limit on hosted macOS.
+	socketDir, err := os.MkdirTemp("", "beszel-ssh-")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = os.RemoveAll(socketDir) })
+	socketFile := filepath.Join(socketDir, "beszel-test.sock")
 
 	tests := []struct {
 		name        string
