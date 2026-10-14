@@ -997,7 +997,11 @@ func dialTestAgentClient(t *testing.T, clientVersion string) *gossh.Client {
 	sshPubKey, err := gossh.NewPublicKey(pubKey)
 	require.NoError(t, err)
 
-	socketFile := filepath.Join(t.TempDir(), "beszel-test.sock")
+	// Keep the complete Unix socket path within Darwin's 104-byte limit.
+	socketDir, err := os.MkdirTemp("", "beszel-ssh-")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = os.RemoveAll(socketDir) })
+	socketFile := filepath.Join(socketDir, "beszel-test.sock")
 	agent, err := NewAgent("")
 	require.NoError(t, err)
 
