@@ -271,3 +271,36 @@ func TestP009RequestIDWrapDoesNotReplacePending(t *testing.T) {
 	require.NotEqual(t, first.ID, second.ID)
 	require.Equal(t, 2, wc.requestManager.GetPendingCount())
 }
+
+func TestP009NoCrossConnectionResponseRouting(t *testing.T) {
+	a, connA, wireA := p009RequestPair(t, "0.21.0")
+	b, connB, wireB := p009RequestPair(t, "0.21.0")
+	reqA, err := a.SendRequest(t.Context(), common.GetData, nil)
+	require.NoError(t, err)
+	defer reqA.Cancel()
+	reqB, err := b.SendRequest(t.Context(), common.GetData, nil)
+	require.NoError(t, err)
+	defer reqB.Cancel()
+	idA, idB := (<-wireA).Id, (<-wireB).Id
+	require.Equal(t, *idA, *idB, "per-connection IDs can coincide")
+	p009Reply(t, connA, idA, "system-a")
+	select {
+	case msg := <-reqA.ResponseCh:
+		var resp common.AgentResponse
+		require.NoError(t, cbor.Unmarshal(msg.Bytes(), &resp))
+		msg.Close()
+		var value string
+		require.NoError(t, cbor.Unmarshal(resp.Data, &value))
+		require.Equal(t, "system-a", value)
+	case <-time.After(time.Second):
+		t.Fatal("system A response lost")
+	}
+	require.Empty(t, reqB.ResponseCh)
+	p009Reply(t, connB, idB, "system-b")
+	select {
+	case msg := <-reqB.ResponseCh:
+		msg.Close()
+	case <-time.After(time.Second):
+		t.Fatal("system B response lost")
+	}
+}

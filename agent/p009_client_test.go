@@ -161,7 +161,13 @@ func TestP009WebSocketAuthAndFaultRecovery(t *testing.T) {
 	h.authenticate(t, wc)
 	h.c.OnClose(old, errors.New("late close"))
 	require.True(t, h.c.isVerified())
-	require.Error(t, h.c.handleHubRequest(&common.HubRequest[cbor.RawMessage]{Action: common.GetPackageUpdates}, nil, old), "stale connection cannot borrow replacement authentication")
+	require.ErrorContains(t, h.c.handleHubRequest(&common.HubRequest[cbor.RawMessage]{Action: common.GetPackageUpdates}, nil, old), "hub not verified", "stale connection cannot borrow replacement authentication")
+	sig, err := h.signer.Sign(rand.Reader, []byte(h.c.token))
+	require.NoError(t, err)
+	challenge, err := cbor.Marshal(common.FingerprintRequest{Signature: sig.Blob})
+	require.NoError(t, err)
+	require.ErrorIs(t, h.c.handleAuthChallenge(&common.HubRequest[cbor.RawMessage]{Data: challenge}, nil, old), gws.ErrConnClosed)
+	require.True(t, h.c.isVerified())
 	require.NoError(t, transport.NewWebSocketTransport(wc).Request(t.Context(), common.GetPackageUpdates, nil, &updates))
 }
 func TestP009WebSocketRepeatedRecoveryAndFreshData(t *testing.T) {
