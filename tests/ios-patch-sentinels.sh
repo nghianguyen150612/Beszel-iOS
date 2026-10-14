@@ -88,9 +88,10 @@ _require_in_file ".github/workflows/ios-build.yml" \
 	"patch-go-ios-arm64-runtime.py" \
 	"A.7 CI applies runtime patch"
 
-# Confirm the patch step runs before any go build in the workflow.
+# Confirm the patch step precedes every iOS build. Unpatched macOS regression
+# builds deliberately run earlier and must remain isolated from the A7 patch.
 _patch_line=$(grep -n "patch-go-ios-arm64-runtime.py" "$REPO_ROOT/.github/workflows/ios-build.yml" | head -1 | cut -d: -f1)
-_go_build_line=$(grep -n "go build" "$REPO_ROOT/.github/workflows/ios-build.yml" | head -1 | cut -d: -f1)
+_go_build_line=$(grep -n "go build" "$REPO_ROOT/.github/workflows/ios-build.yml" | grep -v "GOOS=darwin" | head -1 | cut -d: -f1)
 if [ -n "$_patch_line" ] && [ -n "$_go_build_line" ] && [ "$_patch_line" -lt "$_go_build_line" ]; then
 	pass "A.8 CI applies runtime patch before go build"
 else
@@ -111,7 +112,7 @@ _require_in_file ".github/workflows/ios-build.yml" \
 	"**/*.go" \
 	"B.3 workflow covers Go source changes in its push paths"
 
-_require_in_file ".github/workflows/ios-build.yml" \
+_require_in_file ".github/scripts/ios-clang.sh" \
 	"mios-version-min=12.0" \
 	"B.4 workflow targets iOS 12.0 minimum"
 

@@ -11,18 +11,21 @@ Tài liệu này ghi lại các yêu cầu đặc biệt để build được bi
 
 ## Chuỗi công cụ
 
-1. Vá runtime Go trước: `sudo python3 .github/scripts/patch-go-ios-arm64-runtime.py` (workflow sẽ fail nếu bước này fail).
-2. Build frontend của Hub trước với Bun 1.4.0 đã ghim (`internal/site`: `bun install --frozen-lockfile`, `bun run build`). File `bun.lock` đã check-in phản ánh `overrides` trong `package.json`, nên bắt buộc cài frozen và tái lập được từ checkout sạch.
-3. Resolve SDK và compiler: `xcrun --sdk iphoneos --show-sdk-path`, `xcrun --sdk iphoneos --find clang`. Không bao giờ hardcode đường dẫn SDK.
-4. Tạo một clang wrapper truyền `-arch arm64 -isysroot <SDK> -mios-version-min=12.0`, rồi dùng chung làm `CC` cho cả hai lượt build.
-5. Build bằng wrapper vào `build/ios/`:
-   - Agent: `go build -trimpath -ldflags="-s -w" -o build/ios/beszel-agent-ios-arm64 ./internal/cmd/agent`
-   - Hub: `go build -trimpath -ldflags="-s -w" -o build/ios/beszel-hub-ios-arm64 ./internal/cmd/hub`
-6. Kiểm tra cả hai binary: `file`, `otool -hv`, `otool -l | grep LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS`. Workflow sẽ fail khi thiếu/rỗng file, output không phải Mach-O, không phải arm64, thiếu load command iOS, hoặc thiếu metadata deployment `12.0`.
-7. Sinh checksum bằng `shasum -a 256` tương thích macOS (không đường dẫn tuyệt đối):
-   - `shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS`
-8. Kiểm tra bằng `shasum -a 256 -c SHA256SUMS`.
-9. Tải lên một artifact `beszel-ios-arm64` với đúng ba file trên. Với push nhánh và dispatch thủ công, workflow dừng ở đây; với push tag `v*-ios.*`, job phụ `release-ios` chạy tiếp (xem Releases bên dưới).
+1. Dùng đúng bản Go trong `go.mod` và Bun 1.4.0. Chạy test runtime/build validator với fixture tạm.
+2. Trong `internal/site`, chạy `bun install --frozen-lockfile`, `bun run sync`, `bun test`, rồi `bun run build`. Hash lock phải giữ nguyên; khôi phục PO text đã track được sinh lại, giữ asset production thật và catalog đã compile.
+3. Chạy `.github/scripts/check-ios-source-selection.py` để kiểm tra lựa chọn file Go và dependency thật cho iOS, macOS, Linux. Chạy test parser GPU macOS và build macOS bằng toolchain gốc.
+4. Sao chép **toàn bộ** GOROOT setup-go vào thư mục riêng theo job. Kiểm tra cấu trúc/phiên bản, chọn bằng GOROOT/PATH và GOTOOLCHAIN=local, rồi chạy `.github/scripts/patch-go-ios-arm64-runtime.py` trên bản sao. Dùng GOCACHE iOS riêng. Hash source runtime gốc phải giữ nguyên; không cần sudo.
+5. Dùng `.github/scripts/ios-clang.sh` làm CC cho cả hai build native. Wrapper resolve SDK thiết bị và Apple clang bằng `xcrun --sdk iphoneos`, từ chối component thiếu hoặc cờ đích không tương thích, truyền `-arch arm64 -isysroot <SDK> -mios-version-min=12.0`. Xóa CGO/GOFLAGS host kế thừa.
+6. Build Agent và Hub vào `build/ios/` với `GOOS=ios GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=1`, `-trimpath`, `-ldflags="-s -w"`. Lặp lại bằng cache sạch độc lập và so sánh cả hai output.
+7. Build binary kiểm tra riêng không strip bằng cùng toolchain đã patch; chạy `.github/scripts/verify-ios-runtime-binary.py` để kiểm tra toàn bộ symbol procyield. Giữ cờ strip production.
+8. Kiểm tra từng output bằng `file`, `otool -hv`, `otool -l` native. Sinh SHA256SUMS chỉ có tên file bằng `shasum -a 256`, xác minh cả hai entry, rồi chạy `.github/scripts/verify-ios-artifacts.py build/ios --frontend internal/site/dist`. Validator kiểm tra ARM64 MH_EXECUTE, platform iOS thiết bị/minimum 12.0, entry point, Go entry package/CGO, payload chính xác và byte frontend được embed.
+9. Tải artifact review gồm đúng `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, `SHA256SUMS`. JSON kiểm tra nằm trong artifact review riêng. Chạy theo nhánh/dispatch bỏ qua `release-ios`; quy trình này không gọi lệnh ký, phát hành hay deploy.
+
+Xem [review runtime A7](ios-a7-runtime-compatibility.vi.md),
+[kiểm tra native](ios-native-build-validation.vi.md) và
+[bằng chứng cấu trúc](ios-build-validation.json). Hai build giống nhau trong cùng
+môi trường đã xác minh chỉ chứng minh phép so sánh đó; không giả định tái lập
+byte giữa SDK, bản toolchain hoặc source commit khác nhau.
 
 ## Vì sao lúc cài cần `ldid`
 
@@ -38,7 +41,12 @@ Cài dưới `/usr/local/bin`; chạy từ `$HOME` và `/tmp` trước đây t�
 
 ## Vì sao có bản vá runtime Apple A7
 
-Trên Apple A7 / iOS 12, hàm `runtime.procyieldAsm` ARM64 của Go hiện đại đọc `CNTVCT_EL0`, vốn fault (`SIGILL`) trong userspace cũ này. Script vá thay thân hàm đó bằng vòng lặp `YIELD` kiểu cũ và từ chối chạy nếu không thấy đúng chuỗi `CNTVCT_EL0` mong đợi (để fail to trên Go lạ thay vì làm hỏng toolchain). Nó phải chạy trước mọi lượt build iOS cho target đã kiểm thử. SoC/iOS mới hơn có thể không cần — điều đó chưa thử.
+Môi trường Apple A7 / iOS 12 lịch sử gặp lỗi ở đường CNTVCT_EL0 của Go ARM64
+`runtime.procyieldAsm` mới. Script chỉ chấp nhận toàn bộ source thực thi Go 1.27.1
+đã review và thay bằng vòng YIELD có guard giá trị 0. Bản không hỗ trợ, cấu trúc
+lạ và lần gọi thứ hai thất bại, không ghi. Patch chạy trước mọi compile iOS native
+trên bản sao cách ly. Kiểm tra source/binary không chứng minh 0.21 chạy không có
+SIGILL: nghiệm thu A7 thật vẫn thuộc P018 / Gate F.
 
 ## Yêu cầu build frontend Hub
 
@@ -47,6 +55,8 @@ Hub nhúng web UI. Trước khi biên dịch binary Hub:
 ```sh
 cd internal/site
 bun install --frozen-lockfile
+bun run sync
+bun test
 bun run build
 ```
 

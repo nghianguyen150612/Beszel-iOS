@@ -11,18 +11,21 @@ This documents the unusual requirements for producing working iOS binaries. The 
 
 ## Toolchain
 
-1. Apply the Go runtime patch first: `sudo python3 .github/scripts/patch-go-ios-arm64-runtime.py` (workflow fails if this fails).
-2. Build the Hub frontend first with pinned Bun 1.4.0 (`internal/site`: `bun install --frozen-lockfile`, `bun run build`). The checked-in `bun.lock` reflects the `package.json` overrides, so frozen installs are required and reproducible from a clean checkout.
-3. Resolve the SDK and compiler: `xcrun --sdk iphoneos --show-sdk-path`, `xcrun --sdk iphoneos --find clang`. Never hardcode an SDK path.
-4. Create one clang wrapper passing `-arch arm64 -isysroot <SDK> -mios-version-min=12.0`, and reuse it as `CC` for both builds.
-5. Build with the wrapper into `build/ios/`:
-   - Agent: `go build -trimpath -ldflags="-s -w" -o build/ios/beszel-agent-ios-arm64 ./internal/cmd/agent`
-   - Hub: `go build -trimpath -ldflags="-s -w" -o build/ios/beszel-hub-ios-arm64 ./internal/cmd/hub`
-6. Verify both binaries: `file`, `otool -hv`, `otool -l | grep LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS`. The workflow fails on missing/empty files, non-Mach-O output, non-arm64 output, missing iOS load commands, or missing `12.0` deployment metadata.
-7. Generate checksums with macOS-compatible `shasum -a 256` (no absolute paths):
-   - `shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS`
-8. Verify with `shasum -a 256 -c SHA256SUMS`.
-9. Upload one `beszel-ios-arm64` artifact with exactly the three files above. On branch pushes and manual dispatches the workflow stops here; on `v*-ios.*` tag pushes the dependent `release-ios` job continues (see Releases below).
+1. Use the exact Go version from `go.mod` and Bun 1.4.0. Run the disposable runtime/build-validator tests.
+2. In `internal/site`, run `bun install --frozen-lockfile`, `bun run sync`, `bun test`, then `bun run build`. Verify the lock hash is unchanged; restore generated tracked PO text while retaining genuine production assets and compiled catalogs.
+3. Run `.github/scripts/check-ios-source-selection.py` to inspect actual Go dependency selection for iOS, macOS and Linux. Run the macOS GPU parser tests and macOS builds with the original toolchain.
+4. Copy the **complete** setup-go GOROOT into a job-local directory. Verify its layout/version, select it through GOROOT/PATH and GOTOOLCHAIN=local, and apply `.github/scripts/patch-go-ios-arm64-runtime.py` to the copy. Use a dedicated iOS GOCACHE. Verify the original runtime source hash remains unchanged; no sudo is needed.
+5. Use `.github/scripts/ios-clang.sh` as CC for both native builds. It resolves the device SDK and Apple clang with `xcrun --sdk iphoneos`, fails on missing components or explicit incompatible target flags, and passes `-arch arm64 -isysroot <SDK> -mios-version-min=12.0`. Clear inherited host CGO/GOFLAGS.
+6. Build Agent and Hub into `build/ios/` with `GOOS=ios GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=1`, `-trimpath` and `-ldflags="-s -w"`. Repeat with an independent clean cache and compare both outputs.
+7. Build separate unstripped validation binaries with the same patched toolchain; run `.github/scripts/verify-ios-runtime-binary.py` to inspect the complete procyield symbol. Keep the production stripping flags.
+8. Inspect each output with native `file`, `otool -hv` and `otool -l`. Generate bare-filename SHA256SUMS with `shasum -a 256`, verify both entries, then run `.github/scripts/verify-ios-artifacts.py build/ios --frontend internal/site/dist`. It validates ARM64 MH_EXECUTE, device iOS platform/minimum 12.0, entry point, Go entry package/CGO settings, exact payload and embedded frontend bytes.
+9. Upload the review payload containing exactly `beszel-agent-ios-arm64`, `beszel-hub-ios-arm64`, and `SHA256SUMS`. Validation JSON is a separate review artifact. Branch/manual runs skip `release-ios`; this procedure does not invoke signing, release or deployment commands.
+
+See [A7 runtime review](ios-a7-runtime-compatibility.md),
+[native validation](ios-native-build-validation.md) and
+[structured evidence](ios-build-validation.json). Two identical builds in one
+verified environment establish that comparison; reproducibility across different
+SDKs, toolchain versions or source commits is not assumed.
 
 ## Why `ldid` is needed at install time
 
@@ -38,7 +41,13 @@ Install under `/usr/local/bin`; `$HOME` and `/tmp` have previously produced exec
 
 ## Why the Apple A7 runtime patch exists
 
-On Apple A7 / iOS 12, the modern Go ARM64 `runtime.procyieldAsm` implementation reads `CNTVCT_EL0`, which faults (`SIGILL`) in this legacy userspace. The patch script replaces that function body with a legacy `YIELD` spin loop and refuses to run if the expected `CNTVCT_EL0` sequence is absent (so it fails loudly on unknown Go versions rather than corrupting the toolchain). It must run before every iOS build for the validated target. Newer SoCs/iOS versions may not need it — that is untested.
+The historical Apple A7 / iOS 12 environment faults on the modern Go ARM64
+`runtime.procyieldAsm` CNTVCT_EL0 path. The script accepts only the reviewed Go
+1.27.1 complete executable source shape and replaces it with a zero-guarded YIELD
+loop. Unsupported versions, unknown layouts and repeat invocation fail without
+writing. The patch is applied before every native iOS compilation to an isolated
+copy. Source/binary inspection cannot establish SIGILL-free 0.21 execution:
+physical A7 acceptance remains P018 / Gate F.
 
 ## Hub frontend build requirement
 
@@ -47,6 +56,8 @@ The Hub embeds the web UI. Before compiling the Hub binary:
 ```sh
 cd internal/site
 bun install --frozen-lockfile
+bun run sync
+bun test
 bun run build
 ```
 

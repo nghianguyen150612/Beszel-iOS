@@ -1,0 +1,3289 @@
+{
+  "schema_version": 1,
+  "milestone": "P007",
+  "status": "PASS_BUILD_AND_PATCH_CANDIDATE",
+  "starting_integration_sha": "6b14ebcdadc44641f4f84a5d7999ebf964905aa3",
+  "starting_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+  "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+  "feature_branch": "ios/a7-runtime-compatibility",
+  "pr_base": "ios/upstream-v021-integration",
+  "implementation_commits": [
+    "7b09aa797fbfa636e05c67e85f7df307e474e237",
+    "19c705c65a45b3da1c426e3c0222636fd244f3b0",
+    "d85eb2cc6f139d7e03c98e8f793eddf193963d4d"
+  ],
+  "candidate_commit": "19c705c65a45b3da1c426e3c0222636fd244f3b0",
+  "starting_workflow_git_blob": "eae8a2f6db73601f97638120fa03e73b04802111",
+  "starting_workflow_sha256": "20a8a5703e71dd0cbf3c694603b9fa77467241a151098dd6761123810b41fc96",
+  "pr": {
+    "number": 9,
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/9"
+  },
+  "final_head_validation": {
+    "status": "REQUIRED_BEFORE_MERGE",
+    "evidence_location": "PR #9: final documentation-inclusive feature SHA, exact final iOS/installer run URLs, checksums and merge verification.",
+    "reason": "An evidence commit cannot contain its own hash. This JSON records actual source-candidate results; final-head reruns are recorded in the PR without another source change.",
+    "additional_guards": "Final HEAD must validate explicit GOARM64=v8.0, vcs.revision == GITHUB_SHA and vcs.modified=false. PYTHONDONTWRITEBYTECODE avoids untracked test caches."
+  },
+  "ancestry": {
+    "frozen_target_reachable": true,
+    "upstream_count": 178,
+    "reachable_upstream_shas": [
+      "086091a0fea2a0914bf4db1fc46e575e386f795e",
+      "6a7b2772d90c732077a910ca03bb79b13c4fe8c6",
+      "982101743e92acffa4f6bc1b42285aa7b020342e",
+      "a0bf33879605aa28911a4961567e5feb18155d46",
+      "50f6fc075d7af0482287acb5c61fbc8a88578335",
+      "f0f1f7985c864ab4ad41ff12b6b74dd9f258046d",
+      "18f7a4bbc09aed953cf21ec80f4c2612ad2a3beb",
+      "4bf70700f20cc2994774995dca5e725c7173996b",
+      "bb1b39928e317592159e65dbcac1de12510d49b8",
+      "6e5440c21f9f1798b469f1c473e8f12d14323443",
+      "b34759992828f097df9ff12d18bfccdf82c22848",
+      "db3afeabd949eb3b58fb0acd65724a37212376b0",
+      "f7fd3ef403085b64dc8a21a02011105b2251333a",
+      "d2352e888231484a83d4fd3d592a0e56554f66bb",
+      "bd7e359dcdbf4a14f3978d7d149682c0806f10e5",
+      "97de1471d7ddb92d3138d9baaecb1f58db0bc06b",
+      "6937453282f33e43bd5b5473291b9208c0398ee5",
+      "b0bc72741126b2eadaf284e803827261eac82d54",
+      "27844606215ef535c86ecb868178692a817c0397",
+      "187dc886a96f7124090f7e5a258c9c720bd2cb2c",
+      "0509053a69e7af4b88a6b0cdc90e6c493e65bb6b",
+      "dd3f7d58b543d1016d84e3d0478753d2a6afd7fe",
+      "c54dbfba7cf8bd572c9437adc363e62964cd1fd4",
+      "912bc50874ac4bf20cbefa4a6b8859898223e859",
+      "a0dc19eacf6902d2f6934a3efd7ea7277198c40b",
+      "c09eb8c6dfae05d2d13a1445def10d39ad9738a7",
+      "c52f3acb94c94f26b05397b59976fa1ae74380af",
+      "e68372dce417fe922c0a27aded5ce4e4bfb66cf3",
+      "4a5915b141bfa96627f5493e5174ec8bc36734d5",
+      "97e6f64bdcb926b8d0436f358942c098a46b6237",
+      "2c69197d2d1cc94b325a8e9098eaba43d16063e6",
+      "cbe4824ac334a6a6568c8a961c90e5197cb7b8bb",
+      "a5f216f425997de165fabc64562f4974697b04ef",
+      "c9de35fad2e781c2913981174d936405e4a8def2",
+      "97ea3c16cb079133929b98cf41b35a3651586a1a",
+      "1aaabfc255e473563cb9bbb31c82dc0115c6a95b",
+      "4a4610bbc3d37dbe0e588336a5454eae9d095796",
+      "8047f005d41c86c5bd7db812b0189578830c5d3b",
+      "627d364071b6d50ce9c967ecb43a5363ad0fdecc",
+      "2d5ea3fa08f052695f086024c0254f4bd02a43fb",
+      "8bf6917fe07ce0a33c9ae29a70bcea45410b0a7e",
+      "9042a8c5c8448344de968d4476a3cfa6ba1a02a1",
+      "b1270e341cd2ffadbfd31ba93f9404e0b4e32f90",
+      "08707160528048b97556b984b2cff338580474dd",
+      "a99fe5e99725edf2a8ff582f5b21793fc88731f2",
+      "fc33e6273610dbfbd264b59283e2bbb1eac8521c",
+      "e4b84b72abac255f5604776632af1662a453f7f4",
+      "0be9882b34bb3445b5ec7b6af8915b097e0bbf27",
+      "eabd9a950a379d061398e6128b716fc750468a91",
+      "367d2f39da6e3e46345054368891b445e3a3c189",
+      "c21412f45d9309ec8895624834711c454dd58d6c",
+      "6141b15f0359516101e4da0fc4350f4d04f165aa",
+      "b5ef0154511b28d21e1f6ec617c1cc330a92e5f6",
+      "4d10ea2e03678ac27d41bae1fd9505113f18b36c",
+      "f2adb9cf94756b86b1d1098722591b348cee77bb",
+      "a20a7d2edce5f9c14f2f1dcd6151cc92babdf70e",
+      "f7528a02082a6fd2a54857470e40ff5a54782801",
+      "151423ac638a0f288efb4c2ad981ce7a19e066dd",
+      "21b648a005bcaa928240116fc2f87b7d57836fdc",
+      "d80a2f49f9d00abe4c7853f0b041dcb65846814b",
+      "d591da46f3dd47af2e11e935abb6a12b60fdb1e8",
+      "c25408651f076c59c13f35f27016461ada8a9093",
+      "f50fb4f8e5e4fe7dda46941c13f84d032eb50a28",
+      "d708def38f5552534791c990cb0ba6db637c661e",
+      "3fb97b800cdbb5985587df9644bc484c8ec1bbb9",
+      "3dfe062ee4202c35f6cfdd6392f2f345617d1f27",
+      "433b83800fdb00349a916bdbf98da991d7c0456a",
+      "7bea20e3b61c02744819ff057bc60ba57b5425c0",
+      "badd4c8245968bad9a79ab67293a9367e8c57f8f",
+      "86ab0fae8b7b2d87251a90a4fa56138d17cca553",
+      "16e3fbadce2026d5591aa08c6518e1c5754fa1a2",
+      "24792aa24fb91dfc0dc93394b7fcd51c520e9650",
+      "46fa7c581e50fcd567c7aec7a5d5d1120dd4e830",
+      "fe83f5b8318968a650d4cab470103375c5d341cb",
+      "a042e195496a88f20592ec2e65dad0efc223eb7d",
+      "c7f2177b08bb3dcfba7988e34d1c293ab3f835da",
+      "24ec18a937b1b18d606eef2f56728230326557e6",
+      "15994474f6c061a6a1db525f19b72ec0ba0e42a0",
+      "1ed02bb51795730964fb031bac232703708f617a",
+      "fb4e93f09811f7efc442c4a1218736287767aa4a",
+      "67c3c1cb437e80d01d1d8ed6f78e5de1d43ecca4",
+      "b3feff9a28273c7b2f74dd0c0fdc834c295ae4d7",
+      "3f20ecae503117ff052061136b080b8f8cce2df9",
+      "739649a6db777387ec8d551fd7298ac25c33a59e",
+      "c1505804bdbac5607f6eac2165a41a2691cf2d25",
+      "8613cfe548c882b57c5748efd7007ecbe2ba2553",
+      "81fd571169def94b951e8703aba204c4f2e4f70f",
+      "4b4ef0a2fef6feb694cb87f7e6039aab754ab324",
+      "65f00ae119269113613a39028b7a935693b860e6",
+      "b684ac9910652bdc39b61982b079fb5213dcc07a",
+      "ad215788eda2f41fd0999ae26581547e99f6c55d",
+      "7626e5e3c84806a67d9e10c8791a6aca9991d2ce",
+      "666529e073c69a74a14375df0388767960c869e6",
+      "be3dad7ed4f3b8a1de55c566926fc3fb69cc0e95",
+      "62f8a39c8af70dc51065626056808216c239fd2c",
+      "c556dc478d04e59b40ec8e04658f4d3f8951b07e",
+      "083b28a1fc5fdf198ef36ac6b4e64dcc1cf98747",
+      "09a277f07487c1e78a82eb331b0e8dcc4906e753",
+      "921ded1af0f955ddaba1dabafe0d361f1d12fb7d",
+      "130365f5d37a3fd12b82e16b5b1c5f235a96bdb2",
+      "8b38db1ba0d73033c7f6638f59577e3c142f4a2a",
+      "5df0a256c600f827ac1a7ef207b77d4fb299b3b2",
+      "68ca6936a77baff48e1803a3bc85ba8a3fb5c617",
+      "1ab38e57c59c470ae579caa268b7d9dcdbda95ba",
+      "a77ed345d76daf7676dbf2d7b68873ffdd240537",
+      "0484c54919ff071e21e1db3197060fc8277213e0",
+      "4422be717c3e3cb2e58ebac9c0bebbd30d94e2a1",
+      "24881fbfdf3feba4567e41dc011ea283716873ee",
+      "97db8bd199b10f90ce854ddc913491d43fda9216",
+      "1997984325de5057bee0bd5b309fa534dac5d639",
+      "67c5905b3691b3dc5315fb37604cf7883cfe28fa",
+      "02653f8ed94ca90536ffd7a282f0c911dfb1dad0",
+      "3281055d95b365964e67296c8935cdcbc4bfaec1",
+      "6c47ca8eccb1ed2b8148546f4f0acebd10cad0a5",
+      "3cc19602c1a0ad3f097c350d6bda66ce5d620da0",
+      "e01e2a20e9d32e46ed5eaaa4cf48cf04f56d9a9f",
+      "2ca5e727f9fd5cad9a98e42fa169580dc2ecab18",
+      "15c29fee92f29f6fd47b9c1384c6e03a6580119e",
+      "e925fafd7ba5fde2073446b1a903090317d67a4b",
+      "266f45f104e901019a55eb268e183d3582dcc17b",
+      "dd3a769d189ee8becf0d457e3d675f895e187d61",
+      "87f1efdfd9225acb243c9b4b3985b391abc566f6",
+      "65e3e2e768aa1f1820d5d15235c86940a6f3aef4",
+      "6ff9b4cfeabb54d8bc48ae5a61e9b1a67cc92341",
+      "8a91a0b5ab7f9b771e388d3f7b0db47f9b925b29",
+      "2502dd96260cbb8b70e3a8ef3fdd3dc09afc7cc3",
+      "5b0952ffcf0b3cf0a8f975e2fa396db679a0dab7",
+      "0b101cc6be4de850f0cdb26a9abd538b27f3e363",
+      "8a173e2643a4eb38fe5cd99567c13e2d496f30e8",
+      "d8c2b1f310bea3df3c0a5b29f2e8f1864380a648",
+      "4ffd83677d18fe285ce1647da9d64ed4b2798f40",
+      "c394a6b5b16f029bacd8d093cc6893c2d1bcc13d",
+      "01d91728f00d234f68cc6ebd2ab7df09226a2789",
+      "da742a70ab7db54b9535ca003e22d4cc01b8ba2f",
+      "49ad3fe5339fb135851749690d4ffc251e8766c1",
+      "25132b73ff18d43e99388ed5cb7a9b5e5541355c",
+      "49f4f652e161b4d93859699e98f0003cba966ae7",
+      "0cca9d060257b01c79a03bad5c74c34a6b81b84c",
+      "b115e2aa6ae22652f6a9ee4d25475af9250a0bd4",
+      "e597dd94db90a112fbbe69cf154f8d23a5b857e7",
+      "ec96c134660c998f7eb044e349e3715b65733fe1",
+      "4a40d1772c2c0fcb1aec1fefecbbc56bb6622cbe",
+      "7748651f5cb3ee0ccd3d3e6141f315ee5d20454e",
+      "dcae7682cddf5e52ba3bd7b3aebfa0f472d8c890",
+      "36c14e903d73b226a2df5bbf7ab4fbf1943c2906",
+      "74c952b87907a36d84d404ad17a0695be4ac55df",
+      "d89f844a2a0abc7474555f0635344245456f82d6",
+      "ca40b5b38ffac6336872cdb0d5f4f053916f394a",
+      "965518e63c92cbf72e498ab6d10f14f0a78f4196",
+      "ef840e0e6d8f066419a351c25312acb2d5323af7",
+      "4fe1a0a7a42f655564e0b1577a2bc0dd74af8f58",
+      "bc2278e7e9820825ce990fb2fe7fca4b9fe9a1c3",
+      "7305eda972cb423bd51ac18f4966312b346360d0",
+      "d91f06f3c533b231346dc1d0ca5bf0bca265e462",
+      "195afc10b8924ef4d6afc5d409eb8a8e1c43b96c",
+      "e30e980854408d46b2e8837a14a0c0d771a18545",
+      "5529d2e15e142dcec0ee5a239ffadb33e3295b01",
+      "5714643ff9001e70e0fbf8ecb4f55369dcf7ae61",
+      "b11e3617990bee170122c4af1913ed79ddb4a632",
+      "017ebb091aa64596f9545c89e67f6c880f8bb121",
+      "d8b41919751da63f63745b4a9d2ce894dd61342d",
+      "13bdd05934a7363016aa9a92c0d5bef13c0e81a4",
+      "383e9c707249e88075044d2170a0f1e68411ee76",
+      "f8d3fe1817b2ac977c051243d6ffc9077a000ba3",
+      "7f63e65f22bff5d4bf5962e3555bc4107c31de6e",
+      "7f2eb90f24df180a7c0dd6c1b888aaba65b3dbb6",
+      "d324ccc0977d0347e4f94529490fefbc72e54900",
+      "4da7d867f237542aadac148eebbcff60f82d9ef9",
+      "596f96442e5b60706018e47d63c56bd5abad2a37",
+      "da51dfd5986528d7341ba488b96046603298ae0b",
+      "3d33d5eabb2bed36b5ff252057a96647dbd8c8c7",
+      "665bcb3e53d80a4d4c01e43e0b0bea0ecc85383c",
+      "a1cbdc980e05f0a03616d89e0b3d6986e0e59aa8",
+      "a1d86d120fa046eabdfc0fc1a674e34aebdc81f1",
+      "02f24ed0af859dd9a3e21ba009ed3714733a50f8",
+      "9cf75cca7af6a198c418d99a2bd6d78efb2e5d9b",
+      "32d469285382521bae4ad3f368a7045f32ff2f5e",
+      "bb23f99b3eeaced9608e11e280e7c986dba650be"
+    ],
+    "logical_ios_patches": [
+      {
+        "id": "IOS-A7-RUNTIME",
+        "owner": "P007",
+        "files": [
+          ".github/scripts/patch-go-ios-arm64-runtime.py",
+          ".github/workflows/ios-build.yml"
+        ],
+        "sha256": {
+          ".github/scripts/patch-go-ios-arm64-runtime.py": "73b7297aa84e1c0742f345da8fd10488eb87b42d470d71de516ac272cddd9c85",
+          ".github/workflows/ios-build.yml": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82"
+        },
+        "changed_surfaces": [
+          ".github/scripts/patch-go-ios-arm64-runtime.py",
+          ".github/workflows/ios-build.yml"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      },
+      {
+        "id": "IOS-AGENT-BATTERY",
+        "owner": "P008",
+        "files": [
+          "agent/battery/battery_ios.go"
+        ],
+        "sha256": {
+          "agent/battery/battery_ios.go": "0d15da4e09c3d168c7d09f639d8934d20a6cde06f7cb4bcdd77c73b14fd16d11"
+        },
+        "changed_surfaces": [],
+        "status": "PRESERVED"
+      },
+      {
+        "id": "IOS-AGENT-BUILD-PROBE",
+        "owner": "P007",
+        "files": [
+          ".github/workflows/ios-build.yml"
+        ],
+        "sha256": {
+          ".github/workflows/ios-build.yml": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82"
+        },
+        "changed_surfaces": [
+          ".github/workflows/ios-build.yml"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      },
+      {
+        "id": "IOS-AGENT-SYSTEM-HOOK",
+        "owner": "P008",
+        "files": [
+          "agent/battery/battery_darwin.go",
+          "agent/battery/battery_ios.go",
+          "agent/system.go",
+          "agent/system_platform_ios.go",
+          "agent/system_platform_other.go"
+        ],
+        "sha256": {
+          "agent/battery/battery_darwin.go": "dd1ff8d19fdba55e45f5fe77039b43bedd1b02d5821a4f2c7e4372aae491ad75",
+          "agent/battery/battery_ios.go": "0d15da4e09c3d168c7d09f639d8934d20a6cde06f7cb4bcdd77c73b14fd16d11",
+          "agent/system.go": "cde0413c24fa35a3b07c154ed8765d7a34536a63de848d8d33aab53c8d30a6d3",
+          "agent/system_platform_ios.go": "0c4986a08f2dc826e64031dbd4d9d37f57f5543ae0fe2c69861b5a6f958a20a4",
+          "agent/system_platform_other.go": "07aa4a2789d2b07e9ef07bc84ad9750784c985bb499896a5c4a0053e2a9a1da7"
+        },
+        "changed_surfaces": [],
+        "status": "PRESERVED"
+      },
+      {
+        "id": "IOS-FRONTEND-BUILD",
+        "owner": "P015",
+        "files": [
+          ".github/workflows/ios-build.yml",
+          "docs/ios-build-notes.md",
+          "docs/upstream-sync.md",
+          "internal/site/bun.lock"
+        ],
+        "sha256": {
+          ".github/workflows/ios-build.yml": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+          "docs/ios-build-notes.md": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+          "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+          "internal/site/bun.lock": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa"
+        },
+        "changed_surfaces": [
+          ".github/workflows/ios-build.yml",
+          "docs/ios-build-notes.md"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      },
+      {
+        "id": "IOS-HUB-BUILD-PIPELINE",
+        "owner": "P015",
+        "files": [
+          ".github/workflows/ios-build.yml",
+          "docs/architecture.md",
+          "docs/ios-build-notes.md",
+          "docs/ios-port-status.md"
+        ],
+        "sha256": {
+          ".github/workflows/ios-build.yml": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+          "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+          "docs/ios-build-notes.md": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+          "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c"
+        },
+        "changed_surfaces": [
+          ".github/workflows/ios-build.yml",
+          "docs/ios-build-notes.md"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      },
+      {
+        "id": "IOS-INSTALLER-ARCH-DETECTION",
+        "owner": "P016",
+        "files": [
+          "install.sh",
+          "scripts/ios/install-beszel.sh",
+          "tests/install-sh-test.sh"
+        ],
+        "sha256": {
+          "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+          "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+          "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+        },
+        "changed_surfaces": [],
+        "status": "PRESERVED"
+      },
+      {
+        "id": "IOS-INSTALLER-BOOTSTRAP-INTEGRITY",
+        "owner": "P016",
+        "files": [
+          ".github/workflows/ios-build.yml",
+          ".github/workflows/ios-installer.yml",
+          "README.md",
+          "README.vi.md",
+          "docs/architecture.md",
+          "docs/architecture.vi.md",
+          "docs/device-validation.md",
+          "docs/device-validation.vi.md",
+          "docs/ios-build-notes.md",
+          "docs/ios-build-notes.vi.md",
+          "docs/ios-port-status.md",
+          "docs/ios-port-status.vi.md",
+          "docs/upstream-sync.md",
+          "docs/upstream-sync.vi.md",
+          "install.sh",
+          "scripts/ios/install-beszel.sh",
+          "tests/bootstrap-test.sh",
+          "tests/install-sh-test.sh",
+          "tests/ios-patch-sentinels.sh"
+        ],
+        "sha256": {
+          ".github/workflows/ios-build.yml": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+          ".github/workflows/ios-installer.yml": "b0814ac8d1ef84b22f914aacb1cd02d9ef2f66020231f47f03e787dc836bbc04",
+          "README.md": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+          "README.vi.md": "91a9798dd6bdc6a12b63d433533863a23b33d5eb4721f680f085ee73cd39dc12",
+          "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+          "docs/architecture.vi.md": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+          "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+          "docs/device-validation.vi.md": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+          "docs/ios-build-notes.md": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+          "docs/ios-build-notes.vi.md": "5e75c986e74eff062719f5b15da16e3f1658bd9877e86e49115b33edbb909b14",
+          "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+          "docs/ios-port-status.vi.md": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+          "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+          "docs/upstream-sync.vi.md": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb",
+          "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+          "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+          "tests/bootstrap-test.sh": "bdb69ca0f34d06118ead7fdc719f7a6c7fe66be803b82a1337fe096d4aaf2cc4",
+          "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+          "tests/ios-patch-sentinels.sh": "cf74af72a381f1c28fe03069e1feff8e4161a081644dbcec49b5f811d17a354f"
+        },
+        "changed_surfaces": [
+          ".github/workflows/ios-build.yml",
+          "docs/ios-build-notes.md",
+          "docs/ios-build-notes.vi.md",
+          "tests/ios-patch-sentinels.sh"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      },
+      {
+        "id": "IOS-INSTALLER-LIFECYCLE",
+        "owner": "P016",
+        "files": [
+          "README.md",
+          "docs/architecture.md",
+          "docs/ios-build-notes.md",
+          "docs/ios-port-status.md",
+          "install.sh",
+          "scripts/ios/install-beszel.sh",
+          "tests/install-sh-test.sh"
+        ],
+        "sha256": {
+          "README.md": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+          "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+          "docs/ios-build-notes.md": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+          "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+          "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+          "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+          "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+        },
+        "changed_surfaces": [
+          "docs/ios-build-notes.md"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      },
+      {
+        "id": "IOS-INSTALLER-VALIDATION",
+        "owner": "P017",
+        "files": [
+          "docs/architecture.md",
+          "docs/device-validation.md",
+          "docs/ios-port-status.md",
+          "install.sh",
+          "scripts/ios/install-beszel.sh",
+          "tests/install-sh-test.sh"
+        ],
+        "sha256": {
+          "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+          "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+          "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+          "install.sh": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+          "scripts/ios/install-beszel.sh": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+          "tests/install-sh-test.sh": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a"
+        },
+        "changed_surfaces": [],
+        "status": "PRESERVED"
+      },
+      {
+        "id": "IOS-PORT-DOCUMENTATION",
+        "owner": "P017",
+        "files": [
+          "README.md",
+          "README.vi.md",
+          "SECURITY.md",
+          "docs/architecture.md",
+          "docs/architecture.vi.md",
+          "docs/device-validation.md",
+          "docs/device-validation.vi.md",
+          "docs/ios-build-notes.md",
+          "docs/ios-build-notes.vi.md",
+          "docs/ios-port-status.md",
+          "docs/ios-port-status.vi.md",
+          "docs/upstream-sync.md",
+          "docs/upstream-sync.vi.md"
+        ],
+        "sha256": {
+          "README.md": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+          "README.vi.md": "91a9798dd6bdc6a12b63d433533863a23b33d5eb4721f680f085ee73cd39dc12",
+          "SECURITY.md": "132cdbdbba8dafe26a98a5b806da63e6e6b8a1642f2fa8dae4a185bc0a6eff4c",
+          "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+          "docs/architecture.vi.md": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+          "docs/device-validation.md": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+          "docs/device-validation.vi.md": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+          "docs/ios-build-notes.md": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+          "docs/ios-build-notes.vi.md": "5e75c986e74eff062719f5b15da16e3f1658bd9877e86e49115b33edbb909b14",
+          "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+          "docs/ios-port-status.vi.md": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+          "docs/upstream-sync.md": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+          "docs/upstream-sync.vi.md": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb"
+        },
+        "changed_surfaces": [
+          "docs/ios-build-notes.md",
+          "docs/ios-build-notes.vi.md"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      },
+      {
+        "id": "IOS-RELEASE-ISOLATION",
+        "owner": "P016",
+        "files": [
+          ".github/workflows/docker-images.yml",
+          ".github/workflows/ios-build.yml",
+          ".github/workflows/release.yml",
+          "docs/architecture.md",
+          "docs/ios-build-notes.md",
+          "docs/ios-port-status.md"
+        ],
+        "sha256": {
+          ".github/workflows/docker-images.yml": "00b0c6f8bcbbcc83fd7b7b0f4699a82cfbfb6b708f5370a4de32ad0d9a49de2e",
+          ".github/workflows/ios-build.yml": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+          ".github/workflows/release.yml": "d5adc4efd3f0da0924f97982e0c9ef70cf373e2a95e383dfc66325ed58d8b500",
+          "docs/architecture.md": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+          "docs/ios-build-notes.md": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+          "docs/ios-port-status.md": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c"
+        },
+        "changed_surfaces": [
+          ".github/workflows/ios-build.yml",
+          "docs/ios-build-notes.md"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      },
+      {
+        "id": "IOS-UPSTREAM-SYNC-CI",
+        "owner": "P017",
+        "files": [
+          ".github/scripts/check-upstream-drift.sh",
+          ".github/scripts/patch-go-ios-arm64-runtime.py",
+          ".github/workflows/ios-build.yml",
+          ".github/workflows/sync-upstream-main.yml",
+          ".github/workflows/upstream-drift.yml",
+          "tests/ios-patch-sentinels.sh",
+          "tests/upstream-sync-test.sh"
+        ],
+        "sha256": {
+          ".github/scripts/check-upstream-drift.sh": "b5e7c9f50e2468055928f02262a3a1375e60f7afeb02cda82e7af36ae221af36",
+          ".github/scripts/patch-go-ios-arm64-runtime.py": "73b7297aa84e1c0742f345da8fd10488eb87b42d470d71de516ac272cddd9c85",
+          ".github/workflows/ios-build.yml": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+          ".github/workflows/sync-upstream-main.yml": "af70e4cbfcc88f6426d83378d94c1636ec3949f5366ad5ea1deb1adf0a322ef1",
+          ".github/workflows/upstream-drift.yml": "6f2e1d6e69219080b68806dcaabce5070e2130dab99fb812a8a24b59431cae8c",
+          "tests/ios-patch-sentinels.sh": "cf74af72a381f1c28fe03069e1feff8e4161a081644dbcec49b5f811d17a354f",
+          "tests/upstream-sync-test.sh": "1c858a6332ab444cfe6f2689ba1aa5293291c6f0849c6c44dcdf06d056faac92"
+        },
+        "changed_surfaces": [
+          ".github/scripts/patch-go-ios-arm64-runtime.py",
+          ".github/workflows/ios-build.yml",
+          "tests/ios-patch-sentinels.sh"
+        ],
+        "status": "P007_BUILD_CHECKS_STRENGTHENED"
+      }
+    ]
+  },
+  "toolchains": {
+    "go": "1.27.1",
+    "bun": "1.4.0",
+    "xcode": "15.4",
+    "xcode_build": "15F31d",
+    "iphoneos_sdk": "17.5",
+    "sdk_path": "/Applications/Xcode_15.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS17.5.sdk",
+    "clang": "/Applications/Xcode_15.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
+  },
+  "target": {
+    "GOOS": "ios",
+    "GOARCH": "arm64",
+    "CGO_ENABLED": "1",
+    "minimum_ios": "12.0",
+    "compiler_wrapper": ".github/scripts/ios-clang.sh",
+    "flags": [
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "<resolved iPhoneOS SDK>",
+      "-mios-version-min=12.0"
+    ],
+    "CGO_CFLAGS": "-O2 -g",
+    "CGO_CPPFLAGS": "",
+    "CGO_CXXFLAGS": "-O2 -g",
+    "CGO_LDFLAGS": "",
+    "GOFLAGS": "",
+    "GOARM64": "v8.0"
+  },
+  "runtime_patch": {
+    "status": "PASS",
+    "go": "go1.27.1",
+    "path": "/Users/runner/work/_temp/go-ios-a7/src/runtime/asm_arm64.s",
+    "source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+    "patched_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f",
+    "replacement": "zero-guarded YIELD loop; no CNTFRQ_EL0/CNTVCT_EL0 reads",
+    "fixture_sha256": "6a778321962ff3d351a2167246eabd79643b8a00e5fd14274f965993dfeb702d",
+    "script_sha256": "73b7297aa84e1c0742f345da8fd10488eb87b42d470d71de516ac272cddd9c85",
+    "known_source_matches_real_toolchain": true,
+    "runtime_unit_tests": 13,
+    "source_mutations": 15,
+    "positive": "PASS",
+    "negative": "PASS_BYTE_IDENTICAL",
+    "repeat_invocation": "NONZERO_WITHOUT_WRITE",
+    "atomic_failure_injection": "FLUSH_AND_RENAME_PASS",
+    "toolchain_isolation": "Complete job-local GOROOT, GOTOOLCHAIN=local, separate cache. Original runtime hash verified after patch and both builds.",
+    "local_real_toolchain_copy": "PASS; original unchanged; repeat invocation rejected without mutation",
+    "binary_validation": {
+      "agent": "PASS",
+      "hub": "PASS",
+      "symbol": "runtime.procyieldAsm.abi0",
+      "instruction_words": [
+        "b9400be0",
+        "b4000080",
+        "d503203f",
+        "51000400",
+        "b5ffffc0",
+        "d65f03c0"
+      ],
+      "alignment_words": [
+        "00000000",
+        "00000000"
+      ],
+      "counter_access": false,
+      "strategy": "Separate unstripped linked builds with identical Go/SDK/source inputs; production -s -w retained."
+    }
+  },
+  "source_selection": {
+    "status": {
+      "ios": "PASS",
+      "darwin": "PASS",
+      "linux": "PASS"
+    },
+    "GOARCH": "arm64",
+    "CGO_ENABLED": "1",
+    "command": "go list -mod=readonly -deps -json ./internal/cmd/agent ./internal/cmd/hub",
+    "files": {
+      "ios": {
+        "github.com/henrygd/beszel/agent": {
+          "GoFiles": [
+            "agent.go",
+            "agent_cache.go",
+            "client.go",
+            "connection_manager.go",
+            "cpu.go",
+            "cpu_unsupported.go",
+            "data_dir.go",
+            "disk.go",
+            "docker.go",
+            "docker_image_updates.go",
+            "docker_registry.go",
+            "emmc_common.go",
+            "emmc_stub.go",
+            "fans.go",
+            "fans_other.go",
+            "fingerprint.go",
+            "gpu.go",
+            "gpu_amd_unsupported.go",
+            "gpu_darwin_unsupported.go",
+            "gpu_intel.go",
+            "gpu_intel_sysfs_unsupported.go",
+            "gpu_nvml_unsupported.go",
+            "gpu_nvtop.go",
+            "handlers.go",
+            "mdraid_stub.go",
+            "memory.go",
+            "memory_unsupported.go",
+            "network.go",
+            "network_counters_unsupported.go",
+            "network_monitor.go",
+            "network_monitor_cert.go",
+            "network_monitor_history.go",
+            "network_monitor_ping.go",
+            "network_monitor_probe.go",
+            "network_monitor_resume.go",
+            "network_monitor_schedule.go",
+            "network_monitor_task.go",
+            "package_updates.go",
+            "response.go",
+            "sensors.go",
+            "sensors_default.go",
+            "server.go",
+            "smart.go",
+            "smart_nonwindows.go",
+            "storage_pool.go",
+            "system.go",
+            "system_platform_ios.go",
+            "systemd_nonlinux.go",
+            "update.go",
+            "uptime_stub.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "emmc_common_test.go",
+            "network_monitor_history_test.go",
+            "network_monitor_test.go",
+            "system_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "agent_cache_test.go",
+            "agent_test_helpers.go",
+            "client_test.go",
+            "connection_manager_test.go",
+            "cpu_linux.go",
+            "cpu_linux_test.go",
+            "cpu_test.go",
+            "data_dir_test.go",
+            "disk_io_linux_test.go",
+            "disk_test.go",
+            "disk_zfs_test.go",
+            "docker_image_updates_test.go",
+            "docker_registry_test.go",
+            "docker_test.go",
+            "emmc_linux.go",
+            "emmc_linux_test.go",
+            "fans_linux.go",
+            "fans_test.go",
+            "fingerprint_test.go",
+            "gpu_amd_linux.go",
+            "gpu_amd_linux_test.go",
+            "gpu_darwin.go",
+            "gpu_darwin_test.go",
+            "gpu_fixture_test.go",
+            "gpu_intel_sysfs_linux.go",
+            "gpu_intel_sysfs_linux_test.go",
+            "gpu_nvml.go",
+            "gpu_nvml_linux.go",
+            "gpu_nvml_sample_test.go",
+            "gpu_nvml_unsupported_test.go",
+            "gpu_nvml_windows.go",
+            "gpu_test.go",
+            "handlers_test.go",
+            "mdraid_linux.go",
+            "mdraid_linux_test.go",
+            "memory_linux.go",
+            "memory_linux_test.go",
+            "network_counters_linux.go",
+            "network_counters_linux_test.go",
+            "network_monitor_cert_test.go",
+            "network_monitor_ping_test.go",
+            "network_monitor_resume_test.go",
+            "network_monitor_schedule_test.go",
+            "network_monitor_task_test.go",
+            "network_test.go",
+            "package_updates_test.go",
+            "sensors_freebsd.go",
+            "sensors_freebsd_common.go",
+            "sensors_freebsd_common_test.go",
+            "sensors_test.go",
+            "sensors_windows.go",
+            "server_config_test.go",
+            "server_test.go",
+            "smart_test.go",
+            "smart_windows.go",
+            "storage_pool_test.go",
+            "system_platform_other.go",
+            "systemd.go",
+            "systemd_nonlinux_test.go",
+            "systemd_test.go",
+            "uptime_linux.go",
+            "uptime_linux_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/battery": {
+          "GoFiles": [
+            "battery.go",
+            "battery_ios.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "battery_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "battery_darwin.go",
+            "battery_linux.go",
+            "battery_linux_test.go",
+            "battery_stub.go",
+            "battery_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/btrfs": {
+          "GoFiles": [
+            "btrfs.go",
+            "btrfs_unsupported.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "btrfs_linux.go",
+            "btrfs_linux_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/deltatracker": {
+          "GoFiles": [
+            "deltatracker.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "deltatracker_test.go"
+          ],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/health": {
+          "GoFiles": [
+            "health.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "health_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/utils": {
+          "GoFiles": [
+            "utils.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "utils_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "cgroup_linux.go",
+            "cgroup_linux_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/wifi": {
+          "GoFiles": [
+            "wifi.go",
+            "wifi_unsupported.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "wifi_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "wifi_darwin.go",
+            "wifi_linux.go",
+            "wifi_linux_test.go",
+            "wifi_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/zfs": {
+          "GoFiles": [
+            "zfs.go",
+            "zfs_nonlinux.go",
+            "zfs_status.go",
+            "zfs_unsupported.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "zfs_freebsd.go",
+            "zfs_linux.go",
+            "zfs_linux_test.go",
+            "zfs_nonlinux_test.go",
+            "zfs_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/cmd/agent": {
+          "GoFiles": [
+            "agent.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "agent_test.go"
+          ],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/cmd/hub": {
+          "GoFiles": [
+            "hub.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/site": {
+          "GoFiles": [
+            "embed.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": [
+            "dist/assets/TwemojiCountryFlags-Bymva2JV.woff2",
+            "dist/assets/active-alerts-GL2Xsvs6.js",
+            "dist/assets/activity-DDWEdgt_.js",
+            "dist/assets/alert-6e8bYhdc.js",
+            "dist/assets/alert-dialog-BgfQqa74.js",
+            "dist/assets/alerts-history-data-table-CfRGU59C.js",
+            "dist/assets/ar-D8tWbkiX.js",
+            "dist/assets/arrow-left-right-D791wW5x.js",
+            "dist/assets/badge-BayDkLC9.js",
+            "dist/assets/bg-BBLoS_tK.js",
+            "dist/assets/chevrons-right-B6_DIRK4.js",
+            "dist/assets/circle-alert-D3JPmIEc.js",
+            "dist/assets/circle-x-u2QmvTxk.js",
+            "dist/assets/clock-DF1a5hwT.js",
+            "dist/assets/command-palette-BW_c-rh0.js",
+            "dist/assets/config-yaml-B6fvFd9q.js",
+            "dist/assets/containers-DkYNP-Uj.js",
+            "dist/assets/containers-table-BKWqbWnt.js",
+            "dist/assets/copy-to-clipboard-JpqQOI-V.js",
+            "dist/assets/cs-B60MPb2W.js",
+            "dist/assets/da-CSCcxnr0.js",
+            "dist/assets/de-XN1nHauC.js",
+            "dist/assets/el-CGs-NguZ.js",
+            "dist/assets/ellipsis-MRSyPJCi.js",
+            "dist/assets/es-buMb_i4V.js",
+            "dist/assets/eye-DpN-qAUA.js",
+            "dist/assets/fa-Jszxa1sA.js",
+            "dist/assets/footer-repo-link-D2pzxYIt.js",
+            "dist/assets/fr-CVG-snA_.js",
+            "dist/assets/general-B5FloXCQ.js",
+            "dist/assets/he-7aKYqJm7.js",
+            "dist/assets/heartbeat-JLw4fITZ.js",
+            "dist/assets/home-Bj33qZZS.js",
+            "dist/assets/hr-OgJwMM_v.js",
+            "dist/assets/hu-BNgp_821.js",
+            "dist/assets/id-BJpcyI9N.js",
+            "dist/assets/index-Bz4p_Lr7.css",
+            "dist/assets/index-JngQiXM0.js",
+            "dist/assets/index-Oi8yeeH9.js",
+            "dist/assets/index-VyrJdKtl.js",
+            "dist/assets/index-aMxe3cwg.js",
+            "dist/assets/it-E51otyG0.js",
+            "dist/assets/ja-_lacCq4c.js",
+            "dist/assets/json-Cp-IABpG.js",
+            "dist/assets/key-DYaqxf6o.js",
+            "dist/assets/ko-Db72lXRT.js",
+            "dist/assets/loader-circle-DZebsUtv.js",
+            "dist/assets/log-2UxHyX5q.js",
+            "dist/assets/login-Cb9bBV7T.js",
+            "dist/assets/mail-2v6wALcM.js",
+            "dist/assets/monitors-CB6KhWnM.js",
+            "dist/assets/network-monitors-table-CQyZ93Nq.js",
+            "dist/assets/nl-BGWPiUsG.js",
+            "dist/assets/no-C1hR0-eH.js",
+            "dist/assets/notifications-I0BS1ArQ.js",
+            "dist/assets/package-updates-table-CZuGwYkS.js",
+            "dist/assets/pl-CunHNb72.js",
+            "dist/assets/pt-MdzsJpq2.js",
+            "dist/assets/refresh-cw-DwafMBJT.js",
+            "dist/assets/rotate-cw-CCvpTLFZ.js",
+            "dist/assets/ru-CTO2wz-j.js",
+            "dist/assets/save-CrriL0cP.js",
+            "dist/assets/settings-2-BjWLNyoI.js",
+            "dist/assets/sheet-Cx3AhTqv.js",
+            "dist/assets/shield-check-Djq5cqG-.js",
+            "dist/assets/shiki-BoUGCYBZ.js",
+            "dist/assets/sl-Ybg3S3lX.js",
+            "dist/assets/slider-BWpNJr12.js",
+            "dist/assets/smart-4a6eBHWy.js",
+            "dist/assets/smart-table-BwdE9vqn.js",
+            "dist/assets/square-pen-Be93aass.js",
+            "dist/assets/sr-BaJtn8Y4.js",
+            "dist/assets/storage-pools-table-7yQ5XXoN.js",
+            "dist/assets/sv-DaHfPgOr.js",
+            "dist/assets/switch-gTX7GrSA.js",
+            "dist/assets/system-C-7K4mH-.js",
+            "dist/assets/table-CrtmXdb6.js",
+            "dist/assets/textarea-CQmumqKl.js",
+            "dist/assets/tokens-fingerprints-D5JuZ0qm.js",
+            "dist/assets/tr-CVcHDLmV.js",
+            "dist/assets/trash-2-CzVGtqiM.js",
+            "dist/assets/uk-nR059ENx.js",
+            "dist/assets/use-network-monitors-C_SUz6a0.js",
+            "dist/assets/uz-CtPHuOws.js",
+            "dist/assets/vi-CxB8FJP7.js",
+            "dist/assets/wasm-CG6Dc4jp.js",
+            "dist/assets/wifi-jtYoPYOi.js",
+            "dist/assets/zh-CN-IA3LEX0G.js",
+            "dist/assets/zh-Cdnmg5wZ.js",
+            "dist/assets/zh-HK-CTyLxolt.js",
+            "dist/index.html",
+            "dist/static/InterVariable.woff2",
+            "dist/static/icon.png",
+            "dist/static/icon.svg",
+            "dist/static/manifest.json"
+          ]
+        },
+        "github.com/shirou/gopsutil/v4/common": {
+          "GoFiles": [
+            "env.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/cpu": {
+          "GoFiles": [
+            "cpu.go",
+            "cpu_darwin.go",
+            "cpu_darwin_arm64.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "cpu_darwin_arm64_test.go",
+            "cpu_darwin_test.go",
+            "cpu_psutil_test.go",
+            "cpu_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "cpu_aix.go",
+            "cpu_aix_cgo.go",
+            "cpu_aix_nocgo.go",
+            "cpu_darwin_fallback.go",
+            "cpu_dragonfly.go",
+            "cpu_dragonfly_amd64.go",
+            "cpu_fallback.go",
+            "cpu_freebsd.go",
+            "cpu_freebsd_386.go",
+            "cpu_freebsd_amd64.go",
+            "cpu_freebsd_arm.go",
+            "cpu_freebsd_arm64.go",
+            "cpu_freebsd_test.go",
+            "cpu_linux.go",
+            "cpu_linux_test.go",
+            "cpu_netbsd.go",
+            "cpu_netbsd_amd64.go",
+            "cpu_netbsd_arm.go",
+            "cpu_netbsd_arm64.go",
+            "cpu_openbsd.go",
+            "cpu_openbsd_386.go",
+            "cpu_openbsd_amd64.go",
+            "cpu_openbsd_arm.go",
+            "cpu_openbsd_arm64.go",
+            "cpu_openbsd_riscv64.go",
+            "cpu_plan9.go",
+            "cpu_plan9_test.go",
+            "cpu_solaris.go",
+            "cpu_solaris_test.go",
+            "cpu_windows.go",
+            "cpu_windows_test.go",
+            "ex_linux.go",
+            "ex_linux_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/disk": {
+          "GoFiles": [
+            "disk.go",
+            "disk_darwin.go",
+            "disk_unix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "disk_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "disk_aix.go",
+            "disk_aix_cgo.go",
+            "disk_aix_nocgo.go",
+            "disk_fallback.go",
+            "disk_freebsd.go",
+            "disk_freebsd_386.go",
+            "disk_freebsd_amd64.go",
+            "disk_freebsd_arm.go",
+            "disk_freebsd_arm64.go",
+            "disk_linux.go",
+            "disk_linux_test.go",
+            "disk_netbsd.go",
+            "disk_netbsd_amd64.go",
+            "disk_netbsd_arm.go",
+            "disk_netbsd_arm64.go",
+            "disk_openbsd.go",
+            "disk_openbsd_386.go",
+            "disk_openbsd_amd64.go",
+            "disk_openbsd_arm.go",
+            "disk_openbsd_arm64.go",
+            "disk_openbsd_riscv64.go",
+            "disk_solaris.go",
+            "disk_windows.go",
+            "disk_windows_test.go",
+            "types_freebsd.go",
+            "types_netbsd.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/host": {
+          "GoFiles": [
+            "host.go",
+            "host_bsd.go",
+            "host_darwin.go",
+            "host_darwin_arm64.go",
+            "host_posix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "host_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "host_aix.go",
+            "host_aix_cgo.go",
+            "host_aix_nocgo.go",
+            "host_aix_ppc64.go",
+            "host_aix_test.go",
+            "host_darwin_amd64.go",
+            "host_fallback.go",
+            "host_freebsd.go",
+            "host_freebsd_386.go",
+            "host_freebsd_amd64.go",
+            "host_freebsd_arm.go",
+            "host_freebsd_arm64.go",
+            "host_linux.go",
+            "host_linux_386.go",
+            "host_linux_amd64.go",
+            "host_linux_arm.go",
+            "host_linux_arm64.go",
+            "host_linux_loong64.go",
+            "host_linux_mips.go",
+            "host_linux_mips64.go",
+            "host_linux_mips64le.go",
+            "host_linux_mipsle.go",
+            "host_linux_ppc64.go",
+            "host_linux_ppc64le.go",
+            "host_linux_riscv64.go",
+            "host_linux_s390x.go",
+            "host_linux_test.go",
+            "host_netbsd.go",
+            "host_openbsd.go",
+            "host_openbsd_386.go",
+            "host_openbsd_amd64.go",
+            "host_openbsd_arm.go",
+            "host_openbsd_arm64.go",
+            "host_openbsd_riscv64.go",
+            "host_solaris.go",
+            "host_windows.go",
+            "types_darwin.go",
+            "types_freebsd.go",
+            "types_linux.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/internal/common": {
+          "GoFiles": [
+            "common.go",
+            "common_darwin.go",
+            "common_unix.go",
+            "endian.go",
+            "sleep.go",
+            "warnings.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "common_test.go",
+            "warnings_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "common_aix.go",
+            "common_aix_test.go",
+            "common_freebsd.go",
+            "common_linux.go",
+            "common_netbsd.go",
+            "common_openbsd.go",
+            "common_windows.go",
+            "readlink_linux.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/load": {
+          "GoFiles": [
+            "load.go",
+            "load_darwin.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "load_psutil_test.go",
+            "load_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "load_aix.go",
+            "load_aix_cgo.go",
+            "load_aix_nocgo.go",
+            "load_aix_nocgo_test.go",
+            "load_bsd.go",
+            "load_fallback.go",
+            "load_freebsd.go",
+            "load_linux.go",
+            "load_openbsd.go",
+            "load_solaris.go",
+            "load_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/mem": {
+          "GoFiles": [
+            "mem.go",
+            "mem_darwin.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "mem_darwin_test.go",
+            "mem_psutil_test.go",
+            "mem_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "ex_linux.go",
+            "ex_windows.go",
+            "mem_aix.go",
+            "mem_aix_cgo.go",
+            "mem_aix_nocgo.go",
+            "mem_bsd.go",
+            "mem_bsd_test.go",
+            "mem_fallback.go",
+            "mem_freebsd.go",
+            "mem_linux.go",
+            "mem_linux_test.go",
+            "mem_netbsd.go",
+            "mem_openbsd.go",
+            "mem_openbsd_386.go",
+            "mem_openbsd_amd64.go",
+            "mem_openbsd_arm.go",
+            "mem_openbsd_arm64.go",
+            "mem_openbsd_riscv64.go",
+            "mem_plan9.go",
+            "mem_plan9_test.go",
+            "mem_solaris.go",
+            "mem_solaris_test.go",
+            "mem_windows.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/net": {
+          "GoFiles": [
+            "net.go",
+            "net_darwin.go",
+            "net_unix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "net_darwin_test.go",
+            "net_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "net_aix.go",
+            "net_aix_cgo.go",
+            "net_aix_nocgo.go",
+            "net_aix_nocgo_test.go",
+            "net_aix_test.go",
+            "net_fallback.go",
+            "net_freebsd.go",
+            "net_linux.go",
+            "net_linux_test.go",
+            "net_netbsd.go",
+            "net_netbsd_test.go",
+            "net_openbsd.go",
+            "net_solaris.go",
+            "net_windows.go",
+            "net_windows_386_test.go",
+            "types_darwin.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/process": {
+          "GoFiles": [
+            "process.go",
+            "process_bsd.go",
+            "process_darwin.go",
+            "process_darwin_arm64.go",
+            "process_posix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "process_darwin_test.go",
+            "process_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "process_darwin_amd64.go",
+            "process_fallback.go",
+            "process_freebsd.go",
+            "process_freebsd_386.go",
+            "process_freebsd_amd64.go",
+            "process_freebsd_arm.go",
+            "process_freebsd_arm64.go",
+            "process_linux.go",
+            "process_linux_test.go",
+            "process_openbsd.go",
+            "process_openbsd_386.go",
+            "process_openbsd_amd64.go",
+            "process_openbsd_arm.go",
+            "process_openbsd_arm64.go",
+            "process_openbsd_riscv64.go",
+            "process_plan9.go",
+            "process_posix_test.go",
+            "process_race_test.go",
+            "process_solaris.go",
+            "process_windows.go",
+            "process_windows_32bit.go",
+            "process_windows_64bit.go",
+            "process_windows_test.go",
+            "types_darwin.go",
+            "types_freebsd.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/sensors": {
+          "GoFiles": [
+            "sensors.go",
+            "sensors_darwin_arm64.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "sensors_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "ex_linux.go",
+            "sensors_aix.go",
+            "sensors_darwin.go",
+            "sensors_fallback.go",
+            "sensors_freebsd.go",
+            "sensors_linux.go",
+            "sensors_netbsd.go",
+            "sensors_openbsd.go",
+            "sensors_solaris.go",
+            "sensors_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "runtime/cgo": {
+          "GoFiles": [
+            "callbacks.go",
+            "callbacks_traceback.go",
+            "callbacks_unix.go",
+            "handle.go",
+            "iscgo.go",
+            "setenv.go"
+          ],
+          "CgoFiles": [
+            "cgo.go"
+          ],
+          "SFiles": [
+            "asm_arm64.s",
+            "gcc_arm64.S"
+          ],
+          "TestGoFiles": [
+            "handle_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "callbacks_aix.go",
+            "clearenv.go",
+            "dragonfly.go",
+            "freebsd.go",
+            "linux.go",
+            "mmap.go",
+            "netbsd.go",
+            "openbsd.go",
+            "sigaction.go",
+            "windows.go"
+          ],
+          "EmbedFiles": []
+        }
+      },
+      "darwin": {
+        "github.com/henrygd/beszel/agent": {
+          "GoFiles": [
+            "agent.go",
+            "agent_cache.go",
+            "client.go",
+            "connection_manager.go",
+            "cpu.go",
+            "cpu_unsupported.go",
+            "data_dir.go",
+            "disk.go",
+            "docker.go",
+            "docker_image_updates.go",
+            "docker_registry.go",
+            "emmc_common.go",
+            "emmc_stub.go",
+            "fans.go",
+            "fans_other.go",
+            "fingerprint.go",
+            "gpu.go",
+            "gpu_amd_unsupported.go",
+            "gpu_darwin.go",
+            "gpu_intel.go",
+            "gpu_intel_sysfs_unsupported.go",
+            "gpu_nvml_unsupported.go",
+            "gpu_nvtop.go",
+            "handlers.go",
+            "mdraid_stub.go",
+            "memory.go",
+            "memory_unsupported.go",
+            "network.go",
+            "network_counters_unsupported.go",
+            "network_monitor.go",
+            "network_monitor_cert.go",
+            "network_monitor_history.go",
+            "network_monitor_ping.go",
+            "network_monitor_probe.go",
+            "network_monitor_resume.go",
+            "network_monitor_schedule.go",
+            "network_monitor_task.go",
+            "package_updates.go",
+            "response.go",
+            "sensors.go",
+            "sensors_default.go",
+            "server.go",
+            "smart.go",
+            "smart_nonwindows.go",
+            "storage_pool.go",
+            "system.go",
+            "system_platform_other.go",
+            "systemd_nonlinux.go",
+            "update.go",
+            "uptime_stub.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "emmc_common_test.go",
+            "gpu_darwin_test.go",
+            "network_monitor_history_test.go",
+            "network_monitor_test.go",
+            "system_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "agent_cache_test.go",
+            "agent_test_helpers.go",
+            "client_test.go",
+            "connection_manager_test.go",
+            "cpu_linux.go",
+            "cpu_linux_test.go",
+            "cpu_test.go",
+            "data_dir_test.go",
+            "disk_io_linux_test.go",
+            "disk_test.go",
+            "disk_zfs_test.go",
+            "docker_image_updates_test.go",
+            "docker_registry_test.go",
+            "docker_test.go",
+            "emmc_linux.go",
+            "emmc_linux_test.go",
+            "fans_linux.go",
+            "fans_test.go",
+            "fingerprint_test.go",
+            "gpu_amd_linux.go",
+            "gpu_amd_linux_test.go",
+            "gpu_darwin_unsupported.go",
+            "gpu_fixture_test.go",
+            "gpu_intel_sysfs_linux.go",
+            "gpu_intel_sysfs_linux_test.go",
+            "gpu_nvml.go",
+            "gpu_nvml_linux.go",
+            "gpu_nvml_sample_test.go",
+            "gpu_nvml_unsupported_test.go",
+            "gpu_nvml_windows.go",
+            "gpu_test.go",
+            "handlers_test.go",
+            "mdraid_linux.go",
+            "mdraid_linux_test.go",
+            "memory_linux.go",
+            "memory_linux_test.go",
+            "network_counters_linux.go",
+            "network_counters_linux_test.go",
+            "network_monitor_cert_test.go",
+            "network_monitor_ping_test.go",
+            "network_monitor_resume_test.go",
+            "network_monitor_schedule_test.go",
+            "network_monitor_task_test.go",
+            "network_test.go",
+            "package_updates_test.go",
+            "sensors_freebsd.go",
+            "sensors_freebsd_common.go",
+            "sensors_freebsd_common_test.go",
+            "sensors_test.go",
+            "sensors_windows.go",
+            "server_config_test.go",
+            "server_test.go",
+            "smart_test.go",
+            "smart_windows.go",
+            "storage_pool_test.go",
+            "system_platform_ios.go",
+            "systemd.go",
+            "systemd_nonlinux_test.go",
+            "systemd_test.go",
+            "uptime_linux.go",
+            "uptime_linux_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/battery": {
+          "GoFiles": [
+            "battery.go",
+            "battery_darwin.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "battery_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "battery_ios.go",
+            "battery_linux.go",
+            "battery_linux_test.go",
+            "battery_stub.go",
+            "battery_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/btrfs": {
+          "GoFiles": [
+            "btrfs.go",
+            "btrfs_unsupported.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "btrfs_linux.go",
+            "btrfs_linux_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/deltatracker": {
+          "GoFiles": [
+            "deltatracker.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "deltatracker_test.go"
+          ],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/health": {
+          "GoFiles": [
+            "health.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "health_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/utils": {
+          "GoFiles": [
+            "utils.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "utils_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "cgroup_linux.go",
+            "cgroup_linux_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/wifi": {
+          "GoFiles": [
+            "wifi.go",
+            "wifi_darwin.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "wifi_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "wifi_linux.go",
+            "wifi_linux_test.go",
+            "wifi_unsupported.go",
+            "wifi_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/zfs": {
+          "GoFiles": [
+            "zfs.go",
+            "zfs_nonlinux.go",
+            "zfs_status.go",
+            "zfs_unsupported.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "zfs_freebsd.go",
+            "zfs_linux.go",
+            "zfs_linux_test.go",
+            "zfs_nonlinux_test.go",
+            "zfs_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/cmd/agent": {
+          "GoFiles": [
+            "agent.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "agent_test.go"
+          ],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/cmd/hub": {
+          "GoFiles": [
+            "hub.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/site": {
+          "GoFiles": [
+            "embed.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": [
+            "dist/assets/TwemojiCountryFlags-Bymva2JV.woff2",
+            "dist/assets/active-alerts-GL2Xsvs6.js",
+            "dist/assets/activity-DDWEdgt_.js",
+            "dist/assets/alert-6e8bYhdc.js",
+            "dist/assets/alert-dialog-BgfQqa74.js",
+            "dist/assets/alerts-history-data-table-CfRGU59C.js",
+            "dist/assets/ar-D8tWbkiX.js",
+            "dist/assets/arrow-left-right-D791wW5x.js",
+            "dist/assets/badge-BayDkLC9.js",
+            "dist/assets/bg-BBLoS_tK.js",
+            "dist/assets/chevrons-right-B6_DIRK4.js",
+            "dist/assets/circle-alert-D3JPmIEc.js",
+            "dist/assets/circle-x-u2QmvTxk.js",
+            "dist/assets/clock-DF1a5hwT.js",
+            "dist/assets/command-palette-BW_c-rh0.js",
+            "dist/assets/config-yaml-B6fvFd9q.js",
+            "dist/assets/containers-DkYNP-Uj.js",
+            "dist/assets/containers-table-BKWqbWnt.js",
+            "dist/assets/copy-to-clipboard-JpqQOI-V.js",
+            "dist/assets/cs-B60MPb2W.js",
+            "dist/assets/da-CSCcxnr0.js",
+            "dist/assets/de-XN1nHauC.js",
+            "dist/assets/el-CGs-NguZ.js",
+            "dist/assets/ellipsis-MRSyPJCi.js",
+            "dist/assets/es-buMb_i4V.js",
+            "dist/assets/eye-DpN-qAUA.js",
+            "dist/assets/fa-Jszxa1sA.js",
+            "dist/assets/footer-repo-link-D2pzxYIt.js",
+            "dist/assets/fr-CVG-snA_.js",
+            "dist/assets/general-B5FloXCQ.js",
+            "dist/assets/he-7aKYqJm7.js",
+            "dist/assets/heartbeat-JLw4fITZ.js",
+            "dist/assets/home-Bj33qZZS.js",
+            "dist/assets/hr-OgJwMM_v.js",
+            "dist/assets/hu-BNgp_821.js",
+            "dist/assets/id-BJpcyI9N.js",
+            "dist/assets/index-Bz4p_Lr7.css",
+            "dist/assets/index-JngQiXM0.js",
+            "dist/assets/index-Oi8yeeH9.js",
+            "dist/assets/index-VyrJdKtl.js",
+            "dist/assets/index-aMxe3cwg.js",
+            "dist/assets/it-E51otyG0.js",
+            "dist/assets/ja-_lacCq4c.js",
+            "dist/assets/json-Cp-IABpG.js",
+            "dist/assets/key-DYaqxf6o.js",
+            "dist/assets/ko-Db72lXRT.js",
+            "dist/assets/loader-circle-DZebsUtv.js",
+            "dist/assets/log-2UxHyX5q.js",
+            "dist/assets/login-Cb9bBV7T.js",
+            "dist/assets/mail-2v6wALcM.js",
+            "dist/assets/monitors-CB6KhWnM.js",
+            "dist/assets/network-monitors-table-CQyZ93Nq.js",
+            "dist/assets/nl-BGWPiUsG.js",
+            "dist/assets/no-C1hR0-eH.js",
+            "dist/assets/notifications-I0BS1ArQ.js",
+            "dist/assets/package-updates-table-CZuGwYkS.js",
+            "dist/assets/pl-CunHNb72.js",
+            "dist/assets/pt-MdzsJpq2.js",
+            "dist/assets/refresh-cw-DwafMBJT.js",
+            "dist/assets/rotate-cw-CCvpTLFZ.js",
+            "dist/assets/ru-CTO2wz-j.js",
+            "dist/assets/save-CrriL0cP.js",
+            "dist/assets/settings-2-BjWLNyoI.js",
+            "dist/assets/sheet-Cx3AhTqv.js",
+            "dist/assets/shield-check-Djq5cqG-.js",
+            "dist/assets/shiki-BoUGCYBZ.js",
+            "dist/assets/sl-Ybg3S3lX.js",
+            "dist/assets/slider-BWpNJr12.js",
+            "dist/assets/smart-4a6eBHWy.js",
+            "dist/assets/smart-table-BwdE9vqn.js",
+            "dist/assets/square-pen-Be93aass.js",
+            "dist/assets/sr-BaJtn8Y4.js",
+            "dist/assets/storage-pools-table-7yQ5XXoN.js",
+            "dist/assets/sv-DaHfPgOr.js",
+            "dist/assets/switch-gTX7GrSA.js",
+            "dist/assets/system-C-7K4mH-.js",
+            "dist/assets/table-CrtmXdb6.js",
+            "dist/assets/textarea-CQmumqKl.js",
+            "dist/assets/tokens-fingerprints-D5JuZ0qm.js",
+            "dist/assets/tr-CVcHDLmV.js",
+            "dist/assets/trash-2-CzVGtqiM.js",
+            "dist/assets/uk-nR059ENx.js",
+            "dist/assets/use-network-monitors-C_SUz6a0.js",
+            "dist/assets/uz-CtPHuOws.js",
+            "dist/assets/vi-CxB8FJP7.js",
+            "dist/assets/wasm-CG6Dc4jp.js",
+            "dist/assets/wifi-jtYoPYOi.js",
+            "dist/assets/zh-CN-IA3LEX0G.js",
+            "dist/assets/zh-Cdnmg5wZ.js",
+            "dist/assets/zh-HK-CTyLxolt.js",
+            "dist/index.html",
+            "dist/static/InterVariable.woff2",
+            "dist/static/icon.png",
+            "dist/static/icon.svg",
+            "dist/static/manifest.json"
+          ]
+        },
+        "github.com/shirou/gopsutil/v4/common": {
+          "GoFiles": [
+            "env.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/cpu": {
+          "GoFiles": [
+            "cpu.go",
+            "cpu_darwin.go",
+            "cpu_darwin_arm64.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "cpu_darwin_arm64_test.go",
+            "cpu_darwin_test.go",
+            "cpu_psutil_test.go",
+            "cpu_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "cpu_aix.go",
+            "cpu_aix_cgo.go",
+            "cpu_aix_nocgo.go",
+            "cpu_darwin_fallback.go",
+            "cpu_dragonfly.go",
+            "cpu_dragonfly_amd64.go",
+            "cpu_fallback.go",
+            "cpu_freebsd.go",
+            "cpu_freebsd_386.go",
+            "cpu_freebsd_amd64.go",
+            "cpu_freebsd_arm.go",
+            "cpu_freebsd_arm64.go",
+            "cpu_freebsd_test.go",
+            "cpu_linux.go",
+            "cpu_linux_test.go",
+            "cpu_netbsd.go",
+            "cpu_netbsd_amd64.go",
+            "cpu_netbsd_arm.go",
+            "cpu_netbsd_arm64.go",
+            "cpu_openbsd.go",
+            "cpu_openbsd_386.go",
+            "cpu_openbsd_amd64.go",
+            "cpu_openbsd_arm.go",
+            "cpu_openbsd_arm64.go",
+            "cpu_openbsd_riscv64.go",
+            "cpu_plan9.go",
+            "cpu_plan9_test.go",
+            "cpu_solaris.go",
+            "cpu_solaris_test.go",
+            "cpu_windows.go",
+            "cpu_windows_test.go",
+            "ex_linux.go",
+            "ex_linux_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/disk": {
+          "GoFiles": [
+            "disk.go",
+            "disk_darwin.go",
+            "disk_unix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "disk_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "disk_aix.go",
+            "disk_aix_cgo.go",
+            "disk_aix_nocgo.go",
+            "disk_fallback.go",
+            "disk_freebsd.go",
+            "disk_freebsd_386.go",
+            "disk_freebsd_amd64.go",
+            "disk_freebsd_arm.go",
+            "disk_freebsd_arm64.go",
+            "disk_linux.go",
+            "disk_linux_test.go",
+            "disk_netbsd.go",
+            "disk_netbsd_amd64.go",
+            "disk_netbsd_arm.go",
+            "disk_netbsd_arm64.go",
+            "disk_openbsd.go",
+            "disk_openbsd_386.go",
+            "disk_openbsd_amd64.go",
+            "disk_openbsd_arm.go",
+            "disk_openbsd_arm64.go",
+            "disk_openbsd_riscv64.go",
+            "disk_solaris.go",
+            "disk_windows.go",
+            "disk_windows_test.go",
+            "types_freebsd.go",
+            "types_netbsd.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/host": {
+          "GoFiles": [
+            "host.go",
+            "host_bsd.go",
+            "host_darwin.go",
+            "host_darwin_arm64.go",
+            "host_posix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "host_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "host_aix.go",
+            "host_aix_cgo.go",
+            "host_aix_nocgo.go",
+            "host_aix_ppc64.go",
+            "host_aix_test.go",
+            "host_darwin_amd64.go",
+            "host_fallback.go",
+            "host_freebsd.go",
+            "host_freebsd_386.go",
+            "host_freebsd_amd64.go",
+            "host_freebsd_arm.go",
+            "host_freebsd_arm64.go",
+            "host_linux.go",
+            "host_linux_386.go",
+            "host_linux_amd64.go",
+            "host_linux_arm.go",
+            "host_linux_arm64.go",
+            "host_linux_loong64.go",
+            "host_linux_mips.go",
+            "host_linux_mips64.go",
+            "host_linux_mips64le.go",
+            "host_linux_mipsle.go",
+            "host_linux_ppc64.go",
+            "host_linux_ppc64le.go",
+            "host_linux_riscv64.go",
+            "host_linux_s390x.go",
+            "host_linux_test.go",
+            "host_netbsd.go",
+            "host_openbsd.go",
+            "host_openbsd_386.go",
+            "host_openbsd_amd64.go",
+            "host_openbsd_arm.go",
+            "host_openbsd_arm64.go",
+            "host_openbsd_riscv64.go",
+            "host_solaris.go",
+            "host_windows.go",
+            "types_darwin.go",
+            "types_freebsd.go",
+            "types_linux.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/internal/common": {
+          "GoFiles": [
+            "common.go",
+            "common_darwin.go",
+            "common_unix.go",
+            "endian.go",
+            "sleep.go",
+            "warnings.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "common_test.go",
+            "warnings_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "common_aix.go",
+            "common_aix_test.go",
+            "common_freebsd.go",
+            "common_linux.go",
+            "common_netbsd.go",
+            "common_openbsd.go",
+            "common_windows.go",
+            "readlink_linux.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/load": {
+          "GoFiles": [
+            "load.go",
+            "load_darwin.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "load_psutil_test.go",
+            "load_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "load_aix.go",
+            "load_aix_cgo.go",
+            "load_aix_nocgo.go",
+            "load_aix_nocgo_test.go",
+            "load_bsd.go",
+            "load_fallback.go",
+            "load_freebsd.go",
+            "load_linux.go",
+            "load_openbsd.go",
+            "load_solaris.go",
+            "load_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/mem": {
+          "GoFiles": [
+            "mem.go",
+            "mem_darwin.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "mem_darwin_test.go",
+            "mem_psutil_test.go",
+            "mem_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "ex_linux.go",
+            "ex_windows.go",
+            "mem_aix.go",
+            "mem_aix_cgo.go",
+            "mem_aix_nocgo.go",
+            "mem_bsd.go",
+            "mem_bsd_test.go",
+            "mem_fallback.go",
+            "mem_freebsd.go",
+            "mem_linux.go",
+            "mem_linux_test.go",
+            "mem_netbsd.go",
+            "mem_openbsd.go",
+            "mem_openbsd_386.go",
+            "mem_openbsd_amd64.go",
+            "mem_openbsd_arm.go",
+            "mem_openbsd_arm64.go",
+            "mem_openbsd_riscv64.go",
+            "mem_plan9.go",
+            "mem_plan9_test.go",
+            "mem_solaris.go",
+            "mem_solaris_test.go",
+            "mem_windows.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/net": {
+          "GoFiles": [
+            "net.go",
+            "net_darwin.go",
+            "net_unix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "net_darwin_test.go",
+            "net_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "net_aix.go",
+            "net_aix_cgo.go",
+            "net_aix_nocgo.go",
+            "net_aix_nocgo_test.go",
+            "net_aix_test.go",
+            "net_fallback.go",
+            "net_freebsd.go",
+            "net_linux.go",
+            "net_linux_test.go",
+            "net_netbsd.go",
+            "net_netbsd_test.go",
+            "net_openbsd.go",
+            "net_solaris.go",
+            "net_windows.go",
+            "net_windows_386_test.go",
+            "types_darwin.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/process": {
+          "GoFiles": [
+            "process.go",
+            "process_bsd.go",
+            "process_darwin.go",
+            "process_darwin_arm64.go",
+            "process_posix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "process_darwin_test.go",
+            "process_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "process_darwin_amd64.go",
+            "process_fallback.go",
+            "process_freebsd.go",
+            "process_freebsd_386.go",
+            "process_freebsd_amd64.go",
+            "process_freebsd_arm.go",
+            "process_freebsd_arm64.go",
+            "process_linux.go",
+            "process_linux_test.go",
+            "process_openbsd.go",
+            "process_openbsd_386.go",
+            "process_openbsd_amd64.go",
+            "process_openbsd_arm.go",
+            "process_openbsd_arm64.go",
+            "process_openbsd_riscv64.go",
+            "process_plan9.go",
+            "process_posix_test.go",
+            "process_race_test.go",
+            "process_solaris.go",
+            "process_windows.go",
+            "process_windows_32bit.go",
+            "process_windows_64bit.go",
+            "process_windows_test.go",
+            "types_darwin.go",
+            "types_freebsd.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/sensors": {
+          "GoFiles": [
+            "sensors.go",
+            "sensors_darwin_arm64.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "sensors_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "ex_linux.go",
+            "sensors_aix.go",
+            "sensors_darwin.go",
+            "sensors_fallback.go",
+            "sensors_freebsd.go",
+            "sensors_linux.go",
+            "sensors_netbsd.go",
+            "sensors_openbsd.go",
+            "sensors_solaris.go",
+            "sensors_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "runtime/cgo": {
+          "GoFiles": [
+            "callbacks.go",
+            "callbacks_traceback.go",
+            "callbacks_unix.go",
+            "handle.go",
+            "iscgo.go",
+            "setenv.go"
+          ],
+          "CgoFiles": [
+            "cgo.go"
+          ],
+          "SFiles": [
+            "asm_arm64.s",
+            "gcc_arm64.S"
+          ],
+          "TestGoFiles": [
+            "handle_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "callbacks_aix.go",
+            "clearenv.go",
+            "dragonfly.go",
+            "freebsd.go",
+            "linux.go",
+            "mmap.go",
+            "netbsd.go",
+            "openbsd.go",
+            "sigaction.go",
+            "windows.go"
+          ],
+          "EmbedFiles": []
+        }
+      },
+      "linux": {
+        "github.com/henrygd/beszel/agent": {
+          "GoFiles": [
+            "agent.go",
+            "agent_cache.go",
+            "client.go",
+            "connection_manager.go",
+            "cpu.go",
+            "cpu_linux.go",
+            "data_dir.go",
+            "disk.go",
+            "docker.go",
+            "docker_image_updates.go",
+            "docker_registry.go",
+            "emmc_common.go",
+            "emmc_linux.go",
+            "fans.go",
+            "fans_linux.go",
+            "fingerprint.go",
+            "gpu.go",
+            "gpu_amd_linux.go",
+            "gpu_darwin_unsupported.go",
+            "gpu_intel.go",
+            "gpu_intel_sysfs_linux.go",
+            "gpu_nvml_unsupported.go",
+            "gpu_nvtop.go",
+            "handlers.go",
+            "mdraid_linux.go",
+            "memory.go",
+            "memory_linux.go",
+            "network.go",
+            "network_counters_linux.go",
+            "network_monitor.go",
+            "network_monitor_cert.go",
+            "network_monitor_history.go",
+            "network_monitor_ping.go",
+            "network_monitor_probe.go",
+            "network_monitor_resume.go",
+            "network_monitor_schedule.go",
+            "network_monitor_task.go",
+            "package_updates.go",
+            "response.go",
+            "sensors.go",
+            "sensors_default.go",
+            "server.go",
+            "smart.go",
+            "smart_nonwindows.go",
+            "storage_pool.go",
+            "system.go",
+            "system_platform_other.go",
+            "systemd.go",
+            "update.go",
+            "uptime_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "disk_io_linux_test.go",
+            "emmc_common_test.go",
+            "emmc_linux_test.go",
+            "gpu_amd_linux_test.go",
+            "gpu_intel_sysfs_linux_test.go",
+            "mdraid_linux_test.go",
+            "network_monitor_history_test.go",
+            "network_monitor_test.go",
+            "system_test.go",
+            "uptime_linux_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "agent_cache_test.go",
+            "agent_test_helpers.go",
+            "client_test.go",
+            "connection_manager_test.go",
+            "cpu_linux_test.go",
+            "cpu_test.go",
+            "cpu_unsupported.go",
+            "data_dir_test.go",
+            "disk_test.go",
+            "disk_zfs_test.go",
+            "docker_image_updates_test.go",
+            "docker_registry_test.go",
+            "docker_test.go",
+            "emmc_stub.go",
+            "fans_other.go",
+            "fans_test.go",
+            "fingerprint_test.go",
+            "gpu_amd_unsupported.go",
+            "gpu_darwin.go",
+            "gpu_darwin_test.go",
+            "gpu_fixture_test.go",
+            "gpu_intel_sysfs_unsupported.go",
+            "gpu_nvml.go",
+            "gpu_nvml_linux.go",
+            "gpu_nvml_sample_test.go",
+            "gpu_nvml_unsupported_test.go",
+            "gpu_nvml_windows.go",
+            "gpu_test.go",
+            "handlers_test.go",
+            "mdraid_stub.go",
+            "memory_linux_test.go",
+            "memory_unsupported.go",
+            "network_counters_linux_test.go",
+            "network_counters_unsupported.go",
+            "network_monitor_cert_test.go",
+            "network_monitor_ping_test.go",
+            "network_monitor_resume_test.go",
+            "network_monitor_schedule_test.go",
+            "network_monitor_task_test.go",
+            "network_test.go",
+            "package_updates_test.go",
+            "sensors_freebsd.go",
+            "sensors_freebsd_common.go",
+            "sensors_freebsd_common_test.go",
+            "sensors_test.go",
+            "sensors_windows.go",
+            "server_config_test.go",
+            "server_test.go",
+            "smart_test.go",
+            "smart_windows.go",
+            "storage_pool_test.go",
+            "system_platform_ios.go",
+            "systemd_nonlinux.go",
+            "systemd_nonlinux_test.go",
+            "systemd_test.go",
+            "uptime_stub.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/battery": {
+          "GoFiles": [
+            "battery.go",
+            "battery_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "battery_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "battery_darwin.go",
+            "battery_ios.go",
+            "battery_linux_test.go",
+            "battery_stub.go",
+            "battery_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/btrfs": {
+          "GoFiles": [
+            "btrfs.go",
+            "btrfs_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "btrfs_linux_test.go",
+            "btrfs_unsupported.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/deltatracker": {
+          "GoFiles": [
+            "deltatracker.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "deltatracker_test.go"
+          ],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/health": {
+          "GoFiles": [
+            "health.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "health_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/utils": {
+          "GoFiles": [
+            "cgroup_linux.go",
+            "utils.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "cgroup_linux_test.go",
+            "utils_test.go"
+          ],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/wifi": {
+          "GoFiles": [
+            "wifi.go",
+            "wifi_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "wifi_linux_test.go",
+            "wifi_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "wifi_darwin.go",
+            "wifi_unsupported.go",
+            "wifi_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/agent/zfs": {
+          "GoFiles": [
+            "zfs.go",
+            "zfs_linux.go",
+            "zfs_status.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [
+            "zfs_freebsd.go",
+            "zfs_linux_test.go",
+            "zfs_nonlinux.go",
+            "zfs_nonlinux_test.go",
+            "zfs_test.go",
+            "zfs_unsupported.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/cmd/agent": {
+          "GoFiles": [
+            "agent.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "agent_test.go"
+          ],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/cmd/hub": {
+          "GoFiles": [
+            "hub.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/henrygd/beszel/internal/site": {
+          "GoFiles": [
+            "embed.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": [
+            "dist/assets/TwemojiCountryFlags-Bymva2JV.woff2",
+            "dist/assets/active-alerts-GL2Xsvs6.js",
+            "dist/assets/activity-DDWEdgt_.js",
+            "dist/assets/alert-6e8bYhdc.js",
+            "dist/assets/alert-dialog-BgfQqa74.js",
+            "dist/assets/alerts-history-data-table-CfRGU59C.js",
+            "dist/assets/ar-D8tWbkiX.js",
+            "dist/assets/arrow-left-right-D791wW5x.js",
+            "dist/assets/badge-BayDkLC9.js",
+            "dist/assets/bg-BBLoS_tK.js",
+            "dist/assets/chevrons-right-B6_DIRK4.js",
+            "dist/assets/circle-alert-D3JPmIEc.js",
+            "dist/assets/circle-x-u2QmvTxk.js",
+            "dist/assets/clock-DF1a5hwT.js",
+            "dist/assets/command-palette-BW_c-rh0.js",
+            "dist/assets/config-yaml-B6fvFd9q.js",
+            "dist/assets/containers-DkYNP-Uj.js",
+            "dist/assets/containers-table-BKWqbWnt.js",
+            "dist/assets/copy-to-clipboard-JpqQOI-V.js",
+            "dist/assets/cs-B60MPb2W.js",
+            "dist/assets/da-CSCcxnr0.js",
+            "dist/assets/de-XN1nHauC.js",
+            "dist/assets/el-CGs-NguZ.js",
+            "dist/assets/ellipsis-MRSyPJCi.js",
+            "dist/assets/es-buMb_i4V.js",
+            "dist/assets/eye-DpN-qAUA.js",
+            "dist/assets/fa-Jszxa1sA.js",
+            "dist/assets/footer-repo-link-D2pzxYIt.js",
+            "dist/assets/fr-CVG-snA_.js",
+            "dist/assets/general-B5FloXCQ.js",
+            "dist/assets/he-7aKYqJm7.js",
+            "dist/assets/heartbeat-JLw4fITZ.js",
+            "dist/assets/home-Bj33qZZS.js",
+            "dist/assets/hr-OgJwMM_v.js",
+            "dist/assets/hu-BNgp_821.js",
+            "dist/assets/id-BJpcyI9N.js",
+            "dist/assets/index-Bz4p_Lr7.css",
+            "dist/assets/index-JngQiXM0.js",
+            "dist/assets/index-Oi8yeeH9.js",
+            "dist/assets/index-VyrJdKtl.js",
+            "dist/assets/index-aMxe3cwg.js",
+            "dist/assets/it-E51otyG0.js",
+            "dist/assets/ja-_lacCq4c.js",
+            "dist/assets/json-Cp-IABpG.js",
+            "dist/assets/key-DYaqxf6o.js",
+            "dist/assets/ko-Db72lXRT.js",
+            "dist/assets/loader-circle-DZebsUtv.js",
+            "dist/assets/log-2UxHyX5q.js",
+            "dist/assets/login-Cb9bBV7T.js",
+            "dist/assets/mail-2v6wALcM.js",
+            "dist/assets/monitors-CB6KhWnM.js",
+            "dist/assets/network-monitors-table-CQyZ93Nq.js",
+            "dist/assets/nl-BGWPiUsG.js",
+            "dist/assets/no-C1hR0-eH.js",
+            "dist/assets/notifications-I0BS1ArQ.js",
+            "dist/assets/package-updates-table-CZuGwYkS.js",
+            "dist/assets/pl-CunHNb72.js",
+            "dist/assets/pt-MdzsJpq2.js",
+            "dist/assets/refresh-cw-DwafMBJT.js",
+            "dist/assets/rotate-cw-CCvpTLFZ.js",
+            "dist/assets/ru-CTO2wz-j.js",
+            "dist/assets/save-CrriL0cP.js",
+            "dist/assets/settings-2-BjWLNyoI.js",
+            "dist/assets/sheet-Cx3AhTqv.js",
+            "dist/assets/shield-check-Djq5cqG-.js",
+            "dist/assets/shiki-BoUGCYBZ.js",
+            "dist/assets/sl-Ybg3S3lX.js",
+            "dist/assets/slider-BWpNJr12.js",
+            "dist/assets/smart-4a6eBHWy.js",
+            "dist/assets/smart-table-BwdE9vqn.js",
+            "dist/assets/square-pen-Be93aass.js",
+            "dist/assets/sr-BaJtn8Y4.js",
+            "dist/assets/storage-pools-table-7yQ5XXoN.js",
+            "dist/assets/sv-DaHfPgOr.js",
+            "dist/assets/switch-gTX7GrSA.js",
+            "dist/assets/system-C-7K4mH-.js",
+            "dist/assets/table-CrtmXdb6.js",
+            "dist/assets/textarea-CQmumqKl.js",
+            "dist/assets/tokens-fingerprints-D5JuZ0qm.js",
+            "dist/assets/tr-CVcHDLmV.js",
+            "dist/assets/trash-2-CzVGtqiM.js",
+            "dist/assets/uk-nR059ENx.js",
+            "dist/assets/use-network-monitors-C_SUz6a0.js",
+            "dist/assets/uz-CtPHuOws.js",
+            "dist/assets/vi-CxB8FJP7.js",
+            "dist/assets/wasm-CG6Dc4jp.js",
+            "dist/assets/wifi-jtYoPYOi.js",
+            "dist/assets/zh-CN-IA3LEX0G.js",
+            "dist/assets/zh-Cdnmg5wZ.js",
+            "dist/assets/zh-HK-CTyLxolt.js",
+            "dist/index.html",
+            "dist/static/InterVariable.woff2",
+            "dist/static/icon.png",
+            "dist/static/icon.svg",
+            "dist/static/manifest.json"
+          ]
+        },
+        "github.com/shirou/gopsutil/v4/common": {
+          "GoFiles": [
+            "env.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [],
+          "IgnoredGoFiles": [],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/cpu": {
+          "GoFiles": [
+            "cpu.go",
+            "cpu_linux.go",
+            "ex_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "cpu_linux_test.go",
+            "cpu_psutil_test.go",
+            "cpu_test.go",
+            "ex_linux_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "cpu_aix.go",
+            "cpu_aix_cgo.go",
+            "cpu_aix_nocgo.go",
+            "cpu_darwin.go",
+            "cpu_darwin_arm64.go",
+            "cpu_darwin_arm64_test.go",
+            "cpu_darwin_fallback.go",
+            "cpu_darwin_test.go",
+            "cpu_dragonfly.go",
+            "cpu_dragonfly_amd64.go",
+            "cpu_fallback.go",
+            "cpu_freebsd.go",
+            "cpu_freebsd_386.go",
+            "cpu_freebsd_amd64.go",
+            "cpu_freebsd_arm.go",
+            "cpu_freebsd_arm64.go",
+            "cpu_freebsd_test.go",
+            "cpu_netbsd.go",
+            "cpu_netbsd_amd64.go",
+            "cpu_netbsd_arm.go",
+            "cpu_netbsd_arm64.go",
+            "cpu_openbsd.go",
+            "cpu_openbsd_386.go",
+            "cpu_openbsd_amd64.go",
+            "cpu_openbsd_arm.go",
+            "cpu_openbsd_arm64.go",
+            "cpu_openbsd_riscv64.go",
+            "cpu_plan9.go",
+            "cpu_plan9_test.go",
+            "cpu_solaris.go",
+            "cpu_solaris_test.go",
+            "cpu_windows.go",
+            "cpu_windows_test.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/disk": {
+          "GoFiles": [
+            "disk.go",
+            "disk_linux.go",
+            "disk_unix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "disk_linux_test.go",
+            "disk_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "disk_aix.go",
+            "disk_aix_cgo.go",
+            "disk_aix_nocgo.go",
+            "disk_darwin.go",
+            "disk_fallback.go",
+            "disk_freebsd.go",
+            "disk_freebsd_386.go",
+            "disk_freebsd_amd64.go",
+            "disk_freebsd_arm.go",
+            "disk_freebsd_arm64.go",
+            "disk_netbsd.go",
+            "disk_netbsd_amd64.go",
+            "disk_netbsd_arm.go",
+            "disk_netbsd_arm64.go",
+            "disk_openbsd.go",
+            "disk_openbsd_386.go",
+            "disk_openbsd_amd64.go",
+            "disk_openbsd_arm.go",
+            "disk_openbsd_arm64.go",
+            "disk_openbsd_riscv64.go",
+            "disk_solaris.go",
+            "disk_windows.go",
+            "disk_windows_test.go",
+            "types_freebsd.go",
+            "types_netbsd.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/host": {
+          "GoFiles": [
+            "host.go",
+            "host_linux.go",
+            "host_linux_arm64.go",
+            "host_posix.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "host_linux_test.go",
+            "host_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "host_aix.go",
+            "host_aix_cgo.go",
+            "host_aix_nocgo.go",
+            "host_aix_ppc64.go",
+            "host_aix_test.go",
+            "host_bsd.go",
+            "host_darwin.go",
+            "host_darwin_amd64.go",
+            "host_darwin_arm64.go",
+            "host_fallback.go",
+            "host_freebsd.go",
+            "host_freebsd_386.go",
+            "host_freebsd_amd64.go",
+            "host_freebsd_arm.go",
+            "host_freebsd_arm64.go",
+            "host_linux_386.go",
+            "host_linux_amd64.go",
+            "host_linux_arm.go",
+            "host_linux_loong64.go",
+            "host_linux_mips.go",
+            "host_linux_mips64.go",
+            "host_linux_mips64le.go",
+            "host_linux_mipsle.go",
+            "host_linux_ppc64.go",
+            "host_linux_ppc64le.go",
+            "host_linux_riscv64.go",
+            "host_linux_s390x.go",
+            "host_netbsd.go",
+            "host_openbsd.go",
+            "host_openbsd_386.go",
+            "host_openbsd_amd64.go",
+            "host_openbsd_arm.go",
+            "host_openbsd_arm64.go",
+            "host_openbsd_riscv64.go",
+            "host_solaris.go",
+            "host_windows.go",
+            "types_darwin.go",
+            "types_freebsd.go",
+            "types_linux.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/internal/common": {
+          "GoFiles": [
+            "common.go",
+            "common_linux.go",
+            "common_unix.go",
+            "endian.go",
+            "readlink_linux.go",
+            "sleep.go",
+            "warnings.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "common_test.go",
+            "warnings_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "common_aix.go",
+            "common_aix_test.go",
+            "common_darwin.go",
+            "common_freebsd.go",
+            "common_netbsd.go",
+            "common_openbsd.go",
+            "common_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/load": {
+          "GoFiles": [
+            "load.go",
+            "load_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "load_psutil_test.go",
+            "load_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "load_aix.go",
+            "load_aix_cgo.go",
+            "load_aix_nocgo.go",
+            "load_aix_nocgo_test.go",
+            "load_bsd.go",
+            "load_darwin.go",
+            "load_fallback.go",
+            "load_freebsd.go",
+            "load_openbsd.go",
+            "load_solaris.go",
+            "load_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/mem": {
+          "GoFiles": [
+            "ex_linux.go",
+            "mem.go",
+            "mem_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "mem_linux_test.go",
+            "mem_psutil_test.go",
+            "mem_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "ex_windows.go",
+            "mem_aix.go",
+            "mem_aix_cgo.go",
+            "mem_aix_nocgo.go",
+            "mem_bsd.go",
+            "mem_bsd_test.go",
+            "mem_darwin.go",
+            "mem_darwin_test.go",
+            "mem_fallback.go",
+            "mem_freebsd.go",
+            "mem_netbsd.go",
+            "mem_openbsd.go",
+            "mem_openbsd_386.go",
+            "mem_openbsd_amd64.go",
+            "mem_openbsd_arm.go",
+            "mem_openbsd_arm64.go",
+            "mem_openbsd_riscv64.go",
+            "mem_plan9.go",
+            "mem_plan9_test.go",
+            "mem_solaris.go",
+            "mem_solaris_test.go",
+            "mem_windows.go",
+            "types_openbsd.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/net": {
+          "GoFiles": [
+            "net.go",
+            "net_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "net_linux_test.go",
+            "net_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "net_aix.go",
+            "net_aix_cgo.go",
+            "net_aix_nocgo.go",
+            "net_aix_nocgo_test.go",
+            "net_aix_test.go",
+            "net_darwin.go",
+            "net_darwin_test.go",
+            "net_fallback.go",
+            "net_freebsd.go",
+            "net_netbsd.go",
+            "net_netbsd_test.go",
+            "net_openbsd.go",
+            "net_solaris.go",
+            "net_unix.go",
+            "net_windows.go",
+            "net_windows_386_test.go",
+            "types_darwin.go"
+          ],
+          "EmbedFiles": []
+        },
+        "github.com/shirou/gopsutil/v4/sensors": {
+          "GoFiles": [
+            "ex_linux.go",
+            "sensors.go",
+            "sensors_linux.go"
+          ],
+          "CgoFiles": [],
+          "SFiles": [],
+          "TestGoFiles": [
+            "sensors_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "sensors_aix.go",
+            "sensors_darwin.go",
+            "sensors_darwin_arm64.go",
+            "sensors_fallback.go",
+            "sensors_freebsd.go",
+            "sensors_netbsd.go",
+            "sensors_openbsd.go",
+            "sensors_solaris.go",
+            "sensors_windows.go"
+          ],
+          "EmbedFiles": []
+        },
+        "runtime/cgo": {
+          "GoFiles": [
+            "callbacks.go",
+            "callbacks_traceback.go",
+            "callbacks_unix.go",
+            "clearenv.go",
+            "handle.go",
+            "iscgo.go",
+            "linux.go",
+            "mmap.go",
+            "setenv.go",
+            "sigaction.go"
+          ],
+          "CgoFiles": [
+            "cgo.go"
+          ],
+          "SFiles": [
+            "asm_arm64.s",
+            "gcc_arm64.S"
+          ],
+          "TestGoFiles": [
+            "handle_test.go"
+          ],
+          "IgnoredGoFiles": [
+            "callbacks_aix.go",
+            "dragonfly.go",
+            "freebsd.go",
+            "netbsd.go",
+            "openbsd.go",
+            "windows.go"
+          ],
+          "EmbedFiles": []
+        }
+      }
+    },
+    "macos_gpu_test_fix": "gpu_darwin_test.go now darwin && !ios; production collector code unchanged",
+    "runtime_limit": "Darwin gopsutil source selection is intentional and does not prove IOKit/syscall/command availability on iOS."
+  },
+  "frontend": {
+    "status": "PASS",
+    "tests_passed": 44,
+    "tests_failed": 0,
+    "operations": [
+      "bun install --frozen-lockfile",
+      "bun run sync",
+      "bun test",
+      "bun run build"
+    ],
+    "frozen_lock_unchanged": true,
+    "lock_sha256": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa",
+    "embedded_asset_count": 95,
+    "native_all_asset_bytes_verified": true,
+    "local_linux_all_95_asset_bytes_verified": true,
+    "tracked_generated_locale_text_restored": true
+  },
+  "native_builds": {
+    "beszel-agent-ios-arm64": {
+      "cpu": "arm64",
+      "filetype": "MH_EXECUTE",
+      "command": "LC_BUILD_VERSION",
+      "platform": 2,
+      "minos": "12.0",
+      "sdk": 1115392,
+      "entry_kind": "file",
+      "entry": 549312,
+      "sha256": "072b4957ba9046f61618013736e8c13e72bba965134c7a964cf421d3b97a29f8",
+      "bytes": 9493656,
+      "build_info": {
+        "go": "go1.27.1",
+        "entry_package": "github.com/henrygd/beszel/internal/cmd/agent",
+        "settings": {
+          "CGO_ENABLED": "1",
+          "GOARCH": "arm64",
+          "GOOS": "ios",
+          "GOARM64": "v8.0",
+          "vcs": "git"
+        }
+      }
+    },
+    "beszel-hub-ios-arm64": {
+      "cpu": "arm64",
+      "filetype": "MH_EXECUTE",
+      "command": "LC_BUILD_VERSION",
+      "platform": 2,
+      "minos": "12.0",
+      "sdk": 1115392,
+      "entry_kind": "file",
+      "entry": 582256,
+      "sha256": "649f91eede20852c72ff2e95c77a998eed5cd83469d3f5fa3708bc0e7457c030",
+      "bytes": 31927800,
+      "build_info": {
+        "go": "go1.27.1",
+        "entry_package": "github.com/henrygd/beszel/internal/cmd/hub",
+        "settings": {
+          "CGO_ENABLED": "1",
+          "GOARCH": "arm64",
+          "GOOS": "ios",
+          "GOARM64": "v8.0",
+          "vcs": "git"
+        }
+      },
+      "embedded_asset_count": 95
+    }
+  },
+  "reproducibility": {
+    "agent": "BYTE_IDENTICAL",
+    "hub": "BYTE_IDENTICAL",
+    "method": "Two builds with independent initially empty caches in the same hosted job.",
+    "scope": "Same commit, SDK, Go, Bun, frontend inputs. Different commits embed different VCS revisions; cross-runner/SDK/version reproducibility is not asserted."
+  },
+  "payload": {
+    "files": [
+      "beszel-agent-ios-arm64",
+      "beszel-hub-ios-arm64",
+      "SHA256SUMS"
+    ],
+    "manifest_bare_filenames": true,
+    "checksum_verification": "PASS",
+    "review_payload_artifact_id": 11866216149,
+    "validation_artifact_id": 11866216151,
+    "local_artifact_download": "BLOCKED: Azure Actions blob HTTP 403. No local downloaded Mach-O inspection claimed; native runner logs are authoritative."
+  },
+  "local_regression": [
+    {
+      "name": "matrix",
+      "command": "python3 scripts/audit/validate-upstream-v021-matrix.py",
+      "exit_code": 0,
+      "seconds": 0.08
+    },
+    {
+      "name": "readiness",
+      "command": "python3 scripts/audit/validate-upstream-v021-readiness.py",
+      "exit_code": 0,
+      "seconds": 0.04
+    },
+    {
+      "name": "audit",
+      "command": "python3 -m unittest discover -s tests/audit -p 'test_*.py' -v",
+      "exit_code": 0,
+      "seconds": 1.48
+    },
+    {
+      "name": "upstream-sync",
+      "command": "sh tests/upstream-sync-test.sh",
+      "exit_code": 0,
+      "seconds": 0.07
+    },
+    {
+      "name": "sentinels",
+      "command": "sh tests/ios-patch-sentinels.sh",
+      "exit_code": 0,
+      "seconds": 0.04
+    },
+    {
+      "name": "bootstrap",
+      "command": "sh tests/bootstrap-test.sh",
+      "exit_code": 0,
+      "seconds": 0.09
+    },
+    {
+      "name": "installer",
+      "command": "sh tests/install-sh-test.sh",
+      "exit_code": 0,
+      "seconds": 17.07
+    },
+    {
+      "name": "diff",
+      "command": "git diff --check",
+      "exit_code": 0,
+      "seconds": 0.0
+    },
+    {
+      "name": "go-canonical",
+      "command": "env -u NETWORK go test -tags 'testing no_ui' ./...",
+      "exit_code": 0,
+      "seconds": 0.44
+    },
+    {
+      "name": "go-uncached",
+      "command": "env -u NETWORK go test -count=1 -tags 'testing no_ui' ./...",
+      "exit_code": 0,
+      "seconds": 65.88
+    },
+    {
+      "name": "selection",
+      "command": "python3 .github/scripts/check-ios-source-selection.py --output /workspace/scratch/P007/evidence/source-selection.json",
+      "exit_code": 0,
+      "seconds": 1.25
+    },
+    {
+      "name": "actionlint",
+      "command": "/workspace/scratch/P007/tools/actionlint .github/workflows/ios-build.yml",
+      "exit_code": 0,
+      "seconds": 0.0
+    }
+  ],
+  "audit_tests": 49,
+  "p007_validator_tests": 35,
+  "shell_counts": {
+    "upstream_sync": 10,
+    "sentinels": 44,
+    "bootstrap": 54,
+    "installer": 814
+  },
+  "focused_go": "PASS Agent, battery and Wi-Fi; no concurrent production code changed, so no additional race gate",
+  "linux_builds": {
+    "beszel-hub-linux-amd64": {
+      "status": "PASS",
+      "bytes": 46147136,
+      "sha256": "b153bd45741e4e2c5ce245c9e668c6ee3666c8b9017e6f3aeeef44711d597c41"
+    },
+    "beszel-agent-linux-amd64": {
+      "status": "PASS",
+      "bytes": 15722711,
+      "sha256": "7cce81e2cdb39399a511af618024738761c7eb1638ae64e765f6aac798a5d1e1"
+    }
+  },
+  "linux_build_state": "Built from starting integration tree with P007 tooling/test changes; Linux production source is unchanged. Final-head builds are also required before merge.",
+  "baseline_failure": {
+    "test": "TestConnectionManager_ReconnectionLogic",
+    "starting_commit": "6b14ebcdadc44641f4f84a5d7999ebf964905aa3",
+    "test_last_changed_commit": "4ffd83677d18fe285ce1647da9d64ed4b2798f40",
+    "cause": "Immediate flag assertion can run after the asynchronous reconnect goroutine resets it; test and connection production code unchanged.",
+    "followup": "P009/P017 timing-sensitive test; canonical and uncached full suites subsequently PASS without modifying test."
+  },
+  "hosted_ci": [
+    {
+      "conclusion": "success",
+      "headSha": "19c705c65a45b3da1c426e3c0222636fd244f3b0",
+      "jobs": [
+        {
+          "completedAt": "2026-10-14T02:30:28Z",
+          "conclusion": "success",
+          "databaseId": 115647788043,
+          "name": "build-ios",
+          "startedAt": "2026-10-14T02:26:42Z",
+          "status": "completed",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run iOS maintenance sentinels",
+              "number": 3,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Setup Go",
+              "number": 4,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Setup Bun",
+              "number": 5,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Test native build validators",
+              "number": 6,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build and test real web UI",
+              "number": 7,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Verify iOS, macOS and Linux source selection",
+              "number": 8,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Preserve macOS build and GPU parser tests",
+              "number": 9,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Show and verify environment",
+              "number": 10,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Patch isolated Go runtime for legacy iOS ARM64",
+              "number": 11,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build Beszel Agent and Hub twice with isolated caches",
+              "number": 12,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Inspect runtime instructions in unstripped validation builds",
+              "number": 13,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Inspect native Mach-O outputs",
+              "number": 14,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Generate and verify exact payload and frontend embedding",
+              "number": 15,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Upload iOS review payload",
+              "number": 16,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Upload native validation evidence",
+              "number": 17,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Setup Bun",
+              "number": 32,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Setup Go",
+              "number": 33,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 34,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 35,
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38501036073/job/115647788043"
+        },
+        {
+          "completedAt": "2026-10-14T02:30:28Z",
+          "conclusion": "skipped",
+          "databaseId": 115648907412,
+          "name": "release-ios",
+          "startedAt": "2026-10-14T02:30:29Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38501036073/job/115648907412"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38501036073"
+    },
+    {
+      "conclusion": "success",
+      "headSha": "19c705c65a45b3da1c426e3c0222636fd244f3b0",
+      "jobs": [
+        {
+          "completedAt": "2026-10-14T02:27:07Z",
+          "conclusion": "success",
+          "databaseId": 115647795627,
+          "name": "installer",
+          "startedAt": "2026-10-14T02:26:38Z",
+          "status": "completed",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Canonical iOS branch references",
+              "number": 3,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "POSIX syntax",
+              "number": 4,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Bootstrap checksum pin",
+              "number": 5,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Bootstrap tests",
+              "number": 6,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Lifecycle engine tests",
+              "number": 7,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Patch sentinels and upstream sync tests",
+              "number": 8,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 16,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38501038417/job/115647795627"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38501038417"
+    }
+  ],
+  "failed_initial_run": {
+    "id": 38500460499,
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38500460499",
+    "tested_sha": "7b09aa797fbfa636e05c67e85f7df307e474e237",
+    "conclusion": "failure",
+    "reason": "Validator initially assumed /assets/ URLs; actual Vite base is ./; corrected and regression-tested in 19c705c6. Failed run is not a P007 pass."
+  },
+  "acceptance": {
+    "A7-BUILD-01": "PASS_HOSTED_SOURCE_CANDIDATE",
+    "A7-RUNTIME-01": "PASS_TESTED_PATCH_BEHAVIOR_AND_LINKED_INSPECTION",
+    "A7-DEVICE-01": "DEFERRED_P018_GATE_F",
+    "P007": "SOURCE_CANDIDATE_PASS_FINAL_HEAD_REQUIRED_BEFORE_MERGE",
+    "Gate_C": "PENDING_P008_THROUGH_P012"
+  },
+  "physical_device": {
+    "status": "NOT_TESTED",
+    "device_changes": false,
+    "historical_019_records_preserved": true,
+    "no_sigill_free_claim": true
+  },
+  "known_limitations": [
+    "No physical Apple A7 execution or endurance evidence for 0.21; P018/Gate F.",
+    "YIELD iterations are a bounded spin hint, not calibrated nanosecond delays.",
+    "Darwin dependency file selection does not establish every collector runtime API on iOS; P008/P010/P012.",
+    "Local CI artifact re-download returned HTTP 403; hosted evidence remains available.",
+    "Known preexisting reconnect test scheduling sensitivity; P009/P017.",
+    "Dependency advisories remain the P015/P017 backlog; no dependency versions changed."
+  ],
+  "safety": {
+    "production_database_modified": false,
+    "physical_device_modified": false,
+    "release_tag_deployment": false,
+    "release_job_text_unchanged": true,
+    "release_ios_job": "SKIPPED",
+    "ios_branch_changed": false,
+    "main_branch_changed": false
+  },
+  "next_milestone": "P008 — iOS CPU, RAM, disk, network, battery and system metadata compatibility; not started",
+  "evidence_log_sha256": {
+    "native-candidate.log": "9b663e62eaaf4833e5541398dafc228d6ed1bee1344b7791cdae20be9b536870",
+    "native-initial.log": "f7dc05a8f0b59218a3a6a1ca8993858ac674ca93b8f2cfde3cbbd946d150d916",
+    "runtime-and-build-fixtures.log": "b92f4120d5f001fa1a9472f65f2f1a189cb0a32e9b180fc7a8f60305926ef74f",
+    "audit-final.log": "c22fef507cedf5c4c0f16b6ab6e0b7dac72627aba677ad98c5223218dfae8c1c",
+    "go-regression.log": "ad248716d999d53364de28ebdfd7d4125f78f4aa7c64a80512f4deca7158e8c5",
+    "go-uncached-final.log": "7ea8328db0f0652908cf61d263c2cf860c434468878244c0fa593d1590c06e67"
+  }
+}
