@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/henrygd/beszel"
@@ -44,11 +46,23 @@ func networkMonitorProbe(client, insecureClient *http.Client) monitorProbe {
 // but excluding DNS resolution.
 // Returns -1 and an error on failure.
 func monitorTCP(ctx context.Context, target string, port uint16) (int64, error) {
+	return monitorTCPWith(ctx, target, port, net.DefaultResolver.LookupHost, func(ctx context.Context, address string, timeout time.Duration) (net.Conn, error) {
+		dialer := net.Dialer{Timeout: timeout}
+		return dialer.DialContext(ctx, "tcp", address)
+	})
+}
+
+// Injection at the resolver/dial boundary allows deadline fairness to be tested
+// without depending on a host route silently dropping packets.
+func monitorTCPWith(ctx context.Context, target string, port uint16, lookup func(context.Context, string) ([]string, error), dial func(context.Context, string, time.Duration) (net.Conn, error)) (int64, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
+	if port == 0 {
+		return -1, errors.New("invalid TCP monitor port: 0")
+	}
 
 	// Resolve DNS first, outside the timing window but within the probe deadline.
-	ips, err := net.DefaultResolver.LookupHost(ctx, target)
+	ips, err := lookup(ctx, target)
 	if err != nil {
 		return -1, err
 	}
@@ -65,9 +79,9 @@ func monitorTCP(ctx context.Context, target string, port uint16) (int64, error) 
 		if err := ctx.Err(); err != nil {
 			return -1, err
 		}
-		dialer := net.Dialer{Timeout: time.Until(deadline) / time.Duration(len(ips)-i)}
+		timeout := time.Until(deadline) / time.Duration(len(ips)-i)
 		var conn net.Conn
-		conn, err = dialer.DialContext(ctx, "tcp", net.JoinHostPort(ip, portString))
+		conn, err = dial(ctx, net.JoinHostPort(ip, portString), timeout)
 		if err != nil {
 			continue
 		}
@@ -92,8 +106,11 @@ func monitorDNS(ctx context.Context, target, server string) (int64, error) {
 
 	start := time.Now()
 	ips, err := resolver.LookupHost(ctx, target)
-	if err != nil || len(ips) == 0 {
+	if err != nil {
 		return -1, err
+	}
+	if len(ips) == 0 {
+		return -1, errors.New("no addresses resolved for DNS monitor")
 	}
 	return time.Since(start).Microseconds(), nil
 }
@@ -102,21 +119,40 @@ func monitorDNS(ctx context.Context, target, server string) (int64, error) {
 // server address instead of the system resolver. server may be a bare host or
 // host:port; when no port is given, the standard DNS port 53 is used.
 func dnsResolverForServer(server string) *net.Resolver {
-	address := server
-	if _, _, err := net.SplitHostPort(server); err != nil {
-		address = net.JoinHostPort(server, "53")
-	}
+	address, configErr := dnsServerAddress(server)
 	return &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
+			if configErr != nil {
+				return nil, configErr
+			}
 			var dialer net.Dialer
 			return dialer.DialContext(ctx, network, address)
 		},
 	}
 }
 
+// dnsServerAddress accepts a host, bare/bracketed IPv6 literal or host:port.
+// Invalid explicit configuration fails closed; it never selects the system resolver.
+func dnsServerAddress(server string) (string, error) {
+	host, port, err := net.SplitHostPort(server)
+	if err != nil {
+		host, port = strings.TrimPrefix(strings.TrimSuffix(server, "]"), "["), "53"
+		if strings.Contains(host, ":") && net.ParseIP(host) == nil {
+			return "", fmt.Errorf("invalid DNS server: %q", server)
+		}
+	}
+	n, err := strconv.Atoi(port)
+	if host == "" || strings.TrimSpace(host) != host || err != nil || n < 1 || n > 65535 {
+		return "", fmt.Errorf("invalid DNS server: %q", server)
+	}
+	return net.JoinHostPort(host, port), nil
+}
+
 // monitorHTTP measures HTTP GET request response in microseconds. Returns -1 and an error on failure.
 func monitorHTTP(ctx context.Context, client *http.Client, url string) (int64, error) {
+	ctx, cancel := context.WithTimeout(ctx, monitor.MaxProbeTimeout)
+	defer cancel()
 	if client == nil {
 		client = http.DefaultClient
 	}
