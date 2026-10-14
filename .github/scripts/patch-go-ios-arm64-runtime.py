@@ -1,98 +1,97 @@
 #!/usr/bin/env python3
+"""Patch only the reviewed Go 1.27.1 ARM64 procyield body, atomically."""
 
-import re
-import subprocess
+import hashlib
+import json
+import os
 from pathlib import Path
+import stat
+import subprocess
+import tempfile
 
-
-def fail(message: str) -> None:
-    raise SystemExit(f"ERROR: {message}")
-
-
-try:
-    goroot_text = subprocess.check_output(
-        ["go", "env", "GOROOT"],
-        text=True,
-    ).strip()
-except (OSError, subprocess.CalledProcessError) as exc:
-    fail(f"could not resolve Go GOROOT: {exc}")
-
-if not goroot_text:
-    fail("go env GOROOT returned an empty path")
-
-goroot = Path(goroot_text)
-path = goroot / "src/runtime/asm_arm64.s"
-if not path.is_file():
-    fail(f"Go runtime source not found: {path}")
-
-src = path.read_text(encoding="utf-8")
-
-start_marker = "TEXT runtime·procyieldAsm(SB),NOSPLIT,$0-0"
-end_marker = "\n// Save state of caller into g->sched,"
-
-if src.count(start_marker) != 1:
-    fail(
-        "expected exactly one procyieldAsm start marker; "
-        "refusing to patch unknown Go runtime"
-    )
-
-start = src.index(start_marker)
-try:
-    end = src.index(end_marker, start)
-except ValueError:
-    fail(
-        "procyieldAsm end marker not found; "
-        "refusing to patch unknown Go runtime"
-    )
-
-old = src[start:end]
-normalized = re.sub(r"\s+", " ", old).strip()
-
-# The A7 workaround is deliberately tied to the known Go ARM64 implementation.
-# Checking only for the instruction name would risk rewriting a future
-# implementation whose counter access has different semantics.
+SUPPORTED_VERSION = "go1.27.1"
+START = "TEXT runtime·procyieldAsm(SB),NOSPLIT,$0-0"
+END = "\n// Save state of caller into g->sched,"
+# Complete executable source shape from go1.27.1/src/runtime/asm_arm64.s.
+# Comments and horizontal whitespace carry no assembly semantics. All other
+# lines (including directives, labels and unexpected instructions) must match.
 expected_shape = (
-    "TEXT runtime·procyieldAsm(SB),NOSPLIT,$0-0",
-    "MOVWU cycles+0(FP), R0",
-    "CBZ R0, done",
-    "MRS CNTFRQ_EL0, R1",
-    "MRS CNTVCT_EL0, R2",
-    "MRS CNTVCT_EL0, R1",
-    "SUB R2, R1, R1",
-    "BCC delay",
-    "done: RET",
+    START,
+    "MOVWU cycles+0(FP), R0", "CBZ R0, done", "ISB $15",
+    "CMP $18, R0", "BLS done", "SUB $18, R0, R0",
+    "MRS CNTFRQ_EL0, R1", "ADD R0>>4, R0, R0", "MUL R1, R0, R0",
+    "LSR $30, R0, R0", "CBZ R0, done", "MRS CNTVCT_EL0, R2",
+    "delay:", "ISB $15", "MRS CNTVCT_EL0, R1", "SUB R2, R1, R1",
+    "CMP R0, R1", "BCC delay", "done:", "RET",
 )
-cursor = 0
-for marker in expected_shape:
-    position = normalized.find(marker, cursor)
-    if position < 0:
-        fail(
-            f"procyieldAsm source shape changed (missing '{marker}'); "
-            "refusing to patch unknown Go runtime"
-        )
-    cursor = position + len(marker)
-
-if normalized.count("MRS CNTVCT_EL0") != 2:
-    fail(
-        "procyieldAsm source shape changed (expected two CNTVCT_EL0 reads); "
-        "refusing to patch unknown Go runtime"
-    )
-
-replacement = """TEXT runtime·procyieldAsm(SB),NOSPLIT,$0-0
+REPLACEMENT = """TEXT runtime·procyieldAsm(SB),NOSPLIT,$0-0
 \tMOVWU\tcycles+0(FP), R0
+\tCBZ\tR0, done
 again:
 \tYIELD
 \tSUBW\t$1, R0
 \tCBNZ\tR0, again
+done:
 \tRET
 """
 
-patched = src[:start] + replacement + src[end:]
-patched_body = patched[start : start + len(replacement)]
-if "CNTVCT_EL0" in patched_body or "YIELD" not in patched_body:
-    fail("runtime replacement verification failed")
 
-path.write_text(patched, encoding="utf-8")
+def shape(body):
+    return tuple(" ".join(code.split()) for line in body.splitlines()
+                 if (code := line.split("//", 1)[0].strip()))
 
-print(f"Patched {path}")
-print("Replaced CNTVCT_EL0 procyield with legacy YIELD loop")
+
+def patch_source(source):
+    if source.count(START) != 1 or source.count(END) != 1:
+        raise ValueError("expected exactly one function start and end marker")
+    start, end = source.index(START), source.index(END)
+    if start and source[start - 1] != "\n":
+        raise ValueError("function start is not a line boundary")
+    if end <= start or shape(source[start:end]) != expected_shape:
+        raise ValueError("procyieldAsm complete executable source shape changed")
+    # No other bytes are rewritten; the zero case must return without underflow.
+    return source[:start] + REPLACEMENT + source[end:]
+
+
+def main():
+    temporary = None
+    try:
+        info = json.loads(subprocess.check_output(
+            ["go", "env", "-json", "GOROOT", "GOVERSION"], text=True))
+        if not isinstance(info, dict):
+            raise ValueError("go env returned invalid toolchain metadata")
+        if info.get("GOVERSION") != SUPPORTED_VERSION:
+            raise ValueError(f"unsupported Go version {info.get('GOVERSION')!r}; expected {SUPPORTED_VERSION}")
+        root = Path(info.get("GOROOT", ""))
+        if not root.is_absolute() or not root.is_dir():
+            raise ValueError("go env GOROOT must resolve an existing absolute directory")
+        path = root / "src/runtime/asm_arm64.s"
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"Go runtime source missing or symlinked: {path}")
+        original = path.read_bytes()
+        patched = patch_source(original.decode("utf-8")).encode("utf-8")
+        # Same-directory temporary file + rename avoids a truncated runtime if a
+        # write fails. Verification completes before creating the temporary file.
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".a7-", delete=False) as stream:
+            temporary = Path(stream.name)
+            os.fchmod(stream.fileno(), stat.S_IMODE(path.stat().st_mode))
+            stream.write(patched)
+            stream.flush()
+            os.fsync(stream.fileno())
+        if path.read_bytes() != original:
+            raise ValueError("runtime source changed during patch validation")
+        os.replace(temporary, path)
+        temporary = None
+        print(json.dumps({"status": "PASS", "go": info["GOVERSION"], "path": str(path),
+                          "source_sha256": hashlib.sha256(original).hexdigest(),
+                          "patched_sha256": hashlib.sha256(patched).hexdigest(),
+                          "replacement": "zero-guarded YIELD loop; no CNTFRQ_EL0/CNTVCT_EL0 reads"}))
+    except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as exc:
+        raise SystemExit(f"ERROR: {exc}; refusing to patch unknown Go runtime") from exc
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+if __name__ == "__main__":
+    main()

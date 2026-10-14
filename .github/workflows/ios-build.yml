@@ -19,7 +19,8 @@ on:
       - "go.work"
       - "go.work.sum"
       - ".github/workflows/ios-build.yml"
-      - ".github/scripts/patch-go-ios-arm64-runtime.py"
+      - ".github/scripts/**"
+      - "tests/audit/**"
       - "tests/ios-patch-sentinels.sh"
       - "tests/upstream-sync-test.sh"
 
@@ -47,139 +48,152 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Patch Go runtime for legacy iOS ARM64
-        run: sudo python3 .github/scripts/patch-go-ios-arm64-runtime.py
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.0
 
-      - name: Build web UI
-        working-directory: internal/site
-        run: |
-          bun install --frozen-lockfile
-          bun run build
+      - name: Test native build validators
+        run: python3 -m unittest discover -s tests/audit -p 'test_ios*.py' -v
 
-      - name: Show environment
+      - name: Build and test real web UI
+        working-directory: internal/site
+        shell: bash
         run: |
+          set -euo pipefail
+          shasum -a 256 bun.lock > "$RUNNER_TEMP/bun-lock-before"
+          bun install --frozen-lockfile
+          bun run sync
+          bun test
+          bun run build
+          shasum -a 256 -c "$RUNNER_TEMP/bun-lock-before"
+          # Retain genuine dist and compiled catalogs; exclude generated PO text.
+          git restore -- src/locales
+          git diff --exit-code
+
+      - name: Verify iOS, macOS and Linux source selection
+        run: python3 .github/scripts/check-ios-source-selection.py --output "$RUNNER_TEMP/source-selection.json"
+
+      - name: Preserve macOS build and GPU parser tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test ./agent -run 'Test.*(Powermetrics|Macmon)' -count=1
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -trimpath -o "$RUNNER_TEMP/beszel-agent-macos" ./internal/cmd/agent
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -trimpath -o "$RUNNER_TEMP/beszel-hub-macos" ./internal/cmd/hub
+
+      - name: Show and verify environment
+        shell: bash
+        run: |
+          set -euo pipefail
           go version
+          bun --version
           xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
           xcrun --sdk iphoneos --show-sdk-path
           xcrun --sdk iphoneos --find clang
+          test "$(go env GOVERSION)" = "go$(awk '$1 == "go" {print $2}' go.mod)"
 
-      - name: Create iOS clang wrapper
+      - name: Patch isolated Go runtime for legacy iOS ARM64
         shell: bash
         run: |
           set -euo pipefail
-          cat > "$RUNNER_TEMP/ios-clangwrap.sh" <<'WRAP'
-          #!/bin/sh
-          SDK_PATH="$(xcrun --sdk iphoneos --show-sdk-path)"
-          CLANG="$(xcrun --sdk iphoneos --find clang)"
+          source_goroot="$(go env GOROOT)"
+          patched_goroot="$RUNNER_TEMP/go-ios-a7"
+          test ! -e "$patched_goroot"
+          mkdir "$patched_goroot"
+          cp -R "$source_goroot/." "$patched_goroot/"
+          chmod -R u+w "$patched_goroot"
+          shasum -a 256 "$source_goroot/src/runtime/asm_arm64.s" > "$RUNNER_TEMP/original-runtime.sha256"
+          export GOROOT="$patched_goroot" GOTOOLCHAIN=local
+          export PATH="$GOROOT/bin:$PATH"
+          test "$(go env GOROOT)" = "$patched_goroot"
+          test "$(go env GOVERSION)" = "go$(awk '$1 == "go" {print $2}' go.mod)"
+          python3 .github/scripts/patch-go-ios-arm64-runtime.py | tee "$RUNNER_TEMP/runtime-patch.json"
+          shasum -a 256 -c "$RUNNER_TEMP/original-runtime.sha256"
+          echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
+          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+          echo "$GOROOT/bin" >> "$GITHUB_PATH"
+          echo "GOCACHE=$RUNNER_TEMP/ios-go-cache" >> "$GITHUB_ENV"
+          # Clear inherited host target/linker flags; share one device clang.
+          echo "GOFLAGS=" >> "$GITHUB_ENV"
+          echo "CGO_CFLAGS=-O2 -g" >> "$GITHUB_ENV"
+          echo "CGO_CPPFLAGS=" >> "$GITHUB_ENV"
+          echo "CGO_CXXFLAGS=-O2 -g" >> "$GITHUB_ENV"
+          echo "CGO_LDFLAGS=" >> "$GITHUB_ENV"
+          echo "GOOS=ios" >> "$GITHUB_ENV"
+          echo "GOARCH=arm64" >> "$GITHUB_ENV"
+          echo "CGO_ENABLED=1" >> "$GITHUB_ENV"
+          echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh" >> "$GITHUB_ENV"
 
-          exec "$CLANG" \
-            -arch arm64 \
-            -isysroot "$SDK_PATH" \
-            -mios-version-min=12.0 \
-            "$@"
-          WRAP
-
-          chmod +x "$RUNNER_TEMP/ios-clangwrap.sh"
-
-      - name: Build Beszel agent for iOS arm64
+      - name: Build Beszel Agent and Hub twice with isolated caches
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p build/ios
+          test "$(go env GOROOT)" = "$RUNNER_TEMP/go-ios-a7"
+          test "$(go env GOVERSION)" = "go$(awk '$1 == "go" {print $2}' go.mod)"
+          go env GOOS GOARCH CGO_ENABLED CC CGO_CFLAGS CGO_LDFLAGS GOROOT GOTOOLCHAIN
+          mkdir -p build/ios "$RUNNER_TEMP/ios-repeat"
+          for binary in agent hub; do
+            go build -trimpath -ldflags="-s -w" -o "build/ios/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
+            GOCACHE="$RUNNER_TEMP/ios-repeat-cache" go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/ios-repeat/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
+            cmp "build/ios/beszel-$binary-ios-arm64" "$RUNNER_TEMP/ios-repeat/beszel-$binary-ios-arm64"
+            echo "PASS: two clean-cache $binary builds are byte-identical"
+          done
+          shasum -a 256 -c "$RUNNER_TEMP/original-runtime.sha256"
 
-          CGO_ENABLED=1 \
-          GOOS=ios \
-          GOARCH=arm64 \
-          CC="$RUNNER_TEMP/ios-clangwrap.sh" \
-          go build \
-            -trimpath \
-            -ldflags="-s -w" \
-            -o build/ios/beszel-agent-ios-arm64 \
-            ./internal/cmd/agent
-
-      - name: Build Beszel hub for iOS arm64
+      - name: Inspect runtime instructions in unstripped validation builds
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p build/ios
+          for binary in agent hub; do
+            go build -trimpath -o "$RUNNER_TEMP/beszel-$binary-validation" "./internal/cmd/$binary"
+            python3 .github/scripts/verify-ios-runtime-binary.py "$RUNNER_TEMP/beszel-$binary-validation" --output "$RUNNER_TEMP/runtime-$binary.json"
+          done
 
-          CGO_ENABLED=1 \
-          GOOS=ios \
-          GOARCH=arm64 \
-          CC="$RUNNER_TEMP/ios-clangwrap.sh" \
-          go build \
-            -trimpath \
-            -ldflags="-s -w" \
-            -o build/ios/beszel-hub-ios-arm64 \
-            ./internal/cmd/hub
-
-      - name: Verify Mach-O outputs
+      - name: Inspect native Mach-O outputs
         shell: bash
         run: |
           set -euo pipefail
           for bin in build/ios/beszel-agent-ios-arm64 build/ios/beszel-hub-ios-arm64; do
-            echo "== $bin =="
-            if [ ! -s "$bin" ]; then
-              echo "ERROR: missing or empty binary: $bin" >&2
-              exit 1
-            fi
+            file "$bin" | grep -q "Mach-O 64-bit executable arm64"
             file "$bin"
-            if ! file "$bin" | grep -q "Mach-O"; then
-              echo "ERROR: not a Mach-O binary: $bin" >&2
-              exit 1
-            fi
-            if ! file "$bin" | grep -q "arm64"; then
-              echo "ERROR: not an arm64 binary: $bin" >&2
-              exit 1
-            fi
             otool -hv "$bin"
-            if ! otool -l "$bin" | grep -Eq 'LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS'; then
-              echo "ERROR: missing iOS version load command in $bin" >&2
-              exit 1
-            fi
-            otool -l "$bin" | grep -A8 -E 'LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS'
-            load_commands="$(otool -l "$bin")"
-            if ! printf '%s\n' "$load_commands" | awk '
-              $1 == "cmd" && $2 == "LC_BUILD_VERSION" { section = "build"; next }
-              $1 == "cmd" && $2 == "LC_VERSION_MIN_IPHONEOS" { section = "legacy"; next }
-              $1 == "cmd" { section = ""; next }
-              section == "build" && $1 == "minos" && $2 == "12.0" { found = 1 }
-              section == "legacy" && $1 == "version" && $2 == "12.0" { found = 1 }
-              END { exit(found ? 0 : 1) }
-            '; then
-              echo "ERROR: iOS deployment load command does not set minimum version to 12.0 in $bin" >&2
-              exit 1
-            fi
+            # Validator checks LC_BUILD_VERSION platform AND minos, or
+            # LC_VERSION_MIN_IPHONEOS, requiring device iOS minimum 12.0.
+            otool -l "$bin" | grep -A8 -E 'LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS|LC_MAIN|LC_UNIXTHREAD'
           done
 
-      - name: Generate SHA256SUMS
+      - name: Generate and verify exact payload and frontend embedding
         shell: bash
-        working-directory: build/ios
         run: |
           set -euo pipefail
-          shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS
-          cat SHA256SUMS
+          (cd build/ios && shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS && shasum -a 256 -c SHA256SUMS)
+          cat build/ios/SHA256SUMS
+          python3 .github/scripts/verify-ios-artifacts.py build/ios --frontend internal/site/dist --output "$RUNNER_TEMP/native-artifacts.json"
+          git diff --exit-code
 
-      - name: Verify SHA256SUMS
-        shell: bash
-        working-directory: build/ios
-        run: |
-          set -euo pipefail
-          shasum -a 256 -c SHA256SUMS
-
-      - name: Upload iOS release payload
+      - name: Upload iOS review payload
         uses: actions/upload-artifact@v4
         with:
           name: beszel-ios-arm64
+          if-no-files-found: error
           path: |
             build/ios/beszel-agent-ios-arm64
             build/ios/beszel-hub-ios-arm64
             build/ios/SHA256SUMS
+
+      - name: Upload native validation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-native-validation
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/source-selection.json
+            ${{ runner.temp }}/runtime-patch.json
+            ${{ runner.temp }}/runtime-agent.json
+            ${{ runner.temp }}/runtime-hub.json
+            ${{ runner.temp }}/native-artifacts.json
 
   release-ios:
     needs: build-ios
