@@ -30,6 +30,8 @@ permissions:
 jobs:
   build-ios:
     runs-on: macos-14
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
 
     steps:
       - name: Checkout
@@ -123,6 +125,7 @@ jobs:
           echo "CGO_LDFLAGS=" >> "$GITHUB_ENV"
           echo "GOOS=ios" >> "$GITHUB_ENV"
           echo "GOARCH=arm64" >> "$GITHUB_ENV"
+          echo "GOARM64=v8.0" >> "$GITHUB_ENV"
           echo "CGO_ENABLED=1" >> "$GITHUB_ENV"
           echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh" >> "$GITHUB_ENV"
 
@@ -170,7 +173,7 @@ jobs:
           set -euo pipefail
           (cd build/ios && shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS && shasum -a 256 -c SHA256SUMS)
           cat build/ios/SHA256SUMS
-          python3 .github/scripts/verify-ios-artifacts.py build/ios --frontend internal/site/dist --output "$RUNNER_TEMP/native-artifacts.json"
+          python3 .github/scripts/verify-ios-artifacts.py build/ios --frontend internal/site/dist --expected-commit "$GITHUB_SHA" --output "$RUNNER_TEMP/native-artifacts.json"
           git diff --exit-code
 
       - name: Upload iOS review payload

@@ -81,20 +81,22 @@ def frontend_assets(directory):
     return [p for p in sorted(directory.rglob('*')) if p.is_file()]
 
 
-def build_info(text, name):
+def build_info(text, name, expected_commit=None):
     version = re.search(r'^.+: (go[0-9.]+)$', text, re.MULTILINE)
     path = re.search(r'^\s+path\s+(\S+)$', text, re.MULTILINE)
-    settings = dict(re.findall(r'^\s+build\s+(\w+)=(.*)$', text, re.MULTILINE))
+    settings = dict(re.findall(r'^\s+build\s+([\w.]+)=(.*)$', text, re.MULTILINE))
     command = 'agent' if name == NAMES[0] else 'hub'
     if not version or version[1] != 'go1.27.1' or not path or path[1] != 'github.com/henrygd/beszel/internal/cmd/' + command:
         raise ValueError(f'{name}: wrong Go version or Agent/Hub entry package')
-    for key, value in {'GOOS': 'ios', 'GOARCH': 'arm64', 'CGO_ENABLED': '1'}.items():
+    for key, value in {'GOOS': 'ios', 'GOARCH': 'arm64', 'GOARM64': 'v8.0', 'CGO_ENABLED': '1'}.items():
         if settings.get(key) != value:
             raise ValueError(f'{name}: wrong Go build setting {key}')
+    if expected_commit and (settings.get('vcs.revision') != expected_commit or settings.get('vcs.modified') != 'false'):
+        raise ValueError(f'{name}: Go VCS metadata must match the clean tested feature commit')
     return {'go': version[1], 'entry_package': path[1], 'settings': settings}
 
 
-def verify(directory, frontend=None, inspect_go=False):
+def verify(directory, frontend=None, inspect_go=False, expected_commit=None):
     if {p.name for p in directory.iterdir()} != {*NAMES, 'SHA256SUMS'}:
         raise ValueError('payload must contain exactly Agent, Hub and SHA256SUMS')
     manifest = {}
@@ -117,7 +119,7 @@ def verify(directory, frontend=None, inspect_go=False):
         result[name] = {**macho(data), 'sha256': digest, 'bytes': len(data)}
         if inspect_go:
             metadata = subprocess.check_output(['go', 'version', '-m', str(path)], text=True)
-            result[name]['build_info'] = build_info(metadata, name)
+            result[name]['build_info'] = build_info(metadata, name, expected_commit)
         if name == NAMES[1] and frontend is not None:
             assets = frontend_assets(frontend)
             for asset in assets:
@@ -132,9 +134,10 @@ def main():
     parser.add_argument('directory', type=Path)
     parser.add_argument('--frontend', type=Path)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--expected-commit')
     args = parser.parse_args()
     try:
-        result = verify(args.directory, args.frontend, inspect_go=True)
+        result = verify(args.directory, args.frontend, inspect_go=True, expected_commit=args.expected_commit)
     except (ValueError, OSError, struct.error, subprocess.CalledProcessError) as exc:
         raise SystemExit(f'ERROR: {exc}') from exc
     report = json.dumps(result, indent=2) + '\n'

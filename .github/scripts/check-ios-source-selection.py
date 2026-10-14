@@ -102,7 +102,7 @@ def main():
     args = parser.parse_args()
     result = {}
     for target in ['ios', 'darwin', 'linux']:
-        env = dict(os.environ, GOOS=target, GOARCH='arm64', CGO_ENABLED='1', GOFLAGS='')
+        env = dict(os.environ, GOOS=target, GOARCH='arm64', CGO_ENABLED='1', GOARM64='v8.0', GOFLAGS='')
         output = subprocess.check_output(['go', 'list', '-mod=readonly', '-deps', '-json',
                                          './internal/cmd/agent', './internal/cmd/hub'], env=env, text=True)
         result[target] = validate(decode_packages(output), target)
