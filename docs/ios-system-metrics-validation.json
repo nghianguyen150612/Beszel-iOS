@@ -1,0 +1,1389 @@
+{
+  "schema_version": 1,
+  "milestone": "P008",
+  "evidence_scope": "portable logic and source-candidate native build; final documentation-inclusive HEAD and merge are recorded in PR",
+  "status": "SOURCE_FIXTURE_REGRESSION_NATIVE_PASS",
+  "starting_integration_sha": "2b5d8fa31e6b6da25a3073c5148b3375301f40dd",
+  "starting_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+  "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+  "feature_branch": "ios/ios-system-metrics",
+  "base_branch": "ios/upstream-v021-integration",
+  "source_candidate_sha": "a096d1eabe11e41667a726470f502e21a6b93650",
+  "implementation_commits": [
+    "e7ff9be9124bf020cca1a4d114122afc77dabe3d",
+    "5ff46fb7c0f35120095d4983f29a1877044c6e32",
+    "e9dcd71e1f4ab989f7a505def4656f0883fb8639",
+    "4528fd9a381e68d0d97fdd20800021713b61f81d",
+    "c84673e672442fda9d33033b0c6c9cd82a64f28e",
+    "a096d1eabe11e41667a726470f502e21a6b93650"
+  ],
+  "pr": {
+    "number": 10,
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/10"
+  },
+  "final_head_record_policy": "The JSON records actual tested source IDs, not its own impossible self-reference. Before merge, rerun native and installer workflows on the documentation-inclusive HEAD; record that SHA, final run URLs/artifact checksums and merge verification in PR #10. No source changes may rely solely on earlier runs.",
+  "baseline": {
+    "tested_sha": "2b5d8fa31e6b6da25a3073c5148b3375301f40dd",
+    "canonical_go": "PASS",
+    "genuine_bun_build_tests": "PASS"
+  },
+  "production_changes": {
+    "cpu": "Darwin Mach counters retained; finite/monotonic/identity and baseline/error checks, shared runtime lock, per-core structure validation; iOS CPU-model guard retained",
+    "memory": "Small iOS-only Mach CGO source with hw.memsize and OS page size; wide bounded free+inactive/used arithmetic; no inferred cache or swap",
+    "disk": "Actual iOS filesystem usage identities/default root/explicit extras; no physical I/O probe; safe shared rates and disappearance/error cleanup; ExtraFs copies",
+    "network": "One-way filter repaired with fixtures; reconcile dynamic identities; addressed UP zero-counter and explicit NICS inclusion; independent interval/reset/overflow/error handling; upstream active AWDL policy retained",
+    "battery": "Exact iOS entry calls portable AppleARMPMUCharger ioreg acquisition/parser; 2s deadline, 250ms pipe wait, 1MiB output, reap, 60s success/error cache, class/direct-block checks, safe integer percent and unknown states",
+    "metadata": "Injected sysctl/plist source, exact A7 identifier set, generic unknown SoCs, iOS labels/runtime architecture and valid counts; absent values cleared"
+  },
+  "confirmed_defects": [
+    "CPU missing initial baseline, empty nil-error source, partial rollback/NaN, shared map concurrency",
+    "Network one-way startup exclusion and later-interface omission",
+    "Network/disk rate multiplication overflow and reset interpretation",
+    "Disk unsigned byte/op subtraction and stale ExtraFs data",
+    "Unbounded battery subprocess; integer capacity overflow; missing booleans implied known state; nested/truncated/mixed registry parsing",
+    "Overbroad iPad4 prefix labels unknown models A7",
+    "Darwin VM unchecked page-size symbol dereference and uint32 arithmetic risk"
+  ],
+  "source_risks_not_device_observations": [
+    "Darwin VM symbol failure and macOS storage-driver availability were inspected in gopsutil; no v0.21 device crash or driver counter capture occurred"
+  ],
+  "acquisition": {
+    "cpu": [
+      "host_statistics HOST_CPU_LOAD_INFO",
+      "host_processor_info PROCESSOR_CPU_LOAD_INFO",
+      "libSystem gopsutil v4.26.9"
+    ],
+    "memory": [
+      "hw.memsize",
+      "host_statistics HOST_VM_INFO",
+      "OS page size"
+    ],
+    "filesystem": [
+      "Darwin getfsstat initialization",
+      "statfs usage"
+    ],
+    "network": [
+      "Darwin routing/sysctl gopsutil counters"
+    ],
+    "battery": "/usr/sbin/ioreg -r -c AppleARMPMUCharger -l",
+    "metadata": [
+      "hw.machine",
+      "hw.physicalcpu",
+      "hw.logicalcpu",
+      "kern.hostname",
+      "kern.osrelease",
+      "SystemVersion.plist ProductVersion",
+      "runtime.GOARCH"
+    ]
+  },
+  "unavailable": {
+    "ios_physical_disk_io": "Unavailable: existing IOMedia/IOBlockStorageDriver assumptions not established for iOS; optional throughput/time/cumulative fields omitted; no substitute diskstats/device guess",
+    "ios_swap": "Unavailable in this acquisition path; optional fields omitted, not a measured no-swap claim",
+    "ios_cache_buffer": "Unavailable separately; mandatory MemBuffCache retains upstream zero default, not proof of no cache",
+    "cpu_iowait_steal": "Darwin source has no categories; existing breakdown zero slots retained",
+    "native_wifi_rssi": "Unsupported fallback retained; P012 owns adapter"
+  },
+  "required_scalar_error_convention": "Required CPU/RAM/disk fields retain upstream zero defaults on unavailable/error samples; no new availability field or protocol change. Optional fields are absent and prior data is not copied as fresh.",
+  "fixture_provenance": {
+    "historical_device": "iPad mini 2 A1489 / iPad4,4, Apple A7, arm64, iOS 12.5.7, Amethyst/Procursus; Beszel 0.19 only",
+    "battery": "Sanitized synthetic recursive/legacy shapes; STEP 39 historic 42/100/raw3989/charging facts, negative nested1/2 values synthetic; no identifiers",
+    "other": "Synthetic injected CPU/page/partition/interface/metadata/error samples; 1 GiB is a fixture sanity value, not hardcoded device memory"
+  },
+  "new_tests": {
+    "cpu": {
+      "top_level": 2,
+      "named_subtests": 10
+    },
+    "memory": {
+      "top_level": 2,
+      "named_subtests": 6
+    },
+    "disk": {
+      "top_level": 3,
+      "named_subtests": 9
+    },
+    "network": {
+      "top_level": 2,
+      "named_subtests": 0,
+      "sequential_scenarios": [
+        "up addressed zero counters",
+        "inactive",
+        "one-way",
+        "loopback",
+        "active AWDL unchanged",
+        "VPN",
+        "cellular",
+        "addition",
+        "removal",
+        "reappearance",
+        "source failure/recovery",
+        "whitelist",
+        "blacklist",
+        "idle",
+        "reset",
+        "zero/future time",
+        "independent intervals",
+        "overflow/anomaly aggregate consistency"
+      ]
+    },
+    "battery": {
+      "top_level": 4,
+      "named_subtests": 37,
+      "helper_excluded": true
+    },
+    "metadata": {
+      "top_level": 2,
+      "named_subtests": 22
+    },
+    "shared_rate": {
+      "top_level": 1,
+      "named_subtests": 0
+    },
+    "payload": {
+      "top_level": 1,
+      "named_subtests": 3
+    }
+  },
+  "test_source_files": [
+    "agent/ios_metrics_test.go",
+    "agent/ios_metadata_test.go",
+    "agent/ios_payload_test.go",
+    "agent/battery/ios_ioreg_test.go"
+  ],
+  "local_results": {
+    "matrix": {
+      "command": [
+        "python3",
+        "scripts/audit/validate-upstream-v021-matrix.py"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "readiness": {
+      "command": [
+        "python3",
+        "scripts/audit/validate-upstream-v021-readiness.py"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "audit": {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/audit",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "sync": {
+      "command": [
+        "sh",
+        "tests/upstream-sync-test.sh"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "sentinels": {
+      "command": [
+        "sh",
+        "tests/ios-patch-sentinels.sh"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "bootstrap": {
+      "command": [
+        "sh",
+        "tests/bootstrap-test.sh"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "installer": {
+      "command": [
+        "sh",
+        "tests/install-sh-test.sh"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "diff": {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "go": {
+      "command": [
+        "go",
+        "test",
+        "-tags",
+        "testing no_ui",
+        "./..."
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "race": {
+      "command": [
+        "go",
+        "test",
+        "-race",
+        "-tags",
+        "testing no_ui glibc",
+        "./agent",
+        "./agent/battery",
+        "./agent/deltatracker",
+        "./internal/entities/system",
+        "-run",
+        "Test(P008|IOSBattery|CalculateHostMemory|Cpu|GetAllBusy|ContainerMemory|ContainerCpu|Disk|UpdateDisk|SumAndTrack|SkipNetwork|IsValidNic|NewNic|Delta|Serialization|Battery|Primary|Normalize)",
+        "-count=1"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "selection": {
+      "command": [
+        "python3",
+        ".github/scripts/check-ios-source-selection.py",
+        "--output",
+        "/workspace/p008-evidence/final/source-selection.json"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "linux-agent": {
+      "command": [
+        "go",
+        "build",
+        "-trimpath",
+        "-o",
+        "/workspace/p008-evidence/final/beszel-agent-linux",
+        "./internal/cmd/agent"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    },
+    "linux-hub": {
+      "command": [
+        "go",
+        "build",
+        "-trimpath",
+        "-o",
+        "/workspace/p008-evidence/final/beszel-hub-linux",
+        "./internal/cmd/hub"
+      ],
+      "exit_code": 0,
+      "tested_source_sha": "a096d1eabe11e41667a726470f502e21a6b93650"
+    }
+  },
+  "local_audit_tests": 49,
+  "p007_runtime_binary_selection_unit_tests": 35,
+  "shell_counts": {
+    "sync": 10,
+    "sentinels": 45,
+    "bootstrap": 54,
+    "installer": 814
+  },
+  "frontend": {
+    "bun": "1.4.0",
+    "asset_count": 95,
+    "missing_embedded_assets": [],
+    "lock_sha256": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa",
+    "verified": true,
+    "tests_passed": 44,
+    "tests_failed": 0
+  },
+  "race_scope": "Agent telemetry/shared regression, battery cache/parser/subprocess, deltatracker, system entities; Linux testing no_ui glibc. Hosted macOS repeats applicable package race tests without Linux-only glibc.",
+  "hosted_ci": [
+    {
+      "conclusion": "success",
+      "headSha": "a096d1eabe11e41667a726470f502e21a6b93650",
+      "jobs": [
+        {
+          "completedAt": "2026-10-14T07:15:47Z",
+          "conclusion": "success",
+          "databaseId": 115728247169,
+          "name": "build-ios",
+          "startedAt": "2026-10-14T07:10:09Z",
+          "status": "completed",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run iOS maintenance sentinels",
+              "number": 3,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Setup Go",
+              "number": 4,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Setup Bun",
+              "number": 5,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Test native build validators",
+              "number": 6,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build and test real web UI",
+              "number": 7,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Verify iOS, macOS and Linux source selection",
+              "number": 8,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Test portable telemetry and macOS regressions",
+              "number": 9,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Preserve macOS build and GPU parser tests",
+              "number": 10,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Show and verify environment",
+              "number": 11,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Patch isolated Go runtime for legacy iOS ARM64",
+              "number": 12,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build Beszel Agent and Hub twice with isolated caches",
+              "number": 13,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Inspect runtime instructions in unstripped validation builds",
+              "number": 14,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Inspect native Mach-O outputs",
+              "number": 15,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Generate and verify exact payload and frontend embedding",
+              "number": 16,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Upload iOS review payload",
+              "number": 17,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Upload native validation evidence",
+              "number": 18,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Setup Bun",
+              "number": 34,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Setup Go",
+              "number": 35,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 36,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 37,
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38526577598/job/115728247169"
+        },
+        {
+          "completedAt": "2026-10-14T07:15:47Z",
+          "conclusion": "skipped",
+          "databaseId": 115730194947,
+          "name": "release-ios",
+          "startedAt": "2026-10-14T07:15:47Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38526577598/job/115730194947"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38526577598"
+    },
+    {
+      "conclusion": "success",
+      "headSha": "a096d1eabe11e41667a726470f502e21a6b93650",
+      "status": "completed",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38526580705"
+    }
+  ],
+  "hosted_versions": {
+    "go": "1.27.1",
+    "bun": "1.4.0",
+    "xcode": "15.4",
+    "xcode_build": "15F31d",
+    "iphoneos_sdk": "17.5",
+    "runner": "macos-14"
+  },
+  "hosted_native_artifacts": {
+    "beszel-agent-ios-arm64": {
+      "cpu": "arm64",
+      "filetype": "MH_EXECUTE",
+      "command": "LC_BUILD_VERSION",
+      "platform": 2,
+      "minos": "12.0",
+      "sdk": 1115392,
+      "entry_kind": "file",
+      "entry": 549376,
+      "sha256": "2a63b88ffc6b28bd3ca72ef2650e7d06df03e81efd8bee274841ad87ed8f8082",
+      "bytes": 9477360,
+      "build_info": {
+        "go": "go1.27.1",
+        "entry_package": "github.com/henrygd/beszel/internal/cmd/agent",
+        "settings": {
+          "CGO_ENABLED": "1",
+          "GOARCH": "arm64",
+          "GOOS": "ios",
+          "GOARM64": "v8.0",
+          "vcs": "git",
+          "vcs.revision": "a096d1eabe11e41667a726470f502e21a6b93650",
+          "vcs.time": "2026-10-14T07:09:56Z",
+          "vcs.modified": "false"
+        }
+      }
+    },
+    "beszel-hub-ios-arm64": {
+      "cpu": "arm64",
+      "filetype": "MH_EXECUTE",
+      "command": "LC_BUILD_VERSION",
+      "platform": 2,
+      "minos": "12.0",
+      "sdk": 1115392,
+      "entry_kind": "file",
+      "entry": 582256,
+      "sha256": "0cc91d9b516158cbc81ee50c71d99c8f860ccab74d785fbf165521b33b428b7f",
+      "bytes": 31927800,
+      "build_info": {
+        "go": "go1.27.1",
+        "entry_package": "github.com/henrygd/beszel/internal/cmd/hub",
+        "settings": {
+          "CGO_ENABLED": "1",
+          "GOARCH": "arm64",
+          "GOOS": "ios",
+          "GOARM64": "v8.0",
+          "vcs": "git",
+          "vcs.revision": "a096d1eabe11e41667a726470f502e21a6b93650",
+          "vcs.time": "2026-10-14T07:09:56Z",
+          "vcs.modified": "false"
+        }
+      },
+      "embedded_asset_count": 95
+    }
+  },
+  "native_artifact_ids": {
+    "payload": 11876176964,
+    "validation": 11876676028
+  },
+  "native_zip_sha256": {
+    "payload": "38ac77817a8c64e7b96f48c1076bba5fc317165db3c579839a2fc7decddbba95",
+    "validation": "19068da1aada06dabf2ee2efc1452590d032d0da4f6e4f842ab36a327e5f5d90"
+  },
+  "native_runtime_patch": {
+    "status": "PASS",
+    "go": "go1.27.1",
+    "path": "/Users/runner/work/_temp/go-ios-a7/src/runtime/asm_arm64.s",
+    "source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+    "patched_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f",
+    "replacement": "zero-guarded YIELD loop; no CNTFRQ_EL0/CNTVCT_EL0 reads"
+  },
+  "native_runtime_agent": {
+    "symbol": "runtime.procyieldAsm.abi0",
+    "instructions": [
+      "b9400be0",
+      "b4000080",
+      "d503203f",
+      "51000400",
+      "b5ffffc0",
+      "d65f03c0",
+      "00000000",
+      "00000000"
+    ],
+    "counter_access": false,
+    "status": "PASS"
+  },
+  "native_runtime_hub": {
+    "symbol": "runtime.procyieldAsm.abi0",
+    "instructions": [
+      "b9400be0",
+      "b4000080",
+      "d503203f",
+      "51000400",
+      "b5ffffc0",
+      "d65f03c0",
+      "00000000",
+      "00000000"
+    ],
+    "counter_access": false,
+    "status": "PASS"
+  },
+  "native_download_verification": {
+    "beszel-agent-ios-arm64": {
+      "cpu": "arm64",
+      "filetype": "MH_EXECUTE",
+      "command": "LC_BUILD_VERSION",
+      "platform": 2,
+      "minos": "12.0",
+      "sdk": 1115392,
+      "entry_kind": "file",
+      "entry": 549376,
+      "sha256": "2a63b88ffc6b28bd3ca72ef2650e7d06df03e81efd8bee274841ad87ed8f8082",
+      "bytes": 9477360,
+      "build_info": {
+        "go": "go1.27.1",
+        "entry_package": "github.com/henrygd/beszel/internal/cmd/agent",
+        "settings": {
+          "CGO_ENABLED": "1",
+          "GOARCH": "arm64",
+          "GOOS": "ios",
+          "GOARM64": "v8.0",
+          "vcs": "git",
+          "vcs.revision": "a096d1eabe11e41667a726470f502e21a6b93650",
+          "vcs.time": "2026-10-14T07:09:56Z",
+          "vcs.modified": "false"
+        }
+      }
+    },
+    "beszel-hub-ios-arm64": {
+      "cpu": "arm64",
+      "filetype": "MH_EXECUTE",
+      "command": "LC_BUILD_VERSION",
+      "platform": 2,
+      "minos": "12.0",
+      "sdk": 1115392,
+      "entry_kind": "file",
+      "entry": 582256,
+      "sha256": "0cc91d9b516158cbc81ee50c71d99c8f860ccab74d785fbf165521b33b428b7f",
+      "bytes": 31927800,
+      "build_info": {
+        "go": "go1.27.1",
+        "entry_package": "github.com/henrygd/beszel/internal/cmd/hub",
+        "settings": {
+          "CGO_ENABLED": "1",
+          "GOARCH": "arm64",
+          "GOOS": "ios",
+          "GOARM64": "v8.0",
+          "vcs": "git",
+          "vcs.revision": "a096d1eabe11e41667a726470f502e21a6b93650",
+          "vcs.time": "2026-10-14T07:09:56Z",
+          "vcs.modified": "false"
+        }
+      },
+      "embedded_asset_count": 95
+    }
+  },
+  "native_reproducibility": "Agent and Hub each byte-identical across two independent clean caches in the stated hosted job; cross-SDK/source reproducibility not claimed",
+  "release_job": "skipped",
+  "intermediate_ci": [
+    {
+      "run_id": 38525166387,
+      "tested_sha": "5ff46fb7c0f35120095d4983f29a1877044c6e32",
+      "conclusion": "failure",
+      "cause": "Darwin Unix socket path exceeded 104 bytes in existing payload test fixture",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38525166387"
+    },
+    {
+      "run_id": 38525831677,
+      "tested_sha": "c84673e672442fda9d33033b0c6c9cd82a64f28e",
+      "conclusion": "failure",
+      "cause": "First path repair affected another fixture; failing payload helper still used long t.TempDir path",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38525831677"
+    },
+    {
+      "run_id": 38525581035,
+      "tested_sha": "4528fd9a381e68d0d97fdd20800021713b61f81d",
+      "conclusion": "cancelled",
+      "cause": "Superseded source before native build; not pass evidence",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38525581035"
+    }
+  ],
+  "preservation": {
+    "tested_sha": "a096d1eabe11e41667a726470f502e21a6b93650",
+    "upstream_count": 178,
+    "reachable_count": 178,
+    "upstream_shas": [
+      "086091a0fea2a0914bf4db1fc46e575e386f795e",
+      "6a7b2772d90c732077a910ca03bb79b13c4fe8c6",
+      "982101743e92acffa4f6bc1b42285aa7b020342e",
+      "a0bf33879605aa28911a4961567e5feb18155d46",
+      "50f6fc075d7af0482287acb5c61fbc8a88578335",
+      "f0f1f7985c864ab4ad41ff12b6b74dd9f258046d",
+      "18f7a4bbc09aed953cf21ec80f4c2612ad2a3beb",
+      "4bf70700f20cc2994774995dca5e725c7173996b",
+      "bb1b39928e317592159e65dbcac1de12510d49b8",
+      "6e5440c21f9f1798b469f1c473e8f12d14323443",
+      "b34759992828f097df9ff12d18bfccdf82c22848",
+      "db3afeabd949eb3b58fb0acd65724a37212376b0",
+      "f7fd3ef403085b64dc8a21a02011105b2251333a",
+      "d2352e888231484a83d4fd3d592a0e56554f66bb",
+      "bd7e359dcdbf4a14f3978d7d149682c0806f10e5",
+      "97de1471d7ddb92d3138d9baaecb1f58db0bc06b",
+      "6937453282f33e43bd5b5473291b9208c0398ee5",
+      "b0bc72741126b2eadaf284e803827261eac82d54",
+      "27844606215ef535c86ecb868178692a817c0397",
+      "187dc886a96f7124090f7e5a258c9c720bd2cb2c",
+      "0509053a69e7af4b88a6b0cdc90e6c493e65bb6b",
+      "dd3f7d58b543d1016d84e3d0478753d2a6afd7fe",
+      "c54dbfba7cf8bd572c9437adc363e62964cd1fd4",
+      "912bc50874ac4bf20cbefa4a6b8859898223e859",
+      "a0dc19eacf6902d2f6934a3efd7ea7277198c40b",
+      "c09eb8c6dfae05d2d13a1445def10d39ad9738a7",
+      "c52f3acb94c94f26b05397b59976fa1ae74380af",
+      "e68372dce417fe922c0a27aded5ce4e4bfb66cf3",
+      "4a5915b141bfa96627f5493e5174ec8bc36734d5",
+      "97e6f64bdcb926b8d0436f358942c098a46b6237",
+      "2c69197d2d1cc94b325a8e9098eaba43d16063e6",
+      "cbe4824ac334a6a6568c8a961c90e5197cb7b8bb",
+      "a5f216f425997de165fabc64562f4974697b04ef",
+      "c9de35fad2e781c2913981174d936405e4a8def2",
+      "97ea3c16cb079133929b98cf41b35a3651586a1a",
+      "1aaabfc255e473563cb9bbb31c82dc0115c6a95b",
+      "4a4610bbc3d37dbe0e588336a5454eae9d095796",
+      "8047f005d41c86c5bd7db812b0189578830c5d3b",
+      "627d364071b6d50ce9c967ecb43a5363ad0fdecc",
+      "2d5ea3fa08f052695f086024c0254f4bd02a43fb",
+      "8bf6917fe07ce0a33c9ae29a70bcea45410b0a7e",
+      "9042a8c5c8448344de968d4476a3cfa6ba1a02a1",
+      "b1270e341cd2ffadbfd31ba93f9404e0b4e32f90",
+      "08707160528048b97556b984b2cff338580474dd",
+      "a99fe5e99725edf2a8ff582f5b21793fc88731f2",
+      "fc33e6273610dbfbd264b59283e2bbb1eac8521c",
+      "e4b84b72abac255f5604776632af1662a453f7f4",
+      "0be9882b34bb3445b5ec7b6af8915b097e0bbf27",
+      "eabd9a950a379d061398e6128b716fc750468a91",
+      "367d2f39da6e3e46345054368891b445e3a3c189",
+      "c21412f45d9309ec8895624834711c454dd58d6c",
+      "6141b15f0359516101e4da0fc4350f4d04f165aa",
+      "b5ef0154511b28d21e1f6ec617c1cc330a92e5f6",
+      "4d10ea2e03678ac27d41bae1fd9505113f18b36c",
+      "f2adb9cf94756b86b1d1098722591b348cee77bb",
+      "a20a7d2edce5f9c14f2f1dcd6151cc92babdf70e",
+      "f7528a02082a6fd2a54857470e40ff5a54782801",
+      "151423ac638a0f288efb4c2ad981ce7a19e066dd",
+      "21b648a005bcaa928240116fc2f87b7d57836fdc",
+      "d80a2f49f9d00abe4c7853f0b041dcb65846814b",
+      "d591da46f3dd47af2e11e935abb6a12b60fdb1e8",
+      "c25408651f076c59c13f35f27016461ada8a9093",
+      "f50fb4f8e5e4fe7dda46941c13f84d032eb50a28",
+      "d708def38f5552534791c990cb0ba6db637c661e",
+      "3fb97b800cdbb5985587df9644bc484c8ec1bbb9",
+      "3dfe062ee4202c35f6cfdd6392f2f345617d1f27",
+      "433b83800fdb00349a916bdbf98da991d7c0456a",
+      "7bea20e3b61c02744819ff057bc60ba57b5425c0",
+      "badd4c8245968bad9a79ab67293a9367e8c57f8f",
+      "86ab0fae8b7b2d87251a90a4fa56138d17cca553",
+      "16e3fbadce2026d5591aa08c6518e1c5754fa1a2",
+      "24792aa24fb91dfc0dc93394b7fcd51c520e9650",
+      "46fa7c581e50fcd567c7aec7a5d5d1120dd4e830",
+      "fe83f5b8318968a650d4cab470103375c5d341cb",
+      "a042e195496a88f20592ec2e65dad0efc223eb7d",
+      "c7f2177b08bb3dcfba7988e34d1c293ab3f835da",
+      "24ec18a937b1b18d606eef2f56728230326557e6",
+      "15994474f6c061a6a1db525f19b72ec0ba0e42a0",
+      "1ed02bb51795730964fb031bac232703708f617a",
+      "fb4e93f09811f7efc442c4a1218736287767aa4a",
+      "67c3c1cb437e80d01d1d8ed6f78e5de1d43ecca4",
+      "b3feff9a28273c7b2f74dd0c0fdc834c295ae4d7",
+      "3f20ecae503117ff052061136b080b8f8cce2df9",
+      "739649a6db777387ec8d551fd7298ac25c33a59e",
+      "c1505804bdbac5607f6eac2165a41a2691cf2d25",
+      "8613cfe548c882b57c5748efd7007ecbe2ba2553",
+      "81fd571169def94b951e8703aba204c4f2e4f70f",
+      "4b4ef0a2fef6feb694cb87f7e6039aab754ab324",
+      "65f00ae119269113613a39028b7a935693b860e6",
+      "b684ac9910652bdc39b61982b079fb5213dcc07a",
+      "ad215788eda2f41fd0999ae26581547e99f6c55d",
+      "7626e5e3c84806a67d9e10c8791a6aca9991d2ce",
+      "666529e073c69a74a14375df0388767960c869e6",
+      "be3dad7ed4f3b8a1de55c566926fc3fb69cc0e95",
+      "62f8a39c8af70dc51065626056808216c239fd2c",
+      "c556dc478d04e59b40ec8e04658f4d3f8951b07e",
+      "083b28a1fc5fdf198ef36ac6b4e64dcc1cf98747",
+      "09a277f07487c1e78a82eb331b0e8dcc4906e753",
+      "921ded1af0f955ddaba1dabafe0d361f1d12fb7d",
+      "130365f5d37a3fd12b82e16b5b1c5f235a96bdb2",
+      "8b38db1ba0d73033c7f6638f59577e3c142f4a2a",
+      "5df0a256c600f827ac1a7ef207b77d4fb299b3b2",
+      "68ca6936a77baff48e1803a3bc85ba8a3fb5c617",
+      "1ab38e57c59c470ae579caa268b7d9dcdbda95ba",
+      "a77ed345d76daf7676dbf2d7b68873ffdd240537",
+      "0484c54919ff071e21e1db3197060fc8277213e0",
+      "4422be717c3e3cb2e58ebac9c0bebbd30d94e2a1",
+      "24881fbfdf3feba4567e41dc011ea283716873ee",
+      "97db8bd199b10f90ce854ddc913491d43fda9216",
+      "1997984325de5057bee0bd5b309fa534dac5d639",
+      "67c5905b3691b3dc5315fb37604cf7883cfe28fa",
+      "02653f8ed94ca90536ffd7a282f0c911dfb1dad0",
+      "3281055d95b365964e67296c8935cdcbc4bfaec1",
+      "6c47ca8eccb1ed2b8148546f4f0acebd10cad0a5",
+      "3cc19602c1a0ad3f097c350d6bda66ce5d620da0",
+      "e01e2a20e9d32e46ed5eaaa4cf48cf04f56d9a9f",
+      "2ca5e727f9fd5cad9a98e42fa169580dc2ecab18",
+      "15c29fee92f29f6fd47b9c1384c6e03a6580119e",
+      "e925fafd7ba5fde2073446b1a903090317d67a4b",
+      "266f45f104e901019a55eb268e183d3582dcc17b",
+      "dd3a769d189ee8becf0d457e3d675f895e187d61",
+      "87f1efdfd9225acb243c9b4b3985b391abc566f6",
+      "65e3e2e768aa1f1820d5d15235c86940a6f3aef4",
+      "6ff9b4cfeabb54d8bc48ae5a61e9b1a67cc92341",
+      "8a91a0b5ab7f9b771e388d3f7b0db47f9b925b29",
+      "2502dd96260cbb8b70e3a8ef3fdd3dc09afc7cc3",
+      "5b0952ffcf0b3cf0a8f975e2fa396db679a0dab7",
+      "0b101cc6be4de850f0cdb26a9abd538b27f3e363",
+      "8a173e2643a4eb38fe5cd99567c13e2d496f30e8",
+      "d8c2b1f310bea3df3c0a5b29f2e8f1864380a648",
+      "4ffd83677d18fe285ce1647da9d64ed4b2798f40",
+      "c394a6b5b16f029bacd8d093cc6893c2d1bcc13d",
+      "01d91728f00d234f68cc6ebd2ab7df09226a2789",
+      "da742a70ab7db54b9535ca003e22d4cc01b8ba2f",
+      "49ad3fe5339fb135851749690d4ffc251e8766c1",
+      "25132b73ff18d43e99388ed5cb7a9b5e5541355c",
+      "49f4f652e161b4d93859699e98f0003cba966ae7",
+      "0cca9d060257b01c79a03bad5c74c34a6b81b84c",
+      "b115e2aa6ae22652f6a9ee4d25475af9250a0bd4",
+      "e597dd94db90a112fbbe69cf154f8d23a5b857e7",
+      "ec96c134660c998f7eb044e349e3715b65733fe1",
+      "4a40d1772c2c0fcb1aec1fefecbbc56bb6622cbe",
+      "7748651f5cb3ee0ccd3d3e6141f315ee5d20454e",
+      "dcae7682cddf5e52ba3bd7b3aebfa0f472d8c890",
+      "36c14e903d73b226a2df5bbf7ab4fbf1943c2906",
+      "74c952b87907a36d84d404ad17a0695be4ac55df",
+      "d89f844a2a0abc7474555f0635344245456f82d6",
+      "ca40b5b38ffac6336872cdb0d5f4f053916f394a",
+      "965518e63c92cbf72e498ab6d10f14f0a78f4196",
+      "ef840e0e6d8f066419a351c25312acb2d5323af7",
+      "4fe1a0a7a42f655564e0b1577a2bc0dd74af8f58",
+      "bc2278e7e9820825ce990fb2fe7fca4b9fe9a1c3",
+      "7305eda972cb423bd51ac18f4966312b346360d0",
+      "d91f06f3c533b231346dc1d0ca5bf0bca265e462",
+      "195afc10b8924ef4d6afc5d409eb8a8e1c43b96c",
+      "e30e980854408d46b2e8837a14a0c0d771a18545",
+      "5529d2e15e142dcec0ee5a239ffadb33e3295b01",
+      "5714643ff9001e70e0fbf8ecb4f55369dcf7ae61",
+      "b11e3617990bee170122c4af1913ed79ddb4a632",
+      "017ebb091aa64596f9545c89e67f6c880f8bb121",
+      "d8b41919751da63f63745b4a9d2ce894dd61342d",
+      "13bdd05934a7363016aa9a92c0d5bef13c0e81a4",
+      "383e9c707249e88075044d2170a0f1e68411ee76",
+      "f8d3fe1817b2ac977c051243d6ffc9077a000ba3",
+      "7f63e65f22bff5d4bf5962e3555bc4107c31de6e",
+      "7f2eb90f24df180a7c0dd6c1b888aaba65b3dbb6",
+      "d324ccc0977d0347e4f94529490fefbc72e54900",
+      "4da7d867f237542aadac148eebbcff60f82d9ef9",
+      "596f96442e5b60706018e47d63c56bd5abad2a37",
+      "da51dfd5986528d7341ba488b96046603298ae0b",
+      "3d33d5eabb2bed36b5ff252057a96647dbd8c8c7",
+      "665bcb3e53d80a4d4c01e43e0b0bea0ecc85383c",
+      "a1cbdc980e05f0a03616d89e0b3d6986e0e59aa8",
+      "a1d86d120fa046eabdfc0fc1a674e34aebdc81f1",
+      "02f24ed0af859dd9a3e21ba009ed3714733a50f8",
+      "9cf75cca7af6a198c418d99a2bd6d78efb2e5d9b",
+      "32d469285382521bae4ad3f368a7045f32ff2f5e",
+      "bb23f99b3eeaced9608e11e280e7c986dba650be"
+    ],
+    "logical_patches": [
+      {
+        "id": "IOS-A7-RUNTIME",
+        "owner": "P007",
+        "files": {
+          ".github/scripts/patch-go-ios-arm64-runtime.py": {
+            "starting_sha256": "73b7297aa84e1c0742f345da8fd10488eb87b42d470d71de516ac272cddd9c85",
+            "current_sha256": "73b7297aa84e1c0742f345da8fd10488eb87b42d470d71de516ac272cddd9c85",
+            "unchanged": true
+          },
+          ".github/workflows/ios-build.yml": {
+            "starting_sha256": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+            "current_sha256": "0b6873626806eb87f9a9b0f402e85ce292e704553edc9348fcc313bf91944279",
+            "unchanged": false
+          }
+        },
+        "disposition": "adapted with tests"
+      },
+      {
+        "id": "IOS-AGENT-BATTERY",
+        "owner": "P008",
+        "files": {
+          "agent/battery/battery_ios.go": {
+            "starting_sha256": "0d15da4e09c3d168c7d09f639d8934d20a6cde06f7cb4bcdd77c73b14fd16d11",
+            "current_sha256": "7f05b3dfd97ada3b7e30a7d6932f277729897dc22db9d1f91ee3631ec52a5261",
+            "unchanged": false
+          }
+        },
+        "disposition": "adapted with tests"
+      },
+      {
+        "id": "IOS-AGENT-BUILD-PROBE",
+        "owner": "P007",
+        "files": {
+          ".github/workflows/ios-build.yml": {
+            "starting_sha256": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+            "current_sha256": "0b6873626806eb87f9a9b0f402e85ce292e704553edc9348fcc313bf91944279",
+            "unchanged": false
+          }
+        },
+        "disposition": "adapted with tests"
+      },
+      {
+        "id": "IOS-AGENT-SYSTEM-HOOK",
+        "owner": "P008",
+        "files": {
+          "agent/battery/battery_darwin.go": {
+            "starting_sha256": "dd1ff8d19fdba55e45f5fe77039b43bedd1b02d5821a4f2c7e4372aae491ad75",
+            "current_sha256": "dd1ff8d19fdba55e45f5fe77039b43bedd1b02d5821a4f2c7e4372aae491ad75",
+            "unchanged": true
+          },
+          "agent/battery/battery_ios.go": {
+            "starting_sha256": "0d15da4e09c3d168c7d09f639d8934d20a6cde06f7cb4bcdd77c73b14fd16d11",
+            "current_sha256": "7f05b3dfd97ada3b7e30a7d6932f277729897dc22db9d1f91ee3631ec52a5261",
+            "unchanged": false
+          },
+          "agent/system.go": {
+            "starting_sha256": "cde0413c24fa35a3b07c154ed8765d7a34536a63de848d8d33aab53c8d30a6d3",
+            "current_sha256": "ae584e98a716ce41e7c198bc49d5b90606bcf93c732e46ac9a6ac8a0850225b6",
+            "unchanged": false
+          },
+          "agent/system_platform_ios.go": {
+            "starting_sha256": "0c4986a08f2dc826e64031dbd4d9d37f57f5543ae0fe2c69861b5a6f958a20a4",
+            "current_sha256": "485686d20a84dfbda94142f41313d91eef5093832fbfc47c894174662b0f67b3",
+            "unchanged": false
+          },
+          "agent/system_platform_other.go": {
+            "starting_sha256": "07aa4a2789d2b07e9ef07bc84ad9750784c985bb499896a5c4a0053e2a9a1da7",
+            "current_sha256": "07aa4a2789d2b07e9ef07bc84ad9750784c985bb499896a5c4a0053e2a9a1da7",
+            "unchanged": true
+          }
+        },
+        "disposition": "adapted with tests"
+      },
+      {
+        "id": "IOS-FRONTEND-BUILD",
+        "owner": "P015",
+        "files": {
+          ".github/workflows/ios-build.yml": {
+            "starting_sha256": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+            "current_sha256": "0b6873626806eb87f9a9b0f402e85ce292e704553edc9348fcc313bf91944279",
+            "unchanged": false
+          },
+          "docs/ios-build-notes.md": {
+            "starting_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "current_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "unchanged": true
+          },
+          "docs/upstream-sync.md": {
+            "starting_sha256": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+            "current_sha256": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+            "unchanged": true
+          },
+          "internal/site/bun.lock": {
+            "starting_sha256": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa",
+            "current_sha256": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa",
+            "unchanged": true
+          }
+        },
+        "disposition": "adapted with tests"
+      },
+      {
+        "id": "IOS-HUB-BUILD-PIPELINE",
+        "owner": "P015",
+        "files": {
+          ".github/workflows/ios-build.yml": {
+            "starting_sha256": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+            "current_sha256": "0b6873626806eb87f9a9b0f402e85ce292e704553edc9348fcc313bf91944279",
+            "unchanged": false
+          },
+          "docs/architecture.md": {
+            "starting_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "current_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "unchanged": true
+          },
+          "docs/ios-build-notes.md": {
+            "starting_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "current_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "unchanged": true
+          },
+          "docs/ios-port-status.md": {
+            "starting_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "current_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "unchanged": true
+          }
+        },
+        "disposition": "adapted with tests"
+      },
+      {
+        "id": "IOS-INSTALLER-ARCH-DETECTION",
+        "owner": "P016",
+        "files": {
+          "install.sh": {
+            "starting_sha256": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+            "current_sha256": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+            "unchanged": true
+          },
+          "scripts/ios/install-beszel.sh": {
+            "starting_sha256": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+            "current_sha256": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+            "unchanged": true
+          },
+          "tests/install-sh-test.sh": {
+            "starting_sha256": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+            "current_sha256": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+            "unchanged": true
+          }
+        },
+        "disposition": "preserved"
+      },
+      {
+        "id": "IOS-INSTALLER-BOOTSTRAP-INTEGRITY",
+        "owner": "P016",
+        "files": {
+          ".github/workflows/ios-build.yml": {
+            "starting_sha256": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+            "current_sha256": "0b6873626806eb87f9a9b0f402e85ce292e704553edc9348fcc313bf91944279",
+            "unchanged": false
+          },
+          ".github/workflows/ios-installer.yml": {
+            "starting_sha256": "b0814ac8d1ef84b22f914aacb1cd02d9ef2f66020231f47f03e787dc836bbc04",
+            "current_sha256": "b0814ac8d1ef84b22f914aacb1cd02d9ef2f66020231f47f03e787dc836bbc04",
+            "unchanged": true
+          },
+          "README.md": {
+            "starting_sha256": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+            "current_sha256": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+            "unchanged": true
+          },
+          "README.vi.md": {
+            "starting_sha256": "91a9798dd6bdc6a12b63d433533863a23b33d5eb4721f680f085ee73cd39dc12",
+            "current_sha256": "91a9798dd6bdc6a12b63d433533863a23b33d5eb4721f680f085ee73cd39dc12",
+            "unchanged": true
+          },
+          "docs/architecture.md": {
+            "starting_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "current_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "unchanged": true
+          },
+          "docs/architecture.vi.md": {
+            "starting_sha256": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+            "current_sha256": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+            "unchanged": true
+          },
+          "docs/device-validation.md": {
+            "starting_sha256": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+            "current_sha256": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+            "unchanged": true
+          },
+          "docs/device-validation.vi.md": {
+            "starting_sha256": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+            "current_sha256": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+            "unchanged": true
+          },
+          "docs/ios-build-notes.md": {
+            "starting_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "current_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "unchanged": true
+          },
+          "docs/ios-build-notes.vi.md": {
+            "starting_sha256": "5e75c986e74eff062719f5b15da16e3f1658bd9877e86e49115b33edbb909b14",
+            "current_sha256": "5e75c986e74eff062719f5b15da16e3f1658bd9877e86e49115b33edbb909b14",
+            "unchanged": true
+          },
+          "docs/ios-port-status.md": {
+            "starting_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "current_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "unchanged": true
+          },
+          "docs/ios-port-status.vi.md": {
+            "starting_sha256": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+            "current_sha256": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+            "unchanged": true
+          },
+          "docs/upstream-sync.md": {
+            "starting_sha256": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+            "current_sha256": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+            "unchanged": true
+          },
+          "docs/upstream-sync.vi.md": {
+            "starting_sha256": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb",
+            "current_sha256": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb",
+            "unchanged": true
+          },
+          "install.sh": {
+            "starting_sha256": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+            "current_sha256": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+            "unchanged": true
+          },
+          "scripts/ios/install-beszel.sh": {
+            "starting_sha256": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+            "current_sha256": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+            "unchanged": true
+          },
+          "tests/bootstrap-test.sh": {
+            "starting_sha256": "bdb69ca0f34d06118ead7fdc719f7a6c7fe66be803b82a1337fe096d4aaf2cc4",
+            "current_sha256": "bdb69ca0f34d06118ead7fdc719f7a6c7fe66be803b82a1337fe096d4aaf2cc4",
+            "unchanged": true
+          },
+          "tests/install-sh-test.sh": {
+            "starting_sha256": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+            "current_sha256": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+            "unchanged": true
+          },
+          "tests/ios-patch-sentinels.sh": {
+            "starting_sha256": "cf74af72a381f1c28fe03069e1feff8e4161a081644dbcec49b5f811d17a354f",
+            "current_sha256": "0c8b999950a37ada9afbe6c98cd652e79a9333aca87e6daea8b085e1e271631c",
+            "unchanged": false
+          }
+        },
+        "disposition": "adapted with tests"
+      },
+      {
+        "id": "IOS-INSTALLER-LIFECYCLE",
+        "owner": "P016",
+        "files": {
+          "README.md": {
+            "starting_sha256": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+            "current_sha256": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+            "unchanged": true
+          },
+          "docs/architecture.md": {
+            "starting_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "current_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "unchanged": true
+          },
+          "docs/ios-build-notes.md": {
+            "starting_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "current_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "unchanged": true
+          },
+          "docs/ios-port-status.md": {
+            "starting_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "current_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "unchanged": true
+          },
+          "install.sh": {
+            "starting_sha256": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+            "current_sha256": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+            "unchanged": true
+          },
+          "scripts/ios/install-beszel.sh": {
+            "starting_sha256": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+            "current_sha256": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+            "unchanged": true
+          },
+          "tests/install-sh-test.sh": {
+            "starting_sha256": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+            "current_sha256": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+            "unchanged": true
+          }
+        },
+        "disposition": "preserved"
+      },
+      {
+        "id": "IOS-INSTALLER-VALIDATION",
+        "owner": "P017",
+        "files": {
+          "docs/architecture.md": {
+            "starting_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "current_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "unchanged": true
+          },
+          "docs/device-validation.md": {
+            "starting_sha256": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+            "current_sha256": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+            "unchanged": true
+          },
+          "docs/ios-port-status.md": {
+            "starting_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "current_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "unchanged": true
+          },
+          "install.sh": {
+            "starting_sha256": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+            "current_sha256": "50e4e15ed83bbea3e5cb4b35295e13766f56b74b4fe6175a4a942546a31f26a5",
+            "unchanged": true
+          },
+          "scripts/ios/install-beszel.sh": {
+            "starting_sha256": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+            "current_sha256": "d4b4e381a76c75ac79cb7c99558853b62c7c2163879a72c0333acc5c40092d0c",
+            "unchanged": true
+          },
+          "tests/install-sh-test.sh": {
+            "starting_sha256": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+            "current_sha256": "c8db492981b8d1e107c830e3984e56064bf0d236d156510b3dfc2226b4e4c79a",
+            "unchanged": true
+          }
+        },
+        "disposition": "preserved"
+      },
+      {
+        "id": "IOS-PORT-DOCUMENTATION",
+        "owner": "P017",
+        "files": {
+          "README.md": {
+            "starting_sha256": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+            "current_sha256": "907f811db8580e282a3dfefbbeedb77dca4d27525963a9a49ab948316fb3b35b",
+            "unchanged": true
+          },
+          "README.vi.md": {
+            "starting_sha256": "91a9798dd6bdc6a12b63d433533863a23b33d5eb4721f680f085ee73cd39dc12",
+            "current_sha256": "91a9798dd6bdc6a12b63d433533863a23b33d5eb4721f680f085ee73cd39dc12",
+            "unchanged": true
+          },
+          "SECURITY.md": {
+            "starting_sha256": "132cdbdbba8dafe26a98a5b806da63e6e6b8a1642f2fa8dae4a185bc0a6eff4c",
+            "current_sha256": "132cdbdbba8dafe26a98a5b806da63e6e6b8a1642f2fa8dae4a185bc0a6eff4c",
+            "unchanged": true
+          },
+          "docs/architecture.md": {
+            "starting_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "current_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "unchanged": true
+          },
+          "docs/architecture.vi.md": {
+            "starting_sha256": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+            "current_sha256": "c5e02714eef405403ae6814326604dda42009c55514023e00938f28018dda9dc",
+            "unchanged": true
+          },
+          "docs/device-validation.md": {
+            "starting_sha256": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+            "current_sha256": "2433ef331e66df9460ff0144509990229e910e4393ee7fa8b844629f839233fd",
+            "unchanged": true
+          },
+          "docs/device-validation.vi.md": {
+            "starting_sha256": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+            "current_sha256": "efd4a5f0e65a8f697425d729e82c97b94171ed84899f050b564f046776844706",
+            "unchanged": true
+          },
+          "docs/ios-build-notes.md": {
+            "starting_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "current_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "unchanged": true
+          },
+          "docs/ios-build-notes.vi.md": {
+            "starting_sha256": "5e75c986e74eff062719f5b15da16e3f1658bd9877e86e49115b33edbb909b14",
+            "current_sha256": "5e75c986e74eff062719f5b15da16e3f1658bd9877e86e49115b33edbb909b14",
+            "unchanged": true
+          },
+          "docs/ios-port-status.md": {
+            "starting_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "current_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "unchanged": true
+          },
+          "docs/ios-port-status.vi.md": {
+            "starting_sha256": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+            "current_sha256": "8cb93cd19fd113b5ab8f7252ca69c24a060c07ee8f2685dcab17eed9efff4ed1",
+            "unchanged": true
+          },
+          "docs/upstream-sync.md": {
+            "starting_sha256": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+            "current_sha256": "2ca0090e062cafc7f275ac5314875ffff32ae9e57590cdaca8f0d4a059a8e739",
+            "unchanged": true
+          },
+          "docs/upstream-sync.vi.md": {
+            "starting_sha256": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb",
+            "current_sha256": "ee915bb15b4594135e93bc5e0a6c5be5ba54a21e77401b8f5a4156e78f077cfb",
+            "unchanged": true
+          }
+        },
+        "disposition": "preserved"
+      },
+      {
+        "id": "IOS-RELEASE-ISOLATION",
+        "owner": "P016",
+        "files": {
+          ".github/workflows/docker-images.yml": {
+            "starting_sha256": "00b0c6f8bcbbcc83fd7b7b0f4699a82cfbfb6b708f5370a4de32ad0d9a49de2e",
+            "current_sha256": "00b0c6f8bcbbcc83fd7b7b0f4699a82cfbfb6b708f5370a4de32ad0d9a49de2e",
+            "unchanged": true
+          },
+          ".github/workflows/ios-build.yml": {
+            "starting_sha256": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+            "current_sha256": "0b6873626806eb87f9a9b0f402e85ce292e704553edc9348fcc313bf91944279",
+            "unchanged": false
+          },
+          ".github/workflows/release.yml": {
+            "starting_sha256": "d5adc4efd3f0da0924f97982e0c9ef70cf373e2a95e383dfc66325ed58d8b500",
+            "current_sha256": "d5adc4efd3f0da0924f97982e0c9ef70cf373e2a95e383dfc66325ed58d8b500",
+            "unchanged": true
+          },
+          "docs/architecture.md": {
+            "starting_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "current_sha256": "f2a624ddb6089353691e737227346f6a092b2e76a970b38f6656e80a227eab76",
+            "unchanged": true
+          },
+          "docs/ios-build-notes.md": {
+            "starting_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "current_sha256": "ced3a1fb67780afb2bdc16a4fb0f03c6928658b33add753799429b29e45282f5",
+            "unchanged": true
+          },
+          "docs/ios-port-status.md": {
+            "starting_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "current_sha256": "7fef463e3636b28c2f744d6ae1cdeb64cf111d3c14316840c40b078f8e41420c",
+            "unchanged": true
+          }
+        },
+        "disposition": "adapted with tests"
+      },
+      {
+        "id": "IOS-UPSTREAM-SYNC-CI",
+        "owner": "P017",
+        "files": {
+          ".github/scripts/check-upstream-drift.sh": {
+            "starting_sha256": "b5e7c9f50e2468055928f02262a3a1375e60f7afeb02cda82e7af36ae221af36",
+            "current_sha256": "b5e7c9f50e2468055928f02262a3a1375e60f7afeb02cda82e7af36ae221af36",
+            "unchanged": true
+          },
+          ".github/scripts/patch-go-ios-arm64-runtime.py": {
+            "starting_sha256": "73b7297aa84e1c0742f345da8fd10488eb87b42d470d71de516ac272cddd9c85",
+            "current_sha256": "73b7297aa84e1c0742f345da8fd10488eb87b42d470d71de516ac272cddd9c85",
+            "unchanged": true
+          },
+          ".github/workflows/ios-build.yml": {
+            "starting_sha256": "66160e849bb21138c69a478b4e29e4454e50e4339a46559367a00bc64e4ecf82",
+            "current_sha256": "0b6873626806eb87f9a9b0f402e85ce292e704553edc9348fcc313bf91944279",
+            "unchanged": false
+          },
+          ".github/workflows/sync-upstream-main.yml": {
+            "starting_sha256": "af70e4cbfcc88f6426d83378d94c1636ec3949f5366ad5ea1deb1adf0a322ef1",
+            "current_sha256": "af70e4cbfcc88f6426d83378d94c1636ec3949f5366ad5ea1deb1adf0a322ef1",
+            "unchanged": true
+          },
+          ".github/workflows/upstream-drift.yml": {
+            "starting_sha256": "6f2e1d6e69219080b68806dcaabce5070e2130dab99fb812a8a24b59431cae8c",
+            "current_sha256": "6f2e1d6e69219080b68806dcaabce5070e2130dab99fb812a8a24b59431cae8c",
+            "unchanged": true
+          },
+          "tests/ios-patch-sentinels.sh": {
+            "starting_sha256": "cf74af72a381f1c28fe03069e1feff8e4161a081644dbcec49b5f811d17a354f",
+            "current_sha256": "0c8b999950a37ada9afbe6c98cd652e79a9333aca87e6daea8b085e1e271631c",
+            "unchanged": false
+          },
+          "tests/upstream-sync-test.sh": {
+            "starting_sha256": "1c858a6332ab444cfe6f2689ba1aa5293291c6f0849c6c44dcdf06d056faac92",
+            "current_sha256": "1c858a6332ab444cfe6f2689ba1aa5293291c6f0849c6c44dcdf06d056faac92",
+            "unchanged": true
+          }
+        },
+        "disposition": "adapted with tests"
+      }
+    ],
+    "entities_unchanged": true
+  },
+  "acceptance": {
+    "IOS-AGENT-01": "Portable mapping/sysctl/plist/count fixtures and native linkage PASS; actual device comparison planned P018",
+    "IOS-AGENT-02": "Portable CPU/RAM/disk/network and recovery fixtures/builds PASS; actual kernel/mount/Wi-Fi/VPN comparison planned P018; physical disk I/O unavailable",
+    "IOS-AGENT-03": "Production battery parser/acquisition/deadline/cache/state/error/recovery fixtures PASS; real output and state transitions planned P018",
+    "Gate C": "Pending P009–P012 and applicable device criteria",
+    "Gate F": "Pending P018 physical A7/device execution"
+  },
+  "device_only_unknowns": [
+    "iOS Mach permissions and actual kernel CPU/page accounting",
+    "Real iOS root/private-var/APFS capacity/mount association",
+    "Actual Wi-Fi/cellular/VPN counter visibility and reset behavior",
+    "Current ioreg format and charging/discharging/idle/full transitions",
+    "A7 execution without SIGILL and sustained collector overhead/latency"
+  ],
+  "execution_notes": [
+    "Original clean checkout preserved; mandatory fresh iOS clone performed",
+    "Intermediate shell sentinels initially required acquisition text in old file; now check exact entry-to-portable production source wiring without dropping invariants",
+    "Python bytecode accidentally included in initial implementation commit was removed by normal follow-up commit and ignored; no history rewrite",
+    "Two macOS Unix socket fixture failures repaired by short disposable paths; no assertion weakened or transport implementation changed",
+    "Readiness companion table originally duplicated acceptance IDs; Markdown formatting and matching VI companion repaired; validators unchanged and rerun PASS",
+    "Obsolete overlapping intermediate local Go run was terminated after a corrected canonical run passed; not counted as final evidence",
+    "gh direct artifact download received HTTP 403 at storage redirect; connected GitHub artifact tool retrieved both archives; their upload digests/checksums and downloaded Mach-O/frontend metadata were independently verified"
+  ],
+  "safety": {
+    "no_device_access_or_modification": true,
+    "no_production_database_access_or_changes": true,
+    "no_release_tag_or_deployment": true,
+    "no_ios_or_main_changes": true,
+    "no_runtime_patch_or_protocol_or_dependency_changes": true,
+    "normal_merge_only": true,
+    "p009_not_started": true
+  },
+  "evidence_log_sha256": {
+    "audit.log": "280e1fbd7d5b71097ee83f0a0d1f6996cbb5b4c3ddce8b59228e9205cf606b9c",
+    "sentinels.log": "2445c4b2035b0743cb67f6a93ba9bfa3724f9b418dcede49d6da9455fa5645b5",
+    "go.log": "3de275ee4fb19a841412089fc6a7d11d839bcfb21d7a5b726e1e3f398218a7fa",
+    "matrix.log": "46667426fb1e020f6530ec66ab2f201b438edc255b8a2287f63294eb02729ad5",
+    "installer.log": "367581e92fc154e2439a14d2722a46e8465a07c2233bc2aefbae25ccd2667fdc",
+    "diff.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-agent.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "linux-hub.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sync.log": "95aad086addce56f54ee0443f59f9aa1725ee12a708f47a68b50c2ab52b51a13",
+    "race.log": "58f3e363bb1c5e2459203dc10245d3a39e71c163a655c2ba707e93df7331dc34",
+    "selection.log": "14038c428605a648036201ea02929bf819f03656c277c3ea506a5f6c8dfa4472",
+    "readiness.log": "9d153cd76ea6080ba376b102d2fd52c172c5a450e412b428f57b3248cccf9e12",
+    "bootstrap.log": "178e2737b3f9bdc44fbff924393ab58d17ec7eb3db8f7647fd6c9360ee563abb",
+    "baseline-go.log": "0b7d2eadcd9b00d76b8b7e3ca0f3531fc096d72e4442bf2bc6f194437075d7b5",
+    "frontend-install.log": "14e38cff86fba6b0ce0b25a9a9d408d18f4a50a7147bfe653bc94c449032ec51",
+    "frontend-sync.log": "3422f0af63c24197ec524a09d05a39df31bc64ad5437370311c35b6c85a97e87",
+    "frontend-build.log": "81e25588a4fb6e7f1982696d0c66eec138492e96aa349e62fc2dc1460dbc79d2",
+    "frontend-tests.log": "decc908d9a7722a81b71ff394ef6d356980d117e999dc2bd3209729e9d848a97",
+    "native-source.log": "782aa3708cf50a0ebb3e825c12ee015d1846cffcc2905d8e212e712e0c75ad23",
+    "ssh-fixture-final.log": "0c0792a7dc53e119574b6b22619395f87bf8ae0960fda70cf5ca67808e373439"
+  }
+}
