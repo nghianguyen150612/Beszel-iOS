@@ -32,3 +32,16 @@ calls per repetition. These prove only unavailable behavior. Build-contract
 Python tests pass. No native API boundary exists to simulate or authorize.
 Remaining: shared history validation, Agent snapshot lifecycle/protocol tests,
 full regressions, final-head hosted native builds and consistent evidence.
+
+## C — signal and SSID semantics
+
+Confirmed shared defect: Signals converted positive/huge/non-finite inputs to
+int8, potentially wrapping invalid data into plausible negative history. It now
+rejects inputs outside the collectors' -150..-1 dBm range and NaN before rounding.
+The existing -150..-129 to -128 history saturation policy is retained; no shared
+model or protocol field changes. Raw precision remains in Info for valid sources.
+Typical/weak/edge/sentinel/overflow/normalized-signal and UTF-8/CBOR fixtures pass
+under the race detector, 10 repetitions. The fallback has no RSSI/CF parser;
+native object/dictionary fixtures are not claimed as executed.
+Remaining: Agent polling lifecycle and remote protocol regressions, full checks,
+hosted builds and evidence. Native provider blockers remain unchanged.
