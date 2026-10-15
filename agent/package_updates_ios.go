@@ -42,5 +42,8 @@ func (procursusOSProbe) open(path string) (procursusReadCloser, error) { return 
 func (procursusOSProbe) evalSymlinks(path string) (string, error)      { return filepath.EvalSymlinks(path) }
 func (procursusOSProbe) lookPath(name string) (string, error)          { return exec.LookPath(name) }
 func (procursusOSProbe) run(ctx context.Context, executable string, args ...string) (string, error) {
+	if !procursusCommandAllowed(executable, args) {
+		return "", errProcursusCommandNotAllowed
+	}
 	return runProcursusProbeCommand(ctx, executable, args...)
 }

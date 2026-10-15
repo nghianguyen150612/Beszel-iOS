@@ -5,22 +5,31 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/henrygd/beszel/internal/entities/system"
 )
 
 const (
 	procursusProbeOutputLimit = 256 << 10
+	procursusQueryOutputLimit = 1 << 20
+	procursusPackageLimit     = 8192
+	iosPackageUpdatesTimeout  = 20 * time.Second
 	procursusPackageIndexMark = "_Packages"
 )
 
 var errProcursusProbeOutputTooLarge = errors.New("package-manager probe output exceeded limit")
+var errProcursusCommandNotAllowed = errors.New("package-manager command is not allowlisted")
+
+var procursusSummaryPattern = regexp.MustCompile(`^[0-9]+ upgraded, [0-9]+ newly installed, [0-9]+ to remove and [0-9]+ not upgraded\.$`)
 
 type procursusBoundedOutput struct {
 	bytes.Buffer
@@ -43,13 +52,34 @@ func (w *procursusBoundedOutput) Write(p []byte) (int, error) {
 }
 
 func runProcursusProbeCommand(ctx context.Context, executable string, args ...string) (string, error) {
+	return runProcursusBoundedCommand(ctx, procursusProbeOutputLimit, executable, args...)
+}
+
+func procursusCommandAllowed(executable string, args []string) bool {
+	switch filepath.Base(executable) {
+	case "apt-get":
+		return slices.Equal(args, []string{"--version"}) || slices.Equal(args, procursusAPTReadOnlyArgs)
+	case "apt-config":
+		return slices.Equal(args, []string{"dump"})
+	case "dpkg-query":
+		return slices.Equal(args, []string{"-W", "-f=${Package} ${Status}\\n", "apt", "procursus-keyring"})
+	default:
+		return false
+	}
+}
+
+func runProcursusBoundedCommand(ctx context.Context, limit int, executable string, args ...string) (string, error) {
+	return runProcursusBoundedCommandEnv(ctx, limit, []string{"LC_ALL=C"}, executable, args...)
+}
+
+func runProcursusBoundedCommandEnv(ctx context.Context, limit int, env []string, executable string, args ...string) (string, error) {
 	commandCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	cmd := exec.CommandContext(commandCtx, executable, args...)
-	cmd.Env = []string{"LC_ALL=C"}
+	cmd.Env = append([]string(nil), env...)
 	cmd.Stderr = io.Discard
 	cmd.WaitDelay = 2 * time.Second
-	output := &procursusBoundedOutput{limit: procursusProbeOutputLimit, cancel: cancel}
+	output := &procursusBoundedOutput{limit: limit, cancel: cancel}
 	cmd.Stdout = output
 	err := cmd.Run()
 	if output.overflow {
@@ -106,16 +136,18 @@ type procursusProbe interface {
 }
 
 type procursusAPTLayout struct {
-	kind        string
-	binDir      string
-	aptGet      string
-	aptConfig   string
-	dpkgQuery   string
-	statusPath  string
-	listsPath   string
-	aptEtcPath  string
-	sourceList  string
-	sourceParts string
+	kind           string
+	binDir         string
+	aptGet         string
+	aptConfig      string
+	dpkgQuery      string
+	statusPath     string
+	listsPath      string
+	aptEtcPath     string
+	aptConfigFile  string
+	aptConfigParts string
+	sourceList     string
+	sourceParts    string
 }
 
 type procursusDetection struct {
@@ -332,29 +364,33 @@ func resolveProcursusAPTLayout(candidate procursusCandidate, config map[string]s
 	lists := config["Dir::State::lists"]
 	sourceList := config["Dir::Etc::sourcelist"]
 	sourceParts := config["Dir::Etc::sourceparts"]
-	if status == "" || lists == "" || sourceList == "" || sourceParts == "" {
+	mainConfig := config["Dir::Etc::main"]
+	configParts := config["Dir::Etc::parts"]
+	if status == "" || lists == "" || sourceList == "" || sourceParts == "" || mainConfig == "" || configParts == "" {
 		return procursusAPTLayout{}, errors.New("missing apt state configuration")
 	}
 	statePath := resolveAPTConfigPath(root, "", state)
 	etcPath := resolveAPTConfigPath(root, "", etc)
 	layout := procursusAPTLayout{
-		kind:        candidate.kind,
-		binDir:      candidate.binDir,
-		aptGet:      candidate.aptGet,
-		aptConfig:   candidate.aptConfig,
-		dpkgQuery:   candidate.dpkgQuery,
-		statusPath:  resolveAPTConfigPath(root, statePath, status),
-		listsPath:   resolveAPTConfigPath(root, statePath, lists),
-		aptEtcPath:  etcPath,
-		sourceList:  resolveAPTConfigPath(root, etcPath, sourceList),
-		sourceParts: resolveAPTConfigPath(root, etcPath, sourceParts),
+		kind:           candidate.kind,
+		binDir:         candidate.binDir,
+		aptGet:         candidate.aptGet,
+		aptConfig:      candidate.aptConfig,
+		dpkgQuery:      candidate.dpkgQuery,
+		statusPath:     resolveAPTConfigPath(root, statePath, status),
+		listsPath:      resolveAPTConfigPath(root, statePath, lists),
+		aptEtcPath:     etcPath,
+		aptConfigFile:  resolveAPTConfigPath(root, etcPath, mainConfig),
+		aptConfigParts: resolveAPTConfigPath(root, etcPath, configParts),
+		sourceList:     resolveAPTConfigPath(root, etcPath, sourceList),
+		sourceParts:    resolveAPTConfigPath(root, etcPath, sourceParts),
 	}
 	return layout, nil
 }
 
 func resolveAPTConfigPath(root, base, configured string) string {
 	if filepath.IsAbs(configured) {
-		return filepath.Clean(filepath.Join(root, strings.TrimLeft(configured, string(filepath.Separator))))
+		return filepath.Clean(configured)
 	}
 	if base == "" {
 		return filepath.Clean(filepath.Join(root, configured))
@@ -398,11 +434,19 @@ func validateProcursusAPTPaths(probe procursusProbe, layout procursusAPTLayout) 
 	if !hasPackageIndex {
 		return errors.New("no cached apt package indexes")
 	}
-	if _, err := probe.stat(layout.aptEtcPath); err != nil {
-		return err
+	for _, path := range []string{layout.aptEtcPath, layout.aptConfigParts, layout.sourceParts} {
+		info, err := probe.stat(path)
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			return errors.New("APT configuration directory is not a directory")
+		}
 	}
-	if _, err := probe.stat(layout.sourceParts); err != nil {
+	if info, err := probe.stat(layout.aptConfigFile); err != nil && !os.IsNotExist(err) {
 		return err
+	} else if err == nil && !info.Mode().IsRegular() {
+		return errors.New("apt main configuration path is not a file")
 	}
 	if info, err := probe.stat(layout.sourceList); err != nil && !os.IsNotExist(err) {
 		return err
@@ -427,10 +471,340 @@ func installedProcursusPackages(output string) bool {
 	return scanner.Err() == nil && installed["apt"] && installed["procursus-keyring"]
 }
 
-// newProcursusAPTCheck is wired in by the iOS factory after a bounded probe.
+// newProcursusAPTCheck reads only already-present APT state. The simulation flag
+// disables locking and package actions; no-download and empty cache destinations
+// make the query fail closed if APT tries to acquire packages or persist caches.
 func newProcursusAPTCheck(layout procursusAPTLayout) packageUpdatesCheck {
-	return func(context.Context) (packageUpdatesResult, error) {
-		return packageUpdatesResult{}, fmt.Errorf("Procursus query is not initialized")
+	return func(ctx context.Context) (packageUpdatesResult, error) {
+		return checkProcursusAPTWith(ctx, layout, runProcursusAPTCommand)
+	}
+}
+
+type procursusAPTCommand func(context.Context, string, ...string) (string, error)
+
+var procursusAPTReadOnlyArgs = []string{
+	"-s",
+	"--no-download",
+	"-o", "Debug::NoLocking=1",
+	"-o", "Dir::Cache::pkgcache=",
+	"-o", "Dir::Cache::srcpkgcache=",
+	"dist-upgrade",
+}
+
+func runProcursusAPTCommand(ctx context.Context, executable string, args ...string) (string, error) {
+	if filepath.Base(executable) != "apt-get" || !slices.Equal(args, procursusAPTReadOnlyArgs) {
+		return "", errProcursusCommandNotAllowed
+	}
+	return runProcursusBoundedCommand(ctx, procursusQueryOutputLimit, executable, args...)
+}
+
+func checkProcursusAPTWith(ctx context.Context, layout procursusAPTLayout, run procursusAPTCommand) (packageUpdatesResult, error) {
+	queryCtx, cancel := context.WithTimeout(ctx, iosPackageUpdatesTimeout)
+	defer cancel()
+	output, err := run(queryCtx, layout.aptGet, procursusAPTReadOnlyArgs...)
+	if err != nil {
+		return packageUpdatesResult{}, err
+	}
+	packages, err := parseProcursusAPTOutput(output)
+	if err != nil {
+		return packageUpdatesResult{}, err
+	}
+	return packageUpdatesResult{
+		counts:        []uint16{uint16(len(packages))},
+		packages:      packages,
+		securityKnown: false,
+	}, nil
+}
+
+// parseProcursusAPTOutput accepts complete, C-locale apt-get simulation output.
+// New dependencies, removals, held packages and downgrades are not updates to an
+// installed package. Security classification is deliberately not inferred from
+// repository text.
+func parseProcursusAPTOutput(output string) ([]system.PackageUpdate, error) {
+	if len(output) > procursusQueryOutputLimit {
+		return nil, errProcursusProbeOutputTooLarge
+	}
+	seenSummary := false
+	var summaryUpgrades uint64
+	seen := make(map[string]system.PackageUpdate)
+	seenInst := make(map[string]system.PackageUpdate)
+	downgrades := make(map[string]struct{})
+	scanner := bufio.NewScanner(strings.NewReader(output))
+	scanner.Buffer(make([]byte, 4096), 64<<10)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if procursusSummaryPattern.MatchString(line) {
+			if seenSummary {
+				return nil, errors.New("duplicate APT simulation summary")
+			}
+			fields := strings.Fields(line)
+			upgrades, err := strconv.ParseUint(fields[0], 10, 64)
+			if err != nil {
+				return nil, errors.New("invalid APT simulation summary count")
+			}
+			summaryUpgrades = upgrades
+			seenSummary = true
+			continue
+		}
+		if !strings.HasPrefix(line, "Inst ") {
+			continue
+		}
+		pkg, hasCurrent, err := parseProcursusAPTInst(line)
+		if err != nil {
+			return nil, err
+		}
+		if prior, ok := seenInst[pkg.Name]; ok {
+			if prior != pkg {
+				return nil, errors.New("conflicting duplicate APT package entry")
+			}
+			continue
+		}
+		if len(seenInst) >= procursusPackageLimit {
+			return nil, errors.New("APT simulation package count exceeded limit")
+		}
+		seenInst[pkg.Name] = pkg
+		if !hasCurrent {
+			continue
+		}
+		comparison, err := compareDpkgVersions(pkg.Available, pkg.Current)
+		if err != nil {
+			return nil, err
+		}
+		if comparison <= 0 {
+			if comparison < 0 {
+				downgrades[pkg.Name] = struct{}{}
+			}
+			continue
+		}
+		seen[pkg.Name] = pkg
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, errors.New("APT simulation output is malformed or truncated")
+	}
+	if !seenSummary {
+		return nil, errors.New("APT simulation summary is missing")
+	}
+	updateCount := uint64(len(seen))
+	if summaryUpgrades != updateCount && summaryUpgrades != updateCount+uint64(len(downgrades)) {
+		return nil, errors.New("APT simulation summary does not match parsed package entries")
+	}
+	packages := make([]system.PackageUpdate, 0, len(seen))
+	for _, pkg := range seen {
+		packages = append(packages, pkg)
+	}
+	slices.SortFunc(packages, func(a, b system.PackageUpdate) int {
+		if n := strings.Compare(a.Name, b.Name); n != 0 {
+			return n
+		}
+		if n := strings.Compare(a.Current, b.Current); n != 0 {
+			return n
+		}
+		return strings.Compare(a.Available, b.Available)
+	})
+	return packages, nil
+}
+
+func parseProcursusAPTInst(line string) (system.PackageUpdate, bool, error) {
+	rest := strings.TrimSpace(strings.TrimPrefix(line, "Inst "))
+	name, rest, ok := strings.Cut(rest, " ")
+	if !ok || !validAPTQualifiedPackageName(name) {
+		return system.PackageUpdate{}, false, errors.New("malformed APT simulation package name")
+	}
+	rest = strings.TrimSpace(rest)
+	current := ""
+	if strings.HasPrefix(rest, "[") {
+		end := strings.IndexByte(rest, ']')
+		if end <= 1 {
+			return system.PackageUpdate{}, false, errors.New("malformed APT installed version")
+		}
+		current = rest[1:end]
+		rest = strings.TrimSpace(rest[end+1:])
+	} else if !strings.HasPrefix(rest, "(") {
+		return system.PackageUpdate{}, false, errors.New("malformed APT simulation installed version")
+	}
+	open := strings.IndexByte(rest, '(')
+	if open < 0 {
+		return system.PackageUpdate{}, false, errors.New("APT candidate version is missing")
+	}
+	afterOpen := strings.TrimSpace(rest[open+1:])
+	fields := strings.Fields(afterOpen)
+	close := strings.IndexByte(afterOpen, ')')
+	if len(fields) == 0 || close < len(fields[0]) || !validDpkgVersion(fields[0]) {
+		return system.PackageUpdate{}, false, errors.New("malformed APT candidate version")
+	}
+	pkg := system.PackageUpdate{Name: name, Current: current, Available: fields[0]}
+	if current == "" {
+		return pkg, false, nil
+	}
+	if !validDpkgVersion(current) {
+		return system.PackageUpdate{}, false, errors.New("malformed APT installed version")
+	}
+	return pkg, true, nil
+}
+
+func validAPTQualifiedPackageName(name string) bool {
+	parts := strings.Split(name, ":")
+	if len(parts) > 2 || !validAPTNamePart(parts[0], true) {
+		return false
+	}
+	return len(parts) == 1 || validAPTNamePart(parts[1], false)
+}
+
+func validAPTNamePart(s string, packageName bool) bool {
+	if s == "" {
+		return false
+	}
+	for i, c := range s {
+		valid := c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '+' || c == '.' || c == '-'
+		if !valid || (i == 0 && packageName && !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9')) {
+			return false
+		}
+	}
+	return true
+}
+
+func validDpkgVersion(version string) bool {
+	if version == "" || strings.ContainsAny(version, " \t\r\n\x00") {
+		return false
+	}
+	epoch, rest := splitDpkgEpoch(version)
+	if epoch == "" || rest == "" {
+		return false
+	}
+	for _, c := range epoch {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func splitDpkgEpoch(version string) (epoch, rest string) {
+	colon := strings.IndexByte(version, ':')
+	if colon < 0 {
+		return "0", version
+	}
+	if colon == 0 {
+		return "", version
+	}
+	for _, c := range version[:colon] {
+		if c < '0' || c > '9' {
+			return "", version
+		}
+	}
+	epoch = strings.TrimLeft(version[:colon], "0")
+	if epoch == "" {
+		epoch = "0"
+	}
+	return epoch, version[colon+1:]
+}
+
+// compareDpkgVersions implements dpkg's epoch and verrevcmp ordering for the
+// version strings present in apt-get simulation lines.
+func compareDpkgVersions(a, b string) (int, error) {
+	if !validDpkgVersion(a) || !validDpkgVersion(b) {
+		return 0, errors.New("invalid Debian package version")
+	}
+	aEpoch, aRest := splitDpkgEpoch(a)
+	bEpoch, bRest := splitDpkgEpoch(b)
+	if n := compareDpkgNumeric(aEpoch, bEpoch); n != 0 {
+		return n, nil
+	}
+	aUpstream, aRevision := splitDpkgRevision(aRest)
+	bUpstream, bRevision := splitDpkgRevision(bRest)
+	if n := dpkgRevisionCompare(aUpstream, bUpstream); n != 0 {
+		return n, nil
+	}
+	return dpkgRevisionCompare(aRevision, bRevision), nil
+}
+
+func splitDpkgRevision(version string) (upstream, revision string) {
+	if dash := strings.LastIndexByte(version, '-'); dash >= 0 {
+		return version[:dash], version[dash+1:]
+	}
+	return version, "0"
+}
+
+func compareDpkgNumeric(a, b string) int {
+	a = strings.TrimLeft(a, "0")
+	b = strings.TrimLeft(b, "0")
+	if len(a) < len(b) {
+		return -1
+	}
+	if len(a) > len(b) {
+		return 1
+	}
+	return strings.Compare(a, b)
+}
+
+func dpkgRevisionCompare(a, b string) int {
+	ai, bi := 0, 0
+	for {
+		for {
+			var ac, bc byte
+			if ai < len(a) {
+				ac = a[ai]
+			}
+			if bi < len(b) {
+				bc = b[bi]
+			}
+			if isASCIIDigit(ac) || isASCIIDigit(bc) {
+				break
+			}
+			if order := dpkgCharOrder(ac) - dpkgCharOrder(bc); order != 0 {
+				if order < 0 {
+					return -1
+				}
+				return 1
+			}
+			if ac == 0 {
+				return 0
+			}
+			ai++
+			bi++
+		}
+		for ai < len(a) && a[ai] == '0' {
+			ai++
+		}
+		for bi < len(b) && b[bi] == '0' {
+			bi++
+		}
+		for {
+			aDigit := ai < len(a) && isASCIIDigit(a[ai])
+			bDigit := bi < len(b) && isASCIIDigit(b[bi])
+			if !aDigit && !bDigit {
+				break
+			}
+			if !aDigit {
+				return -1
+			}
+			if !bDigit {
+				return 1
+			}
+			if a[ai] != b[bi] {
+				if a[ai] < b[bi] {
+					return -1
+				}
+				return 1
+			}
+			ai++
+			bi++
+		}
+	}
+}
+
+func isASCIIDigit(c byte) bool { return c >= '0' && c <= '9' }
+
+func dpkgCharOrder(c byte) int {
+	switch {
+	case c == '~':
+		return -1
+	case c == 0:
+		return 0
+	case c >= 'A' && c <= 'Z', c >= 'a' && c <= 'z':
+		return int(c)
+	default:
+		return int(c) + 256
 	}
 }
 

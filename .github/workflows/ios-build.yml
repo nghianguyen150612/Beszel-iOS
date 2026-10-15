@@ -28,6 +28,30 @@ permissions:
   contents: read
 
 jobs:
+  procursus-package-updates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test Procursus detection, parser, and isolated read-only query
+        shell: bash
+        run: |
+          set -euo pipefail
+          go version
+          env -u NETWORK go test -race -tags 'testing no_ui' ./agent \
+            -run 'Test(DetectProcursusAPT|ParseProcursusAPT|ProcursusAPT|CompareDpkgVersions|CheckProcursusAPT)' \
+            -count=3 -timeout=180s
+
   build-ios:
     runs-on: macos-14
     env:
