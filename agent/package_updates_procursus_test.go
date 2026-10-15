@@ -548,14 +548,6 @@ func usableOfflineSandbox() (string, []string, bool) {
 			return bwrap, args, true
 		}
 	}
-	if unshare, err := exec.LookPath("unshare"); err == nil {
-		args := []string{"-n", "--"}
-		cmd := exec.Command(unshare, append(args, "true")...)
-		cmd.Env = []string{"LC_ALL=C"}
-		if cmd.Run() == nil {
-			return unshare, args, true
-		}
-	}
 	return "", nil, false
 }
 
