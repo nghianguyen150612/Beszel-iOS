@@ -7,7 +7,7 @@ name: iOS installer lifecycle
 
 on:
   push:
-    branches: [iOS]
+    branches: [iOS, ios/procursus-package-updates]
     paths:
       - install.sh
       - scripts/ios/install-beszel.sh
