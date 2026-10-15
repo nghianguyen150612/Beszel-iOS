@@ -148,3 +148,46 @@ không chứng minh quyền daemon hoặc số đo RSSI thật. P012 BLOCKED, Ga
 P018/Gate F còn chờ. PR #14 Draft, không merge hoặc bắt đầu P013. Không đụng thiết
 bị, DB production, release, nhánh iOS/main. Việc tiếp theo: hoàn tất review ABI/
 association/đơn vị daemon rồi thực hiện P018 từng bước khi được cho phép.
+
+Chính sách canonical trong upstream-v021-acceptance.md cho phép hoãn khả năng không khả thi với owner và fallback rõ ràng. P012A yêu cầu chứng minh thu RSSI native; chưa có phê duyệt thay đổi phạm vi nên không dùng chính sách này để đổi cổng thành PASS.
+
+## Checkpoint cloud đã chạy và candidate cuối
+
+Nguồn `aac215abdb89c5fa6bc307a550216d044f0906a9`:
+[iOS Build PASS](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38742936483),
+[installer PASS](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38742936311).
+Fixture public CF thật trên macOS PASS sanitizer address/undefined và 1.000 vòng
+chuyển đổi/cleanup. LeakSanitizer không được hỗ trợ/đã tắt, không ghi PASS. Snapshot
+unavailable từ executable C thật đi qua client Go giới hạn PASS ba lần race.
+Executable lỗi, inventory và regression P007–P011 hosted PASS. Không gọi constructor
+opaque hay daemon private.
+
+Đã tải artifact và kiểm lại checksum/provenance/Mach-O độc lập:
+Agent `1aa5218684cb96eeb058c4b0a2c32bc306d6c30b30d3582ed5f0ae47dbd1e981`,
+Hub `f6a3605e18e9c022c893fdeed23d8a97b50c0ce8f1d92381e09706949972e684`,
+diagnostic `835700069fbba7736854b0fc6a5ff3835fbe0c4c11af0eee129cb064f96d79ff`.
+Cả ba ARM64/platform 2/tối thiểu 12.0. Agent/Hub dùng Go 1.27.1 ghim, VCS sạch,
+runtime A7 đã vá, 95 asset frontend thật; C diagnostic có revision/hash nguồn
+riêng. Không hard import private, hai cache build byte-identical, SHA256SUMS đúng,
+release skipped. Hash chỉ áp dụng checkpoint này, không gán cho bản build sau.
+
+Regression nguồn ổn định local PASS: 54 audit Python; matrix/readiness, sync 10,
+sentinel 45, bootstrap 54, installer 814; canonical Go; race đầy đủ các package
+liên quan (Hub systems chậm dùng timeout Go chuẩn); ba vòng race tập trung
+P008–P012/Procursus; mười vòng nil-adapter; chọn Wi-Fi năm nền tảng; build Linux
+Agent/Hub; compile Wi-Fi/client Windows/FreeBSD; Bun 1.4.0 frozen install/catalog,
+44 test/build production, 95 asset, lockfile nguyên. Không chạy binary cross-build.
+
+Lần tiếp tục này bổ sung file framework tồn tại nhưng không hợp lệ và xác minh
+unload tường minh trước khi tiến trình kết thúc. Loader sản xuất PASS 100 vòng mỗi
+ca missing/invalid/partial/all trên Linux dưới ASan/UBSan; mutant riêng cố ý bỏ
+dlclose bị fixture từ chối. CF thêm số phân số/NaN/vô hạn và cleanup property có
+sở hữu khi thiếu đích output. Có test NULL từ bước trước; **chưa** cưỡng bức lỗi
+cấp phát manager/device private vì chưa có bridge an toàn. Không ghi là đã chạy
+allocator fault injection. Kết quả hosted bổ sung, HEAD cuối và digest artifact
+cuối ghi tại checkpoint mới nhất của PR #14.
+
+Dừng nghiên cứu tĩnh ở chứng cứ đã commit, không tải lại firmware. Disassembly
+hiện có không giải quyết cache daemon, đơn vị raw, quyền từng hàm hoặc kill/wait
+trên thiết bị. Đây vẫn là nghĩa vụ P018 sau review ABI theo quy trình; không suy
+ra từ fixture. P012 BLOCKED / Gate C PENDING / PR Draft giữ nguyên.

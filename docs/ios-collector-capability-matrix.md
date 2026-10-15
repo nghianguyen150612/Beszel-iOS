@@ -36,3 +36,11 @@ Unsupported optional maps/slices stay nil or empty according to their existing
 JSON/CBOR contract. Upstream required scalars may retain zero defaults; those
 zeros must not be represented as measured temperatures, GPU load or health.
 No capability is disabled globally in the Hub based on the local Agent's OS.
+
+P012A also checks Wi-Fi-only source selection for Windows and FreeBSD. The
+inactive `agent/wifi/ioshelper` boundary and separate native diagnostic are
+excluded from normal Agent/Hub dependencies and payload. They do not add a local
+RSSI capability; normal iOS polling remains nil. Exact reference-firmware exports
+are now verified, while typed ABI, association/raw dBm and minimal authorization
+remain unresolved. Bounded host-process fixtures pass; target behavior remains
+P018. See [P012A blocker resolution](ios-wifi-native-blocker-resolution.md).

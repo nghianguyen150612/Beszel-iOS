@@ -1,6 +1,7 @@
 #include "core.h"
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,8 +31,14 @@ int main(void) {
             bool valid=beszel_wifi_rssi_owned(property,&parsed);
             assert(valid==(i<5));if(valid)assert(parsed==values[i]);assert(state.live==0);
         }
-        double scaled=-40.0;CFNumberRef floating=CFNumberCreate(NULL,kCFNumberDoubleType,&scaled);
-        assert(!beszel_wifi_rssi_owned(dictionary(allocator,floating),&parsed));CFRelease(floating);assert(state.live==0);
+        double floats[]={-40.0,-40.5,NAN,INFINITY,-INFINITY};
+        for(size_t i=0;i<sizeof(floats)/sizeof(floats[0]);i++) {
+            CFNumberRef floating=CFNumberCreate(NULL,kCFNumberDoubleType,&floats[i]);assert(floating);
+            assert(!beszel_wifi_rssi_owned(dictionary(allocator,floating),&parsed));CFRelease(floating);assert(state.live==0);
+        }
+        int64_t valid=-40;CFNumberRef number=CFNumberCreate(NULL,kCFNumberSInt64Type,&valid);assert(number);
+        CFDictionaryRef partial=dictionary(allocator,number);CFRelease(number);
+        assert(!beszel_wifi_rssi_owned(partial,NULL));assert(state.live==0);
         assert(!beszel_wifi_rssi_owned(dictionary(allocator,CFSTR("-40")),&parsed));assert(state.live==0);
         assert(!beszel_wifi_rssi_owned(dictionary(allocator,kCFBooleanTrue),&parsed));assert(state.live==0);
         CFDictionaryRef empty=CFDictionaryCreate(allocator,NULL,NULL,0,&kCFTypeDictionaryKeyCallBacks,&kCFTypeDictionaryValueCallBacks);

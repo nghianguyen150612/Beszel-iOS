@@ -797,6 +797,10 @@
       {
         "phase": "C",
         "sha": "6b859dd6bdf4b7be457546567ba77ef5dfc4e070"
+      },
+      {
+        "phase": "D",
+        "sha": "aac215abdb89c5fa6bc307a550216d044f0906a9"
       }
     ],
     "activation": false,
@@ -875,8 +879,8 @@
       "snapshot": "always unavailable",
       "separate_review_artifact": true,
       "production_payload": false,
-      "host_native_fixture_status": "PENDING hosted macOS",
-      "ios_build_status": "PENDING"
+      "host_native_fixture_status": "PASS on hosted macOS at aac215ab; final extended fixtures pending final-head check",
+      "ios_build_status": "PASS ARM64/platform2/min12.0 at aac215ab; loader addition requires final-head check"
     },
     "focused_tests": {
       "protocol_race": "PASS ten repetitions",
@@ -890,7 +894,807 @@
       "physical_tests_executed": false,
       "p013_started": false
     },
-    "full_regressions": "PENDING final source",
-    "final_head_ci": "PENDING"
+    "full_regressions": {
+      "audit": [
+        {
+          "name": "matrix",
+          "command": [
+            "python3",
+            "scripts/audit/validate-upstream-v021-matrix.py"
+          ],
+          "exit_code": 0,
+          "seconds": 0.07
+        },
+        {
+          "name": "readiness",
+          "command": [
+            "python3",
+            "scripts/audit/validate-upstream-v021-readiness.py"
+          ],
+          "exit_code": 0,
+          "seconds": 0.04
+        },
+        {
+          "name": "audit",
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests/audit",
+            "-p",
+            "test_*.py",
+            "-v"
+          ],
+          "exit_code": 0,
+          "seconds": 1.77
+        },
+        {
+          "name": "sync",
+          "command": [
+            "sh",
+            "tests/upstream-sync-test.sh"
+          ],
+          "exit_code": 0,
+          "seconds": 0.12
+        },
+        {
+          "name": "sentinels",
+          "command": [
+            "sh",
+            "tests/ios-patch-sentinels.sh"
+          ],
+          "exit_code": 0,
+          "seconds": 0.05
+        },
+        {
+          "name": "bootstrap",
+          "command": [
+            "sh",
+            "tests/bootstrap-test.sh"
+          ],
+          "exit_code": 0,
+          "seconds": 0.16
+        },
+        {
+          "name": "installer",
+          "command": [
+            "sh",
+            "tests/install-sh-test.sh"
+          ],
+          "exit_code": 0,
+          "seconds": 29.98
+        },
+        {
+          "name": "diff",
+          "command": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "exit_code": 0,
+          "seconds": 0.04
+        }
+      ],
+      "go": [
+        {
+          "name": "canonical",
+          "command": [
+            "env",
+            "-u",
+            "NETWORK",
+            "go",
+            "test",
+            "-tags",
+            "testing no_ui",
+            "./..."
+          ],
+          "exit_code": 0,
+          "seconds": 110.66
+        },
+        {
+          "name": "race",
+          "command": [
+            "env",
+            "-u",
+            "NETWORK",
+            "go",
+            "test",
+            "-race",
+            "-tags",
+            "testing no_ui",
+            "./agent",
+            "./agent/wifi",
+            "./agent/wifi/ioshelper",
+            "./agent/battery",
+            "./agent/deltatracker",
+            "./internal/entities/system",
+            "./internal/hub/ws",
+            "./internal/hub/transport",
+            "./internal/hub/systems",
+            "-count=1"
+          ],
+          "exit_code": 0,
+          "seconds": 156.71
+        },
+        {
+          "name": "focused",
+          "command": [
+            "env",
+            "-u",
+            "NETWORK",
+            "go",
+            "test",
+            "-race",
+            "-tags",
+            "testing no_ui",
+            "./agent",
+            "./agent/wifi",
+            "./agent/wifi/ioshelper",
+            "./internal/hub/transport",
+            "./internal/hub/systems",
+            "-run",
+            "Test(P007|P008|P009|P010|P012|DetectProcursusAPT|ParseProcursusAPT|ProcursusAPT|CompareDpkgVersions|CheckProcursusAPT|Client|Protocol|Snapshot)",
+            "-count=3"
+          ],
+          "exit_code": 0,
+          "seconds": 37.32
+        },
+        {
+          "name": "ios-fallback",
+          "command": [
+            "env",
+            "-u",
+            "NETWORK",
+            "go",
+            "test",
+            "-race",
+            "-tags",
+            "testing no_ui",
+            "agent/wifi/wifi.go",
+            "agent/wifi/wifi_ios.go",
+            "agent/wifi/wifi_test.go",
+            "agent/wifi/wifi_ios_test.go",
+            "-count=10"
+          ],
+          "exit_code": 0,
+          "seconds": 1.48
+        }
+      ],
+      "frontend": [
+        {
+          "name": "bun-install",
+          "command": [
+            "bun",
+            "install",
+            "--frozen-lockfile"
+          ],
+          "exit_code": 0,
+          "seconds": 0.03
+        },
+        {
+          "name": "bun-sync",
+          "command": [
+            "bun",
+            "run",
+            "sync"
+          ],
+          "exit_code": 0,
+          "seconds": 13.19
+        },
+        {
+          "name": "bun-test",
+          "command": [
+            "bun",
+            "test"
+          ],
+          "exit_code": 0,
+          "seconds": 0.08
+        },
+        {
+          "name": "bun-build",
+          "command": [
+            "bun",
+            "run",
+            "build"
+          ],
+          "exit_code": 0,
+          "seconds": 18.31
+        }
+      ],
+      "builds": [
+        {
+          "name": "selection",
+          "command": [
+            "python3",
+            ".github/scripts/check-ios-source-selection.py",
+            "--output",
+            "/workspace/scratch/p012a/source-selection.json"
+          ],
+          "exit_code": 0,
+          "seconds": 4.85
+        },
+        {
+          "name": "linux-agent",
+          "command": [
+            "go",
+            "build",
+            "-tags",
+            "no_ui",
+            "-o",
+            "/workspace/scratch/p012a/beszel-agent-linux",
+            "./internal/cmd/agent"
+          ],
+          "exit_code": 0,
+          "seconds": 5.1
+        },
+        {
+          "name": "linux-hub",
+          "command": [
+            "go",
+            "build",
+            "-o",
+            "/workspace/scratch/p012a/beszel-hub-linux",
+            "./internal/cmd/hub"
+          ],
+          "exit_code": 0,
+          "seconds": 14.5
+        },
+        {
+          "name": "windows-wifi",
+          "command": [
+            "env",
+            "GOOS=windows",
+            "GOARCH=amd64",
+            "CGO_ENABLED=0",
+            "go",
+            "test",
+            "-c",
+            "-o",
+            "/workspace/scratch/p012a/windows-wifi.test.exe",
+            "./agent/wifi"
+          ],
+          "exit_code": 0,
+          "seconds": 1.37
+        },
+        {
+          "name": "windows-client",
+          "command": [
+            "env",
+            "GOOS=windows",
+            "GOARCH=amd64",
+            "CGO_ENABLED=0",
+            "go",
+            "test",
+            "-c",
+            "-o",
+            "/workspace/scratch/p012a/windows-client.test.exe",
+            "./agent/wifi/ioshelper"
+          ],
+          "exit_code": 0,
+          "seconds": 20.63
+        },
+        {
+          "name": "freebsd-wifi",
+          "command": [
+            "env",
+            "GOOS=freebsd",
+            "GOARCH=amd64",
+            "CGO_ENABLED=0",
+            "go",
+            "test",
+            "-c",
+            "-o",
+            "/workspace/scratch/p012a/freebsd-wifi.test",
+            "./agent/wifi"
+          ],
+          "exit_code": 0,
+          "seconds": 1.15
+        },
+        {
+          "name": "freebsd-client",
+          "command": [
+            "env",
+            "GOOS=freebsd",
+            "GOARCH=amd64",
+            "CGO_ENABLED=0",
+            "go",
+            "test",
+            "-c",
+            "-o",
+            "/workspace/scratch/p012a/freebsd-client.test",
+            "./agent/wifi/ioshelper"
+          ],
+          "exit_code": 0,
+          "seconds": 24.1
+        }
+      ]
+    },
+    "final_head_ci": "Final candidate requires hosted verification of loader cleanup and extended CF fixtures. Exact final HEAD, run URLs and artifact digests are recorded in PR #14 latest verification comment; this file preserves tested-checkpoint results without assigning old artifact hashes to new builds.",
+    "last_full_tested_source_sha": "aac215abdb89c5fa6bc307a550216d044f0906a9",
+    "history": {
+      "head": "aac215abdb89c5fa6bc307a550216d044f0906a9",
+      "upstream_count": 178,
+      "upstream_reachable": 178,
+      "missing": [],
+      "patch_rows": 191,
+      "logical_patch_count": 13,
+      "logical_patch_ids": [
+        "IOS-A7-RUNTIME",
+        "IOS-AGENT-BATTERY",
+        "IOS-AGENT-BUILD-PROBE",
+        "IOS-AGENT-SYSTEM-HOOK",
+        "IOS-FRONTEND-BUILD",
+        "IOS-HUB-BUILD-PIPELINE",
+        "IOS-INSTALLER-ARCH-DETECTION",
+        "IOS-INSTALLER-BOOTSTRAP-INTEGRITY",
+        "IOS-INSTALLER-LIFECYCLE",
+        "IOS-INSTALLER-VALIDATION",
+        "IOS-PORT-DOCUMENTATION",
+        "IOS-RELEASE-ISOLATION",
+        "IOS-UPSTREAM-SYNC-CI"
+      ],
+      "platform_sources_unchanged": true,
+      "logical_ios_patch_rows": 24
+    },
+    "hosted_ci": [
+      {
+        "workflow": "iOS Build",
+        "sha": "aac215abdb89c5fa6bc307a550216d044f0906a9",
+        "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38742936483",
+        "result": "PASS",
+        "release": "SKIPPED"
+      },
+      {
+        "workflow": "iOS installer lifecycle",
+        "sha": "aac215abdb89c5fa6bc307a550216d044f0906a9",
+        "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38742936311",
+        "result": "PASS"
+      }
+    ],
+    "native_artifacts": {
+      "diagnostic": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "command": "LC_BUILD_VERSION",
+        "platform": 2,
+        "minos": "12.0",
+        "sdk": "17.5",
+        "entry_kind": "file",
+        "entry": 16820,
+        "sha256": "835700069fbba7736854b0fc6a5ff3835fbe0c4c11af0eee129cb064f96d79ff",
+        "bytes": 51912,
+        "revision": "aac215abdb89c5fa6bc307a550216d044f0906a9",
+        "activation": "disabled",
+        "private_calls_executed": false,
+        "compiler": "Apple clang version 15.0.0 (clang-1500.3.9.4)",
+        "invocation": [
+          "<source>/.github/scripts/ios-clang.sh",
+          "-O2",
+          "-g",
+          "-march=armv8-a",
+          "-DBESZEL_WIFI_REVISION=\"aac215abdb89c5fa6bc307a550216d044f0906a9\"",
+          "<source>/tools/ios-wifi-probe/core.c",
+          "<source>/tools/ios-wifi-probe/probe.c",
+          "-framework",
+          "CoreFoundation",
+          "-o",
+          "/Users/runner/work/_temp/wifi-ios/beszel-ios-wifi-probe"
+        ],
+        "not_in_agent_hub_payload": true,
+        "source_hashes": {
+          "core.h": "b3ad3b2bcfcf2a01fdef4f782b6ab2b74ce99945872cc494db66d5a2693485ee",
+          "core.c": "46fdb42b7d3748b18f2f8d55ef40e0d583dd292f9fc770b8c401fadc87c09da9",
+          "probe.c": "e8706b00cd6d30f27aeb55c14eda8b133828356cff5f01edf0cd01a34add5fc3"
+        }
+      },
+      "host_fixtures": {
+        "public_cf_fixtures": "PASS",
+        "sanitizers": "address,undefined",
+        "leak_sanitizer": "disabled on macOS; custom CF allocator asserts all owned-container allocations released",
+        "fixture_output": "PASS public-CF conversion and owned-container cleanup; no private native API executed",
+        "loader_inventory_fixtures": {
+          "missing": {
+            "version": 1,
+            "model": "arm64",
+            "os_build": "23J631",
+            "revision": "unknown",
+            "framework_available": false,
+            "symbols": {
+              "WiFiManagerClientCreate": false,
+              "WiFiManagerClientCopyDevices": false,
+              "WiFiDeviceClientCopyProperty": false,
+              "WiFiDeviceClientCopyCurrentNetwork": false,
+              "WiFiDeviceClientGetInterfaceName": false,
+              "WiFiNetworkGetSSID": false
+            },
+            "private_calls_executed": false,
+            "acquisition_enabled": false
+          },
+          "partial": {
+            "version": 1,
+            "model": "arm64",
+            "os_build": "23J631",
+            "revision": "unknown",
+            "framework_available": true,
+            "symbols": {
+              "WiFiManagerClientCreate": true,
+              "WiFiManagerClientCopyDevices": false,
+              "WiFiDeviceClientCopyProperty": false,
+              "WiFiDeviceClientCopyCurrentNetwork": false,
+              "WiFiDeviceClientGetInterfaceName": false,
+              "WiFiNetworkGetSSID": false
+            },
+            "private_calls_executed": false,
+            "acquisition_enabled": false
+          },
+          "all": {
+            "version": 1,
+            "model": "arm64",
+            "os_build": "23J631",
+            "revision": "unknown",
+            "framework_available": true,
+            "symbols": {
+              "WiFiManagerClientCreate": true,
+              "WiFiManagerClientCopyDevices": true,
+              "WiFiDeviceClientCopyProperty": true,
+              "WiFiDeviceClientCopyCurrentNetwork": true,
+              "WiFiDeviceClientGetInterfaceName": true,
+              "WiFiNetworkGetSSID": true
+            },
+            "private_calls_executed": false,
+            "acquisition_enabled": false
+          }
+        },
+        "snapshot": {
+          "version": 1,
+          "source": "mobilewifi-ios12",
+          "status": "unavailable",
+          "reason": "native-contract-unverified",
+          "devices": []
+        },
+        "private_api_invocations": 0,
+        "helper": "/Users/runner/work/_temp/wifi-host/beszel-ios-wifi-probe"
+      },
+      "downloaded_revalidated": true,
+      "private_acquisition": false,
+      "agent_hub": {
+        "beszel-agent-ios-arm64": {
+          "cpu": "arm64",
+          "filetype": "MH_EXECUTE",
+          "command": "LC_BUILD_VERSION",
+          "platform": 2,
+          "minos": "12.0",
+          "sdk": 1115392,
+          "entry_kind": "file",
+          "entry": 549376,
+          "sha256": "1aa5218684cb96eeb058c4b0a2c32bc306d6c30b30d3582ed5f0ae47dbd1e981",
+          "bytes": 9526472,
+          "build_info": {
+            "go": "go1.27.1",
+            "entry_package": "github.com/henrygd/beszel/internal/cmd/agent",
+            "settings": {
+              "CGO_ENABLED": "1",
+              "GOARCH": "arm64",
+              "GOOS": "ios",
+              "GOARM64": "v8.0",
+              "vcs": "git",
+              "vcs.revision": "aac215abdb89c5fa6bc307a550216d044f0906a9",
+              "vcs.time": "2026-10-15T13:27:56Z",
+              "vcs.modified": "false"
+            }
+          }
+        },
+        "beszel-hub-ios-arm64": {
+          "cpu": "arm64",
+          "filetype": "MH_EXECUTE",
+          "command": "LC_BUILD_VERSION",
+          "platform": 2,
+          "minos": "12.0",
+          "sdk": 1115392,
+          "entry_kind": "file",
+          "entry": 565872,
+          "sha256": "f6a3605e18e9c022c893fdeed23d8a97b50c0ce8f1d92381e09706949972e684",
+          "bytes": 31927840,
+          "build_info": {
+            "go": "go1.27.1",
+            "entry_package": "github.com/henrygd/beszel/internal/cmd/hub",
+            "settings": {
+              "CGO_ENABLED": "1",
+              "GOARCH": "arm64",
+              "GOOS": "ios",
+              "GOARM64": "v8.0",
+              "vcs": "git",
+              "vcs.revision": "aac215abdb89c5fa6bc307a550216d044f0906a9",
+              "vcs.time": "2026-10-15T13:27:56Z",
+              "vcs.modified": "false"
+            }
+          },
+          "embedded_asset_count": 95
+        }
+      },
+      "artifact_archives": [
+        {
+          "id": 11978445078,
+          "name": "ios-wifi-diagnostic-disabled",
+          "size_in_bytes": 5704,
+          "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11978445078",
+          "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11978445078/zip",
+          "expired": false,
+          "created_at": "2026-10-15T13:40:03Z",
+          "expires_at": "2027-01-13T13:28:06Z",
+          "updated_at": "2026-10-15T13:40:03Z",
+          "digest": "sha256:ed5f27dd0e3d57e70834fe2c25ede250b8bae90e8b4f5db45cbe26088b020c5c",
+          "workflow_run": {
+            "id": 38742936483,
+            "repository_id": 1367312898,
+            "head_repository_id": 1367312898,
+            "head_branch": "ios/wifi-rssi-compatibility",
+            "head_sha": "aac215abdb89c5fa6bc307a550216d044f0906a9"
+          }
+        },
+        {
+          "id": 11978400059,
+          "name": "beszel-ios-arm64",
+          "size_in_bytes": 16266589,
+          "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11978400059",
+          "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11978400059/zip",
+          "expired": false,
+          "created_at": "2026-10-15T13:40:02Z",
+          "expires_at": "2027-01-13T13:28:06Z",
+          "updated_at": "2026-10-15T13:40:02Z",
+          "digest": "sha256:f82b7b1ff2d1474cf8c21656ab44c730e22d3092035a8c93ab4a656abdcb0996",
+          "workflow_run": {
+            "id": 38742936483,
+            "repository_id": 1367312898,
+            "head_repository_id": 1367312898,
+            "head_branch": "ios/wifi-rssi-compatibility",
+            "head_sha": "aac215abdb89c5fa6bc307a550216d044f0906a9"
+          }
+        },
+        {
+          "id": 11978330077,
+          "name": "ios-native-validation",
+          "size_in_bytes": 7812,
+          "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11978330077",
+          "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11978330077/zip",
+          "expired": false,
+          "created_at": "2026-10-15T13:40:05Z",
+          "expires_at": "2027-01-13T13:28:06Z",
+          "updated_at": "2026-10-15T13:40:05Z",
+          "digest": "sha256:1a2e810f2b4e8fd8716d19100882a133db8971ab6b71b376ad34662e3514df01",
+          "workflow_run": {
+            "id": 38742936483,
+            "repository_id": 1367312898,
+            "head_repository_id": 1367312898,
+            "head_branch": "ios/wifi-rssi-compatibility",
+            "head_sha": "aac215abdb89c5fa6bc307a550216d044f0906a9"
+          }
+        }
+      ]
+    },
+    "portable_loader_fixtures": {
+      "loader_cleanup_fixtures": {
+        "missing": "PASS production loader: 100 inventories, immediate unload, no private call",
+        "invalid": "PASS production loader: 100 inventories, immediate unload, no private call",
+        "partial": "PASS production loader: 100 inventories, immediate unload, no private call",
+        "all": "PASS production loader: 100 inventories, immediate unload, no private call"
+      },
+      "sanitizers": "address,undefined",
+      "private_calls_executed": false,
+      "CF_executed": false,
+      "missing_dlclose_mutant": "REJECTED as expected; isolated temporary mutation, production source unchanged"
+    },
+    "frontend": {
+      "bun": "1.4.0",
+      "tests_passed": 44,
+      "tests_failed": 0,
+      "assets": 95,
+      "frozen_install": true,
+      "lockfile_sha256": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa",
+      "generated_po_restored": true
+    },
+    "not_executed": [
+      "LeakSanitizer unsupported on hosted macOS; not PASS",
+      "private opaque constructor/ownership or forced allocation-failure injection: no acquiring bridge implemented",
+      "actual iOS executable execution, kill/wait/reap and A7 resource/latency behavior",
+      "private daemon denied/authorized calls and minimum entitlement sufficiency",
+      "fresh connected association, raw dBm measurement and disconnect/reconnect on reference iPad",
+      "Windows/FreeBSD cross-built test execution",
+      "merge/post-merge checks: native contract remains blocked"
+    ],
+    "log_integrity": [
+      {
+        "name": "audit.log",
+        "bytes": 6976,
+        "sha256": "9f1f3f16cb3ac1ca15df27f097048a15a85d9d61609c71e419fc166f3b8b4a33"
+      },
+      {
+        "name": "bootstrap.log",
+        "bytes": 3309,
+        "sha256": "178e2737b3f9bdc44fbff924393ab58d17ec7eb3db8f7647fd6c9360ee563abb"
+      },
+      {
+        "name": "bun-build.log",
+        "bytes": 10845,
+        "sha256": "8a42aaa95c57df6a8b60167cefbc66617ccd6a20d1cac065e9e7357f72eecfe4"
+      },
+      {
+        "name": "bun-install.log",
+        "bytes": 96,
+        "sha256": "2631ad690f8ffdb7f01f8d5177fc045a0450f374cfacfd1188aa2a368281fd66"
+      },
+      {
+        "name": "bun-sync.log",
+        "bytes": 2288,
+        "sha256": "3422f0af63c24197ec524a09d05a39df31bc64ad5437370311c35b6c85a97e87"
+      },
+      {
+        "name": "bun-test.log",
+        "bytes": 4035,
+        "sha256": "abcf1afc72343ee43b43ef0cc6502b84b3291bb84401c3f24ce585682313e297"
+      },
+      {
+        "name": "canonical.log",
+        "bytes": 2149,
+        "sha256": "3dc93e0a7cef9f460ed30d437dd0872cd8c3ad2b4540fe01f0d1565466147fb8"
+      },
+      {
+        "name": "checkpoint-a.log",
+        "bytes": 4658,
+        "sha256": "4ad1a4bd4aa5a596e7afd6f8d043c453c0b549241710f54759cb5458f7f8684d"
+      },
+      {
+        "name": "checkpoint-b-final.log",
+        "bytes": 59,
+        "sha256": "4a7a9db00e2440d5f9cdeeea778a0dce7f443e88b0d732295e756e7229728edc"
+      },
+      {
+        "name": "checkpoint-b-publish.log",
+        "bytes": 59,
+        "sha256": "a78379befe0e0a8bef77340d9b34ce2c3957606d78bd1d17916cadbcbeb90080"
+      },
+      {
+        "name": "checkpoint-b.log",
+        "bytes": 59,
+        "sha256": "cc0d1891f5df642a1bf33d799a9b47cb3767d988e403f8d09a92fd5d46337c2c"
+      },
+      {
+        "name": "checkpoint-c-audit.log",
+        "bytes": 557,
+        "sha256": "78b8ab8673797277163276148080bd56acac43cc2007dd0291d347b6feb09b52"
+      },
+      {
+        "name": "checkpoint-c-final.log",
+        "bytes": 26144,
+        "sha256": "9be4635855a9cebafc698373e74de25c969551d9dcb0603d9009b2f17c026913"
+      },
+      {
+        "name": "checkpoint-c.log",
+        "bytes": 15712,
+        "sha256": "18441e7f97803dd41a3034213b4e6f4e0766ad5b4d364203003cebbc039afe89"
+      },
+      {
+        "name": "checkpoint-d-audit.log",
+        "bytes": 4978,
+        "sha256": "01ebe81e15774e234b261898c546df1f5e7e8502368bec58ff79d96c79842f51"
+      },
+      {
+        "name": "checkpoint-d-go.log",
+        "bytes": 59,
+        "sha256": "897ef70517317c8225dd69e93ffa6c179b8be5b42cd39461c29df6eba34e7c2b"
+      },
+      {
+        "name": "checkpoint-d-selection.log",
+        "bytes": 434,
+        "sha256": "bc72ea379059ca1c43c9aa64445c305f5c147cccd4e1581ea2102e934f77c42f"
+      },
+      {
+        "name": "checkpoint-e-audit.log",
+        "bytes": 4978,
+        "sha256": "30dc2a022f26797dff87258db6e31f8d3c369dc8051fe8736c9b230c061ee003"
+      },
+      {
+        "name": "diff.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "firmware-cache-tests.log",
+        "bytes": 557,
+        "sha256": "78b8ab8673797277163276148080bd56acac43cc2007dd0291d347b6feb09b52"
+      },
+      {
+        "name": "focused.log",
+        "bytes": 291,
+        "sha256": "c932a080d62da3e089c9dfff39bf9df3698f48864f3760fcd1e8850edd4a5ecb"
+      },
+      {
+        "name": "freebsd-client.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "freebsd-wifi.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "hosted-native-source.log",
+        "bytes": 156939,
+        "sha256": "2fbccf38a431ecfc7feb5b623b9ff4663d9c47a44b8468fe705d3f2f01bbeffd"
+      },
+      {
+        "name": "installer.log",
+        "bytes": 36435,
+        "sha256": "cd64a856377a033b9daf11ce5c2600ae0d9a0176dd94065f2f0eee2d4ec3c1b9"
+      },
+      {
+        "name": "ios-fallback.log",
+        "bytes": 35,
+        "sha256": "647d359ec30d0c7bde488b6712ed90507d7e5afabfb4bdfe9f6376704dabe764"
+      },
+      {
+        "name": "linux-agent.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "linux-hub.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "loader-focused.log",
+        "bytes": 502,
+        "sha256": "8be360179a0f44da18309d6f50f69ffd45f39656c166a3425311ad668cecbdc2"
+      },
+      {
+        "name": "matrix.log",
+        "bytes": 1253,
+        "sha256": "46667426fb1e020f6530ec66ab2f201b438edc255b8a2287f63294eb02729ad5"
+      },
+      {
+        "name": "race.log",
+        "bytes": 501,
+        "sha256": "c4b66949899000019f435fba7eb161f6b917981c4fdf1ae375f06276a855693f"
+      },
+      {
+        "name": "readiness.log",
+        "bytes": 180,
+        "sha256": "9d153cd76ea6080ba376b102d2fd52c172c5a450e412b428f57b3248cccf9e12"
+      },
+      {
+        "name": "selection.log",
+        "bytes": 434,
+        "sha256": "bc72ea379059ca1c43c9aa64445c305f5c147cccd4e1581ea2102e934f77c42f"
+      },
+      {
+        "name": "sentinels.log",
+        "bytes": 1511,
+        "sha256": "2445c4b2035b0743cb67f6a93ba9bfa3724f9b418dcede49d6da9455fa5645b5"
+      },
+      {
+        "name": "source-native-revalidated.log",
+        "bytes": 1534,
+        "sha256": "5fe6bbe04f827f4c8c716b82b8d7746e6523482c00b95edcc0b0611c07e6612f"
+      },
+      {
+        "name": "sync.log",
+        "bytes": 404,
+        "sha256": "95aad086addce56f54ee0443f59f9aa1725ee12a708f47a68b50c2ab52b51a13"
+      },
+      {
+        "name": "windows-client.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "windows-wifi.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
   }
 }

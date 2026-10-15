@@ -2,7 +2,7 @@
  * There is intentionally no private function-pointer cast or invocation here.
  */
 #include "core.h"
-#include <dlfcn.h>
+#include "loader.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/sysctl.h>
@@ -15,7 +15,6 @@ static const char build_info[] = "beszel-ios-wifi-probe revision=" BESZEL_WIFI_R
 #define BESZEL_WIFI_FRAMEWORK_PATH "/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi"
 #endif
 static const char framework[] = BESZEL_WIFI_FRAMEWORK_PATH;
-static const char *symbols[] = {"WiFiManagerClientCreate", "WiFiManagerClientCopyDevices", "WiFiDeviceClientCopyProperty", "WiFiDeviceClientCopyCurrentNetwork", "WiFiDeviceClientGetInterfaceName", "WiFiNetworkGetSSID"};
 
 static void json_string(const char *text) {
     putchar('"');
@@ -45,13 +44,13 @@ int main(int argc,char **argv) {
     if (strcmp(argv[1],"--build-info-v1")==0) {puts(build_info);return 0;}
     if (strcmp(argv[1],"--identity-v1")==0) {printf("{\"version\":1,");identity();puts("}");return 0;}
     if (strcmp(argv[1],"--symbols-v1")==0) {
-        void *handle=dlopen(framework,RTLD_LAZY|RTLD_LOCAL);
-        printf("{\"version\":1,");identity();printf(",\"framework_available\":%s,\"symbols\":{",handle?"true":"false");
-        for (size_t i=0;i<sizeof(symbols)/sizeof(symbols[0]);i++) {
-            if(i)putchar(',');json_string(symbols[i]);printf(":%s",handle&&dlsym(handle,symbols[i])?"true":"false");
+        beszel_wifi_inventory inventory;
+        beszel_wifi_inventory_read(framework,&inventory);
+        printf("{\"version\":1,");identity();printf(",\"framework_available\":%s,\"symbols\":{",inventory.available?"true":"false");
+        for (size_t i=0;i<BESZEL_WIFI_SYMBOL_COUNT;i++) {
+            if(i)putchar(',');json_string(beszel_wifi_symbols[i]);printf(":%s",inventory.symbols[i]?"true":"false");
         }
         puts("},\"private_calls_executed\":false,\"acquisition_enabled\":false}");
-        if(handle)dlclose(handle);
         return 0;
     }
     return 64;

@@ -219,3 +219,38 @@ minimal privilege limitations and a staged read-only P018 protocol which stops
 before unimplemented acquisition. No entitlement/signing/installer change.
 Next: run complete final regressions and hosted native fixtures/builds, debug any
 actual failures, update exact evidence and retain Draft/BLOCKED/Gate C PENDING.
+
+## P012A E — completed native checkpoint and recovery fixture gaps
+
+Resumed/refreshed remote `aac215abdb89c5fa6bc307a550216d044f0906a9`; protected
+refs unchanged. Hosted run 38742936483 PASS, installer 38742936311 PASS, release
+SKIPPED. Actual public-CF ASan/UBSan fixtures, ownership allocator counters, loader
+inventories and C-unavailable-snapshot→production Go client passed (three races).
+LeakSanitizer disabled/unsupported, not a pass. Downloaded three artifact ZIPs,
+verified their GitHub digests, Agent/Hub SHA256SUMS, independent C revision/hashes,
+ARM64/platform 2/minimum 12.0, clean Go provenance, A7 runtime evidence and 95 assets.
+No private call/device execution was performed.
+
+Stable-source full cloud validation PASS: matrix/readiness, 54 audit tests, sync
+10, sentinels 45, bootstrap 54, installer 814; canonical Go; full affected race
+packages, focused three repetitions and iOS fallback ten repetitions; genuine
+frozen Bun install/catalog/44 tests/production 95 assets; five-platform selection;
+Linux Agent/Hub builds; Windows/FreeBSD Wi-Fi and inactive-client compile only.
+All 178 upstream commits reachable; all 13 real logical patches accounted for
+(`none` rows excluded). Normal iOS/Linux/macOS/Windows collectors unchanged.
+
+Recovery review found two fixture gaps, not an active provider defect: invalid
+existing library and proof of dlclose before exit. Extracted actual production
+inventory into loader.c, preserving fixed-path/no-call behavior. Portable loader
+ASan/UBSan fixtures pass 100 repetitions per missing/invalid/partial/all case;
+an isolated missing-close mutant is rejected. Native CF adds fractional/NaN/Inf
+and owned-property cleanup with missing output. Updated EN/VI/JSON results and
+scope policy; no general fallback waiver is used to change native acceptance.
+
+Next exact action after publication: complete final-candidate native CI (new
+loader and extended CF tests), inspect/revalidate artifacts and record final HEAD,
+checks/digests in PR #14. No need to download/extract firmware again. Test command:
+`python3 scripts/audit/ios_wifi/native.py --host --output "$RUNNER_TEMP/wifi-host" --revision "$GITHUB_SHA"`
+then workflow's actual C→Go client race integration and separate iOS build.
+Keep Draft/BLOCKED/Gate C PENDING; typed opaque ABI/fresh association/raw dBm/minimal
+authorization and actual iOS process execution remain P018. No P013/merge/device.

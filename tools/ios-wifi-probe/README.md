@@ -27,3 +27,13 @@ private imports. The separate artifact is for review, never automatic deployment
 See `docs/ios-wifi-native-blocker-resolution.md` for boundaries and the staged
 P018 diagnostic protocol. Bundling, separate signing, executable ownership and
 least privilege belong to P016 after the unresolved contracts are established.
+
+The inventory now uses the production `loader.c` boundary. Portable and macOS
+fixtures cover absent files, existing invalid library files, partial/all symbols,
+NULL/empty/relative path rejection, and 100 repeated inventories per case. A
+fixture library's constructor/destructor trace is checked *before* inventory
+returns to its caller, so process-exit cleanup cannot conceal a missing dlclose.
+The same production loader compiles into the separate iOS diagnostic. Float,
+fractional, NaN/infinite CF numbers and cleanup with a missing output destination
+are rejected by native ownership fixtures. No allocator-failure contract for
+private objects is claimed: there is still no private Create/Copy bridge.

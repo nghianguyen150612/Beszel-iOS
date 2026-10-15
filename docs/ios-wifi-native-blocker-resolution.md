@@ -174,3 +174,51 @@ P012 BLOCKED, Gate C PENDING, physical acceptance P018/Gate F. PR #14 stays Draf
 no merge or P013 begins. No device, production database, release, production iOS
 branch or frozen main is modified. Next action is the missing target ABI/daemon
 association/raw-units review, followed by explicitly authorized staged P018 proof.
+
+The canonical upstream-v021-acceptance.md blocking policy permits deferred feasibility capabilities with an owner and absent/no-op fallback. The P012A mission explicitly requires the native acquisition contract; no scope waiver has been approved. That general policy is not used to change this milestone or Gate C to PASS.
+
+## Executed cloud checkpoint and final candidate
+
+Source `aac215abdb89c5fa6bc307a550216d044f0906a9`:
+[iOS Build PASS](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38742936483),
+[installer PASS](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38742936311).
+Actual hosted macOS public-CF fixtures passed address/undefined sanitizers and
+1,000 repeated conversion/cleanup cycles. LeakSanitizer is unsupported/disabled,
+not PASS. The real native C unavailable snapshot passed through the bounded Go
+client three race repetitions. Fault executables, loader inventory and P007–P011
+hosted checks passed. No private object constructor or daemon was called.
+
+Downloaded artifacts were independently checksum/provenance/Mach-O revalidated:
+Agent `1aa5218684cb96eeb058c4b0a2c32bc306d6c30b30d3582ed5f0ae47dbd1e981`,
+Hub `f6a3605e18e9c022c893fdeed23d8a97b50c0ce8f1d92381e09706949972e684`,
+disabled diagnostic `835700069fbba7736854b0fc6a5ff3835fbe0c4c11af0eee129cb064f96d79ff`.
+All are ARM64, iOS platform 2, minimum 12.0. Agent/Hub use pinned Go 1.27.1,
+clean VCS revision, patched A7 runtime and 95 real embedded frontend assets;
+the C diagnostic has independent revision/source-hash evidence. No private hard
+imports, byte-identical separate-cache builds, verified SHA256SUMS, release skipped.
+These hashes identify that checkpoint, not any later rebuild.
+
+Local stable-source full regressions passed: 54 Python audit tests; matrix,
+readiness, sync 10, sentinels 45, bootstrap 54, installer 814; canonical Go suite;
+full affected race packages (including slow Hub systems with normal timeout);
+three focused P008–P012/Procursus race repetitions; ten iOS nil-adapter repetitions;
+five-platform Wi-Fi selection; Linux Agent/Hub builds; Windows/FreeBSD Wi-Fi and
+inactive-client compile checks; Bun 1.4.0 frozen install/catalogs/44 tests/production
+build, 95 assets, unchanged lockfile. Cross-compiled binaries were not executed.
+
+The recovery continuation closes two loader fixture gaps: an existing invalid
+framework file and immediate explicit unload before process exit. The production
+loader passed 100 inventories for each missing/invalid/partial/all case on Linux
+under ASan/UBSan; a deliberate isolated missing-dlclose mutant failed the fixture.
+Native CF tests additionally cover fractional/NaN/infinite numbers and owned
+property cleanup when an output destination is unavailable. Upstream NULL results
+are covered; forced allocation failure of a private manager/device is **not run**
+because no such bridge is safe or implemented. This is not a claimed allocator
+fault-injection result. Final hosted verification of these additions and exact
+final-head checks/artifact digests are recorded in PR #14's latest checkpoint.
+
+Static research stops at the committed derived evidence: no additional firmware
+transfer is needed or justified. Existing disassembly cannot settle daemon cache
+expiry, raw units, per-call authorization, or target process termination. Those
+remain explicit P018 requirements after the staged ABI review; none is inferred
+from fixture data. P012 BLOCKED / Gate C PENDING / PR Draft remains unchanged.

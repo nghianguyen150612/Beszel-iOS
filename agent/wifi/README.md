@@ -22,3 +22,10 @@ native dBm range. Invalid, positive, normalized 0..1, and non-finite values are
 omitted. The existing int8 history policy saturates valid -150..-129 values to
 -128; Info retains the original valid reading. Range checking alone cannot prove
 units: a provider must establish that its source is raw dBm before supplying it.
+
+P012A adds an **inactive** `ioshelper` parser/process client and a separate disabled
+native diagnostic in `tools/ios-wifi-probe`. Neither enters the normal Agent/Hub
+dependency graph or payload. The diagnostic inventories symbols without private
+calls; its snapshot is always unavailable. Exact 12.5.7 firmware exports have been
+verified, but ABI/association/raw-unit/authorization requirements still block
+activation. See [blocker resolution](../../docs/ios-wifi-native-blocker-resolution.md).
