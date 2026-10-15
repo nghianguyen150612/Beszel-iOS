@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -43,6 +44,11 @@ var (
 // information. The human-readable format has been stable across OpenZFS
 // releases; rows are matched by their tabular shape rather than position.
 func PoolStatuses() ([]PoolStatus, error) {
+	// Preserve utility-only detection on other platforms while rejecting iOS
+	// before any command, including direct callers outside the Agent manager.
+	if runtime.GOOS == "ios" {
+		return nil, checkZfsDevice()
+	}
 	out, err := commandOutput("zpool", "status")
 	if err != nil {
 		return nil, fmt.Errorf("zpool status: %w", err)
