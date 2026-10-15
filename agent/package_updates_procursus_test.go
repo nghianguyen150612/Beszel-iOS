@@ -364,11 +364,18 @@ func TestProcursusCommandAllowlistRejectsMutatingArgv(t *testing.T) {
 		{"dpkg configure", "/var/jb/usr/bin/dpkg", []string{"--configure", "-a"}},
 		{"dpkg remove", "/var/jb/usr/bin/dpkg", []string{"--remove", "fixture"}},
 		{"shell execution", "/bin/sh", []string{"-c", "apt-get update"}},
+		{"untrusted apt version path", "/tmp/apt-get", []string{"--version"}},
+		{"untrusted apt query path", "/tmp/apt-get", procursusAPTReadOnlyArgs},
+		{"relative apt path", "../../var/jb/usr/bin/apt-get", procursusAPTReadOnlyArgs},
+		{"untrusted apt config path", "/tmp/apt-config", []string{"dump"}},
+		{"untrusted dpkg query path", "/tmp/dpkg-query", []string{"-W", "-f=${Package} ${Status}\\n", "apt", "procursus-keyring"}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.False(t, procursusCommandAllowed(tt.executable, tt.args))
 		})
 	}
+	_, err := runProcursusAPTCommand(context.Background(), "/tmp/apt-get", procursusAPTReadOnlyArgs...)
+	assert.ErrorIs(t, err, errProcursusCommandNotAllowed, "the execution boundary must reject a safe argv paired with an untrusted path")
 }
 
 func TestProcursusCommandBoundsCancellationAndChildCleanup(t *testing.T) {

@@ -58,16 +58,21 @@ func runProcursusProbeCommand(ctx context.Context, executable string, args ...st
 }
 
 func procursusCommandAllowed(executable string, args []string) bool {
-	switch filepath.Base(executable) {
-	case "apt-get":
+	switch {
+	case procursusExecutablePathAllowed(executable, "apt-get"):
 		return slices.Equal(args, []string{"--version"}) || slices.Equal(args, procursusAPTReadOnlyArgs)
-	case "apt-config":
+	case procursusExecutablePathAllowed(executable, "apt-config"):
 		return slices.Equal(args, []string{"dump"})
-	case "dpkg-query":
+	case procursusExecutablePathAllowed(executable, "dpkg-query"):
 		return slices.Equal(args, []string{"-W", "-f=${Package} ${Status}\\n", "apt", "procursus-keyring"})
 	default:
 		return false
 	}
+}
+
+func procursusExecutablePathAllowed(executable, name string) bool {
+	path := filepath.Clean(executable)
+	return path == filepath.Join("/usr/bin", name) || path == filepath.Join("/var/jb/usr/bin", name)
 }
 
 func runProcursusBoundedCommand(ctx context.Context, limit int, executable string, args ...string) (string, error) {
@@ -495,7 +500,7 @@ var procursusAPTReadOnlyArgs = []string{
 }
 
 func runProcursusAPTCommand(ctx context.Context, executable string, args ...string) (string, error) {
-	if filepath.Base(executable) != "apt-get" || !slices.Equal(args, procursusAPTReadOnlyArgs) {
+	if !procursusExecutablePathAllowed(executable, "apt-get") || !slices.Equal(args, procursusAPTReadOnlyArgs) {
 		return "", errProcursusCommandNotAllowed
 	}
 	return runProcursusBoundedCommand(ctx, procursusQueryOutputLimit, executable, args...)
