@@ -152,6 +152,10 @@ def packages(target):
     files += [name + ('_linux.go' if target == 'linux' else '_unsupported.go') for name in ['cpu','memory','network_counters']]
     files += ['sensors_ios.go', 'emmc_stub.go', 'mdraid_stub.go', 'fans_other.go'] if target == 'ios' else ['sensors_default.go']
     if target == 'ios':files += ['memory_platform_ios.go','ios_memory.go','ios_metadata.go','ios_disk.go']
+    files += ['package_updates.go',
+              'package_updates_ios.go' if target == 'ios' else 'package_updates_otheros.go',
+              'package_updates_procursus.go',
+              'package_updates_process_unix.go' if target in ['ios', 'darwin', 'linux'] else 'package_updates_process_other.go']
     add(prefix + '/agent', files)
     add(prefix + '/agent/zfs', ['zfs_ios.go' if target == 'ios' else 'zfs_linux.go' if target == 'linux' else 'zfs_nonlinux.go'])
     add(prefix + '/agent/btrfs', ['btrfs_linux.go' if target == 'linux' else 'btrfs_unsupported.go'])
