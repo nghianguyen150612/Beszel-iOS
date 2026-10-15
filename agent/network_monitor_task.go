@@ -50,14 +50,34 @@ func newMonitorTask(config monitor.Config) *monitorTask {
 func newMonitorTaskFromExisting(config monitor.Config, existing *monitorTask) *monitorTask {
 	task := newMonitorTask(config)
 	if existing != nil {
-		task.history = existing.history.clone()
+		if sameMonitorObservation(config, existing.config) {
+			task.history = existing.history.clone()
+		}
 		// Keep the last known certificate, but check again soon for the new config.
 		// The hub already stores it, so it is not marked unsent.
-		if config.Target == existing.config.Target {
+		if config.Target == existing.config.Target && certCheckEnabled(config) && certCheckEnabled(existing.config) {
 			task.cert = existing.certInfo()
 		}
 	}
 	return task
+}
+
+// Interval-only edits retain history; changing what is measured or its trust
+// policy starts a new series, including an incremental update with the same ID.
+func sameMonitorObservation(a, b monitor.Config) bool {
+	if a.Target != b.Target || a.Protocol != b.Protocol {
+		return false
+	}
+	switch a.Protocol {
+	case "tcp":
+		return a.Port == b.Port
+	case "dns":
+		return a.Server == b.Server
+	case "http":
+		return a.SkipTLSVerify == b.SkipTLSVerify
+	default:
+		return true
+	}
 }
 
 // runProbe shares an in-flight check between scheduled and immediate requests.

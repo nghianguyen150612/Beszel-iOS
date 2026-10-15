@@ -2,6 +2,7 @@ package agent
 
 import (
 	"math"
+	"sort"
 	"sync"
 	"time"
 
@@ -245,26 +246,27 @@ func aggregateBucketsSince(buckets []monitorBucket, cutoff, now time.Time) monit
 // addSampleLocked stores a fresh sample in both raw and per-minute retention buffers.
 func (h *monitorHistory) addSampleLocked(sample monitorSample) {
 	h.sampleCount++
-	cutoff := sample.timestamp.Add(-monitorRawRetention)
-	start := 0
-	for i := range h.samples {
-		if !h.samples[i].timestamp.Before(cutoff) {
-			start = i
-			break
-		}
-		if i == len(h.samples)-1 {
-			start = len(h.samples)
-		}
-	}
+	// Preserve timestamp order even after wall-clock adjustments or late
+	// samples. Retention is anchored to the newest observation, not the arrival.
+	at := sort.Search(len(h.samples), func(i int) bool { return h.samples[i].timestamp.After(sample.timestamp) })
+	h.samples = append(h.samples, monitorSample{})
+	copy(h.samples[at+1:], h.samples[at:])
+	h.samples[at] = sample
+	cutoff := h.samples[len(h.samples)-1].timestamp.Add(-monitorRawRetention)
+	start := sort.Search(len(h.samples), func(i int) bool { return !h.samples[i].timestamp.Before(cutoff) })
 	if start > 0 {
 		size := copy(h.samples, h.samples[start:])
 		h.samples = h.samples[:size]
 	}
-	h.samples = append(h.samples, sample)
 
 	minute := int32(sample.timestamp.Unix() / 60)
 	// Each slot stores one wall-clock minute, so the ring stays fixed-size at ~1h per monitor.
-	bucket := &h.buckets[minute%monitorMinuteBucketLen]
+	slot := (minute%monitorMinuteBucketLen + monitorMinuteBucketLen) % monitorMinuteBucketLen
+	bucket := &h.buckets[slot]
+	// A delayed observation outside retention must not replace a newer slot.
+	if bucket.filled && bucket.minute > minute {
+		return
+	}
 	if !bucket.filled || bucket.minute != minute {
 		bucket.minute = minute
 		bucket.filled = true

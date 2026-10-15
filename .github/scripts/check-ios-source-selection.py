@@ -67,6 +67,17 @@ def validate(packages, target):
             raise ValueError(f'{target}: invalid {family} implementations: {agent.intersection(alternatives)}')
     if target == 'ios':
         require(MODULE + '/agent', ['memory_platform_ios.go', 'ios_memory.go', 'ios_metadata.go', 'ios_disk.go'])
+    # Optional collectors must select genuine no-op platform adapters on iOS.
+    if target == 'ios':
+        require(MODULE + '/agent', ['sensors_ios.go', 'emmc_stub.go', 'mdraid_stub.go', 'fans_other.go'])
+        if agent.intersection({'sensors_default.go', 'sensors_windows.go', 'sensors_freebsd.go'}):
+            raise ValueError('iOS selects a foreign temperature collector')
+    else:
+        require(MODULE + '/agent', ['sensors_default.go'])
+    _, zfs = require(MODULE + '/agent/zfs', ['zfs_ios.go' if target == 'ios' else 'zfs_linux.go' if target == 'linux' else 'zfs_nonlinux.go'])
+    if target == 'ios' and 'zfs_nonlinux.go' in zfs:
+        raise ValueError('iOS selects utility-based ZFS capability detection')
+    require(MODULE + '/agent/btrfs', ['btrfs_linux.go' if target == 'linux' else 'btrfs_unsupported.go'])
     require(MODULE + '/agent/battery', ['ios_ioreg.go'])
     for subsystem in ['battery', 'wifi']:
         package, files = require(MODULE + '/agent/' + subsystem, [subsystem + '.go'])

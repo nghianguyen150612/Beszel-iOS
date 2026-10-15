@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/henrygd/beszel/internal/common"
@@ -35,13 +36,29 @@ func UnmarshalResponse(resp common.AgentResponse, action common.WebSocketAction,
 	}
 	// Try generic Data field first (0.19+)
 	if len(resp.Data) > 0 {
-		if err := cbor.Unmarshal(resp.Data, dest); err != nil {
+		if err := unmarshalFreshCBOR(resp.Data, dest); err != nil {
 			return fmt.Errorf("failed to unmarshal generic response data: %w", err)
 		}
 		return nil
 	}
 	// Fall back to legacy typed fields for older agents/hubs.
 	return unmarshalLegacyResponse(resp, action, dest)
+}
+
+// Decode a snapshot into fresh storage before publishing. CBOR omitempty keys
+// must clear old loss, certificate and optional telemetry values on recovery;
+// malformed responses must leave the caller's previous snapshot unchanged.
+func unmarshalFreshCBOR(data []byte, dest any) error {
+	value := reflect.ValueOf(dest)
+	if !value.IsValid() || value.Kind() != reflect.Pointer || value.IsNil() {
+		return errors.New("destination must be a non-nil pointer")
+	}
+	fresh := reflect.New(value.Elem().Type())
+	if err := cbor.Unmarshal(data, fresh.Interface()); err != nil {
+		return err
+	}
+	value.Elem().Set(fresh.Elem())
+	return nil
 }
 
 // unmarshalLegacyResponse handles legacy responses that use typed fields.

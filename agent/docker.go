@@ -16,6 +16,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -650,7 +651,16 @@ func (dm *dockerManager) deleteContainerStatsSync(id string) {
 
 // Creates a new http client for Docker or Podman API
 func newDockerManager(agent *Agent) *dockerManager {
+	return newDockerManagerForPlatform(agent, runtime.GOOS)
+}
+
+func newDockerManagerForPlatform(agent *Agent, goos string) *dockerManager {
 	dockerHost, exists := utils.GetEnv("DOCKER_HOST")
+	// iOS has no local Docker daemon; explicitly configured remote engines
+	// retain the portable API client. Remote Hub container data is unaffected.
+	if goos == "ios" && !exists {
+		return nil
+	}
 	if exists {
 		// return nil if set to empty string
 		if dockerHost == "" {

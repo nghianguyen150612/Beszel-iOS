@@ -150,8 +150,11 @@ def packages(target):
              'gpu_darwin.go' if target == 'darwin' else 'gpu_darwin_unsupported.go',
              'systemd.go' if target == 'linux' else 'systemd_nonlinux.go']
     files += [name + ('_linux.go' if target == 'linux' else '_unsupported.go') for name in ['cpu','memory','network_counters']]
+    files += ['sensors_ios.go', 'emmc_stub.go', 'mdraid_stub.go', 'fans_other.go'] if target == 'ios' else ['sensors_default.go']
     if target == 'ios':files += ['memory_platform_ios.go','ios_memory.go','ios_metadata.go','ios_disk.go']
     add(prefix + '/agent', files)
+    add(prefix + '/agent/zfs', ['zfs_ios.go' if target == 'ios' else 'zfs_linux.go' if target == 'linux' else 'zfs_nonlinux.go'])
+    add(prefix + '/agent/btrfs', ['btrfs_linux.go' if target == 'linux' else 'btrfs_unsupported.go'])
     for name in ['battery','wifi']:
         suffix = 'unsupported' if name == 'wifi' and target == 'ios' else target
         add(prefix + '/agent/' + name, [name + '.go', name + '_' + suffix + '.go'] + (['ios_ioreg.go'] if name == 'battery' else []))
@@ -167,7 +170,7 @@ class SelectionTests(unittest.TestCase):
         for target in ['ios','darwin','linux']:selection.validate(packages(target), target)
 
     def test_unsupported_macos_collectors_and_duplicates(self):
-        for path, filename in [('/agent','gpu_darwin.go'),('/agent','system_platform_other.go'),('/agent','cpu_linux.go'),('/agent/battery','battery_darwin.go'),('/agent/wifi','wifi_darwin.go')]:
+        for path, filename in [('/agent','gpu_darwin.go'),('/agent','sensors_default.go'),('/agent/zfs','zfs_nonlinux.go'),('/agent','system_platform_other.go'),('/agent','cpu_linux.go'),('/agent/battery','battery_darwin.go'),('/agent/wifi','wifi_darwin.go')]:
             graph = packages('ios');graph[selection.MODULE + path]['GoFiles'].append(filename)
             with self.subTest(filename=filename), self.assertRaises(ValueError):selection.validate(graph, 'ios')
 

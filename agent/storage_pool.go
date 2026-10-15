@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -76,6 +77,14 @@ type poolBackend struct {
 }
 
 func newStoragePoolManager() *StoragePoolManager {
+	return newStoragePoolManagerForPlatform(runtime.GOOS)
+}
+
+func newStoragePoolManagerForPlatform(goos string) *StoragePoolManager {
+	// No iOS kernel adapter is established for either backend.
+	if goos == "ios" {
+		return &StoragePoolManager{detailInterval: time.Hour}
+	}
 	return &StoragePoolManager{
 		backends:       []*poolBackend{newZfsBackend(), newBtrfsBackend()},
 		detailInterval: time.Hour,

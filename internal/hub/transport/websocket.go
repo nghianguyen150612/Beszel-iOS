@@ -42,7 +42,7 @@ func (t *WebSocketTransport) Request(ctx context.Context, action common.WebSocke
 
 		// Legacy agents (< MinVersionAgentResponse) respond with a raw payload instead of an AgentResponse wrapper.
 		if t.wsConn.AgentVersion().LT(beszel.MinVersionAgentResponse) {
-			return cbor.Unmarshal(message.Data.Bytes(), dest)
+			return unmarshalFreshCBOR(message.Data.Bytes(), dest)
 		}
 
 		var agentResponse common.AgentResponse

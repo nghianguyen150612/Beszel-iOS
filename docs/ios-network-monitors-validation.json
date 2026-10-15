@@ -1,0 +1,1154 @@
+{
+  "schema_version": 1,
+  "milestone": "P010",
+  "recorded_at_utc": "2026-10-15T00:13:46.866862+00:00",
+  "repository": "https://github.com/nghianguyen150612/Beszel-iOS",
+  "branch": "ios/network-monitor-compatibility",
+  "base": "ios/upstream-v021-integration",
+  "git": {
+    "starting_integration_sha": "0c48b1378393b325e9b61ba716f832b1bf807aa6",
+    "source_candidate_sha": "dac735270cf8caf85ef8d8473e24b49e2fd7b743",
+    "source_candidate_tree": "5dcde9112c3139acf422030173c08776b9a76958",
+    "production_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+    "feature_commits": [
+      {
+        "sha": "6b858682fd785eec9a69e60f28d97b105415d1cd",
+        "subject": "Harden probe deadlines and explicit DNS server validation"
+      },
+      {
+        "sha": "38876c41c0d6e492feb1c386343daf9b86a513a8",
+        "subject": "Bound ICMP fallback and recover independent family capabilities"
+      },
+      {
+        "sha": "9c64fce6d95725c23d2d6a467ed71aaf8367bb9f",
+        "subject": "Prevent deleted monitor publication and isolate replacement history"
+      },
+      {
+        "sha": "90483ffc0aaf177bcb0bdbf4df1c815c5905761a",
+        "subject": "Verify TLS trust isolation and certificate rotation across monitor updates"
+      },
+      {
+        "sha": "d191d7de193625bbdcd69e3b62292f85820283a0",
+        "subject": "Exclude unsupported local iOS collectors without changing remote Hub telemetry"
+      },
+      {
+        "sha": "14a778f1ad56bd8f7e251f9e61b196f6725dc953",
+        "subject": "Decode fresh monitor snapshots and validate real WS SSH probe recovery"
+      },
+      {
+        "sha": "694ab4017f5271f1a581cb4677b848a674535126",
+        "subject": "Align ZFS utility tests with the unsupported iOS adapter"
+      },
+      {
+        "sha": "a361b37e5cf20cc29f39180e3a65130f8edca54c",
+        "subject": "Reject direct iOS ZFS status commands before execution"
+      },
+      {
+        "sha": "8e25a476a05cd45efb9aae759e74be4ee0f349ed",
+        "subject": "Fail cancelled DNS and invalid custom settings before literal lookup"
+      },
+      {
+        "sha": "dac735270cf8caf85ef8d8473e24b49e2fd7b743",
+        "subject": "Preserve scoped IPv6 DNS resolver addresses and reject unmatched brackets"
+      }
+    ],
+    "changed_blob_evidence": {
+      ".github/scripts/check-ios-source-selection.py": {
+        "candidate_blob": "83674853154babc57830118d2923f3e1278652a3",
+        "starting_blob": "0226e181e3022645956c6ce7a8d409e41d835ced"
+      },
+      ".github/workflows/ios-build.yml": {
+        "candidate_blob": "69cc6ddde80b46018b1314b1456dbff35d456cb4",
+        "starting_blob": "727c681d3e7958c58e619e882b2916a9073fc258"
+      },
+      "agent/collector_compatibility_test.go": {
+        "candidate_blob": "626e489325168bd60c0f4217b4c687055780ef27",
+        "starting_blob": null
+      },
+      "agent/docker.go": {
+        "candidate_blob": "b34e28ae5b3b3c1b9f80dfc246f1155609247c94",
+        "starting_blob": "8b669d14dc9b7e51a9eaa88315660a57ba3effbe"
+      },
+      "agent/gpu.go": {
+        "candidate_blob": "1d456fcc7ca7222d89f02f031bd9ffc506f90081",
+        "starting_blob": "270cf4e9386c021fdc4249723a590ad0396c62ff"
+      },
+      "agent/network_monitor.go": {
+        "candidate_blob": "f795915008d4ff51cbd3cd68f10c05fc80c68dda",
+        "starting_blob": "b0486181c99c906714718526f3ea5143d5dee788"
+      },
+      "agent/network_monitor_compatibility_test.go": {
+        "candidate_blob": "283d0ddc799f0de66b815b61cd2de1e924ecc709",
+        "starting_blob": null
+      },
+      "agent/network_monitor_dns_fault_test.go": {
+        "candidate_blob": "936fcde74df7961bd18e13a5f99792891356dde8",
+        "starting_blob": null
+      },
+      "agent/network_monitor_history.go": {
+        "candidate_blob": "3f726cef375b2cec3f871095b9e9cdaec2375063",
+        "starting_blob": "9db1639abe9fd5142a527f0c4ce17de449e6f31a"
+      },
+      "agent/network_monitor_icmp_compatibility_test.go": {
+        "candidate_blob": "91cad84be7158ae653def61647a3ac65937d280e",
+        "starting_blob": null
+      },
+      "agent/network_monitor_lifecycle_compatibility_test.go": {
+        "candidate_blob": "cc6a8594855ae8c36346536a1fabd2edb053e31f",
+        "starting_blob": null
+      },
+      "agent/network_monitor_ping.go": {
+        "candidate_blob": "3134b15941aadf0523dccfe0700ca5c7803afc2c",
+        "starting_blob": "632afd668dd23ab0cd03a10df89e9a6791e23526"
+      },
+      "agent/network_monitor_ping_test.go": {
+        "candidate_blob": "66c1e2ec620ac922c88a6c9a7da62b788c43f1f6",
+        "starting_blob": "89ff92e664518e189e7aa8fe1c570a39887285b1"
+      },
+      "agent/network_monitor_probe.go": {
+        "candidate_blob": "3b06d907374f90a8e5751a7215f7e22ebe7527ba",
+        "starting_blob": "e1ac7c427084c84e4d00b127ad13b21647ac95ff"
+      },
+      "agent/network_monitor_protocol_compatibility_test.go": {
+        "candidate_blob": "4e52666ff3758402c20c5cd4a5610695b771e1e4",
+        "starting_blob": null
+      },
+      "agent/network_monitor_task.go": {
+        "candidate_blob": "eb6a649d9246baf82003376acf26c531edfdffa9",
+        "starting_blob": "3ff6ed8f7ed953f3c276156075880cfc2d525038"
+      },
+      "agent/network_monitor_tls_compatibility_test.go": {
+        "candidate_blob": "e75b32483e4e90f6b2f95f519dbd0247348bca7d",
+        "starting_blob": null
+      },
+      "agent/sensors_default.go": {
+        "candidate_blob": "6d06398bff528c381d5c7d0cdd2f51df8481856c",
+        "starting_blob": "2bd1c59c5c51a4692f4757a2aaffb667d87728a7"
+      },
+      "agent/sensors_ios.go": {
+        "candidate_blob": "409229355b1bd01de1605e4eea03d7bfe453851e",
+        "starting_blob": null
+      },
+      "agent/smart.go": {
+        "candidate_blob": "9ce9f42c8305644c9f752aae6da24cf2b320068b",
+        "starting_blob": "57dae3a8a5bc49ba49b30c884ad9ba53ad48d59f"
+      },
+      "agent/storage_pool.go": {
+        "candidate_blob": "8120a67864dcbfe2c68ef3cce4b64c40d7e15f31",
+        "starting_blob": "7cf12dcb4f990b5081e49544cc9186215375d2b2"
+      },
+      "agent/zfs/zfs_ios.go": {
+        "candidate_blob": "886b6bceb1de31f7fb025701aed4b0767f584aeb",
+        "starting_blob": null
+      },
+      "agent/zfs/zfs_ios_test.go": {
+        "candidate_blob": "d4904cb03db714296e9dc9efbbc2182964ce4d9a",
+        "starting_blob": null
+      },
+      "agent/zfs/zfs_nonlinux.go": {
+        "candidate_blob": "8e5527f1f815a119a7cbc303968890260a7a10ce",
+        "starting_blob": "3ac5fc546318f328e6d4aa0934be15f68607f0c5"
+      },
+      "agent/zfs/zfs_nonlinux_test.go": {
+        "candidate_blob": "28622500f6dc31b856676f0df71b00624af03230",
+        "starting_blob": "5c05295132a50fc930cae9bedda9d222304995d5"
+      },
+      "agent/zfs/zfs_status.go": {
+        "candidate_blob": "e4e255c5ca7cc7946fb82a6432b6d11a7797dc5e",
+        "starting_blob": "22050e406a6037ec0150d1daa6b3f14dc497a5a7"
+      },
+      "internal/hub/transport/monitor_compatibility_test.go": {
+        "candidate_blob": "4b3b8565a484902f82d616e9f72c2023bce6bf45",
+        "starting_blob": null
+      },
+      "internal/hub/transport/transport.go": {
+        "candidate_blob": "696fc1c874b7f432571558f69fb55236cb941155",
+        "starting_blob": "8bd8e6fdf0b94018eae6c0c8f7a50bcb6e30076d"
+      },
+      "internal/hub/transport/websocket.go": {
+        "candidate_blob": "e9ec411dc1a5af4d73810521ed82d4fb79375c0a",
+        "starting_blob": "05aae84e72d7455c2567135a9410b3789c4376da"
+      },
+      "tests/audit/test_ios_build_contract.py": {
+        "candidate_blob": "b4d0b8abaae0dee42619633656075bedf1ae4dad",
+        "starting_blob": "9bd0ae38f5e8a0bb36436fb08e98b546a7808032"
+      }
+    },
+    "upstream_reachable_count": 178,
+    "upstream_reachable_shas": [
+      "086091a0fea2a0914bf4db1fc46e575e386f795e",
+      "6a7b2772d90c732077a910ca03bb79b13c4fe8c6",
+      "982101743e92acffa4f6bc1b42285aa7b020342e",
+      "a0bf33879605aa28911a4961567e5feb18155d46",
+      "50f6fc075d7af0482287acb5c61fbc8a88578335",
+      "f0f1f7985c864ab4ad41ff12b6b74dd9f258046d",
+      "18f7a4bbc09aed953cf21ec80f4c2612ad2a3beb",
+      "4bf70700f20cc2994774995dca5e725c7173996b",
+      "bb1b39928e317592159e65dbcac1de12510d49b8",
+      "6e5440c21f9f1798b469f1c473e8f12d14323443",
+      "b34759992828f097df9ff12d18bfccdf82c22848",
+      "db3afeabd949eb3b58fb0acd65724a37212376b0",
+      "f7fd3ef403085b64dc8a21a02011105b2251333a",
+      "d2352e888231484a83d4fd3d592a0e56554f66bb",
+      "bd7e359dcdbf4a14f3978d7d149682c0806f10e5",
+      "97de1471d7ddb92d3138d9baaecb1f58db0bc06b",
+      "6937453282f33e43bd5b5473291b9208c0398ee5",
+      "b0bc72741126b2eadaf284e803827261eac82d54",
+      "27844606215ef535c86ecb868178692a817c0397",
+      "187dc886a96f7124090f7e5a258c9c720bd2cb2c",
+      "0509053a69e7af4b88a6b0cdc90e6c493e65bb6b",
+      "dd3f7d58b543d1016d84e3d0478753d2a6afd7fe",
+      "c54dbfba7cf8bd572c9437adc363e62964cd1fd4",
+      "912bc50874ac4bf20cbefa4a6b8859898223e859",
+      "a0dc19eacf6902d2f6934a3efd7ea7277198c40b",
+      "c09eb8c6dfae05d2d13a1445def10d39ad9738a7",
+      "c52f3acb94c94f26b05397b59976fa1ae74380af",
+      "e68372dce417fe922c0a27aded5ce4e4bfb66cf3",
+      "4a5915b141bfa96627f5493e5174ec8bc36734d5",
+      "97e6f64bdcb926b8d0436f358942c098a46b6237",
+      "2c69197d2d1cc94b325a8e9098eaba43d16063e6",
+      "cbe4824ac334a6a6568c8a961c90e5197cb7b8bb",
+      "a5f216f425997de165fabc64562f4974697b04ef",
+      "c9de35fad2e781c2913981174d936405e4a8def2",
+      "97ea3c16cb079133929b98cf41b35a3651586a1a",
+      "1aaabfc255e473563cb9bbb31c82dc0115c6a95b",
+      "4a4610bbc3d37dbe0e588336a5454eae9d095796",
+      "8047f005d41c86c5bd7db812b0189578830c5d3b",
+      "627d364071b6d50ce9c967ecb43a5363ad0fdecc",
+      "2d5ea3fa08f052695f086024c0254f4bd02a43fb",
+      "8bf6917fe07ce0a33c9ae29a70bcea45410b0a7e",
+      "9042a8c5c8448344de968d4476a3cfa6ba1a02a1",
+      "b1270e341cd2ffadbfd31ba93f9404e0b4e32f90",
+      "08707160528048b97556b984b2cff338580474dd",
+      "a99fe5e99725edf2a8ff582f5b21793fc88731f2",
+      "fc33e6273610dbfbd264b59283e2bbb1eac8521c",
+      "e4b84b72abac255f5604776632af1662a453f7f4",
+      "0be9882b34bb3445b5ec7b6af8915b097e0bbf27",
+      "eabd9a950a379d061398e6128b716fc750468a91",
+      "367d2f39da6e3e46345054368891b445e3a3c189",
+      "c21412f45d9309ec8895624834711c454dd58d6c",
+      "6141b15f0359516101e4da0fc4350f4d04f165aa",
+      "b5ef0154511b28d21e1f6ec617c1cc330a92e5f6",
+      "4d10ea2e03678ac27d41bae1fd9505113f18b36c",
+      "f2adb9cf94756b86b1d1098722591b348cee77bb",
+      "a20a7d2edce5f9c14f2f1dcd6151cc92babdf70e",
+      "f7528a02082a6fd2a54857470e40ff5a54782801",
+      "151423ac638a0f288efb4c2ad981ce7a19e066dd",
+      "21b648a005bcaa928240116fc2f87b7d57836fdc",
+      "d80a2f49f9d00abe4c7853f0b041dcb65846814b",
+      "d591da46f3dd47af2e11e935abb6a12b60fdb1e8",
+      "c25408651f076c59c13f35f27016461ada8a9093",
+      "f50fb4f8e5e4fe7dda46941c13f84d032eb50a28",
+      "d708def38f5552534791c990cb0ba6db637c661e",
+      "3fb97b800cdbb5985587df9644bc484c8ec1bbb9",
+      "3dfe062ee4202c35f6cfdd6392f2f345617d1f27",
+      "433b83800fdb00349a916bdbf98da991d7c0456a",
+      "7bea20e3b61c02744819ff057bc60ba57b5425c0",
+      "badd4c8245968bad9a79ab67293a9367e8c57f8f",
+      "86ab0fae8b7b2d87251a90a4fa56138d17cca553",
+      "16e3fbadce2026d5591aa08c6518e1c5754fa1a2",
+      "24792aa24fb91dfc0dc93394b7fcd51c520e9650",
+      "46fa7c581e50fcd567c7aec7a5d5d1120dd4e830",
+      "fe83f5b8318968a650d4cab470103375c5d341cb",
+      "a042e195496a88f20592ec2e65dad0efc223eb7d",
+      "c7f2177b08bb3dcfba7988e34d1c293ab3f835da",
+      "24ec18a937b1b18d606eef2f56728230326557e6",
+      "15994474f6c061a6a1db525f19b72ec0ba0e42a0",
+      "1ed02bb51795730964fb031bac232703708f617a",
+      "fb4e93f09811f7efc442c4a1218736287767aa4a",
+      "67c3c1cb437e80d01d1d8ed6f78e5de1d43ecca4",
+      "b3feff9a28273c7b2f74dd0c0fdc834c295ae4d7",
+      "3f20ecae503117ff052061136b080b8f8cce2df9",
+      "739649a6db777387ec8d551fd7298ac25c33a59e",
+      "c1505804bdbac5607f6eac2165a41a2691cf2d25",
+      "8613cfe548c882b57c5748efd7007ecbe2ba2553",
+      "81fd571169def94b951e8703aba204c4f2e4f70f",
+      "4b4ef0a2fef6feb694cb87f7e6039aab754ab324",
+      "65f00ae119269113613a39028b7a935693b860e6",
+      "b684ac9910652bdc39b61982b079fb5213dcc07a",
+      "ad215788eda2f41fd0999ae26581547e99f6c55d",
+      "7626e5e3c84806a67d9e10c8791a6aca9991d2ce",
+      "666529e073c69a74a14375df0388767960c869e6",
+      "be3dad7ed4f3b8a1de55c566926fc3fb69cc0e95",
+      "62f8a39c8af70dc51065626056808216c239fd2c",
+      "c556dc478d04e59b40ec8e04658f4d3f8951b07e",
+      "083b28a1fc5fdf198ef36ac6b4e64dcc1cf98747",
+      "09a277f07487c1e78a82eb331b0e8dcc4906e753",
+      "921ded1af0f955ddaba1dabafe0d361f1d12fb7d",
+      "130365f5d37a3fd12b82e16b5b1c5f235a96bdb2",
+      "8b38db1ba0d73033c7f6638f59577e3c142f4a2a",
+      "5df0a256c600f827ac1a7ef207b77d4fb299b3b2",
+      "68ca6936a77baff48e1803a3bc85ba8a3fb5c617",
+      "1ab38e57c59c470ae579caa268b7d9dcdbda95ba",
+      "a77ed345d76daf7676dbf2d7b68873ffdd240537",
+      "0484c54919ff071e21e1db3197060fc8277213e0",
+      "4422be717c3e3cb2e58ebac9c0bebbd30d94e2a1",
+      "24881fbfdf3feba4567e41dc011ea283716873ee",
+      "97db8bd199b10f90ce854ddc913491d43fda9216",
+      "1997984325de5057bee0bd5b309fa534dac5d639",
+      "67c5905b3691b3dc5315fb37604cf7883cfe28fa",
+      "02653f8ed94ca90536ffd7a282f0c911dfb1dad0",
+      "3281055d95b365964e67296c8935cdcbc4bfaec1",
+      "6c47ca8eccb1ed2b8148546f4f0acebd10cad0a5",
+      "3cc19602c1a0ad3f097c350d6bda66ce5d620da0",
+      "e01e2a20e9d32e46ed5eaaa4cf48cf04f56d9a9f",
+      "2ca5e727f9fd5cad9a98e42fa169580dc2ecab18",
+      "15c29fee92f29f6fd47b9c1384c6e03a6580119e",
+      "e925fafd7ba5fde2073446b1a903090317d67a4b",
+      "266f45f104e901019a55eb268e183d3582dcc17b",
+      "dd3a769d189ee8becf0d457e3d675f895e187d61",
+      "87f1efdfd9225acb243c9b4b3985b391abc566f6",
+      "65e3e2e768aa1f1820d5d15235c86940a6f3aef4",
+      "6ff9b4cfeabb54d8bc48ae5a61e9b1a67cc92341",
+      "8a91a0b5ab7f9b771e388d3f7b0db47f9b925b29",
+      "2502dd96260cbb8b70e3a8ef3fdd3dc09afc7cc3",
+      "5b0952ffcf0b3cf0a8f975e2fa396db679a0dab7",
+      "0b101cc6be4de850f0cdb26a9abd538b27f3e363",
+      "8a173e2643a4eb38fe5cd99567c13e2d496f30e8",
+      "d8c2b1f310bea3df3c0a5b29f2e8f1864380a648",
+      "4ffd83677d18fe285ce1647da9d64ed4b2798f40",
+      "c394a6b5b16f029bacd8d093cc6893c2d1bcc13d",
+      "01d91728f00d234f68cc6ebd2ab7df09226a2789",
+      "da742a70ab7db54b9535ca003e22d4cc01b8ba2f",
+      "49ad3fe5339fb135851749690d4ffc251e8766c1",
+      "25132b73ff18d43e99388ed5cb7a9b5e5541355c",
+      "49f4f652e161b4d93859699e98f0003cba966ae7",
+      "0cca9d060257b01c79a03bad5c74c34a6b81b84c",
+      "b115e2aa6ae22652f6a9ee4d25475af9250a0bd4",
+      "e597dd94db90a112fbbe69cf154f8d23a5b857e7",
+      "ec96c134660c998f7eb044e349e3715b65733fe1",
+      "4a40d1772c2c0fcb1aec1fefecbbc56bb6622cbe",
+      "7748651f5cb3ee0ccd3d3e6141f315ee5d20454e",
+      "dcae7682cddf5e52ba3bd7b3aebfa0f472d8c890",
+      "36c14e903d73b226a2df5bbf7ab4fbf1943c2906",
+      "74c952b87907a36d84d404ad17a0695be4ac55df",
+      "d89f844a2a0abc7474555f0635344245456f82d6",
+      "ca40b5b38ffac6336872cdb0d5f4f053916f394a",
+      "965518e63c92cbf72e498ab6d10f14f0a78f4196",
+      "ef840e0e6d8f066419a351c25312acb2d5323af7",
+      "4fe1a0a7a42f655564e0b1577a2bc0dd74af8f58",
+      "bc2278e7e9820825ce990fb2fe7fca4b9fe9a1c3",
+      "7305eda972cb423bd51ac18f4966312b346360d0",
+      "d91f06f3c533b231346dc1d0ca5bf0bca265e462",
+      "195afc10b8924ef4d6afc5d409eb8a8e1c43b96c",
+      "e30e980854408d46b2e8837a14a0c0d771a18545",
+      "5529d2e15e142dcec0ee5a239ffadb33e3295b01",
+      "5714643ff9001e70e0fbf8ecb4f55369dcf7ae61",
+      "b11e3617990bee170122c4af1913ed79ddb4a632",
+      "017ebb091aa64596f9545c89e67f6c880f8bb121",
+      "d8b41919751da63f63745b4a9d2ce894dd61342d",
+      "13bdd05934a7363016aa9a92c0d5bef13c0e81a4",
+      "383e9c707249e88075044d2170a0f1e68411ee76",
+      "f8d3fe1817b2ac977c051243d6ffc9077a000ba3",
+      "7f63e65f22bff5d4bf5962e3555bc4107c31de6e",
+      "7f2eb90f24df180a7c0dd6c1b888aaba65b3dbb6",
+      "d324ccc0977d0347e4f94529490fefbc72e54900",
+      "4da7d867f237542aadac148eebbcff60f82d9ef9",
+      "596f96442e5b60706018e47d63c56bd5abad2a37",
+      "da51dfd5986528d7341ba488b96046603298ae0b",
+      "3d33d5eabb2bed36b5ff252057a96647dbd8c8c7",
+      "665bcb3e53d80a4d4c01e43e0b0bea0ecc85383c",
+      "a1cbdc980e05f0a03616d89e0b3d6986e0e59aa8",
+      "a1d86d120fa046eabdfc0fc1a674e34aebdc81f1",
+      "02f24ed0af859dd9a3e21ba009ed3714733a50f8",
+      "9cf75cca7af6a198c418d99a2bd6d78efb2e5d9b",
+      "32d469285382521bae4ad3f368a7045f32ff2f5e",
+      "bb23f99b3eeaced9608e11e280e7c986dba650be"
+    ],
+    "logical_ios_patch_count": 13,
+    "logical_ios_patch_ids": [
+      "IOS-A7-RUNTIME",
+      "IOS-AGENT-BATTERY",
+      "IOS-AGENT-BUILD-PROBE",
+      "IOS-AGENT-SYSTEM-HOOK",
+      "IOS-FRONTEND-BUILD",
+      "IOS-HUB-BUILD-PIPELINE",
+      "IOS-INSTALLER-ARCH-DETECTION",
+      "IOS-INSTALLER-BOOTSTRAP-INTEGRITY",
+      "IOS-INSTALLER-LIFECYCLE",
+      "IOS-INSTALLER-VALIDATION",
+      "IOS-PORT-DOCUMENTATION",
+      "IOS-RELEASE-ISOLATION",
+      "IOS-UPSTREAM-SYNC-CI"
+    ]
+  },
+  "pr": {
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/12",
+    "title": "P010 — Harden iOS network monitors and unsupported collectors",
+    "final_head_provenance": "Final documentation-inclusive HEAD, workflow URLs/results and post-merge SHA/ref/tree evidence are recorded in the PR progress record; a commit cannot contain its own SHA."
+  },
+  "validation": [
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP010DNS|TestMonitorDNS|TestMonitorResolutionCancellation' -count=10",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "d012cb945f51c305217ec607b1c57cc79c2cf4df981d600dccf2faab5ca806b3",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t2.705s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -tags 'testing no_ui' ./... (final production source)",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "d5afaf512767c55803593484682c14acc2bf8b576c853a022a3b99665fc6a685",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/internal/records\t(cached)",
+        "?   \tgithub.com/henrygd/beszel/internal/site\t[no test files]",
+        "ok  \tgithub.com/henrygd/beszel/internal/tests\t(cached)",
+        "ok  \tgithub.com/henrygd/beszel/internal/users\t(cached)",
+        "?   \tgithub.com/henrygd/beszel/scripts/audit/transport-agent-smoke\t[no test files]"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/transport -run TestP010 -count=3 (final production source)",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "202b2e1dcc3e96372765479ee5936f86636f73fcf0e97c7c892db19208fac53b",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t3.349s",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub/transport\t1.014s"
+      ]
+    },
+    {
+      "command": "python3 .github/scripts/check-ios-source-selection.py --output /workspace/p010-evidence/source-selection-final.json",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "14038c428605a648036201ea02929bf819f03656c277c3ea506a5f6c8dfa4472",
+      "log_tail": [
+        "PASS ios/arm64 CGO=1: Agent/Hub, platform families, gopsutil, frontend embed",
+        "PASS darwin/arm64 CGO=1: Agent/Hub, platform families, gopsutil, frontend embed",
+        "PASS linux/arm64 CGO=1: Agent/Hub, platform families, gopsutil, frontend embed"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent/zfs -count=1",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "6f096d8b8233b8ac615bc0fb7933893d568b0045ea86a7ce58bb1b6dd1132bc3",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent/zfs\t2.053s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP010(TCP|DNS|HTTP)|TestMonitor(TCP|DNS|HTTP|TLS)' -count=1",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "9afe92ba591e5ef04608aa773af21614fa72e391f7e10e5badad81739c3fe84f",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t1.274s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP010(ICMP|IOSPing|Ping)|TestMonitorICMP|TestPing|TestDetectICMP|TestResolveICMP' -count=5 -v",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "da0266421196789b581bf01a542d692a43c32eebfb1994f39a7327225bb2c211",
+      "log_tail": [
+        "    --- PASS: TestResolveICMPTarget/IPv4_literal (0.00s)",
+        "    --- PASS: TestResolveICMPTarget/IPv6_literal (0.00s)",
+        "    --- PASS: TestResolveICMPTarget/IPv4-mapped_IPv6_resolves_as_IPv4 (0.00s)",
+        "PASS",
+        "ok  \tgithub.com/henrygd/beszel/agent\t3.289s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP010(Monitor|Delete|Cancellation|OutOfOrder)|TestMonitor(Schedule|Replacement|History|Resume|Manager|Scheduled)' -count=10",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "9b4229972ff405ea9e8ee61da01f5ae033f27b88bef762d5623c18c24c4ae395",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t1.672s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP010(TLS|Certificate)|Test.*Cert|TestMonitorTLS' -count=3",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "8bd74cfd79bc3af6a8132f51754c06ac3e00af6b35b2afa093127acb94e929b3",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t1.988s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/zfs ./agent/btrfs ./agent/wifi -run 'TestP010IOS|Test.*(GPU|Gpu|Smart|StoragePool|Btrfs|Zfs|Wifi|WiFi|Emmc|Mdraid|Fan|Temperature)' -count=1",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "a9487270a40418907eca340045496db07b6d75ac2a1dc7a4303182f6e2923035",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t3.405s",
+        "ok  \tgithub.com/henrygd/beszel/agent/zfs\t1.015s",
+        "ok  \tgithub.com/henrygd/beszel/agent/btrfs\t1.021s",
+        "ok  \tgithub.com/henrygd/beszel/agent/wifi\t1.017s [no tests to run]"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub ./internal/hub/systems ./internal/hub/ws ./internal/hub/transport -run 'TestP010MonitorProtocol|TestP010MonitorCBOR|TestP010MonitorRecovery|TestP010Snapshot|Test.*NetworkMonitor|TestGenerateMonitorID|TestCopyMonitor|TestUnmarshal' -count=3",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "f16da9ee5d4c293e79bcf0dcbb9b1e6350d16a6186f5d59c24393756a6b754eb",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t3.826s",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub\t386.611s",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub/systems\t529.043s",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub/ws\t1.029s [no tests to run]",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub/transport\t1.156s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP010DNSIPv6|TestP010Native' -count=10",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "f7be60e0c8aaebdada4fb5958b49c2bc622f3293776d61729ba7af4990669ade",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t3.487s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run TestMonitorICMPReplyCorrelation -count=10",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "904478feb0be993202731d6e52d0b8a84444ad1e5e435f5fd70cb6b9c8da7214",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t1.893s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/transport -run TestP010 -count=3",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "892c33ccecf9ce6570b5cc7acfd3ecea03e78423c0c92fbc3728faf07f830f07",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent\t9.206s",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub/transport\t1.103s"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -tags 'testing no_ui' ./...",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "25d3a34b4f21faa46d05ef0448685eee6a0e56e8510d59e29f3b0010dd999cc7",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/internal/records\t57.111s",
+        "?   \tgithub.com/henrygd/beszel/internal/site\t[no test files]",
+        "ok  \tgithub.com/henrygd/beszel/internal/tests\t2.059s",
+        "ok  \tgithub.com/henrygd/beszel/internal/users\t29.427s",
+        "?   \tgithub.com/henrygd/beszel/scripts/audit/transport-agent-smoke\t[no test files]"
+      ]
+    },
+    {
+      "command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "7730b3c83579dd6812df426ec1b24771abfb6f461535fc872243db70ad275dc5",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent/deltatracker\t1.077s",
+        "ok  \tgithub.com/henrygd/beszel/internal/entities/system\t1.179s",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub/ws\t1.309s",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub/transport\t5.585s",
+        "ok  \tgithub.com/henrygd/beszel/internal/hub/systems\t475.472s"
+      ]
+    },
+    {
+      "command": "python3 scripts/audit/validate-upstream-v021-matrix.py",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "46667426fb1e020f6530ec66ab2f201b438edc255b8a2287f63294eb02729ad5",
+      "log_tail": [
+        "Release batches: P004=25, P005=116, P006=37",
+        "Priorities: P0=21, P1=74, P2=83, none=0",
+        "Subsystem rows: Agent=63, Agent:CPU/RAM=5, Agent:Cgroups=2, Agent:Containers=6, Agent:Disk I/O=14, Agent:GPU=7, Agent:NVMe SMART=7, Agent:Network=7, Agent:Package updates=5, Agent:Platform collectors=4, Agent:Polling/errors=13, Agent:Systemd=6, Agent:Wi-Fi RSSI=7, Agent:ZFS=6, CI=4, Database=12, Database:History=4, Database:Migrations=7, Database:Records=20, Dependencies=12, Dependencies:Bun/npm=6, Dependencies:Go=6, Documentation=20, Frontend=79, Frontend:Alerts UI=5, Frontend:Charts=18, Frontend:Dashboard=18, Frontend:Dependencies=6, Frontend:Localization=13, Frontend:Logs=3, Frontend:Network monitors=21, Frontend:Package updates UI=6, Frontend:Settings=4, Frontend:Wi-Fi charts=6, Hub=43, Hub:API=12, Hub:Alerts=10, Hub:Authorization=8, Hub:Monitor records=15, Hub:Polling=27, Hub:Sessions/users=3, Platform=8, Platform:Docker/release=6, Platform:Linux=16, Platform:Windows=4, Platform:macOS=2, Protocol=32, Protocol:CBOR/JSON=22, Protocol:Headers/auth=2, Protocol:SSH=8, Protocol:TLS=2, Protocol:WebSocket=18, Tests=97",
+        "Unresolved audit rows: 0",
+        "Validation: PASS"
+      ]
+    },
+    {
+      "command": "python3 scripts/audit/validate-upstream-v021-readiness.py",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "9d153cd76ea6080ba376b102d2fd52c172c5a450e412b428f57b3248cccf9e12",
+      "log_tail": [
+        "Readiness coverage: acceptance_cases=24, compatibility_scenarios=33, logical_ios_patches=13, p0_risks=21, upstream_commits=178",
+        "Readiness validation passed; no files were modified."
+      ]
+    },
+    {
+      "command": "python3 -m unittest discover -s tests/audit -p 'test_*.py' -v",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "2a4fcaab6106c8ee6a03daae2b44d8635119beb951e8607d2ec5c2ed34b3761a",
+      "log_tail": [
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 49 tests in 11.615s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "command": "sh tests/upstream-sync-test.sh",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "95aad086addce56f54ee0443f59f9aa1725ee12a708f47a68b50c2ab52b51a13",
+      "log_tail": [
+        "PASS: ahead exit status reports expected status",
+        "PASS: malformed exit status",
+        "PASS: malformed exit status reports expected status",
+        "",
+        "10 passed, 0 failed"
+      ]
+    },
+    {
+      "command": "sh tests/ios-patch-sentinels.sh",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "2445c4b2035b0743cb67f6a93ba9bfa3724f9b418dcede49d6da9455fa5645b5",
+      "log_tail": [
+        "PASS: G.5 non-iOS platform file exists",
+        "PASS: G.6 non-iOS platform file has //go:build !ios",
+        "",
+        "45 passed, 0 failed",
+        "All iOS patch regression checks passed."
+      ]
+    },
+    {
+      "command": "sh tests/bootstrap-test.sh",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "178e2737b3f9bdc44fbff924393ab58d17ec7eb3db8f7647fd6c9360ee563abb",
+      "log_tail": [
+        "PASS: missing SHA-256 tool aborts before download and before execution",
+        "== bootstrap staging cleanup ==",
+        "PASS: fixture runs leave no /tmp/beszel-installer.* staging directories behind",
+        "",
+        "54 passed, 0 failed"
+      ]
+    },
+    {
+      "command": "sh tests/install-sh-test.sh",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "81ae70b0a0200b17f1220b95a02195596700077b32eb8d6815c5fc36109f2f43",
+      "log_tail": [
+        "PASS: refusal leaves no fetch attempt, no partial staging, existing CLI intact",
+        "PASS: engine defines no mutable manager-source URL",
+        "PASS: stage_manager_source performs no download",
+        "",
+        "814 passed, 0 failed"
+      ]
+    },
+    {
+      "command": "python3 .github/scripts/check-ios-source-selection.py --output /workspace/p010-evidence/source-selection.json",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "b50f329e7746e89b6225d65c02bf3a57e861713660affed26c3502eb09eae32d",
+      "log_tail": [
+        "go: downloading modernc.org/memory v1.12.1",
+        "go: downloading github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec",
+        "PASS ios/arm64 CGO=1: Agent/Hub, platform families, gopsutil, frontend embed",
+        "PASS darwin/arm64 CGO=1: Agent/Hub, platform families, gopsutil, frontend embed",
+        "PASS linux/arm64 CGO=1: Agent/Hub, platform families, gopsutil, frontend embed"
+      ]
+    },
+    {
+      "command": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go test -c -tags 'testing no_ui' ./internal/hub/{transport,ws} (separate invocations)",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log_tail": []
+    },
+    {
+      "command": "env -u NETWORK go test -tags 'testing no_ui' ./agent/zfs",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "b45cf4e29afc71fae1acfa0dcfe4bcbc7ebfdcaadb01f4170ca40f5be2c12b62",
+      "log_tail": [
+        "ok  \tgithub.com/henrygd/beszel/agent/zfs\t0.106s"
+      ]
+    },
+    {
+      "command": "GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -trimpath ./internal/cmd/{agent,hub} (separate invocations); verify every production frontend asset in actual Hub",
+      "status": "PASS",
+      "exit_code": 0,
+      "log_sha256": "5dce4e90d77d72b2ef604511fd4e4e6d713dd03b21ca0f0297efbf837e569729",
+      "log_tail": [
+        "PASS actual Linux Hub embeds all 95 genuine production frontend files"
+      ]
+    }
+  ],
+  "frontend": {
+    "bun": "1.4.0",
+    "frozen_install": "PASS",
+    "catalog_generation": "PASS",
+    "tests": {
+      "passed": 44,
+      "failed": 0,
+      "expect_calls": 151
+    },
+    "production_build": "PASS",
+    "lock_sha256": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa",
+    "actual_hub_embedding": {
+      "embedded_asset_count": 95,
+      "binaries": {
+        "beszel-agent-linux": "091b4a57285468e1730809c73958b2e8356f018b6c92e1a57656c8fa3c99ce1b",
+        "beszel-hub-linux": "951454ba3c829b4138c27811a4740399d117355ce7f855796d452c08eca8b7a3"
+      }
+    },
+    "build_vcs_note": "First local Linux build used a working tree with evidence/source work in progress; final clean-head build provenance is recorded separately in the PR."
+  },
+  "platform_selection": {
+    "targets": [
+      "ios/arm64",
+      "darwin/arm64",
+      "linux/arm64"
+    ],
+    "cgo_enabled": 1,
+    "status": "PASS",
+    "manifest_sha256": "a2a7cc060840e161cb25079c48f3174eb63a99083ca95cc3209485197b01331f",
+    "ios_zfs_testing_tag_selection_sha256": "dcc4fa7bef23842445f0a802adfc80df24fb1de7e4fb22c54726ea24d3ea5ca7",
+    "ios_only_zfs_test": "Selected source; not executed on physical iOS. Host collector policy and selection fixtures are separate."
+  },
+  "icmp_evidence": {
+    "packet_algorithms": "PASS",
+    "simulated_permissions": "PASS",
+    "subprocess_faults": "PASS",
+    "real_host_sockets": {
+      "status": "UNAVAILABLE",
+      "not_counted_as_pass": true,
+      "skipped_modes": [
+        "ip4:icmp",
+        "udp4",
+        "ip6:ipv6-icmp",
+        "udp6"
+      ],
+      "reasons": [
+        "operation not permitted",
+        "permission denied"
+      ]
+    },
+    "physical_ios": "NOT RUN; P018 / Gate F",
+    "strategy": "Independent family caches; raw then datagram then available/validated executable; five-minute capability retry; no privilege escalation; bounded output/deadlines; cryptographic token/sequence retained."
+  },
+  "reproductions": {
+    "cancelled_dns_literal": {
+      "status": "REPRODUCED_THEN_FIXED",
+      "log_sha256": "c437341eb42880e662ca168966ed0a824fd5b7d39f643c199e04932746c3d073"
+    },
+    "delete_while_waiting_for_certificate": {
+      "status": "REPRODUCED_THEN_FIXED",
+      "log_sha256": "f6a39dfe9f923542cb792c8e02f35cbc4190bcada0af51283f4ca6e162550285"
+    },
+    "stale_cbor_loss_on_ws_recovery": {
+      "status": "REPRODUCED_THEN_FIXED",
+      "log_sha256": "984d870087051b88e1c9309b325c54e6686da3b9b6ec37a0972c16beb459b809",
+      "note": "Known-failing pre-repair run; remaining systems repetition was stopped after reproduction, not counted as a gate pass."
+    }
+  },
+  "native_ci": {
+    "source_candidate_run": {
+      "conclusion": "success",
+      "headSha": "14a778f1ad56bd8f7e251f9e61b196f6725dc953",
+      "jobs": [
+        {
+          "completedAt": "2026-10-15T00:11:24Z",
+          "conclusion": "success",
+          "databaseId": 116170753072,
+          "name": "build-ios",
+          "startedAt": "2026-10-15T00:01:07Z",
+          "status": "completed",
+          "steps": [
+            {
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Checkout",
+              "number": 2,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Run iOS maintenance sentinels",
+              "number": 3,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Setup Go",
+              "number": 4,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Setup Bun",
+              "number": 5,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Test native build validators",
+              "number": 6,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build and test real web UI",
+              "number": 7,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Verify iOS, macOS and Linux source selection",
+              "number": 8,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Test portable telemetry and macOS regressions",
+              "number": 9,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Test transport faults and races",
+              "number": 10,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Test network monitor compatibility and fault recovery",
+              "number": 11,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Preserve macOS build and GPU parser tests",
+              "number": 12,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Show and verify environment",
+              "number": 13,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Patch isolated Go runtime for legacy iOS ARM64",
+              "number": 14,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Build Beszel Agent and Hub twice with isolated caches",
+              "number": 15,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Inspect runtime instructions in unstripped validation builds",
+              "number": 16,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Inspect native Mach-O outputs",
+              "number": 17,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Generate and verify exact payload and frontend embedding",
+              "number": 18,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Upload iOS review payload",
+              "number": 19,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Upload native validation evidence",
+              "number": 20,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Setup Bun",
+              "number": 38,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Setup Go",
+              "number": 39,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Post Checkout",
+              "number": 40,
+              "status": "completed"
+            },
+            {
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 41,
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38657535072/job/116170753072"
+        },
+        {
+          "completedAt": "2026-10-15T00:11:24Z",
+          "conclusion": "skipped",
+          "databaseId": 116174136315,
+          "name": "release-ios",
+          "startedAt": "2026-10-15T00:11:25Z",
+          "status": "completed",
+          "steps": [],
+          "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38657535072/job/116174136315"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38657535072"
+    },
+    "installer_source_candidate_run": {
+      "conclusion": "success",
+      "headSha": "14a778f1ad56bd8f7e251f9e61b196f6725dc953",
+      "status": "completed",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38657538922"
+    },
+    "artifacts": {
+      "beszel-agent-ios-arm64": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "command": "LC_BUILD_VERSION",
+        "platform": 2,
+        "minos": "12.0",
+        "sdk": 1115392,
+        "entry_kind": "file",
+        "entry": 549376,
+        "sha256": "a824edd2afcc8be5acd754905cef07c58987f27afd8e79ffa097827f1a8653f4",
+        "bytes": 9460632,
+        "build_info": {
+          "go": "go1.27.1",
+          "entry_package": "github.com/henrygd/beszel/internal/cmd/agent",
+          "settings": {
+            "CGO_ENABLED": "1",
+            "GOARCH": "arm64",
+            "GOOS": "ios",
+            "GOARM64": "v8.0",
+            "vcs": "git",
+            "vcs.revision": "14a778f1ad56bd8f7e251f9e61b196f6725dc953",
+            "vcs.time": "2026-10-15T00:00:44Z",
+            "vcs.modified": "false"
+          }
+        }
+      },
+      "beszel-hub-ios-arm64": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "command": "LC_BUILD_VERSION",
+        "platform": 2,
+        "minos": "12.0",
+        "sdk": 1115392,
+        "entry_kind": "file",
+        "entry": 565872,
+        "sha256": "f880491c82c03ecf5d5bd1b87c9d020af388f01b04b4c9d1f79398ed4a38354c",
+        "bytes": 31927840,
+        "build_info": {
+          "go": "go1.27.1",
+          "entry_package": "github.com/henrygd/beszel/internal/cmd/hub",
+          "settings": {
+            "CGO_ENABLED": "1",
+            "GOARCH": "arm64",
+            "GOOS": "ios",
+            "GOARM64": "v8.0",
+            "vcs": "git",
+            "vcs.revision": "14a778f1ad56bd8f7e251f9e61b196f6725dc953",
+            "vcs.time": "2026-10-15T00:00:44Z",
+            "vcs.modified": "false"
+          }
+        },
+        "embedded_asset_count": 95
+      }
+    },
+    "independent_validation": {
+      "beszel-agent-ios-arm64": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "command": "LC_BUILD_VERSION",
+        "platform": 2,
+        "minos": "12.0",
+        "sdk": 1115392,
+        "entry_kind": "file",
+        "entry": 549376,
+        "sha256": "a824edd2afcc8be5acd754905cef07c58987f27afd8e79ffa097827f1a8653f4",
+        "bytes": 9460632,
+        "build_info": {
+          "go": "go1.27.1",
+          "entry_package": "github.com/henrygd/beszel/internal/cmd/agent",
+          "settings": {
+            "CGO_ENABLED": "1",
+            "GOARCH": "arm64",
+            "GOOS": "ios",
+            "GOARM64": "v8.0",
+            "vcs": "git",
+            "vcs.revision": "14a778f1ad56bd8f7e251f9e61b196f6725dc953",
+            "vcs.time": "2026-10-15T00:00:44Z",
+            "vcs.modified": "false"
+          }
+        }
+      },
+      "beszel-hub-ios-arm64": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "command": "LC_BUILD_VERSION",
+        "platform": 2,
+        "minos": "12.0",
+        "sdk": 1115392,
+        "entry_kind": "file",
+        "entry": 565872,
+        "sha256": "f880491c82c03ecf5d5bd1b87c9d020af388f01b04b4c9d1f79398ed4a38354c",
+        "bytes": 31927840,
+        "build_info": {
+          "go": "go1.27.1",
+          "entry_package": "github.com/henrygd/beszel/internal/cmd/hub",
+          "settings": {
+            "CGO_ENABLED": "1",
+            "GOARCH": "arm64",
+            "GOOS": "ios",
+            "GOARM64": "v8.0",
+            "vcs": "git",
+            "vcs.revision": "14a778f1ad56bd8f7e251f9e61b196f6725dc953",
+            "vcs.time": "2026-10-15T00:00:44Z",
+            "vcs.modified": "false"
+          }
+        },
+        "embedded_asset_count": 95
+      }
+    },
+    "artifact_api": {
+      "total_count": 2,
+      "artifacts": [
+        {
+          "id": 11937961329,
+          "node_id": "MDg6QXJ0aWZhY3QxMTkzNzk2MTMyOQ==",
+          "name": "ios-native-validation",
+          "size_in_bytes": 6378,
+          "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11937961329",
+          "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11937961329/zip",
+          "expired": false,
+          "digest": "sha256:bc129fd563f1149c0faa6d9a5ac05459a4658c13f9379d89a3595557feeb1a46",
+          "created_at": "2026-10-15T00:11:03Z",
+          "updated_at": "2026-10-15T00:11:03Z",
+          "expires_at": "2027-01-13T00:01:00Z",
+          "workflow_run": {
+            "id": 38657535072,
+            "repository_id": 1367312898,
+            "head_repository_id": 1367312898,
+            "head_branch": "ios/network-monitor-compatibility",
+            "head_sha": "14a778f1ad56bd8f7e251f9e61b196f6725dc953"
+          }
+        },
+        {
+          "id": 11937701739,
+          "node_id": "MDg6QXJ0aWZhY3QxMTkzNzcwMTczOQ==",
+          "name": "beszel-ios-arm64",
+          "size_in_bytes": 16237212,
+          "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11937701739",
+          "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/11937701739/zip",
+          "expired": false,
+          "digest": "sha256:290a80d7b38f9a45be1493e31e9583aa0eaeebef458d0c78d53f2f10ae530c83",
+          "created_at": "2026-10-15T00:11:01Z",
+          "updated_at": "2026-10-15T00:11:01Z",
+          "expires_at": "2027-01-13T00:01:00Z",
+          "workflow_run": {
+            "id": 38657535072,
+            "repository_id": 1367312898,
+            "head_repository_id": 1367312898,
+            "head_branch": "ios/network-monitor-compatibility",
+            "head_sha": "14a778f1ad56bd8f7e251f9e61b196f6725dc953"
+          }
+        }
+      ]
+    },
+    "runtime_patch": {
+      "status": "PASS",
+      "go": "go1.27.1",
+      "path": "/Users/runner/work/_temp/go-ios-a7/src/runtime/asm_arm64.s",
+      "source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+      "patched_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f",
+      "replacement": "zero-guarded YIELD loop; no CNTFRQ_EL0/CNTVCT_EL0 reads"
+    },
+    "runtime_agent": {
+      "symbol": "runtime.procyieldAsm.abi0",
+      "instructions": [
+        "b9400be0",
+        "b4000080",
+        "d503203f",
+        "51000400",
+        "b5ffffc0",
+        "d65f03c0",
+        "00000000",
+        "00000000"
+      ],
+      "counter_access": false,
+      "status": "PASS"
+    },
+    "runtime_hub": {
+      "symbol": "runtime.procyieldAsm.abi0",
+      "instructions": [
+        "b9400be0",
+        "b4000080",
+        "d503203f",
+        "51000400",
+        "b5ffffc0",
+        "d65f03c0",
+        "00000000",
+        "00000000"
+      ],
+      "counter_access": false,
+      "status": "PASS"
+    },
+    "tools": {
+      "Go": "1.27.1",
+      "Bun": "1.4.0",
+      "Xcode": "15.4",
+      "iPhoneOS_SDK": "17.5"
+    },
+    "artifact_zip_digests_verified": true,
+    "native_source_candidate_status": "PASS",
+    "release_job": "SKIPPED",
+    "final_head_record": "PR #12 records authoritative final documentation-inclusive HEAD checks after later DNS/ZFS edits."
+  },
+  "acceptance": {
+    "IOS-AGENT-04": "LOCAL SOURCE/FIXTURE PASS; native/final-head/merge gate pending",
+    "IOS-AGENT-06": "LOCAL SOURCE/FIXTURE PASS; native/final-head/merge gate pending",
+    "P010_gate": "SOURCE/FIXTURE AND NATIVE CANDIDATE PASS; final integration gate requires final-head checks and normal merge recorded in PR #12",
+    "Gate_C": "NOT COMPLETE; P011/P012 and applicable device acceptance remain",
+    "P018": "Physical iOS ICMP permissions, A7 execution, trust/DNS/network reliability, services/reboot remain hardware obligations"
+  },
+  "safety": {
+    "production_database_accessed": false,
+    "pocketbase_migrations_changed": false,
+    "physical_device_modified": false,
+    "jailbreak_privileges_changed": false,
+    "release_tag_or_deployment": false,
+    "P011_started": false,
+    "P012_started": false,
+    "historical_device_evidence_changed": false
+  },
+  "limitations": [
+    "Privileged cloud socket SKIPs are not passes.",
+    "Synthetic/native build evidence does not prove physical iPad operation.",
+    "Optional full Windows Agent build retains the pre-existing missing LHM assets limitation; WS/SSH transport test binaries compile separately."
+  ]
+}

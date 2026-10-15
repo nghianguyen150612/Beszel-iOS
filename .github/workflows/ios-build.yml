@@ -91,6 +91,13 @@ jobs:
           env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems
           env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport -run TestP009 -count=3 -timeout=180s
 
+      - name: Test network monitor compatibility and fault recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/transport -run TestP010 -count=3 -timeout=180s
+          env -u NETWORK go test -race -tags 'testing no_ui' ./internal/hub ./internal/hub/systems -run 'Test.*NetworkMonitor|TestGenerateMonitorID|TestCopyMonitor' -count=1
+
       - name: Preserve macOS build and GPU parser tests
         shell: bash
         run: |
