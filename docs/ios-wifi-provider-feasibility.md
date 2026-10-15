@@ -106,3 +106,20 @@ SHA256 of inspected upstream bytes (not shipped SDK files):
 | Cykey WiFiManager.h | `b4549c720b5766307a0888ba0c736ad2d940334ad101a101c996e127c31b803d` |
 | Cykey WiFiNetwork.h | `68c963636c1529258761ec81b7e6a64dbb02ed4f63d420cf58329683b3d61835` |
 | iOS 12.4 MobileWiFi.tbd | `f7ac468998f286a1e0bc850a16c1f8c12027b6032f7485c41ac4660bc679efdf` |
+
+## P012A follow-up (original P012 evidence above preserved)
+
+Starting feature: `88dcf9b89389cd58de6f4859d4619485451dfa82`; PR #14 remains Draft.
+The [ABI manifest](ios-wifi-native-abi-manifest.json) separates verified pinned
+header bytes and iOS 12.4 exports from unknown firmware-specific typed ABI.
+A new pinned firmware-derived report identifies MobileWiFi 634.21 / UUID
+FA49B5A2-2578-38A0-AE5E-5DDBB37D68EA in build 16H81, but its image is iPhone 6 Plus,
+not the reference iPad; symbol count alone does not establish the six prototypes.
+
+Apple's iPad4,4 12.5.7 restore image is publicly available. No smaller verified
+extracted binary was found. A separate read-only cloud workflow inspects one
+checksum-pinned restore image, selects board j85ap from BuildManifest, verifies
+mounted SystemVersion, and records exports, binary hashes and selected function
+disassembly. It never executes firmware code or accesses a physical device;
+only derived evidence is uploaded. Firmware-specific conclusions remain pending
+that result. No native provider is activated by these research tools.

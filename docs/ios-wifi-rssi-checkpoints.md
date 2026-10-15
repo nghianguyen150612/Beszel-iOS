@@ -125,3 +125,21 @@ matching EN/VI reports are ready for publication.
 Next: publish this exact reviewed tree, verify new final-head push workflows and
 record final SHA/results in PR #14. Keep Draft: native RSSI remains blocked and
 Gate C pending. Do not merge, start P013, deploy, sign or modify devices/data.
+
+## P012A A — resume and firmware-specific investigation
+
+Resumed exactly `88dcf9b89389cd58de6f4859d4619485451dfa82`; all four remote refs
+match the expected baselines; clean branch and Draft PR #14 retained. Reviewed
+previous EN/VI/JSON evidence, ledger, source, workflow and final CI comment.
+
+New: machine-readable per-symbol ABI/ownership manifest with exact pinned source
+hashes, conservative evidence statuses, and firmware-derived build 16H81 metadata.
+Reusable declaration validation rejects mismatched source bytes. Found the exact
+Apple reference restore image; no smaller verified extraction was found. A
+separate cloud-only workflow will inspect the checksum-pinned image read-only,
+without running Apple firmware or touching hardware. This inspection is pending.
+
+Focused ABI/firmware manifest tests and existing iOS build tests pass. Production
+polling fallback is unchanged. Next: collect firmware evidence, implement strict
+helper result conversion/state fixtures and bounded process orchestration.
+P012 remains BLOCKED; Gate C PENDING; P013 not started.
