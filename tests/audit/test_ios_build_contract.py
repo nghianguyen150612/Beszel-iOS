@@ -170,6 +170,18 @@ def packages(target):
 
 
 class SelectionTests(unittest.TestCase):
+    def test_five_wifi_targets_reject_foreign_implementations(self):
+        for target in ['ios', 'darwin', 'linux', 'windows', 'freebsd']:
+            expected = 'wifi_unsupported.go' if target == 'freebsd' else 'wifi_' + target + '.go'
+            package = {'GoFiles': ['wifi.go', expected]}
+            selection.validate_wifi(package, target)
+            for foreign in ['ios', 'darwin', 'linux', 'windows', 'unsupported']:
+                name = 'wifi_' + foreign + '.go'
+                if name == expected:
+                    continue
+                with self.subTest(target=target, foreign=name), self.assertRaises(ValueError):
+                    selection.validate_wifi({'GoFiles': ['wifi.go', expected, name]}, target)
+
     def test_all_targets(self):
         for target in ['ios','darwin','linux']:selection.validate(packages(target), target)
 
@@ -177,6 +189,12 @@ class SelectionTests(unittest.TestCase):
         for path, filename in [('/agent','gpu_darwin.go'),('/agent','sensors_default.go'),('/agent/zfs','zfs_nonlinux.go'),('/agent','system_platform_other.go'),('/agent','cpu_linux.go'),('/agent/battery','battery_darwin.go'),('/agent/wifi','wifi_darwin.go'),('/agent/wifi','wifi_linux.go'),('/agent/wifi','wifi_windows.go'),('/agent/wifi','wifi_unsupported.go')]:
             graph = packages('ios');graph[selection.MODULE + path]['GoFiles'].append(filename)
             with self.subTest(filename=filename), self.assertRaises(ValueError):selection.validate(graph, 'ios')
+
+    def test_inactive_wifi_helper_is_not_a_main_binary_dependency(self):
+        for target in ['ios', 'darwin', 'linux']:
+            graph = packages(target)
+            graph[selection.MODULE + '/agent/wifi/ioshelper'] = {'GoFiles':['client.go']}
+            with self.subTest(target=target), self.assertRaises(ValueError):selection.validate(graph,target)
 
     def test_missing_dependencies_and_embed(self):
         for path in ['/internal/cmd/hub','/agent/battery']:

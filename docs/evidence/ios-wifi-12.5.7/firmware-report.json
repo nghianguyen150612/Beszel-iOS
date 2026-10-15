@@ -1,0 +1,45 @@
+{
+  "model": "iPad4,4",
+  "board": "j85ap",
+  "version": "12.5.7",
+  "build": "16H81",
+  "ipsw_sha256": "780aa5b20fa9fb5770c18311663bd098dbbf8e89311675a19b4860303edc0cd9",
+  "filesystem_version_verified": true,
+  "private_calls_executed": false,
+  "device_accessed": false,
+  "cache_path": "System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64",
+  "cache_sha256": "e11344fd5c2cb27a87c578ed83d8169e3243cabea1c6439b4593dab243505c28",
+  "binary_status": "EXTRACTED_FROM_REFERENCE_CACHE",
+  "binary_sha256": "052eef70beb4e8471471c9562772ea79437dc2aba51e0cb302f054e0972009ba",
+  "binary_bytes": 356352,
+  "file": "/Users/runner/work/_temp/extracted-cache/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi: Mach-O 64-bit dynamically linked shared library arm64\n",
+  "uuid": "UUID: FA49B5A2-2578-38A0-AE5E-5DDBB37D68EA (arm64) /Users/runner/work/_temp/extracted-cache/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi\n",
+  "exports": {
+    "WiFiManagerClientCreate": true,
+    "WiFiManagerClientCopyDevices": true,
+    "WiFiDeviceClientCopyProperty": true,
+    "WiFiDeviceClientCopyCurrentNetwork": true,
+    "WiFiDeviceClientGetInterfaceName": true,
+    "WiFiNetworkGetSSID": true
+  },
+  "selected_strings": [
+    "RSSI",
+    "com.apple.wifi.manager-access",
+    "RSSI_CTL_AGR"
+  ],
+  "disassembly_status": {
+    "WiFiManagerClientCreate": "EXTRACTED",
+    "WiFiManagerClientCopyDevices": "EXTRACTED",
+    "WiFiDeviceClientCopyProperty": "EXTRACTED",
+    "WiFiDeviceClientCopyCurrentNetwork": "EXTRACTED",
+    "WiFiDeviceClientGetInterfaceName": "EXTRACTED",
+    "WiFiNetworkGetSSID": "EXTRACTED"
+  },
+  "selected_functions_sha256": "6f3e56bcd6c34c83074f5452f9650a2542bfd12ceb129a01947c834f0d49bd43",
+  "wifid": {
+    "path": "usr/sbin/wifid",
+    "sha256": "85668efb6c6141831f30f2da3c7eee799aa3fed111302fd7866bd8f36ae56d52",
+    "manager_access_string_present": true
+  },
+  "filesystem_image": "038-87004-055.dmg"
+}

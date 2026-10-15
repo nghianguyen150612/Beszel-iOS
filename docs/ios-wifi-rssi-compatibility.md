@@ -157,3 +157,11 @@ receive a new feature-head push run; the exact final commit and final CI URLs
 are recorded in PR #14 to avoid claiming that an earlier run tested a later SHA.
 These build results establish the unavailable adapter only. P012 native RSSI
 remains BLOCKED and Gate C remains PENDING.
+
+## P012A continuation
+
+See [native blocker resolution](ios-wifi-native-blocker-resolution.md) and the
+`p012a` evidence extension. Exact reference-firmware exports are now verified;
+strict conversion, bounded inactive helper client and separate disabled native
+diagnostic are implemented. These do not activate RSSI. Historical evidence above
+is preserved at its original tested SHA. P012 BLOCKED / Gate C PENDING remains.

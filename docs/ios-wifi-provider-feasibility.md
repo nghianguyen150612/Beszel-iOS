@@ -123,3 +123,18 @@ mounted SystemVersion, and records exports, binary hashes and selected function
 disassembly. It never executes firmware code or accesses a physical device;
 only derived evidence is uploaded. Firmware-specific conclusions remain pending
 that result. No native provider is activated by these research tools.
+
+### P012A reference firmware result
+
+The exact iPad4,4 12.5.7/16H81 restore and cache were inspected successfully in
+run 38741425098 at `6b859dd6bdf4b7be457546567ba77ef5dfc4e070`. All six candidate
+exports are now verified against that image. See the ABI manifest and retained
+small disassembly/report in `docs/evidence/ios-wifi-12.5.7/`. Typed ABI/opaque
+ownership remain strongly inferred; no activation is authorized by export names.
+CopyDevices uses manager-side cached devices; CopyCurrentNetwork does synchronous
+MIG, whose daemon freshness/authorization is unknown. RSSI_CTL_AGR string presence
+does not establish raw dBm. Minimal manager-access necessity/sufficiency remains
+unknown. An inactive bounded process client now addresses source-side isolation;
+a separate diagnostic inventories symbols but never invokes them. No experimental
+flag enables acquisition. Full findings and P018 protocol are in the EN/VI native
+blocker-resolution documents. P012 remains BLOCKED; Gate C PENDING.

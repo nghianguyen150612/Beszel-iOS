@@ -143,3 +143,10 @@ Job release đã skip. Thay đổi tài liệu/filter nhánh workflow cuối nh�
 push mới trên feature HEAD; commit cuối và URL CI cuối ghi tại PR #14, không coi
 run cũ là test cho SHA mới. Build này chỉ chứng minh adapter unavailable; RSSI
 native P012 vẫn BLOCKED, Gate C vẫn PENDING.
+
+## Tiếp tục P012A
+
+Xem [giải quyết điểm chặn native](ios-wifi-native-blocker-resolution.vi.md) và phần
+`p012a` của JSON. Đã xác minh export đúng firmware, thêm chuyển đổi chặt chẽ,
+client helper giới hạn chưa kích hoạt và diagnostic native riêng luôn unavailable.
+Không bật RSSI. Chứng cứ cũ giữ nguyên SHA ban đầu. P012 BLOCKED / Gate C PENDING.

@@ -242,3 +242,16 @@ func TestClientNoStaleResultAndRestrictedEnvironment(t *testing.T) {
 	}
 	require.Equal(t, -40.0, *firstSignal)
 }
+
+func TestNativeDiagnosticUnavailable(t *testing.T) {
+	path := os.Getenv("BESZEL_WIFI_PROBE_TEST_PATH")
+	if path == "" {
+		t.Skip("separate native diagnostic/CF fixtures run on hosted macOS, not this host")
+	}
+	c, err := NewClient(path)
+	require.NoError(t, err)
+	got, err := c.Read(context.Background())
+	require.NoError(t, err)
+	require.Nil(t, got)
+	require.NoError(t, c.Close(context.Background()))
+}

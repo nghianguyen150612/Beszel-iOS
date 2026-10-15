@@ -782,5 +782,115 @@
     "jailbreak": "Amethyst / Procursus",
     "accessed": false
   },
-  "final_head_validation": "A final evidence/workflow-branch checkpoint will receive push-triggered CI. Exact final HEAD and final runs will be recorded in PR #14; no further source changes are planned."
+  "final_head_validation": "A final evidence/workflow-branch checkpoint will receive push-triggered CI. Exact final HEAD and final runs will be recorded in PR #14; no further source changes are planned.",
+  "p012a": {
+    "starting_feature_sha": "88dcf9b89389cd58de6f4859d4619485451dfa82",
+    "checkpoints": [
+      {
+        "phase": "A",
+        "sha": "0edafbd07a14778c91583b1927d2f2192caca19f"
+      },
+      {
+        "phase": "B",
+        "sha": "41c904911a14a8a4eda582494a57707323b5d9cc"
+      },
+      {
+        "phase": "C",
+        "sha": "6b859dd6bdf4b7be457546567ba77ef5dfc4e070"
+      }
+    ],
+    "activation": false,
+    "normal_ios_collector": "nil unavailable; unchanged",
+    "firmware_evidence": {
+      "model": "iPad4,4",
+      "board": "j85ap",
+      "version": "12.5.7",
+      "build": "16H81",
+      "ipsw_sha256": "780aa5b20fa9fb5770c18311663bd098dbbf8e89311675a19b4860303edc0cd9",
+      "filesystem_version_verified": true,
+      "private_calls_executed": false,
+      "device_accessed": false,
+      "cache_path": "System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64",
+      "cache_sha256": "e11344fd5c2cb27a87c578ed83d8169e3243cabea1c6439b4593dab243505c28",
+      "binary_status": "EXTRACTED_FROM_REFERENCE_CACHE",
+      "binary_sha256": "052eef70beb4e8471471c9562772ea79437dc2aba51e0cb302f054e0972009ba",
+      "binary_bytes": 356352,
+      "file": "/Users/runner/work/_temp/extracted-cache/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi: Mach-O 64-bit dynamically linked shared library arm64\n",
+      "uuid": "UUID: FA49B5A2-2578-38A0-AE5E-5DDBB37D68EA (arm64) /Users/runner/work/_temp/extracted-cache/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi\n",
+      "exports": {
+        "WiFiManagerClientCreate": true,
+        "WiFiManagerClientCopyDevices": true,
+        "WiFiDeviceClientCopyProperty": true,
+        "WiFiDeviceClientCopyCurrentNetwork": true,
+        "WiFiDeviceClientGetInterfaceName": true,
+        "WiFiNetworkGetSSID": true
+      },
+      "selected_strings": [
+        "RSSI",
+        "com.apple.wifi.manager-access",
+        "RSSI_CTL_AGR"
+      ],
+      "disassembly_status": {
+        "WiFiManagerClientCreate": "EXTRACTED",
+        "WiFiManagerClientCopyDevices": "EXTRACTED",
+        "WiFiDeviceClientCopyProperty": "EXTRACTED",
+        "WiFiDeviceClientCopyCurrentNetwork": "EXTRACTED",
+        "WiFiDeviceClientGetInterfaceName": "EXTRACTED",
+        "WiFiNetworkGetSSID": "EXTRACTED"
+      },
+      "selected_functions_sha256": "6f3e56bcd6c34c83074f5452f9650a2542bfd12ceb129a01947c834f0d49bd43",
+      "wifid": {
+        "path": "usr/sbin/wifid",
+        "sha256": "85668efb6c6141831f30f2da3c7eee799aa3fed111302fd7866bd8f36ae56d52",
+        "manager_access_string_present": true
+      },
+      "filesystem_image": "038-87004-055.dmg"
+    },
+    "firmware_ci_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38741425098",
+    "firmware_artifact_sha256": "9fbb17009f59f2b6b68c89dbc7d9003de46e8ad1c5315cf7d40d9996a7a5cd86",
+    "blockers": {
+      "WIFI-ABI-12": {
+        "status": "BLOCKED",
+        "exports": "VERIFIED on exact reference restore",
+        "typed_abi": "STRONGLY_INFERRED; constructor/callee/type/ownership contract incomplete"
+      },
+      "WIFI-ASSOCIATION-12": {
+        "status": "BLOCKED",
+        "current_network_MIG": "VERIFIED in target disassembly",
+        "freshness_and_raw_dBm": "UNKNOWN"
+      },
+      "WIFI-AUTH-12": {
+        "status": "BLOCKED",
+        "manager_access_string": "VERIFIED present in target framework and wifid",
+        "necessity_sufficiency_clean_denial": "UNKNOWN; physical validation mandatory"
+      },
+      "WIFI-BOUND-12": {
+        "status": "PASS source architecture/host fixtures; target execution PENDING",
+        "strategy": "inactive isolated trusted helper; two-second process deadline, capped pipes, kill/wait/reap; no abandoned per-timeout goroutine"
+      }
+    },
+    "native_diagnostic": {
+      "private_function_calls": 0,
+      "acquisition_enabled": false,
+      "snapshot": "always unavailable",
+      "separate_review_artifact": true,
+      "production_payload": false,
+      "host_native_fixture_status": "PENDING hosted macOS",
+      "ios_build_status": "PENDING"
+    },
+    "focused_tests": {
+      "protocol_race": "PASS ten repetitions",
+      "client_fault_race": "PASS five repetitions",
+      "last_followup_race": "PASS three repetitions",
+      "native_CF_on_linux": "NOT EXECUTED; no Apple frameworks"
+    },
+    "acceptance": {
+      "p012": "BLOCKED",
+      "gate_c": "PENDING",
+      "physical_tests_executed": false,
+      "p013_started": false
+    },
+    "full_regressions": "PENDING final source",
+    "final_head_ci": "PENDING"
+  }
 }

@@ -194,3 +194,28 @@ macOS SDK sysroot. Corrected the command, kept this failure recorded, and added 
 checksum-validated restore download cache to avoid repeated Apple transfers.
 Next: finish cache evidence and public-CF conversion/ownership fixtures, build a
 separate non-acquiring native diagnostic, and document minimal privilege/P018.
+
+## P012A D — exact firmware exports and disabled native diagnostic
+
+Checkpoint C published as `6b859dd6bdf4b7be457546567ba77ef5dfc4e070`.
+Research run 38741425098 PASS: exact checksum/model/build/root confirmed, reference
+ARM64 cache extracted, all six exports present; binary/report/disassembly hashes
+recorded in the ABI manifest and retained small derived evidence. Typed ABI is
+strongly inferred, not declared verified. Several functions lack NULL argument
+guards. Association freshness/raw units/minimal authorization remain unresolved.
+
+Added a separate disabled C diagnostic: identity/build-info/symbol inventory only;
+its snapshot always unavailable. No private function pointer is cast or invoked.
+Public-CF conversion/owned-container fixtures and loader fault inventories are
+prepared for hosted sanitizer execution; they have NOT run on this Linux host.
+The hardened workflow builds the iOS diagnostic independently, excludes it from
+normal Agent/Hub payload, checks its Mach-O/provenance/imports, and executes host
+fixtures plus actual C-snapshot→Go-client integration. Source validator additionally
+rejects inactive-client imports and checks Wi-Fi selection for five platforms.
+
+Focused Python tests and Go helper race tests pass locally. The native diagnostic
+requires hosted macOS validation next. EN/VI blocker-resolution reports include
+minimal privilege limitations and a staged read-only P018 protocol which stops
+before unimplemented acquisition. No entitlement/signing/installer change.
+Next: run complete final regressions and hosted native fixtures/builds, debug any
+actual failures, update exact evidence and retain Draft/BLOCKED/Gate C PENDING.

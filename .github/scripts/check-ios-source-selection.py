@@ -28,6 +28,14 @@ def selected(package):
     return set(package.get('GoFiles', []) + package.get('CgoFiles', []) + package.get('SFiles', []))
 
 
+def validate_wifi(package, target):
+    expected = 'wifi_unsupported.go' if target == 'freebsd' else 'wifi_' + target + '.go'
+    implementations = {f for f in selected(package) if f.startswith('wifi_')}
+    if implementations != {expected} or 'wifi.go' not in selected(package):
+        raise ValueError(f'{target}: invalid Wi-Fi implementation: {implementations}')
+    return sorted(selected(package))
+
+
 def validate(packages, target):
     def require(path, names):
         package = packages.get(path)
@@ -38,6 +46,8 @@ def validate(packages, target):
             raise ValueError(f"{target}: {path}: missing {set(names) - files}")
         return package, files
 
+    if MODULE + '/agent/wifi/ioshelper' in packages:
+        raise ValueError('inactive iOS Wi-Fi helper must not enter normal Agent/Hub dependencies')
     require(MODULE + '/internal/cmd/agent', ['agent.go'])
     hub, _ = require(MODULE + '/internal/cmd/hub', ['hub.go'])
     if hub.get('Name') != 'main' or packages[MODULE + '/internal/cmd/agent'].get('Name') != 'main':
@@ -123,6 +133,12 @@ def main():
                                          './internal/cmd/agent', './internal/cmd/hub'], env=env, text=True)
         result[target] = validate(decode_packages(output), target)
         print(f'PASS {target}/arm64 CGO=1: Agent/Hub, platform families, gopsutil, frontend embed')
+    result['wifi_platforms'] = {}
+    for target in ['ios', 'darwin', 'linux', 'windows', 'freebsd']:
+        env = dict(os.environ, GOOS=target, GOARCH='arm64', CGO_ENABLED='1', GOARM64='v8.0', GOFLAGS='')
+        package = json.loads(subprocess.check_output(['go', 'list', '-mod=readonly', '-json', './agent/wifi'], env=env, text=True))
+        result['wifi_platforms'][target] = validate_wifi(package, target)
+        print(f'PASS {target}/arm64: Wi-Fi implementation')
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(result, indent=2) + '\n')
