@@ -801,6 +801,10 @@
       {
         "phase": "D",
         "sha": "aac215abdb89c5fa6bc307a550216d044f0906a9"
+      },
+      {
+        "phase": "E",
+        "sha": "b2fa8b0998fe47c1ff485f8912e260a85a09b2bf"
       }
     ],
     "activation": false,
@@ -1251,6 +1255,12 @@
         "sha": "aac215abdb89c5fa6bc307a550216d044f0906a9",
         "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38742936311",
         "result": "PASS"
+      },
+      {
+        "workflow": "iOS installer lifecycle",
+        "sha": "b2fa8b0998fe47c1ff485f8912e260a85a09b2bf",
+        "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38823770552",
+        "result": "PASS"
       }
     ],
     "native_artifacts": {
@@ -1695,6 +1705,104 @@
         "bytes": 0,
         "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
-    ]
+    ],
+    "recovery_regressions": {
+      "source_sha": "b2fa8b0998fe47c1ff485f8912e260a85a09b2bf",
+      "results": [
+        {
+          "name": "canonical",
+          "command": [
+            "env",
+            "-u",
+            "NETWORK",
+            "go",
+            "test",
+            "-tags",
+            "testing no_ui",
+            "./..."
+          ],
+          "exit_code": 0,
+          "seconds": 1.04
+        },
+        {
+          "name": "race",
+          "command": [
+            "env",
+            "-u",
+            "NETWORK",
+            "go",
+            "test",
+            "-race",
+            "-tags",
+            "testing no_ui",
+            "./agent",
+            "./agent/wifi",
+            "./agent/wifi/ioshelper",
+            "./agent/battery",
+            "./agent/deltatracker",
+            "./internal/entities/system",
+            "./internal/hub/ws",
+            "./internal/hub/transport",
+            "./internal/hub/systems",
+            "-count=1"
+          ],
+          "exit_code": 0,
+          "seconds": 149.03
+        },
+        {
+          "name": "focused",
+          "command": [
+            "env",
+            "-u",
+            "NETWORK",
+            "go",
+            "test",
+            "-race",
+            "-tags",
+            "testing no_ui",
+            "./agent",
+            "./agent/wifi",
+            "./agent/wifi/ioshelper",
+            "./internal/hub/transport",
+            "./internal/hub/systems",
+            "-run",
+            "Test(P007|P008|P009|P010|P012|DetectProcursusAPT|ParseProcursusAPT|ProcursusAPT|CompareDpkgVersions|CheckProcursusAPT|Client|Protocol|Snapshot)",
+            "-count=3"
+          ],
+          "exit_code": 1,
+          "seconds": 36.15
+        },
+        {
+          "name": "ios-fallback",
+          "command": [
+            "env",
+            "-u",
+            "NETWORK",
+            "go",
+            "test",
+            "-race",
+            "-tags",
+            "testing no_ui",
+            "agent/wifi/wifi.go",
+            "agent/wifi/wifi_ios.go",
+            "agent/wifi/wifi_test.go",
+            "agent/wifi/wifi_ios_test.go",
+            "-count=10"
+          ],
+          "exit_code": 0,
+          "seconds": 1.39
+        }
+      ],
+      "focused_failure": "TestP009ConcurrentConnectClose selected closed stale server socket in fixture; initial failure retained",
+      "repair": "test-only atomic wrapper/socket queue and current TCP-peer matching; unchanged ping/auth assertions",
+      "focused_repair_command": "env -u NETWORK go test -race -tags 'testing no_ui' ./agent -run 'TestP009(ConcurrentConnectClose|HubConnectIgnoresQueuedStaleUpgrade)$' -count=50 -timeout=180s",
+      "focused_repair": "PASS 50 race repetitions; corrected-source full validation pending final-head PR checkpoint"
+    },
+    "superseded_native_run": {
+      "sha": "b2fa8b0998fe47c1ff485f8912e260a85a09b2bf",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38823738085",
+      "completed_steps": "extended public-CF ASan/UBSan, loader cleanup and C→Go client PASS",
+      "overall": "superseded for test-fixture repair; not counted as final native build"
+    }
   }
 }

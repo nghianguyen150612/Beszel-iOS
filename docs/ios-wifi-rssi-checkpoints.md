@@ -254,3 +254,28 @@ checks/digests in PR #14. No need to download/extract firmware again. Test comma
 then workflow's actual C→Go client race integration and separate iOS build.
 Keep Draft/BLOCKED/Gate C PENDING; typed opaque ABI/fresh association/raw dBm/minimal
 authorization and actual iOS process execution remain P018. No P013/merge/device.
+
+## P012A F — deterministic P009 regression fixture repair
+
+Checkpoint E: `b2fa8b0998fe47c1ff485f8912e260a85a09b2bf`. Its final-head installer
+38823770552 PASS; hosted extended CF/ASan/UBSan/immediate-loader-unload and C→Go
+integration steps PASS in 38823738085. That native build is superseded during
+validation, not counted as a completed final-head build.
+
+Canonical Go and full affected race suite PASS again. A three-repeat focused run
+exposed an existing test-fixture race in TestP009ConcurrentConnectClose: queue
+draining can precede a delayed old server upgrade; connect(t) then pings a closed
+stale socket. Two separate wrapper/socket channels can also interleave upgrades.
+This was an actual FAILED test, not ignored as a timeout or relabeled PASS.
+
+Repair is test-only: publish each wrapper/socket pair atomically and select the
+server socket matching the current client's real TCP endpoint. Keep all existing
+ping/read-loop/auth/recovery assertions. A deterministic queued-stale-upgrade case
+plus the original concurrency case PASS 50 race repetitions. Production network
+transport and Wi-Fi sources are unchanged. Failure log/result copy retained.
+
+Next after publishing: canonical Go and affected Agent race/focused regressions;
+final-head iOS Build and installer; artifact revalidation; final PR checkpoint.
+No firmware extraction, toolchain reinstall or unchanged frontend rebuild needed
+locally. Existing independent Hub/platform/frontend results remain valid; hosted
+final-head workflow repeats its required checks. P012 BLOCKED / Gate C PENDING.

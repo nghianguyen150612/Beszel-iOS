@@ -191,3 +191,10 @@ Dừng nghiên cứu tĩnh ở chứng cứ đã commit, không tải lại firm
 hiện có không giải quyết cache daemon, đơn vị raw, quyền từng hàm hoặc kill/wait
 trên thiết bị. Đây vẫn là nghĩa vụ P018 sau review ABI theo quy trình; không suy
 ra từ fixture. P012 BLOCKED / Gate C PENDING / PR Draft giữ nguyên.
+
+Lần chạy regression ba vòng tại `b2fa8b0` phát hiện race fixture P009 có sẵn, dù
+canonical/full race PASS: upgrade cũ có thể vào queue sau khi drain, hai queue
+wrapper/socket cũng có thể xen kẽ. Harness test đổi sang cặp nguyên tử và khớp TCP
+peer của client hiện tại trước các kiểm tra ping/auth nguyên vẹn. Ca stale-upgrade
+xác định và concurrency cũ PASS 50 vòng race. Không đổi transport production.
+Giữ kết quả focused FAIL ban đầu; CI nguồn đã sửa và hash cuối nằm ở PR #14.

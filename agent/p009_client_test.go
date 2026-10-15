@@ -56,17 +56,23 @@ func TestP009CloseCallbackCannotBlock(t *testing.T) {
 type p009Hub struct {
 	a           *Agent
 	c           *WebSocketClient
-	connections chan *hubws.WsConn
-	sockets     chan *gws.Conn
+	connections chan p009HubConnection
 	signer      ssh.Signer
 	server      *httptest.Server
 	reject      atomic.Bool
 	pong        chan struct{}
 }
 
+// Publish each wrapper/socket atomically: concurrent upgrades can otherwise
+// interleave two separate channels and pair unrelated connections.
+type p009HubConnection struct {
+	wc  *hubws.WsConn
+	raw *gws.Conn
+}
+
 func newP009Hub(t *testing.T) *p009Hub {
 	t.Helper()
-	h := &p009Hub{a: createTestAgent(t), connections: make(chan *hubws.WsConn, 64), sockets: make(chan *gws.Conn, 64)}
+	h := &p009Hub{a: createTestAgent(t), connections: make(chan p009HubConnection, 64)}
 	_, key, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 	h.signer, err = ssh.NewSignerFromKey(key)
@@ -89,8 +95,7 @@ func newP009Hub(t *testing.T) *p009Hub {
 		}
 		wc := hubws.NewWsConnection(conn, semver.MustParse(beszel.Version))
 		conn.Session().Store("wsConn", wc)
-		h.connections <- wc
-		h.sockets <- conn
+		h.connections <- p009HubConnection{wc: wc, raw: conn}
 		conn.ReadLoop()
 	}))
 	t.Setenv("BESZEL_AGENT_HUB_URL", h.server.URL)
@@ -106,20 +111,45 @@ func newP009Hub(t *testing.T) *p009Hub {
 func (h *p009Hub) connect(t *testing.T) (*hubws.WsConn, *gws.Conn) {
 	t.Helper()
 	require.NoError(t, h.c.ConnectContext(t.Context()))
-	select {
-	case wc := <-h.connections:
-		raw := <-h.sockets
-		require.NoError(t, raw.WritePing(nil))
+	current := h.c.getConn()
+	require.NotNil(t, current)
+	peer := current.NetConn().LocalAddr().String()
+	timer := time.NewTimer(3 * time.Second)
+	defer timer.Stop()
+	for {
 		select {
-		case <-h.pong:
-		case <-time.After(time.Second):
-			t.Fatal("read loop did not start")
+		case pair := <-h.connections:
+			// Close/connect races can enqueue an earlier upgrade after a queue
+			// drain. Match the real TCP peer; never authenticate a stale socket.
+			if pair.raw.NetConn().RemoteAddr().String() != peer {
+				_ = pair.raw.NetConn().Close()
+				continue
+			}
+			raw := pair.raw
+			require.NoError(t, raw.WritePing(nil))
+			select {
+			case <-h.pong:
+			case <-time.After(time.Second):
+				t.Fatal("read loop did not start")
+			}
+			return pair.wc, raw
+		case <-timer.C:
+			t.Fatal("upgrade not observed")
+			return nil, nil
 		}
-		return wc, raw
-	case <-time.After(3 * time.Second):
-		t.Fatal("upgrade not observed")
-		return nil, nil
 	}
+}
+
+func TestP009HubConnectIgnoresQueuedStaleUpgrade(t *testing.T) {
+	h := newP009Hub(t)
+	wc, raw := h.connect(t)
+	h.c.Close()
+	// Deterministically reproduce an old HTTP handler publishing after draining.
+	h.connections <- p009HubConnection{wc: wc, raw: raw}
+	fresh, socket := h.connect(t)
+	require.NotSame(t, raw, socket)
+	require.Equal(t, h.c.getConn().NetConn().LocalAddr().String(), socket.NetConn().RemoteAddr().String())
+	h.authenticate(t, fresh)
 }
 func (h *p009Hub) authenticate(t *testing.T, wc *hubws.WsConn) {
 	t.Helper()

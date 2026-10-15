@@ -222,3 +222,12 @@ transfer is needed or justified. Existing disassembly cannot settle daemon cache
 expiry, raw units, per-call authorization, or target process termination. Those
 remain explicit P018 requirements after the staged ABI review; none is inferred
 from fixture data. P012 BLOCKED / Gate C PENDING / PR Draft remains unchanged.
+
+A subsequent three-repeat regression at `b2fa8b0` exposed an existing P009 fixture
+race despite passing canonical/full race runs: a delayed stale upgrade could be
+picked after draining, and independent wrapper/socket queues could interleave.
+The test harness now publishes an atomic pair and matches the live client TCP
+peer before the unchanged ping/auth assertions. A deterministic stale-upgrade
+regression and original concurrent case pass 50 race repetitions. No production
+transport behavior changed. The initial focused failure is retained in evidence;
+final corrected-source CI and exact hashes are in PR #14's verification checkpoint.
