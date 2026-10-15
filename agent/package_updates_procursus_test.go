@@ -428,6 +428,9 @@ func TestProcursusAPTCountLimit(t *testing.T) {
 }
 
 func TestProcursusAPTQueryReadOnlyAndNetworkIsolatedFixture(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("network namespace and read-only root sandbox are validated by the Linux P011 job")
+	}
 	aptGet, err := exec.LookPath("apt-get")
 	if err != nil {
 		t.Skip("apt-get is unavailable on this test host")
