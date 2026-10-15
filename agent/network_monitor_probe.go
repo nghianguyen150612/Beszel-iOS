@@ -99,14 +99,23 @@ func monitorDNS(ctx context.Context, target, server string) (int64, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
+	if err := ctx.Err(); err != nil {
+		return -1, err
+	}
 	resolver := net.DefaultResolver
 	if server != "" {
+		if _, err := dnsServerAddress(server); err != nil {
+			return -1, err
+		}
 		resolver = dnsResolverForServer(server)
 	}
 
 	start := time.Now()
 	ips, err := resolver.LookupHost(ctx, target)
 	if err != nil {
+		return -1, err
+	}
+	if err := ctx.Err(); err != nil {
 		return -1, err
 	}
 	if len(ips) == 0 {

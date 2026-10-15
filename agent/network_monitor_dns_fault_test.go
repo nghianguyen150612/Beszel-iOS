@@ -79,3 +79,14 @@ func TestP010DNSIPv6NXDOMAINTimeoutRecovery(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, int64(-1), us)
 }
+
+func TestP010DNSLiteralCancellationAndInvalidServer(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	us, err := monitorDNS(ctx, "127.0.0.1", "")
+	require.ErrorIs(t, err, context.Canceled)
+	require.Equal(t, int64(-1), us)
+	us, err = monitorDNS(t.Context(), "127.0.0.1", "127.0.0.1:0")
+	require.Error(t, err)
+	require.Equal(t, int64(-1), us)
+}
