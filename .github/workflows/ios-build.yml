@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - iOS
+      - ios/procursus-package-updates
     # NOTE: path filters are NOT evaluated for tag pushes by GitHub Actions,
     # so iOS release tags always run the full build + release pipeline below,
     # while branch pushes to `iOS` still skip docs-only changes.
