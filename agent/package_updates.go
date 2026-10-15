@@ -21,6 +21,7 @@ import (
 const (
 	defaultPackageUpdatesInterval = time.Hour
 	packageUpdatesTimeout         = 5 * time.Minute
+	packageUpdatesStopWait        = 3 * time.Second
 	// pacmanSyncInterval limits how often checkupdates downloads fresh sync
 	// databases. Checks in between reuse the last synced copy.
 	pacmanSyncInterval = 12 * time.Hour
@@ -44,19 +45,29 @@ type packageUpdatesCheck func(ctx context.Context) (packageUpdatesResult, error)
 // updates in the background and caches the result, so checks never delay metrics.
 type packageUpdatesManager struct {
 	sync.Mutex
-	name      string
-	check     packageUpdatesCheck
-	interval  time.Duration
-	result    packageUpdatesResult
-	checkedAt time.Time
-	running   bool
+	name            string
+	check           packageUpdatesCheck
+	interval        time.Duration
+	result          packageUpdatesResult
+	checkedAt       time.Time
+	lastAttempt     time.Time
+	running         bool
+	closed          bool
+	hideStaleCounts bool
+	timeout         time.Duration
+	ctx             context.Context
+	cancel          context.CancelFunc
+	done            chan struct{}
 }
 
 // newPackageUpdatesManager returns nil if disabled or no supported package manager
 // is found. Agents running in a container are skipped because the container's
 // package database is not the host's. dataDir holds pacman's private sync databases.
 func newPackageUpdatesManager(dataDir string) *packageUpdatesManager {
-	if runtime.GOOS != "linux" || runningInContainer() {
+	if runtime.GOOS == "ios" {
+		return newIOSPackageUpdatesManager()
+	}
+	if !linuxPackageUpdatesEnabled(runtime.GOOS, runningInContainer()) {
 		return nil
 	}
 	interval, enabled := packageUpdatesInterval()
@@ -68,7 +79,19 @@ func newPackageUpdatesManager(dataDir string) *packageUpdatesManager {
 		return nil
 	}
 	slog.Debug("Package updates", "manager", name, "interval", interval)
-	return &packageUpdatesManager{name: name, check: check, interval: interval}
+	return newPackageUpdatesManagerWithConfig(name, check, interval, packageUpdatesTimeout)
+}
+
+func newPackageUpdatesManagerWithConfig(name string, check packageUpdatesCheck, interval, timeout time.Duration) *packageUpdatesManager {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &packageUpdatesManager{
+		name:     name,
+		check:    check,
+		interval: interval,
+		timeout:  timeout,
+		ctx:      ctx,
+		cancel:   cancel,
+	}
 }
 
 // packageUpdatesInterval reads PACKAGE_UPDATES_INTERVAL as a Go duration such as
@@ -96,9 +119,13 @@ func packageUpdatesInterval() (interval time.Duration, enabled bool) {
 func (pm *packageUpdatesManager) get(now time.Time) []uint16 {
 	pm.Lock()
 	defer pm.Unlock()
-	if !pm.running && (pm.checkedAt.IsZero() || now.Sub(pm.checkedAt) >= pm.interval) {
+	if !pm.closed && pm.interval > 0 && !pm.running && (pm.lastAttempt.IsZero() || now.Sub(pm.lastAttempt) >= pm.interval) {
 		pm.running = true
+		pm.done = make(chan struct{})
 		go pm.refresh()
+	}
+	if pm.hideStaleCounts && pm.running {
+		return nil
 	}
 	return pm.result.counts
 }
@@ -119,18 +146,69 @@ func (pm *packageUpdatesManager) list() system.PackageUpdates {
 }
 
 func (pm *packageUpdatesManager) refresh() {
-	ctx, cancel := context.WithTimeout(context.Background(), packageUpdatesTimeout)
-	defer cancel()
-	result, err := pm.check(ctx)
+	pm.Lock()
+	parent, timeout, closed, done := pm.ctx, pm.timeout, pm.closed, pm.done
+	pm.Unlock()
+	if parent == nil {
+		parent = context.Background()
+	}
+	if timeout <= 0 {
+		timeout = packageUpdatesTimeout
+	}
+	ctx, cancel := context.WithTimeout(parent, timeout)
+	var result packageUpdatesResult
+	var err error
+	if closed {
+		err = context.Canceled
+	} else {
+		result, err = pm.check(ctx)
+	}
+	cancel()
 	if err != nil {
-		slog.Debug("Package updates check failed", "err", err)
+		if pm.name == "apt" {
+			slog.Debug("Package updates check failed", "manager", pm.name)
+		} else {
+			slog.Debug("Package updates check failed", "manager", pm.name, "err", err)
+		}
 		result = packageUpdatesResult{}
 	}
 	pm.Lock()
-	pm.result = result
-	pm.checkedAt = time.Now()
+	if err == nil && !pm.closed {
+		pm.result = result
+		pm.checkedAt = time.Now()
+	} else {
+		// Failed checks are unknown, never a verified zero; discard any former
+		// success rather than giving stale package data a fresh timestamp.
+		pm.result = packageUpdatesResult{}
+		pm.checkedAt = time.Time{}
+	}
+	pm.lastAttempt = time.Now()
 	pm.running = false
+	if done != nil {
+		close(done)
+		if pm.done == done {
+			pm.done = nil
+		}
+	}
 	pm.Unlock()
+}
+
+func (pm *packageUpdatesManager) stop() {
+	pm.Lock()
+	pm.closed = true
+	pm.result = packageUpdatesResult{}
+	pm.checkedAt = time.Time{}
+	cancel, done := pm.cancel, pm.done
+	pm.Unlock()
+	if cancel != nil {
+		cancel()
+	}
+	if done != nil {
+		select {
+		case <-done:
+		case <-time.After(packageUpdatesStopWait):
+		}
+	}
 }
 
 func runningInContainer() bool {
@@ -161,6 +239,10 @@ func detectPackageManager(dataDir string) (string, packageUpdatesCheck) {
 		return "xbps", newXbpsCheck()
 	}
 	return "", nil
+}
+
+func linuxPackageUpdatesEnabled(goos string, inContainer bool) bool {
+	return goos == "linux" && !inContainer
 }
 
 func commandExists(name string) bool {

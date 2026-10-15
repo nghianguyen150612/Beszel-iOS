@@ -1,0 +1,20 @@
+Reading package lists...
+Building dependency tree...
+Reading state information...
+WARNING: The following packages cannot be authenticated!
+The following packages will be upgraded:
+  bar++-2 foo:iphoneos-arm libfoo:arm64 very-long-procursus-package-name-2026
+The following NEW packages will be installed:
+  new-dependency-2
+The following packages will be REMOVED:
+  obsolete-package
+The following packages have been kept back:
+  held-package
+4 upgraded, 1 newly installed, 1 to remove and 1 not upgraded.
+Inst libfoo:arm64 [1:2.0~rc1-3] (2:2.0+dfsg-1 Procursus:iphoneos-arm/main [arm64])
+Inst bar++-2 [1.0-1] (1.0-2 Procursus:iphoneos-arm/main [iphoneos-arm])
+Inst very-long-procursus-package-name-2026 [1.2.3~beta-1] (1.2.3+final-1 Procursus:iphoneos-arm/main [iphoneos-arm])
+Inst foo:iphoneos-arm [0:1.0-1] (0:1.0-2 Procursus:iphoneos-arm/main [iphoneos-arm])
+Inst new-dependency-2 (2.0-1 Procursus:iphoneos-arm/main [iphoneos-arm])
+Inst downgrade-me [2:1.0-1] (1:99.0-1 Procursus:iphoneos-arm/main [iphoneos-arm])
+Remv obsolete-package [1.0-1]

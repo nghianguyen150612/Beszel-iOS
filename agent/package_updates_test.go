@@ -4,14 +4,18 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/henrygd/beszel/internal/entities/system"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -329,6 +333,14 @@ func TestDetectPackageManager(t *testing.T) {
 	}
 }
 
+func TestLinuxPackageUpdatesContainerAndPlatformSuppression(t *testing.T) {
+	assert.True(t, linuxPackageUpdatesEnabled("linux", false))
+	assert.False(t, linuxPackageUpdatesEnabled("linux", true), "container package databases are not the host package database")
+	for _, goos := range []string{"ios", "darwin", "windows", "freebsd"} {
+		assert.False(t, linuxPackageUpdatesEnabled(goos, false), goos)
+	}
+}
+
 func TestParseZypperTable(t *testing.T) {
 	tests := []struct {
 		file  string
@@ -457,6 +469,168 @@ func TestPackageUpdatesManagerCaching(t *testing.T) {
 	assert.Nil(t, pm.get(time.Now()))
 	assert.Nil(t, pm.list().Packages)
 	assert.False(t, pm.list().SecurityKnown)
+	assert.Zero(t, pm.list().CheckedAt, "failed attempts do not become successful-check timestamps")
+}
+
+func TestPackageUpdatesManagerFailureThrottleRecoveryAndClockChanges(t *testing.T) {
+	var calls atomic.Int32
+	pm := newPackageUpdatesManagerWithConfig("apt", func(context.Context) (packageUpdatesResult, error) {
+		if calls.Add(1) == 1 {
+			return packageUpdatesResult{}, errors.New("fixture failure")
+		}
+		return packageUpdatesResult{
+			counts:   []uint16{1},
+			packages: []system.PackageUpdate{{Name: "changed-between-checks", Current: "1", Available: "2"}},
+		}, nil
+	}, time.Hour, iosPackageUpdatesTimeout)
+	waitIdle := func() {
+		require.Eventually(t, func() bool {
+			pm.Lock()
+			defer pm.Unlock()
+			return !pm.running
+		}, time.Second, time.Millisecond)
+	}
+
+	start := time.Now()
+	assert.Nil(t, pm.get(start))
+	waitIdle()
+	assert.Nil(t, pm.get(time.Now().Add(time.Minute)), "failure remains unknown and is throttled")
+	assert.EqualValues(t, 1, calls.Load())
+	assert.Zero(t, pm.list().CheckedAt)
+	assert.Nil(t, pm.list().Packages)
+
+	// A backwards wall-clock step must not cause a retry loop.
+	assert.Nil(t, pm.get(start.Add(-time.Hour)))
+	assert.EqualValues(t, 1, calls.Load())
+
+	assert.Nil(t, pm.get(time.Now().Add(2*time.Hour)))
+	waitIdle()
+	assert.EqualValues(t, 2, calls.Load())
+	assert.Equal(t, []uint16{1}, pm.get(time.Now()))
+	list := pm.list()
+	require.NotZero(t, list.CheckedAt)
+	assert.Equal(t, []system.PackageUpdate{{Name: "changed-between-checks", Current: "1", Available: "2"}}, list.Packages)
+	pm.stop()
+}
+
+func TestPackageUpdatesManagerConcurrentCallersShareRefresh(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var calls atomic.Int32
+	pm := newPackageUpdatesManagerWithConfig("apt", func(ctx context.Context) (packageUpdatesResult, error) {
+		calls.Add(1)
+		close(started)
+		select {
+		case <-release:
+			return packageUpdatesResult{counts: []uint16{0}, packages: []system.PackageUpdate{}}, nil
+		case <-ctx.Done():
+			return packageUpdatesResult{}, ctx.Err()
+		}
+	}, time.Hour, iosPackageUpdatesTimeout)
+
+	var callers sync.WaitGroup
+	for range 32 {
+		callers.Add(1)
+		go func() {
+			defer callers.Done()
+			assert.Nil(t, pm.get(time.Now()))
+		}()
+	}
+	callers.Wait()
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("refresh did not start")
+	}
+	close(release)
+	require.Eventually(t, func() bool {
+		pm.Lock()
+		defer pm.Unlock()
+		return !pm.running
+	}, time.Second, time.Millisecond)
+	assert.EqualValues(t, 1, calls.Load())
+	assert.Equal(t, []uint16{0}, pm.get(time.Now()), "successful zero is non-nil and distinct from unknown")
+	assert.NotNil(t, pm.list().Packages)
+	pm.stop()
+}
+
+func TestPackageUpdatesManagerHidesStaleIOSCountsWhileRefreshing(t *testing.T) {
+	refreshStarted := make(chan struct{})
+	releaseRefresh := make(chan struct{})
+	var calls atomic.Int32
+	pm := newPackageUpdatesManagerWithConfig("apt", func(ctx context.Context) (packageUpdatesResult, error) {
+		if calls.Add(1) == 1 {
+			return packageUpdatesResult{
+				counts:   []uint16{2},
+				packages: []system.PackageUpdate{{Name: "old-package", Current: "1", Available: "2"}},
+			}, nil
+		}
+		close(refreshStarted)
+		select {
+		case <-releaseRefresh:
+			return packageUpdatesResult{
+				counts:   []uint16{1},
+				packages: []system.PackageUpdate{{Name: "new-package", Current: "1", Available: "2"}},
+			}, nil
+		case <-ctx.Done():
+			return packageUpdatesResult{}, ctx.Err()
+		}
+	}, time.Hour, iosPackageUpdatesTimeout)
+	pm.hideStaleCounts = true
+
+	start := time.Now()
+	assert.Nil(t, pm.get(start))
+	require.Eventually(t, func() bool {
+		pm.Lock()
+		defer pm.Unlock()
+		return !pm.running
+	}, time.Second, time.Millisecond)
+	assert.Equal(t, []uint16{2}, pm.get(time.Now().Add(time.Minute)))
+	old := pm.list()
+	require.NotZero(t, old.CheckedAt)
+
+	assert.Nil(t, pm.get(start.Add(2*time.Hour)), "stale timestamp-free stats counts must be unknown during refresh")
+	select {
+	case <-refreshStarted:
+	case <-time.After(time.Second):
+		t.Fatal("stale refresh did not start")
+	}
+	assert.Nil(t, pm.get(start.Add(2*time.Hour+time.Second)))
+	assert.Equal(t, old.Packages, pm.list().Packages, "details retain their old CheckedAt timestamp while the query runs")
+	assert.Equal(t, old.CheckedAt, pm.list().CheckedAt)
+
+	close(releaseRefresh)
+	require.Eventually(t, func() bool {
+		pm.Lock()
+		defer pm.Unlock()
+		return !pm.running
+	}, time.Second, time.Millisecond)
+	assert.Equal(t, []uint16{1}, pm.get(time.Now()))
+	assert.Equal(t, "new-package", pm.list().Packages[0].Name)
+	pm.stop()
+}
+
+func TestPackageUpdatesManagerShutdownCancelsRefresh(t *testing.T) {
+	started := make(chan struct{})
+	var calls atomic.Int32
+	pm := newPackageUpdatesManagerWithConfig("apt", func(ctx context.Context) (packageUpdatesResult, error) {
+		calls.Add(1)
+		close(started)
+		<-ctx.Done()
+		return packageUpdatesResult{}, ctx.Err()
+	}, time.Hour, 10*time.Second)
+	assert.Nil(t, pm.get(time.Now()))
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("refresh did not start")
+	}
+	pm.stop()
+	assert.EqualValues(t, 1, calls.Load())
+	assert.Nil(t, pm.get(time.Now().Add(24*time.Hour)), "closed managers do not restart checks")
+	assert.Nil(t, pm.result.counts)
+	assert.Zero(t, pm.list().CheckedAt)
+	assert.False(t, pm.running)
 }
 
 func TestGetPackageUpdatesHandler(t *testing.T) {
@@ -482,6 +656,36 @@ func TestGetPackageUpdatesHandler(t *testing.T) {
 	}
 	require.NoError(t, handler.Handle(hctx))
 	assert.Equal(t, system.PackageUpdates{Manager: "apk", CheckedAt: 1700000000, Packages: packages}, sent)
+}
+
+func TestPackageUpdateCountUnknownAndVerifiedZeroSerialization(t *testing.T) {
+	for _, format := range []string{"json", "cbor"} {
+		t.Run(format, func(t *testing.T) {
+			if format == "json" {
+				unknownJSON, err := json.Marshal(system.Info{})
+				require.NoError(t, err)
+				zeroJSON, err := json.Marshal(system.Info{PackageUpdates: []uint16{0}})
+				require.NoError(t, err)
+				var unknownObject, zeroObject map[string]json.RawMessage
+				require.NoError(t, json.Unmarshal(unknownJSON, &unknownObject))
+				require.NoError(t, json.Unmarshal(zeroJSON, &zeroObject))
+				assert.NotContains(t, unknownObject, "pu")
+				assert.JSONEq(t, "[0]", string(zeroObject["pu"]))
+				return
+			}
+			unknownCBOR, err := cbor.Marshal(system.Info{})
+			require.NoError(t, err)
+			zeroCBOR, err := cbor.Marshal(system.Info{PackageUpdates: []uint16{0}})
+			require.NoError(t, err)
+			var unknownObject, zeroObject map[int]cbor.RawMessage
+			require.NoError(t, cbor.Unmarshal(unknownCBOR, &unknownObject))
+			require.NoError(t, cbor.Unmarshal(zeroCBOR, &zeroObject))
+			assert.NotContains(t, unknownObject, 25)
+			var counts []uint16
+			require.NoError(t, cbor.Unmarshal(zeroObject[25], &counts))
+			assert.Equal(t, []uint16{0}, counts)
+		})
+	}
 }
 
 func TestPacmanCheckSync(t *testing.T) {

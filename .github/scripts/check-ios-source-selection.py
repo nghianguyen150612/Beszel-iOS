@@ -65,6 +65,10 @@ def validate(packages, target):
             alternatives[0] if target == 'linux' else alternatives[1])
         if agent.intersection(alternatives) != {expected}:
             raise ValueError(f'{target}: invalid {family} implementations: {agent.intersection(alternatives)}')
+    package_updates = {'package_updates_ios.go', 'package_updates_otheros.go'}
+    expected_package_updates = 'package_updates_ios.go' if target == 'ios' else 'package_updates_otheros.go'
+    if agent.intersection(package_updates) != {expected_package_updates}:
+        raise ValueError(f'{target}: invalid package-update adapter selection: {agent.intersection(package_updates)}')
     if target == 'ios':
         require(MODULE + '/agent', ['memory_platform_ios.go', 'ios_memory.go', 'ios_metadata.go', 'ios_disk.go'])
     # Optional collectors must select genuine no-op platform adapters on iOS.
