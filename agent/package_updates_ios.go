@@ -27,11 +27,9 @@ func newIOSPackageUpdatesManager() *packageUpdatesManager {
 		return nil
 	}
 	slog.Debug("Package updates", "manager", "procursus-apt", "interval", interval, "layout", detection.layout.kind)
-	return &packageUpdatesManager{
-		name:     "apt",
-		check:    newProcursusAPTCheck(detection.layout),
-		interval: interval,
-	}
+	manager := newPackageUpdatesManagerWithConfig("apt", newProcursusAPTCheck(detection.layout), interval, iosPackageUpdatesTimeout)
+	manager.hideStaleCounts = true
+	return manager
 }
 
 type procursusOSProbe struct{}

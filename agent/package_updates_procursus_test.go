@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -308,6 +309,31 @@ func TestCheckProcursusAPTReadOnlyArgvAndResults(t *testing.T) {
 	assert.False(t, zero.securityKnown)
 }
 
+func TestProcursusAPTFailuresRemainUnknown(t *testing.T) {
+	layout := procursusAPTLayout{aptGet: "/var/jb/usr/bin/apt-get"}
+	for _, tt := range []struct {
+		name   string
+		output string
+		err    error
+	}{
+		{"unsupported APT flag", "", errors.New("unsupported option --no-download")},
+		{"missing package indexes", "", errors.New("package lists unavailable")},
+		{"corrupt package database", "", errors.New("dpkg status database is corrupt")},
+		{"empty output", "", nil},
+		{"truncated output", "1 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.\nInst partial [1.0]", nil},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := checkProcursusAPTWith(context.Background(), layout, func(context.Context, string, ...string) (string, error) {
+				return tt.output, tt.err
+			})
+			assert.Error(t, err)
+			assert.Nil(t, result.counts, "query failure must not be represented as a verified zero")
+			assert.Nil(t, result.packages)
+			assert.False(t, result.securityKnown)
+		})
+	}
+}
+
 func TestProcursusCommandAllowlistRejectsMutatingArgv(t *testing.T) {
 	allowed := []struct {
 		name, executable string
@@ -343,6 +369,52 @@ func TestProcursusCommandAllowlistRejectsMutatingArgv(t *testing.T) {
 			assert.False(t, procursusCommandAllowed(tt.executable, tt.args))
 		})
 	}
+}
+
+func TestProcursusCommandBoundsCancellationAndChildCleanup(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires executable shell fixtures")
+	}
+	binDir := t.TempDir()
+	writeCommand := func(name, body string, mode os.FileMode) string {
+		path := filepath.Join(binDir, name)
+		require.NoError(t, os.WriteFile(path, []byte("#!/bin/sh\n"+body), mode))
+		return path
+	}
+
+	t.Run("missing binary", func(t *testing.T) {
+		_, err := runProcursusBoundedCommand(context.Background(), 64, filepath.Join(binDir, "missing"))
+		assert.Error(t, err)
+	})
+	t.Run("permission denied", func(t *testing.T) {
+		path := writeCommand("not-executable", "exit 0\n", 0o600)
+		_, err := runProcursusBoundedCommand(context.Background(), 64, path)
+		assert.Error(t, err)
+	})
+	t.Run("nonzero exit", func(t *testing.T) {
+		path := writeCommand("nonzero", "exit 7\n", 0o700)
+		_, err := runProcursusBoundedCommand(context.Background(), 64, path)
+		assert.Error(t, err)
+	})
+	t.Run("oversized output cancels process", func(t *testing.T) {
+		path := writeCommand("oversized", "while :; do printf '0123456789'; done\n", 0o700)
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		_, err := runProcursusBoundedCommand(ctx, 64, path)
+		assert.ErrorIs(t, err, errProcursusProbeOutputTooLarge)
+	})
+	t.Run("timeout kills child retaining stdout", func(t *testing.T) {
+		marker := filepath.Join(binDir, "child-survived")
+		path := writeCommand("child-pipe", "(/bin/sleep 0.5; /bin/echo leaked > '"+marker+"') &\nwait\n", 0o700)
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		defer cancel()
+		started := time.Now()
+		_, err := runProcursusBoundedCommand(ctx, 64, path)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Less(t, time.Since(started), 2*time.Second, "WaitDelay should bound inherited pipes")
+		time.Sleep(600 * time.Millisecond)
+		assert.NoFileExists(t, marker, "a child process outlived the canceled package query")
+	})
 }
 
 func TestProcursusAPTCountLimit(t *testing.T) {

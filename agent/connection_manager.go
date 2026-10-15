@@ -279,6 +279,9 @@ func (c *ConnectionManager) stop() error {
 	c.closeWebSocket()
 	c.attempts.Wait()
 	_ = c.agent.StopServer()
+	if c.agent.packageUpdates != nil {
+		c.agent.packageUpdates.stop()
+	}
 	c.agent.monitorManager.Stop()
 	c.closeWebSocket()
 	c.agent.cleanupSensorShadow()

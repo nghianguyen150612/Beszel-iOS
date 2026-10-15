@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -32,24 +31,27 @@ var errProcursusCommandNotAllowed = errors.New("package-manager command is not a
 var procursusSummaryPattern = regexp.MustCompile(`^[0-9]+ upgraded, [0-9]+ newly installed, [0-9]+ to remove and [0-9]+ not upgraded\.$`)
 
 type procursusBoundedOutput struct {
-	bytes.Buffer
+	buffer   []byte
 	limit    int
 	cancel   context.CancelFunc
 	overflow bool
 }
 
 func (w *procursusBoundedOutput) Write(p []byte) (int, error) {
-	remaining := w.limit - w.Len()
+	remaining := w.limit - len(w.buffer)
 	if remaining < len(p) {
 		if remaining > 0 {
-			_, _ = w.Buffer.Write(p[:remaining])
+			w.buffer = append(w.buffer, p[:remaining]...)
 		}
 		w.overflow = true
 		w.cancel()
 		return remaining, errProcursusProbeOutputTooLarge
 	}
-	return w.Buffer.Write(p)
+	w.buffer = append(w.buffer, p...)
+	return len(p), nil
 }
+
+func (w *procursusBoundedOutput) String() string { return string(w.buffer) }
 
 func runProcursusProbeCommand(ctx context.Context, executable string, args ...string) (string, error) {
 	return runProcursusBoundedCommand(ctx, procursusProbeOutputLimit, executable, args...)
@@ -79,6 +81,7 @@ func runProcursusBoundedCommandEnv(ctx context.Context, limit int, env []string,
 	cmd.Env = append([]string(nil), env...)
 	cmd.Stderr = io.Discard
 	cmd.WaitDelay = 2 * time.Second
+	configureProcursusProcess(cmd)
 	output := &procursusBoundedOutput{limit: limit, cancel: cancel}
 	cmd.Stdout = output
 	err := cmd.Run()
