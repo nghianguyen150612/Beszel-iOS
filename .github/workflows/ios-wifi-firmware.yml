@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/ios-wifi-firmware.yml
       - scripts/audit/ios_wifi/firmware.py
+      - scripts/audit/ios_wifi/cache-extract.c
 permissions:
   contents: read
 jobs:

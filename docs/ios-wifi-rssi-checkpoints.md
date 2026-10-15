@@ -143,3 +143,30 @@ Focused ABI/firmware manifest tests and existing iOS build tests pass. Productio
 polling fallback is unchanged. Next: collect firmware evidence, implement strict
 helper result conversion/state fixtures and bounded process orchestration.
 P012 remains BLOCKED; Gate C PENDING; P013 not started.
+
+## P012A B — production helper protocol and state conversion
+
+Added the inactive `agent/wifi/ioshelper` package, not imported by normal Agent
+polling. Strict versioned JSON conversion enforces size/count/depth limits,
+rejects duplicate/unknown keys, wrong encodings/types, incomplete/non-station or
+unknown/disconnected/powered-off association, and nonexistent OS interface names.
+Only integer RSSI_CTL_AGR in -150..-1 is accepted; scaled/float/positive/overflow/
+sentinel data is unavailable. Hidden or invalid SSIDs do not suppress valid RSSI.
+No identifiers are invented; no prior snapshot is cached. The producer's claimed
+association is not treated as independent evidence of native freshness.
+
+Actual production parser tests pass ten race repetitions, including all requested
+association, multiple-device, SSID, failure/recovery and JSON/CBOR contract cases.
+The exact Apple restore image was checksum/model/build verified by research run
+38738978309, but MobileWiFi is cache-only; cache extraction is the next ABI task.
+An intermediate normal build was canceled to avoid repeating unchanged-Agent CI
+while source work remains in progress. Final stable source will get full CI.
+Normal iOS acquisition remains nil; no private call or entitlement was activated.
+Next: bounded client and fault executables, cache extraction, native CF fixtures.
+
+The first exact-image research run succeeded in checksum, j85ap board and
+SystemVersion verification, and established that MobileWiFi is cache-only.
+The follow-up extractor uses Apple's host dsc_extractor bundle (signature pinned
+to Apple dyld 852.2 source), never executes an iOS binary, and records the actual
+reference cache/hash and extracted exports. This requires another image read
+because the first disposable job preserved only its small derived report.

@@ -118,8 +118,25 @@
       "uploaddate": "2023-01-14T18:21:34Z",
       "signed": false
     },
-    "image_sha256_scope": "expected catalog digest; not yet independently downloaded/verified",
-    "inspection_status": "PENDING hosted read-only inspection of checksum-pinned Apple restore image"
+    "image_sha256_scope": "Downloaded and independently verified in hosted read-only restore inspection",
+    "inspection_status": "ROOT_FIRMWARE_VERIFIED; framework is cache-only; export extraction pending",
+    "first_inspection": {
+      "source_sha": "0edafbd07a14778c91583b1927d2f2192caca19f",
+      "run_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38738978309",
+      "artifact_sha256": "343f39b0c61c12ca67b14727931aa16eeb08803dfa458847f1daf0e5f0e9af0b",
+      "report": {
+        "model": "iPad4,4",
+        "board": "j85ap",
+        "version": "12.5.7",
+        "build": "16H81",
+        "ipsw_sha256": "780aa5b20fa9fb5770c18311663bd098dbbf8e89311675a19b4860303edc0cd9",
+        "filesystem_version_verified": true,
+        "private_calls_executed": false,
+        "device_accessed": false,
+        "binary_status": "ABSENT_FROM_FILESYSTEM; dyld cache extraction required",
+        "filesystem_image": "038-87004-055.dmg"
+      }
+    }
   },
   "sources": [
     {
@@ -170,5 +187,11 @@
     "STRONGLY_INFERRED": "corroborated but missing target contract/runtime proof",
     "UNKNOWN": "missing sufficient evidence",
     "CONTRADICTED": "evidence demonstrates a prior assumption is false"
+  },
+  "host_cache_extractor": {
+    "scope": "macOS cloud research only; not an iOS helper or Agent dependency",
+    "source_url": "https://github.com/apple-oss-distributions/dyld/blob/3f24a36068a96722cf3acbd5087983ce658e9d70/dyld3/shared-cache/dsc_extractor.h",
+    "revision": "3f24a36068a96722cf3acbd5087983ce658e9d70",
+    "source_sha256": "759572b3f56a2126a193094237fa3597cc1f4d7de453b1cf6ce11cb48b14dd59"
   }
 }

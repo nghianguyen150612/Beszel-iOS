@@ -50,8 +50,34 @@ def inspect(image, mount, output):
               'ipsw_sha256': IPSW_SHA256, 'filesystem_version_verified': True,
               'private_calls_executed': False, 'device_accessed': False}
     if not binary.is_file():
-        report['binary_status'] = 'ABSENT_FROM_FILESYSTEM; dyld cache extraction required'
-        return report
+        caches = [mount / 'System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64',
+                  mount / 'System/Library/dyld/dyld_shared_cache_arm64']
+        cache = next((p for p in caches if p.is_file()), None)
+        if cache is None:
+            report['binary_status'] = 'CACHE_NOT_FOUND'
+            return report
+        report['cache_path'] = str(cache.relative_to(mount))
+        digest = hashlib.sha256()
+        with cache.open('rb') as source:
+            for chunk in iter(lambda: source.read(4 * 1024 * 1024), b''):
+                digest.update(chunk)
+        report['cache_sha256'] = digest.hexdigest()
+        extractor = output.parent / 'cache-extract'
+        clang = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--find', 'clang'], text=True).strip()
+        subprocess.run([clang, '-fblocks', str(Path(__file__).with_name('cache-extract.c')), '-o', str(extractor)], check=True)
+        extraction = output.parent / 'extracted-cache'
+        extraction.mkdir(exist_ok=True)
+        try:
+            subprocess.run([str(extractor), str(cache), str(extraction)], check=True, timeout=600)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            report['binary_status'] = 'CACHE_EXTRACTION_FAILED'
+            report['extractor_error'] = type(error).__name__
+            return report
+        binary = extraction / 'System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi'
+        if not binary.is_file():
+            report['binary_status'] = 'MOBILEWIFI_NOT_EXTRACTED'
+            return report
+        report['binary_status'] = 'EXTRACTED_FROM_REFERENCE_CACHE'
     data = binary.read_bytes()
     report['binary_sha256'] = hashlib.sha256(data).hexdigest()
     report['binary_bytes'] = len(data)
