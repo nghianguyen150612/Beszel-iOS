@@ -56,6 +56,9 @@ type packageUpdatesManager struct {
 // is found. Agents running in a container are skipped because the container's
 // package database is not the host's. dataDir holds pacman's private sync databases.
 func newPackageUpdatesManager(dataDir string) *packageUpdatesManager {
+	if runtime.GOOS == "ios" {
+		return newIOSPackageUpdatesManager()
+	}
 	if runtime.GOOS != "linux" || runningInContainer() {
 		return nil
 	}
