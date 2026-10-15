@@ -15,13 +15,20 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/reference.ipsw
+          key: apple-ipad-16H81-780aa5b20fa9fb5770c18311663bd098dbbf8e89311675a19b4860303edc0cd9
       - name: Inspect the exact Apple iPad4,4 restore image read-only
         shell: bash
         run: |
           set -euo pipefail
           firmware_url='https://updates.cdn-apple.com/2023FCSWinter/fullrestores/032-14132/A3C10B93-0E34-405D-8A92-92AA354BABF0/iPad_64bit_12.5.7_16H81_Restore.ipsw'
           # One checksum-pinned image, no redundant firmware downloads.
-          curl --fail --location --retry 2 --max-time 900 "$firmware_url" -o "$RUNNER_TEMP/reference.ipsw"
+          if [ ! -f "$RUNNER_TEMP/reference.ipsw" ]; then
+            curl --fail --location --retry 2 --max-time 900 "$firmware_url" -o "$RUNNER_TEMP/reference.ipsw"
+          fi
+          # The inspector hashes every cache hit before mounting or parsing it.
           python3 scripts/audit/ios_wifi/firmware.py "$RUNNER_TEMP/reference.ipsw" --output "$RUNNER_TEMP/firmware-evidence"
       - uses: actions/upload-artifact@v4
         if: always()

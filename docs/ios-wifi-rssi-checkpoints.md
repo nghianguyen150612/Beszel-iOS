@@ -170,3 +170,27 @@ The follow-up extractor uses Apple's host dsc_extractor bundle (signature pinned
 to Apple dyld 852.2 source), never executes an iOS binary, and records the actual
 reference cache/hash and extracted exports. This requires another image read
 because the first disposable job preserved only its small derived report.
+
+## P012A C — bounded inactive helper client
+
+Implemented the production client boundary without importing it into Agent
+polling. Absolute regular executable, fixed argv, minimal environment, discarded
+stderr, 16 KiB stdout cap, two-second acquisition context, one active process,
+process-group cancellation, bounded pipe wait and direct-child reaping. Close
+prevents new acquisition and cancels/awaits the existing child with an explicit
+caller deadline. No source snapshot survives failure; no goroutine is abandoned.
+
+Actual fake executables test valid/unavailable/empty/malformed output, crashes,
+nonzero exit, missing/symlink/non-executable paths, real permission denial,
+output flood, repeated timeouts, inherited pipe holders, 64 parallel callers,
+cancellation, shutdown and recovery. Three race repetitions passed. Each direct
+child must disappear after Wait; Linux deliberately orphaned fixture descendants
+are adopted/reaped by test-only instrumentation, not a production subreaper.
+The trusted native helper will be single-process; iOS kill/wait behavior and
+abnormal kernel behavior are not inferred from these host tests.
+
+Research run 38740375596 failed before cache extraction: host clang lacked the
+macOS SDK sysroot. Corrected the command, kept this failure recorded, and added a
+checksum-validated restore download cache to avoid repeated Apple transfers.
+Next: finish cache evidence and public-CF conversion/ownership fixtures, build a
+separate non-acquiring native diagnostic, and document minimal privilege/P018.

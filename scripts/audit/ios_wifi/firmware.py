@@ -64,7 +64,8 @@ def inspect(image, mount, output):
         report['cache_sha256'] = digest.hexdigest()
         extractor = output.parent / 'cache-extract'
         clang = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--find', 'clang'], text=True).strip()
-        subprocess.run([clang, '-fblocks', str(Path(__file__).with_name('cache-extract.c')), '-o', str(extractor)], check=True)
+        sdk = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path'], text=True).strip()
+        subprocess.run([clang, '-isysroot', sdk, '-fblocks', str(Path(__file__).with_name('cache-extract.c')), '-o', str(extractor)], check=True)
         extraction = output.parent / 'extracted-cache'
         extraction.mkdir(exist_ok=True)
         try:
