@@ -41,7 +41,7 @@ Các đối số được truyền trực tiếp cho đường dẫn apt-get đ�
 
 Truy vấn không gọi apt-get update và không tạo metadata repository. Thiếu index làm truy vấn trả unknown. Không cài prerequisite. Kết quả phản ánh góc nhìn APT cache cục bộ; độ mới tùy vào lần gần nhất chủ thiết bị cập nhật metadata sẵn có. Adapter không cập nhật metadata và không gọi kết quả là trạng thái repository trực tiếp.
 
-Fixture APT dùng thư mục tạm, source loopback cục bộ, package database biệt lập, status/available, lists, extended state, đường dẫn archive/cache, file quản trị dpkg và cấu hình APT. apt-get của host chạy trong bubblewrap, tắt network namespace và mount filesystem chỉ đọc. Listener loopback ghi nhận không có kết nối. Snapshot bất biến gồm 30 file/thư mục, hash file, mode, kích thước và mtime. SHA256 snapshot trước và sau đều là 28a313fd8ac4542674a9f26775b625a51de6da9d7f781a5e27e68c2f882d8234. Không entry fixture nào đổi. Test chạy ba lần liên tiếp.
+Fixture APT dùng thư mục tạm, source loopback cục bộ, package database biệt lập, status/available, lists, extended state, đường dẫn archive/cache, file quản trị dpkg và cấu hình APT. apt-get của host chạy trong bubblewrap, tắt network namespace và mount filesystem chỉ đọc. Listener loopback ghi nhận không có kết nối. Snapshot bất biến gồm 30 file/thư mục, hash file, mode, kích thước và mtime. Test chạy liên tiếp ba lần. Mỗi lần xác nhận cả 30 entry fixture cùng metadata không đổi; SHA256 snapshot trước và sau khớp ở từng lần: `2bc11d3c9d0bc989db04c1b1f161c9fafc15973d2e5734fcb38654e1aff669d9`, `09c9d24415ee87d2aee29f14bac67f368ca54252a50175dfac85d8a29ac77c62` và `4aa97a989d6dbf6a3201406a94f710726e79997e59a4e45be6809cce2edfd4ed`.
 
 Host sandbox có APT 3.0.3. Procursus ghim APT 2.9.4 và các tùy chọn tương thích đã được đối chiếu tài liệu của phiên bản đó. Fixture không chứng minh hành vi APT trên iPad tham chiếu. Output APT, thông tin xác thực, URI source và lỗi subprocess không được ghi log thông thường hoặc gửi Hub.
 
@@ -67,9 +67,20 @@ Các caller chia sẻ một lần refresh chạy nền. Refresh theo interval đ
 
 Test tập trung phát hiện Procursus, chọn path, parser, argv allowlist, invariant DB chỉ đọc, sandbox bắt buộc tắt mạng, giới hạn package count, timeout, cancellation, child cleanup, cache/phục hồi, serialization và handler pass với Go 1.27.1 đã pin. Focused race suite pass ba lần; test lỗi process pass lặp lại. Canonical Go suite và toàn bộ Agent race suite pass. Build Linux Agent và Hub pass.
 
-Validator chọn source iOS/macOS/Linux ARM64 CGO=1 xác nhận chỉ build iOS chọn adapter và process helper Unix. Regression Linux tập trung bao phủ APT, DNF, Zypper, Pacman, APK, XBPS, handler/cache/security và chặn package manager trong container. Audit suite (49 test), upstream matrix/readiness, iOS sentinels (45), upstream-sync (10), bootstrap (54) và installer lifecycle (814) đều pass. Hai test kết nối đồng thời có một lần lỗi trong các lần chạy suite trước; canonical chạy tuần tự cuối cùng pass, và P011 không sửa file implementation/test P009. Hosted native iOS Build, installer workflow, PR checks áp dụng được và URL workflow của final HEAD sẽ được ghi trong PR và completion report sau khi dispatch.
+Validator chọn source iOS/macOS/Linux ARM64 CGO=1 xác nhận chỉ build iOS chọn adapter và process helper Unix. Regression Linux tập trung bao phủ APT, DNF, Zypper, Pacman, APK, XBPS, handler/cache/security và chặn package manager trong container. Audit suite (49 test), upstream matrix/readiness, iOS sentinels (45), upstream-sync (10), bootstrap (54) và installer lifecycle (814) đều pass. Hai test kết nối đồng thời có một lần lỗi trong các lần chạy suite trước; canonical chạy tuần tự cuối cùng pass, và P011 không sửa file implementation/test P009. Hosted native build, installer workflow và regression P007–P010 cuối cùng pass trên source SHA `d777ad42fe8cfc2e2dec5ab5f942659abc49eae9`; URL workflow và evidence artifact được liệt kê bên dưới.
 
-Hosted iOS validation phải dùng HEAD cuối của P011 và xác nhận Go 1.27.1, Bun 1.4.0, Xcode/iPhoneOS SDK, patch runtime A7, Agent/Hub ARM64 Mach-O, iOS platform 2, minimum iOS 12.0, runtime instructions, frontend production đã embed, SHA256SUMS và VCS provenance. Không yêu cầu release job, tag hoặc deployment.
+Validation hosted cuối cùng chạy trên source SHA `d777ad42fe8cfc2e2dec5ab5f942659abc49eae9`:
+
+- iOS Build: PASS — https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38675307900
+- Installer lifecycle: PASS — https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38675307584
+- Hosted job package-update pass các test detection/parser/argv/failure. Query APT disposable tắt mạng bị skip rõ ràng vì Ubuntu runner không có sandbox filesystem read-only và network-disabled; fixture bubblewrap cục bộ riêng pass ba lần như mô tả ở trên.
+- Runner macOS 14.8.9 arm64; Xcode 15.4; iPhoneOS SDK 17.5 và clang của Xcode. Dùng Go 1.27.1 và Bun 1.4.0 đã pin. Frontend production đã cài dependency, sinh catalog, test và build; Hub embed thật có 95 asset.
+- Chọn source iOS pass. Agent và Hub build hai lần với cache riêng và byte-identical. Patch runtime A7 cô lập cho Go 1.27.1 pass; kiểm tra instruction không thấy truy cập CNTVCT/CNTFRQ trong cả hai binary.
+- Cả hai output là Mach-O `MH_EXECUTE` arm64 cho iOS platform 2, minimum iOS 12.0. VCS provenance ghi revision `d777ad42fe8cfc2e2dec5ab5f942659abc49eae9` và `vcs.modified=false`.
+- SHA256 Agent: `9afffa924917c46bd48f18175bb8532d85692664edd642522bf7e5798f46754e`; Hub: `7eec915001fb1ec3d7a36072b50afefef258147a792b9d1da610dd4af2676a8e`. Workflow đã xác minh checksum hai artifact.
+- `release-ios` bị skip. Không tạo release, tag hay deployment.
+
+Ở source candidate này, các gate implementation, test, compatibility và hosted build của P011 đều pass. PR vẫn Draft trong lúc review diff cuối và xác minh yêu cầu approval. SHA nguồn trên là candidate đã test native; các commit sau đó chỉ cập nhật evidence và metadata PR.
 
 ## Giới hạn đã xác nhận và acceptance
 
