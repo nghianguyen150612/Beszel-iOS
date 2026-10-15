@@ -333,6 +333,14 @@ func TestDetectPackageManager(t *testing.T) {
 	}
 }
 
+func TestLinuxPackageUpdatesContainerAndPlatformSuppression(t *testing.T) {
+	assert.True(t, linuxPackageUpdatesEnabled("linux", false))
+	assert.False(t, linuxPackageUpdatesEnabled("linux", true), "container package databases are not the host package database")
+	for _, goos := range []string{"ios", "darwin", "windows", "freebsd"} {
+		assert.False(t, linuxPackageUpdatesEnabled(goos, false), goos)
+	}
+}
+
 func TestParseZypperTable(t *testing.T) {
 	tests := []struct {
 		file  string

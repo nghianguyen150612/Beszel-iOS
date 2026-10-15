@@ -67,7 +67,7 @@ func newPackageUpdatesManager(dataDir string) *packageUpdatesManager {
 	if runtime.GOOS == "ios" {
 		return newIOSPackageUpdatesManager()
 	}
-	if runtime.GOOS != "linux" || runningInContainer() {
+	if !linuxPackageUpdatesEnabled(runtime.GOOS, runningInContainer()) {
 		return nil
 	}
 	interval, enabled := packageUpdatesInterval()
@@ -239,6 +239,10 @@ func detectPackageManager(dataDir string) (string, packageUpdatesCheck) {
 		return "xbps", newXbpsCheck()
 	}
 	return "", nil
+}
+
+func linuxPackageUpdatesEnabled(goos string, inContainer bool) bool {
+	return goos == "linux" && !inContainer
 }
 
 func commandExists(name string) bool {
