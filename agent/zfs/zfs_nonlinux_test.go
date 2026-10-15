@@ -1,4 +1,4 @@
-//go:build testing && !linux
+//go:build testing && !linux && !ios
 
 package zfs
 
