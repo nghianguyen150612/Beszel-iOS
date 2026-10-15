@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "milestone": "P011",
+  "acceptance_status": "PENDING_FINAL_GATES",
+  "repository": "https://github.com/nghianguyen150612/Beszel-iOS",
+  "branch": "ios/procursus-package-updates",
+  "base": "ios/upstream-v021-integration",
+  "pull_request": {
+    "number": 13,
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/13",
+    "state": "OPEN",
+    "draft": true
+  },
+  "git": {
+    "starting_integration_sha": "c2bd226f54f52a5fb2efaa33a63aa9fb632f4216",
+    "starting_production_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+    "source_checkpoint_sha": "02b1d7679da609d72a0f57d95b293756bc405ebe",
+    "implementation_commits": [
+      {
+        "sha": "df0e8ac6e34d9348ac1acedf039c5fee1efd05a6",
+        "subject": "feat(ios): detect supported Procursus APT installations"
+      },
+      {
+        "sha": "fbb58edb404e46e61e614f4a05807288d8d6e8d8",
+        "subject": "feat(ios): add bounded read-only APT update queries"
+      },
+      {
+        "sha": "18cfe77f5c3f7aafc0a86f73b845fb0d3bc7b2d3",
+        "subject": "fix(ios): bound Procursus package queries and recovery"
+      },
+      {
+        "sha": "7d751b784006ebae361a841585de4e1924b55389",
+        "subject": "test(ios): cover package adapter source selection"
+      },
+      {
+        "sha": "5b6111d1e845de0df4c2a34ef148f01c17d0531d",
+        "subject": "test(ios): require isolated APT read-only fixture"
+      },
+      {
+        "sha": "02b1d7679da609d72a0f57d95b293756bc405ebe",
+        "subject": "test(linux): preserve package manager container guard"
+      }
+    ],
+    "frozen_upstream_commits_reachable": {
+      "passed": true,
+      "count": 178
+    },
+    "logical_ios_patches_accounted": {
+      "passed": true,
+      "count": 13
+    },
+    "production_ios_or_frozen_main_modified": false
+  },
+  "source_review": {
+    "procursus_repository": "https://github.com/ProcursusTeam/Procursus/tree/b6185221bf1ce3dda8b4baeee61e75e3f7c7d399",
+    "procursus_source_sha": "b6185221bf1ce3dda8b4baeee61e75e3f7c7d399",
+    "recipe_pinned_apt_version": "2.9.4",
+    "apt_manual": "https://salsa.debian.org/apt-team/apt/-/raw/2.9.4/doc/apt-get.8.xml",
+    "reference_device_apt_version_verified": false
+  },
+  "detection": {
+    "goos": "ios",
+    "binary_candidates": [
+      "/usr/bin",
+      "/var/jb/usr/bin"
+    ],
+    "layout_names": [
+      "rootful",
+      "rootless"
+    ],
+    "required_commands": [
+      "apt-get --version",
+      "apt-config dump",
+      "dpkg-query -W with package/status format and apt, procursus-keyring selections"
+    ],
+    "configuration_resolved_from_apt_config_dump": [
+      "Dir",
+      "Dir::State",
+      "Dir::State::status",
+      "Dir::State::lists",
+      "Dir::Etc",
+      "Dir::Etc::sourcelist",
+      "Dir::Etc::sourceparts",
+      "Dir::Etc::main",
+      "Dir::Etc::parts"
+    ],
+    "required_cached_metadata": [
+      "readable dpkg status file",
+      "APT lists directory",
+      "at least one cached Packages index",
+      "APT configuration and source-part paths"
+    ],
+    "required_installed_packages": [
+      "apt",
+      "procursus-keyring"
+    ],
+    "probe_timeout_seconds": 3,
+    "unsupported_or_ambiguous_installations_enable_adapter": false,
+    "refreshes_or_repairs_during_detection": false
+  },
+  "read_only_query": {
+    "argv": [
+      "-s",
+      "--no-download",
+      "-o",
+      "Debug::NoLocking=1",
+      "-o",
+      "Dir::Cache::pkgcache=",
+      "-o",
+      "Dir::Cache::srcpkgcache=",
+      "dist-upgrade"
+    ],
+    "shell_used": false,
+    "command_allowlist_inspects_actual_argv": true,
+    "apt_update_or_package_mutation_command_available": false,
+    "no_download": true,
+    "package_cache_destinations_disabled": true,
+    "stderr_discarded": true,
+    "environment": [
+      "LC_ALL=C"
+    ],
+    "query_timeout_seconds": 20,
+    "stdout_limit_bytes": 1048576,
+    "process_wait_delay_seconds": 2,
+    "unix_process_group_cancel": true
+  },
+  "read_only_fixture": {
+    "host_apt_version": "3.0.3",
+    "procursus_pinned_apt_version": "2.9.4",
+    "sandbox": "bubblewrap network namespace disabled and filesystem read-only",
+    "apt_sources": "disposable local loopback HTTP source",
+    "loopback_connections_observed": 0,
+    "fixture_entries": 30,
+    "snapshot_invariants": [
+      "file content SHA256",
+      "mode",
+      "size",
+      "modification time",
+      "directory entries and metadata"
+    ],
+    "sha256_before": "28a313fd8ac4542674a9f26775b625a51de6da9d7f781a5e27e68c2f882d8234",
+    "sha256_after": "28a313fd8ac4542674a9f26775b625a51de6da9d7f781a5e27e68c2f882d8234",
+    "unchanged": true,
+    "consecutive_repetitions": 3,
+    "physical_device_database_used": false,
+    "sandbox_required_by_test": true
+  },
+  "parser": {
+    "fixture": "agent/test-data/package_updates/apt_procursus_simulate.txt",
+    "fixture_is_synthetic_not_device_capture": true,
+    "max_output_bytes": 1048576,
+    "max_package_entries": 8192,
+    "count_uint16_overflow_prevented_by_limit": true,
+    "update_rule": "count only installed package entries with candidate version strictly greater than installed version",
+    "new_dependencies_counted": false,
+    "downgrades_or_removals_counted": false,
+    "duplicate_entries": "deduplicate identical entries; reject conflicting duplicates",
+    "deterministic_sort": true,
+    "security_known": false,
+    "per_package_security_flags": false,
+    "invalid_or_truncated_output_becomes_zero": false
+  },
+  "result_and_cache_semantics": {
+    "unknown_counts": null,
+    "verified_zero_counts": [
+      0
+    ],
+    "failed_query_checked_at": 0,
+    "failure_discards_old_details": true,
+    "ios_stats_hide_stale_count_while_refreshing": true,
+    "detail_action_retains_original_checked_at_until_refresh_finishes": true,
+    "single_flight_refresh": true,
+    "failed_attempt_throttled_by_configured_interval": true,
+    "default_interval": "1h",
+    "zero_interval_disables": true,
+    "negative_or_invalid_interval": "existing safe default policy",
+    "system_stats_are_blocked_by_query": false,
+    "agent_hub_entity_or_wire_schema_changed": false
+  },
+  "validation": {
+    "focused_agent_race_tests": {
+      "status": "PASS",
+      "go_version": "go1.27.1",
+      "repetitions": 3
+    },
+    "network_isolated_read_only_query": {
+      "status": "PASS",
+      "repetitions": 3
+    },
+    "process_timeout_cancellation_child_cleanup": {
+      "status": "PASS",
+      "repetitions": 5
+    },
+    "source_selection_ios_macos_linux_arm64_cgo": "PASS",
+    "upstream_matrix": "PASS: 178/178 upstream commits",
+    "upstream_readiness": "PASS: 178 commits, 13 logical iOS patches",
+    "audit_unittest_suite": "PASS: 49 tests",
+    "upstream_sync_sentinels": "PASS: 10 tests",
+    "ios_patch_sentinels": "PASS: 45 tests",
+    "bootstrap_tests": "PASS: 54 tests",
+    "installer_lifecycle_tests": "PASS: 814 tests",
+    "canonical_go_suite": "PASS on latest source after serial rerun",
+    "complete_agent_race_suite": "PASS on latest source",
+    "linux_agent_hub_builds": "PASS on latest source: linux/amd64 CGO=1 Agent and Hub",
+    "p007_p010_regressions": "PENDING_HOSTED_FINAL_HEAD",
+    "native_ios_agent_hub_build": "PENDING_HOSTED_FINAL_HEAD",
+    "macho_deployment_runtime_checksum_provenance": "PENDING_HOSTED_FINAL_HEAD",
+    "installer_workflow": "PENDING_HOSTED_FINAL_HEAD",
+    "applicable_pr_checks": "PENDING_FINAL_HEAD",
+    "linux_package_manager_regressions": "PASS: APT, DNF, Zypper, Pacman, APK, XBPS, handler/cache/security semantics and container suppression; race-enabled focused suite repeated 3 times"
+  },
+  "limitations": {
+    "physical_reference_device_accessed": false,
+    "actual_reference_paths_or_permissions_verified": false,
+    "cache_freshness_is_external": true,
+    "physical_procursus_read_only_validation": "deferred to P018 / Gate F",
+    "production_database_modified": false,
+    "package_database_modified": false,
+    "release_or_deployment_created": false,
+    "p012_started": false
+  },
+  "acceptance": {
+    "p011_gate": "PENDING_FINAL_GATES",
+    "gate_c": "P011 completion pending; P012 native Wi-Fi RSSI is next",
+    "database_restore_gate": "PENDING",
+    "release_deployment_gate": "PENDING",
+    "final_tested_head": "record in PR and final completion report; omitted here to avoid embedding this evidence commit's own SHA"
+  },
+  "next_milestone": "P012 — Native iOS Wi-Fi RSSI adapter and safe unavailable fallback",
+  "transient_test_failures": [
+    {
+      "test": "TestConnectionManager_ReconnectionLogic",
+      "observation": "One full canonical attempt failed its isConnecting assertion while the canonical suite and full Agent race suite ran concurrently; the final serial canonical rerun passed."
+    },
+    {
+      "test": "TestP009ConcurrentConnectClose",
+      "observation": "One serial canonical attempt saw a closed-connection write in the existing P009 concurrent test; the final serial canonical rerun passed. P009 implementation/tests were not changed by P011."
+    }
+  ]
+}
