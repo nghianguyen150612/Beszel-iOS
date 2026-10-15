@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "milestone": "P011",
-  "acceptance_status": "PENDING_FINAL_GATES",
+  "acceptance_status": "PASS",
   "repository": "https://github.com/nghianguyen150612/Beszel-iOS",
   "branch": "ios/procursus-package-updates",
   "base": "ios/upstream-v021-integration",
@@ -9,13 +9,15 @@
     "number": 13,
     "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/13",
     "state": "OPEN",
-    "draft": true
+    "draft": true,
+    "tested_head_sha": "d777ad42fe8cfc2e2dec5ab5f942659abc49eae9",
+    "evidence_state": "OPEN_DRAFT_AT_EVIDENCE_CREATION"
   },
   "git": {
     "starting_integration_sha": "c2bd226f54f52a5fb2efaa33a63aa9fb632f4216",
     "starting_production_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
     "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
-    "source_checkpoint_sha": "02b1d7679da609d72a0f57d95b293756bc405ebe",
+    "source_checkpoint_sha": "d777ad42fe8cfc2e2dec5ab5f942659abc49eae9",
     "implementation_commits": [
       {
         "sha": "df0e8ac6e34d9348ac1acedf039c5fee1efd05a6",
@@ -50,7 +52,62 @@
       "passed": true,
       "count": 13
     },
-    "production_ios_or_frozen_main_modified": false
+    "production_ios_or_frozen_main_modified": false,
+    "feature_commits": [
+      {
+        "sha": "df0e8ac6e34d9348ac1acedf039c5fee1efd05a6",
+        "subject": "feat(ios): detect supported Procursus APT installations"
+      },
+      {
+        "sha": "fbb58edb404e46e61e614f4a05807288d8d6e8d8",
+        "subject": "feat(ios): add bounded read-only APT update queries"
+      },
+      {
+        "sha": "18cfe77f5c3f7aafc0a86f73b845fb0d3bc7b2d3",
+        "subject": "fix(ios): bound Procursus package queries and recovery"
+      },
+      {
+        "sha": "7d751b784006ebae361a841585de4e1924b55389",
+        "subject": "test(ios): cover package adapter source selection"
+      },
+      {
+        "sha": "5b6111d1e845de0df4c2a34ef148f01c17d0531d",
+        "subject": "test(ios): require isolated APT read-only fixture"
+      },
+      {
+        "sha": "02b1d7679da609d72a0f57d95b293756bc405ebe",
+        "subject": "test(linux): preserve package manager container guard"
+      },
+      {
+        "sha": "84bc1d836c46eb6dc4cc64889b24ad7d060f8d14",
+        "subject": "docs(ios): record P011 Procursus package validation"
+      },
+      {
+        "sha": "d9e014600ebfd6360f9b5513f009ff5d857d3d2a",
+        "subject": "test(ios): scope APT namespace fixture to Linux"
+      },
+      {
+        "sha": "2d6710dd12af669d183e81ec426c13e5e28c0e5e",
+        "subject": "test(ios): report unavailable APT sandbox clearly"
+      },
+      {
+        "sha": "7492a2d802356bf3cea1e23bbdcc557f11942391",
+        "subject": "test(ios): require read-only bubblewrap fixture"
+      },
+      {
+        "sha": "2f8b42b12a05565889738b2f10113fe2f75bee4b",
+        "subject": "fix(ios): restrict Procursus command executable paths"
+      },
+      {
+        "sha": "5e12c0a73ab07dfff4a5756de75b7c5354d56792",
+        "subject": "ci(ios): run installer checks on P011 branch"
+      },
+      {
+        "sha": "d777ad42fe8cfc2e2dec5ab5f942659abc49eae9",
+        "subject": "ci(ios): run P011 build checks on feature branch"
+      }
+    ],
+    "final_tested_feature_sha": "d777ad42fe8cfc2e2dec5ab5f942659abc49eae9"
   },
   "source_review": {
     "procursus_repository": "https://github.com/ProcursusTeam/Procursus/tree/b6185221bf1ce3dda8b4baeee61e75e3f7c7d399",
@@ -139,12 +196,31 @@
       "modification time",
       "directory entries and metadata"
     ],
-    "sha256_before": "28a313fd8ac4542674a9f26775b625a51de6da9d7f781a5e27e68c2f882d8234",
-    "sha256_after": "28a313fd8ac4542674a9f26775b625a51de6da9d7f781a5e27e68c2f882d8234",
     "unchanged": true,
     "consecutive_repetitions": 3,
     "physical_device_database_used": false,
-    "sandbox_required_by_test": true
+    "sandbox_required_by_test": true,
+    "hosted_runner_fixture_result": "SKIPPED: Ubuntu runner did not provide network-disabled read-only filesystem sandbox; local bubblewrap fixture passed three repetitions",
+    "snapshot_runs": [
+      {
+        "run": 1,
+        "sha256_before": "2bc11d3c9d0bc989db04c1b1f161c9fafc15973d2e5734fcb38654e1aff669d9",
+        "sha256_after": "2bc11d3c9d0bc989db04c1b1f161c9fafc15973d2e5734fcb38654e1aff669d9",
+        "unchanged": true
+      },
+      {
+        "run": 2,
+        "sha256_before": "09c9d24415ee87d2aee29f14bac67f368ca54252a50175dfac85d8a29ac77c62",
+        "sha256_after": "09c9d24415ee87d2aee29f14bac67f368ca54252a50175dfac85d8a29ac77c62",
+        "unchanged": true
+      },
+      {
+        "run": 3,
+        "sha256_before": "4aa97a989d6dbf6a3201406a94f710726e79997e59a4e45be6809cce2edfd4ed",
+        "sha256_after": "4aa97a989d6dbf6a3201406a94f710726e79997e59a4e45be6809cce2edfd4ed",
+        "unchanged": true
+      }
+    ]
   },
   "parser": {
     "fixture": "agent/test-data/package_updates/apt_procursus_simulate.txt",
@@ -203,12 +279,39 @@
     "canonical_go_suite": "PASS on latest source after serial rerun",
     "complete_agent_race_suite": "PASS on latest source",
     "linux_agent_hub_builds": "PASS on latest source: linux/amd64 CGO=1 Agent and Hub",
-    "p007_p010_regressions": "PENDING_HOSTED_FINAL_HEAD",
-    "native_ios_agent_hub_build": "PENDING_HOSTED_FINAL_HEAD",
-    "macho_deployment_runtime_checksum_provenance": "PENDING_HOSTED_FINAL_HEAD",
-    "installer_workflow": "PENDING_HOSTED_FINAL_HEAD",
-    "applicable_pr_checks": "PENDING_FINAL_HEAD",
-    "linux_package_manager_regressions": "PASS: APT, DNF, Zypper, Pacman, APK, XBPS, handler/cache/security semantics and container suppression; race-enabled focused suite repeated 3 times"
+    "p007_p010_regressions": "PASS on final feature source SHA d777ad42fe8cfc2e2dec5ab5f942659abc49eae9 in hosted iOS Build",
+    "native_ios_agent_hub_build": "PASS on tested source SHA d777ad42fe8cfc2e2dec5ab5f942659abc49eae9; GOOS=ios GOARCH=arm64 CGO_ENABLED=1; Go 1.27.1; Bun 1.4.0; Xcode 15.4; iPhoneOS SDK 17.5; macOS 14.8.9 arm64",
+    "macho_deployment_runtime_checksum_provenance": {
+      "status": "PASS",
+      "tested_sha": "d777ad42fe8cfc2e2dec5ab5f942659abc49eae9",
+      "agent": {
+        "sha256": "9afffa924917c46bd48f18175bb8532d85692664edd642522bf7e5798f46754e",
+        "macho": "arm64 MH_EXECUTE",
+        "ios_platform": 2,
+        "minimum_ios": "12.0"
+      },
+      "hub": {
+        "sha256": "7eec915001fb1ec3d7a36072b50afefef258147a792b9d1da610dd4af2676a8e",
+        "macho": "arm64 MH_EXECUTE",
+        "ios_platform": 2,
+        "minimum_ios": "12.0",
+        "embedded_frontend_assets": 95
+      },
+      "a7_runtime_patch": "PASS; Go 1.27.1 isolated runtime; CNTVCT/CNTFRQ access absent",
+      "vcs_revision": "d777ad42fe8cfc2e2dec5ab5f942659abc49eae9",
+      "vcs_modified": false,
+      "artifact_checksums_verified": true,
+      "workflow_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38675307900"
+    },
+    "installer_workflow": {
+      "status": "PASS",
+      "tested_sha": "d777ad42fe8cfc2e2dec5ab5f942659abc49eae9",
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38675307584"
+    },
+    "applicable_pr_checks": "PASS: iOS Build and installer hosted workflows succeeded on tested feature SHA; no review submissions or inline review threads were present when inspected",
+    "linux_package_manager_regressions": "PASS: APT, DNF, Zypper, Pacman, APK, XBPS, handler/cache/security semantics and container suppression; race-enabled focused suite repeated 3 times",
+    "hosted_procursus_job": "PASS; disposable network-isolated APT query SKIPPED because sandbox capability was unavailable on GitHub Ubuntu runner; local bubblewrap fixture passed 3 repetitions",
+    "release_job": "SKIPPED; no release/tag/deployment"
   },
   "limitations": {
     "physical_reference_device_accessed": false,
@@ -221,13 +324,13 @@
     "p012_started": false
   },
   "acceptance": {
-    "p011_gate": "PENDING_FINAL_GATES",
-    "gate_c": "P011 completion pending; P012 native Wi-Fi RSSI is next",
+    "p011_gate": "PASS on tested source SHA; PR review/approval and normal merge tracked separately",
+    "gate_c": "P011 acceptance passed; P012 Native iOS Wi-Fi RSSI adapter and safe unavailable fallback is next; not started",
     "database_restore_gate": "PENDING",
     "release_deployment_gate": "PENDING",
-    "final_tested_head": "record in PR and final completion report; omitted here to avoid embedding this evidence commit's own SHA"
+    "final_tested_head": "d777ad42fe8cfc2e2dec5ab5f942659abc49eae9; evidence-only doc/PR metadata commits follow and do not alter tested source"
   },
-  "next_milestone": "P012 — Native iOS Wi-Fi RSSI adapter and safe unavailable fallback",
+  "next_milestone": "P012 — Native iOS Wi-Fi RSSI adapter and safe unavailable fallback (not started)",
   "transient_test_failures": [
     {
       "test": "TestConnectionManager_ReconnectionLogic",
@@ -237,5 +340,6 @@
       "test": "TestP009ConcurrentConnectClose",
       "observation": "One serial canonical attempt saw a closed-connection write in the existing P009 concurrent test; the final serial canonical rerun passed. P009 implementation/tests were not changed by P011."
     }
-  ]
+  ],
+  "pr_completion_status": "PENDING_FINAL_DIFF_REVIEW_AND_NORMAL_MERGE"
 }
