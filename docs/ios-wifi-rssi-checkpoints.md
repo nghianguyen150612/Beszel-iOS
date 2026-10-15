@@ -73,3 +73,55 @@ for Linux/macOS/Windows interface names, omission and recovery. Existing synthet
 Hub record disconnect/reconnect and WebSocket omission tests pass. Race tests:
 3 repetitions. No production DB was used; test apps use temporary fixtures.
 Remaining: entitlement/resource documentation, full regressions and hosted CI.
+
+## G — stable-source full regressions and documentation
+
+Source checkpoint: `d3f33c83c8d6164717a26749826408359fed84ea`.
+PASS: canonical `env -u NETWORK go test -tags 'testing no_ui' ./...`; full Agent,
+Wi-Fi, battery, delta tracker, transport and WebSocket race packages. The broad
+race command's explicit 300-second per-package limit expired in Hub systems;
+that package then passed alone with the standard Go timeout (140.535 seconds),
+without source changes. The focused lifecycle/transport/Hub record race run
+passed three repetitions in a separate clean log. P007 Python runtime/ABI source
+fixtures and P008–P012 portable regressions pass. The P011 actual APT read-only,
+network-disabled fixture passed three repetitions on this cloud host.
+
+PASS: upstream matrix/readiness, 49 audit tests, sync 10, sentinels 45, bootstrap
+54, installer 814, diff check. Actual ancestry: 178/178, 13 logical patch IDs.
+PASS: real frozen Bun 1.4.0 install, catalogs, 44 tests, production build with 95
+assets and unchanged lockfile. Generated PO edits restored. iOS/macOS/Linux
+ARM64 CGO=1 source selection passed. Linux Agent/Hub built; Windows Wi-Fi and
+FreeBSD fallback test executables compiled (not executed).
+
+EN/VI reports and machine-readable evidence prepared. Hosted iOS Build on this
+source: https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38724163923 .
+Installer PASS: https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38724168872 .
+The source native build result/artifacts are pending at this ledger entry.
+
+The shell GitHub credential expired during validation (401); connected GitHub
+operations remain available and public unauthenticated reads work. Use connected
+Git tree/commit/ref tools to publish the exact reviewed tree, then fetch it
+without the expired credential and reconcile local HEAD by verifying tree
+identity. Never print credentials or force-push. Workflow branch filters now
+include this feature branch so the final checkpoint receives final-head checks.
+
+Remaining: collect native artifact/provenance/import/checksum evidence, publish
+this documentation checkpoint, verify final-head hosted CI, and leave Draft
+because native acquisition remains blocked. Required merge/post-merge steps are
+inapplicable until those blockers are resolved; P013 has not begun.
+
+## H — source hosted native verification complete
+
+Source SHA `d3f33c83c8d6164717a26749826408359fed84ea`: iOS Build PASS,
+installer PASS. Downloaded both real artifact ZIPs through connected GitHub;
+verified their GitHub archive digests, payload SHA256SUMS, arm64/iOS platform 2 /
+minimum 12.0 metadata, Go 1.27.1 CGO=1 A7 provenance and all 95 embedded assets.
+Agent SHA256 `993c82e71cf570ee490c731ee1ea2a6299b7e6573515b6b1790f707d962f7f6f`;
+Hub SHA256 `b3ea5f9327e5024ee84f2870088dc01a243ea011df522f1b4bf53b7054cb10b1`.
+Private Wi-Fi dependencies/imports absent. Isolated A7 patch, instruction checks
+and separate-cache repeat builds pass. Release job skipped. Full evidence and
+matching EN/VI reports are ready for publication.
+
+Next: publish this exact reviewed tree, verify new final-head push workflows and
+record final SHA/results in PR #14. Keep Draft: native RSSI remains blocked and
+Gate C pending. Do not merge, start P013, deploy, sign or modify devices/data.
