@@ -231,7 +231,7 @@ func TestMonitorICMPReplyCorrelation(t *testing.T) {
 				dst = &net.UDPAddr{IP: ip}
 				wrongPeer = &net.UDPAddr{IP: other}
 			}
-			for _, mismatch := range []string{"source", "id", "sequence", "payload", "type", "code", "malformed"} {
+			for _, mismatch := range []string{"source", "id", "sequence", "payload", "type", "code", "malformed", "truncated", "family"} {
 				for _, eventuallyMatches := range []bool{false, true} {
 					ending := "timeout"
 					if eventuallyMatches {
@@ -273,11 +273,20 @@ func TestMonitorICMPReplyCorrelation(t *testing.T) {
 								reply.Type = family.echoType
 							case "code":
 								reply.Code = 1
+							case "family":
+								if family.isIPv6 {
+									reply.Type = icmpV4.replyType
+								} else {
+									reply.Type = icmpV6.replyType
+								}
 							}
 							invalid, err := reply.Marshal(nil)
 							require.NoError(t, err)
 							if mismatch == "malformed" {
 								invalid = invalid[:2]
+							}
+							if mismatch == "truncated" {
+								invalid = invalid[:len(invalid)-1]
 							}
 							conn.replies = []icmpTestReply{{invalid, peer}}
 							if eventuallyMatches {

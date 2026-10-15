@@ -200,3 +200,21 @@ func TestP010PingBoundedOutputAndInheritedPipe(t *testing.T) {
 	require.ErrorIs(t, err, errPingOutputLimit)
 	require.Zero(t, out.Len())
 }
+
+func TestP010NativeSocketFaultAndClosure(t *testing.T) {
+	original := icmpNativeListen
+	defer func() { icmpNativeListen = original }()
+	for _, fault := range []error{syscall.EPERM, syscall.EACCES, syscall.EPROTONOSUPPORT} {
+		icmpNativeListen = func(string, string) (net.PacketConn, error) { return nil, fault }
+		us, err := monitorICMPNative(t.Context(), "ip4:icmp", &icmpV4, &net.IPAddr{IP: net.ParseIP("127.0.0.1")})
+		require.ErrorIs(t, err, fault)
+		require.Equal(t, int64(-1), us)
+	}
+	conn, err := net.ListenPacket("udp4", "127.0.0.1:0")
+	require.NoError(t, err)
+	require.NoError(t, conn.Close())
+	icmpNativeListen = func(string, string) (net.PacketConn, error) { return conn, nil }
+	us, err := monitorICMPNative(t.Context(), "udp4", &icmpV4, &net.UDPAddr{IP: net.ParseIP("127.0.0.1")})
+	require.Error(t, err)
+	require.Equal(t, int64(-1), us)
+}
