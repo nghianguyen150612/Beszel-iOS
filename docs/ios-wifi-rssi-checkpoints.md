@@ -59,3 +59,17 @@ native dependency/import inspection; native CI has not run at this checkpoint.
 README and capability matrix now describe unavailable behavior accurately.
 Remaining: full stable-source regressions, hosted CI, EN/VI/JSON evidence and
 final review. Native capability deferred; PR remains Draft; no merge/P013.
+
+## D — lifecycle and protocol
+
+Completed: extracted the existing default/realtime Wi-Fi update into a small
+production method with a collector parameter. Fixtures exercise connected,
+disconnected, disabled, denied, temporary/repeated failure, renamed/multiple
+interfaces, hidden SSID, new SSID and recovery. Default acquisition replaces old
+state; five realtime requests per step reuse the snapshot without acquisition.
+JSON/CBOR roundtrips cover absent/SSID-only/RSSI-only/multiple/UTF-8 snapshots.
+Pinned numeric-key legacy wire fixtures exercise the actual Hub transport decoder
+for Linux/macOS/Windows interface names, omission and recovery. Existing synthetic
+Hub record disconnect/reconnect and WebSocket omission tests pass. Race tests:
+3 repetitions. No production DB was used; test apps use temporary fixtures.
+Remaining: entitlement/resource documentation, full regressions and hosted CI.

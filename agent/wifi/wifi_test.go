@@ -1,7 +1,9 @@
 package wifi
 
 import (
+	"encoding/json"
 	"math"
+	"reflect"
 	"testing"
 
 	"github.com/fxamacker/cbor/v2"
@@ -113,6 +115,38 @@ func TestP012SignalsValidation(t *testing.T) {
 			}
 			if len(got) != 1 || got["en0"] != tc.want {
 				t.Fatalf("got %v, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestP012WiFiWireRoundTrip(t *testing.T) {
+	signal := -85.0
+	for name, snapshot := range map[string]map[string]system.WiFi{
+		"absent":               nil,
+		"SSID without RSSI":    {"en0": {SSID: "home"}},
+		"RSSI without SSID":    {"en0": {Signal: &signal}},
+		"multiple same SSID":   {"wlan0": {SSID: "same", Signal: &signal}, "Wi-Fi": {SSID: "same"}},
+		"invalid SSID omitted": {"en0": {SSID: validSSID("raw\xffssid"), Signal: &signal}},
+		"non ASCII":            {"en0": {SSID: "网络 café", Signal: &signal}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			original := system.CombinedData{Info: system.Info{WiFi: snapshot}, Stats: system.Stats{WiFi: Signals(snapshot)}}
+			for _, codec := range []struct {
+				marshal   func(any) ([]byte, error)
+				unmarshal func([]byte, any) error
+			}{{json.Marshal, json.Unmarshal}, {cbor.Marshal, cbor.Unmarshal}} {
+				wire, err := codec.marshal(original)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var got system.CombinedData
+				if err := codec.unmarshal(wire, &got); err != nil {
+					t.Fatal(err)
+				}
+				if !reflect.DeepEqual(original.Info.WiFi, got.Info.WiFi) || !reflect.DeepEqual(original.Stats.WiFi, got.Stats.WiFi) {
+					t.Fatalf("roundtrip: %#v", got)
+				}
 			}
 		})
 	}
