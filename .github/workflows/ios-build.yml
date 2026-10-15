@@ -108,6 +108,18 @@ jobs:
           env -u NETWORK go test -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system
           env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system -run 'Test(P008|IOSBattery|CalculateHostMemory|CpuMetrics|GetAllBusy|Disk|SumAndTrack|SkipNetwork|Serialization|Battery|Primary|Normalize)' -count=1
 
+      - name: Test iOS Wi-Fi unavailable adapter and shared telemetry contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Explicit files execute the production iOS fallback unchanged on
+          # macOS; this does not simulate or claim MobileWiFi hardware access.
+          env -u NETWORK go test -race -tags 'testing no_ui' \
+            agent/wifi/wifi.go agent/wifi/wifi_ios.go \
+            agent/wifi/wifi_test.go agent/wifi/wifi_ios_test.go -count=3
+          env -u NETWORK go test -race -tags 'testing no_ui' ./agent/wifi ./agent ./internal/hub/transport ./internal/hub/systems \
+            -run 'TestP012|TestCreateRecordsWiFi|TestFetchDataViaWebSocketDoesNotRetainOmittedFields' -count=3 -timeout=180s
+
       - name: Test transport faults and races
         shell: bash
         run: |
@@ -214,6 +226,20 @@ jobs:
             otool -l "$bin" | grep -A8 -E 'LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS|LC_MAIN|LC_UNIXTHREAD'
           done
 
+      - name: Verify unavailable Wi-Fi adds no private linkage
+        shell: bash
+        run: |
+          set -euo pipefail
+          for bin in build/ios/beszel-agent-ios-arm64 build/ios/beszel-hub-ios-arm64; do
+            otool -L "$bin" >> "$RUNNER_TEMP/wifi-linkage.txt"
+            nm -u "$bin" >> "$RUNNER_TEMP/wifi-linkage.txt"
+          done
+          cat "$RUNNER_TEMP/wifi-linkage.txt"
+          if grep -E 'MobileWiFi|CoreWLAN|Apple80211|_WiFi(Manager|Device|Network)' "$RUNNER_TEMP/wifi-linkage.txt"; then
+            echo 'ERROR: unavailable Wi-Fi must have no private imports' >&2
+            exit 1
+          fi
+
       - name: Generate and verify exact payload and frontend embedding
         shell: bash
         run: |
@@ -244,6 +270,7 @@ jobs:
             ${{ runner.temp }}/runtime-agent.json
             ${{ runner.temp }}/runtime-hub.json
             ${{ runner.temp }}/native-artifacts.json
+            ${{ runner.temp }}/wifi-linkage.txt
 
   release-ios:
     needs: build-ios

@@ -45,3 +45,17 @@ under the race detector, 10 repetitions. The fallback has no RSSI/CF parser;
 native object/dictionary fixtures are not claimed as executed.
 Remaining: Agent polling lifecycle and remote protocol regressions, full checks,
 hosted builds and evidence. Native provider blockers remain unchanged.
+
+## E / F — authorization, resources and CI coverage
+
+Completed: documented candidate manager-access privilege evidence and its limits;
+no entitlement, signing, service or release change. The fallback acquires no
+native objects, framework handles, workers, or persistent state and returns
+synchronously even for a canceled context. The shared two-second context is
+unchanged. Native IPC cancellation remains a blocker, not a claimed guarantee.
+Actual iOS adapter + shared tests passed 20 race repetitions on the cloud host;
+iOS build-validator tests pass. Added hosted fallback/lifecycle/race tests and
+native dependency/import inspection; native CI has not run at this checkpoint.
+README and capability matrix now describe unavailable behavior accurately.
+Remaining: full stable-source regressions, hosted CI, EN/VI/JSON evidence and
+final review. Native capability deferred; PR remains Draft; no merge/P013.
