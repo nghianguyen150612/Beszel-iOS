@@ -20,3 +20,15 @@ Remaining: explicit adapter/selection tests, history input validation, polling
 and protocol regressions, full regressions, native CI, EN/VI/JSON evidence.
 Native RSSI acceptance remains deferred. Keep PR Draft; no merge while required
 P012 native capability is blocked. P013 has not begun.
+
+## B — explicit iOS adapter and source selection
+
+Completed: `wifi_ios.go` owns iOS selection and returns nil without private calls;
+unsupported targets keep their fallback. The validator requires the iOS file and
+negative fixtures reject macOS/Linux/Windows/generic Wi-Fi implementations.
+Production adapter compiled and executed by explicit Go file list on the cloud
+host: race tests, 3 repetitions, 1,000 serial polls and 3,200 concurrent Collect
+calls per repetition. These prove only unavailable behavior. Build-contract
+Python tests pass. No native API boundary exists to simulate or authorize.
+Remaining: shared history validation, Agent snapshot lifecycle/protocol tests,
+full regressions, final-head hosted native builds and consistent evidence.

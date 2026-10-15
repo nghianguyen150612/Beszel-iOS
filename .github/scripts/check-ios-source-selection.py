@@ -86,8 +86,6 @@ def validate(packages, target):
     for subsystem in ['battery', 'wifi']:
         package, files = require(MODULE + '/agent/' + subsystem, [subsystem + '.go'])
         expected = f'{subsystem}_{target}.go'
-        if subsystem == 'wifi' and target == 'ios':
-            expected = 'wifi_unsupported.go'
         implementations = {f for f in files if f.startswith(subsystem + '_')}
         if implementations != {expected}:
             raise ValueError(f'{target}: invalid {subsystem} implementations: {implementations}')
