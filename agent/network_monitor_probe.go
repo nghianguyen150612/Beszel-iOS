@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/netip"
 	"strconv"
 	"strings"
 	"time"
@@ -146,8 +147,12 @@ func dnsResolverForServer(server string) *net.Resolver {
 func dnsServerAddress(server string) (string, error) {
 	host, port, err := net.SplitHostPort(server)
 	if err != nil {
+		if strings.HasPrefix(server, "[") != strings.HasSuffix(server, "]") {
+			return "", fmt.Errorf("invalid DNS server: %q", server)
+		}
 		host, port = strings.TrimPrefix(strings.TrimSuffix(server, "]"), "["), "53"
-		if strings.Contains(host, ":") && net.ParseIP(host) == nil {
+		_, ipErr := netip.ParseAddr(host)
+		if strings.Contains(host, ":") && ipErr != nil {
 			return "", fmt.Errorf("invalid DNS server: %q", server)
 		}
 	}

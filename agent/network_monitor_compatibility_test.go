@@ -85,12 +85,12 @@ func TestP010TCPNegativeAndIPv6(t *testing.T) {
 }
 
 func TestP010DNSServerConfiguration(t *testing.T) {
-	for _, tc := range []struct{ in, want string }{{"::1", "[::1]:53"}, {"[::1]", "[::1]:53"}, {"[::1]:5353", "[::1]:5353"}, {"127.0.0.1:5353", "127.0.0.1:5353"}, {"dns.test", "dns.test:53"}} {
+	for _, tc := range []struct{ in, want string }{{"::1", "[::1]:53"}, {"fe80::1%en0", "[fe80::1%en0]:53"}, {"[fe80::1%en0]", "[fe80::1%en0]:53"}, {"[::1]", "[::1]:53"}, {"[::1]:5353", "[::1]:5353"}, {"127.0.0.1:5353", "127.0.0.1:5353"}, {"dns.test", "dns.test:53"}} {
 		got, err := dnsServerAddress(tc.in)
 		require.NoError(t, err)
 		require.Equal(t, tc.want, got)
 	}
-	for _, server := range []string{"127.0.0.1:0", "127.0.0.1:65536", "localhost:dns", ":53", "host:", "broken:ipv6:server"} {
+	for _, server := range []string{"127.0.0.1:0", "127.0.0.1:65536", "localhost:dns", ":53", "host:", "broken:ipv6:server", "[::1", "::1]"} {
 		_, err := dnsResolverForServer(server).Dial(t.Context(), "udp", "127.0.0.1:53")
 		require.Error(t, err)
 	}
