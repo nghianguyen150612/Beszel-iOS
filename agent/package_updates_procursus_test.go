@@ -500,23 +500,16 @@ func TestProcursusAPTQueryReadOnlyAndNetworkIsolatedFixture(t *testing.T) {
 
 	before := snapshotPackageFixture(t, root)
 	sandboxPath, sandboxArgs, isolated := usableOfflineSandbox()
-	if isolated {
-		t.Log("APT query ran with network namespace disabled and the filesystem read-only")
-	} else {
-		t.Log("APT query used a loopback network trap; network namespace isolation is unavailable")
-	}
+	require.True(t, isolated, "a network-disabled, read-only filesystem sandbox is required for this acceptance test")
+	t.Log("APT query ran with network namespace disabled and the filesystem read-only")
 	argsSeen := false
 	result, err := checkProcursusAPTWith(context.Background(), procursusAPTLayout{aptGet: aptGet}, func(ctx context.Context, executable string, args ...string) (string, error) {
 		require.Equal(t, aptGet, executable)
 		require.Equal(t, procursusAPTReadOnlyArgs, args)
 		argsSeen = true
 		env := []string{"LC_ALL=C", "APT_CONFIG=" + configPath}
-		command := executable
-		commandArgs := append([]string(nil), args...)
-		if isolated {
-			command = sandboxPath
-			commandArgs = append(append(append([]string(nil), sandboxArgs...), executable), args...)
-		}
+		command := sandboxPath
+		commandArgs := append(append(append([]string(nil), sandboxArgs...), executable), args...)
 		cmd := exec.CommandContext(ctx, command, commandArgs...)
 		cmd.Env = env
 		cmd.WaitDelay = 2 * time.Second
