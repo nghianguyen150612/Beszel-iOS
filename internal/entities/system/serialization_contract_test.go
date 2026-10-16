@@ -94,3 +94,28 @@ func TestSerializationCBORKeysAndOptionalZero(t *testing.T) {
 	require.NoError(t, cbor.Unmarshal(data, &decoded))
 	require.Equal(t, combined.Details, decoded.Details)
 }
+
+// PocketBase uses JSON v2 for persisted fields. Values written by our custom
+// MarshalJSON must be readable by both decoders, including historical byte strings.
+func TestP014ByteMetricJSONRoundTrip(t *testing.T) {
+	for name, decode := range map[string]func([]byte, any) error{
+		"json_v1": json.Unmarshal, "json_v2": func(b []byte, v any) error { return jsonv2.Unmarshal(b, v) },
+	} {
+		t.Run(name, func(t *testing.T) {
+			for _, payload := range []string{`{"cpus":[0,25,100],"bat":[0,1]}`, `{"cpus":"ABlk","bat":"AAE="}`} {
+				var stats Stats
+				require.NoError(t, decode([]byte(payload), &stats))
+				require.Equal(t, Uint8Slice{0, 25, 100}, stats.CpuCoresUsage)
+				require.Equal(t, Battery{0, 1}, stats.Battery)
+			}
+			for _, payload := range []string{`{"cpus":[256]}`, `{"bat":[0,256]}`, `{"bat":[1]}`, `{"cpus":[-1]}`, `{"cpus":[1.5]}`} {
+				var stats Stats
+				require.Error(t, decode([]byte(payload), &stats))
+			}
+			var stats Stats
+			require.NoError(t, decode([]byte(`{"cpus":null,"bat":null}`), &stats))
+			require.Nil(t, stats.CpuCoresUsage)
+			require.Zero(t, stats.Battery)
+		})
+	}
+}

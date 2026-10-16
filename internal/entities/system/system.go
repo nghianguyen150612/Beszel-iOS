@@ -3,7 +3,9 @@ package system
 // TODO: this is confusing, make common package with common/types common/helpers etc
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/henrygd/beszel/internal/entities/container"
@@ -97,6 +99,37 @@ func (s Uint8Slice) MarshalJSON() ([]byte, error) {
 	return json.Marshal(arr)
 }
 
+// UnmarshalJSON accepts the numeric array we publish under both JSON engines.
+// Historical byte-string records remain readable without rewriting history.
+func (s *Uint8Slice) UnmarshalJSON(data []byte) error {
+	values, err := decodeByteMetrics(data)
+	if err == nil {
+		*s = values
+	}
+	return err
+}
+
+func decodeByteMetrics(data []byte) ([]uint8, error) {
+	data = bytes.TrimSpace(data)
+	if len(data) > 0 && data[0] == '[' {
+		var values []uint16
+		if err := json.Unmarshal(data, &values); err != nil {
+			return nil, err
+		}
+		result := make([]uint8, len(values))
+		for i, v := range values {
+			if v > 255 {
+				return nil, fmt.Errorf("byte metric %d exceeds 255", v)
+			}
+			result[i] = uint8(v)
+		}
+		return result, nil
+	}
+	var values []byte
+	err := json.Unmarshal(data, &values)
+	return values, err
+}
+
 // Battery stores the representative battery's percent and charge state.
 // Its custom JSON encoding keeps the public and persisted representation as a
 // numeric tuple under both encoding/json v1 and v2.
@@ -104,6 +137,22 @@ type Battery [2]uint8
 
 func (b Battery) MarshalJSON() ([]byte, error) {
 	return json.Marshal([2]uint16{uint16(b[0]), uint16(b[1])})
+}
+
+func (b *Battery) UnmarshalJSON(data []byte) error {
+	values, err := decodeByteMetrics(data)
+	if err != nil {
+		return err
+	}
+	if values == nil {
+		*b = Battery{}
+		return nil
+	}
+	if len(values) != 2 {
+		return fmt.Errorf("battery tuple has %d values, want 2", len(values))
+	}
+	*b = Battery{values[0], values[1]}
+	return nil
 }
 
 type GPUData struct {

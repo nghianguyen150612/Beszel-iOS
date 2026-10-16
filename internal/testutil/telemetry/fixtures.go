@@ -13,6 +13,7 @@ import (
 
 type Fixture struct {
 	Name, SystemID, UserID, Interface string
+	Configs                           []monitor.Config
 	Data                              system.CombinedData
 	Packages                          system.PackageUpdates
 }
@@ -39,8 +40,14 @@ func All() []Fixture {
 			Monitors: map[string]monitor.Result{},
 		}
 		for j, protocol := range []string{"icmp", "tcp", "dns", "http", "https"} {
-			_ = protocol // HTTPS uses protocol http with an https:// target in configs.
+			target := "127.0.0.1"
+			wireProtocol := protocol
+			if protocol == "http" || protocol == "https" {
+				target = protocol + "://127.0.0.1"
+				wireProtocol = "http"
+			}
 			id := f.Name + string(rune('a'+j)) + "monitor"
+			f.Configs = append(f.Configs, monitor.Config{ID: id, Target: target, Protocol: wireProtocol, Port: 80, Interval: 60})
 			f.Data.Monitors[id] = monitor.Result{AvgResponse: 1500, MinResponse: 1000, MaxResponse: 2000,
 				AvgResponse1h: 1500, MinResponse1h: 1000, MaxResponse1h: 2000, PacketLoss: 25, PacketLoss1h: 25,
 				LastProbeAt: 1792108800000, SampleCount: 4, TotalCount: 4, SuccessCount: 3, ResponseSum: 4500}

@@ -1,0 +1,1127 @@
+{
+  "ios": {
+    "collections": {
+      "container_stats": [],
+      "containers": [],
+      "network_monitor_stats": [
+        {
+          "monitor": "a1b88d9a",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixtureios00001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "2ca833de",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixtureios00001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "21acb63e",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixtureios00001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "18fe0107",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixtureios00001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "b8cd9296",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixtureios00001",
+          "total_count": 4,
+          "type": "1m"
+        }
+      ],
+      "network_monitors": [
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "http",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixtureios00001",
+          "target": "http://127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "tcp",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixtureios00001",
+          "target": "127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "http",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixtureios00001",
+          "target": "https://127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "icmp",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixtureios00001",
+          "target": "127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "dns",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixtureios00001",
+          "target": "127.0.0.1"
+        }
+      ],
+      "system_stats": [
+        {
+          "stats": {
+            "b": [
+              1024,
+              2048
+            ],
+            "bat": [
+              75,
+              1
+            ],
+            "bats": {
+              "battery": 75
+            },
+            "cpu": 25,
+            "cpub": [
+              20,
+              5,
+              0,
+              0,
+              75
+            ],
+            "cpus": [
+              0,
+              25,
+              50,
+              25
+            ],
+            "d": 100,
+            "dp": 40,
+            "du": 40,
+            "efs": {
+              "data": {
+                "d": 200,
+                "du": 50,
+                "r": 0,
+                "rb": 0,
+                "w": 0,
+                "wb": 0
+              }
+            },
+            "la": [
+              0,
+              0,
+              0
+            ],
+            "m": 8,
+            "mb": 0,
+            "mp": 50,
+            "mu": 4,
+            "ni": {
+              "en0": [
+                1024,
+                2048,
+                1048576,
+                2097152
+              ]
+            }
+          },
+          "system": "fixtureios00001",
+          "type": "1m"
+        }
+      ],
+      "systemd_services": []
+    },
+    "details": {
+      "arch": "arm64",
+      "cores": 4,
+      "cpu": "Apple A7",
+      "hostname": "synthetic-ios",
+      "id": "fixtureios00001",
+      "kernel": "fixture-kernel",
+      "memory": 8589934592,
+      "os": 1,
+      "os_name": "iOS 12.5.7 (synthetic)",
+      "podman": false,
+      "system": "fixtureios00001",
+      "threads": 4
+    },
+    "system": {
+      "host": "127.0.0.1",
+      "id": "fixtureios00001",
+      "info": {
+        "bat": [
+          75,
+          1
+        ],
+        "bb": 3072,
+        "cpu": 25,
+        "dp": 40,
+        "la": [
+          0,
+          0,
+          0
+        ],
+        "mp": 50,
+        "pu": [
+          0
+        ],
+        "t": 4,
+        "u": 86403,
+        "v": "0.21.0"
+      },
+      "name": "synthetic-ios",
+      "port": "1",
+      "status": "up",
+      "users": [
+        "ownerios0000001"
+      ]
+    }
+  },
+  "linux": {
+    "collections": {
+      "container_stats": [
+        {
+          "stats": [
+            {
+              "b": [
+                100,
+                200
+              ],
+              "c": 2,
+              "m": 16,
+              "n": "fixture"
+            }
+          ],
+          "system": "fixturelinux001",
+          "type": "1m"
+        }
+      ],
+      "containers": [
+        {
+          "cpu": 2,
+          "health": 0,
+          "image": "fixture:v1",
+          "memory": 16,
+          "name": "fixture",
+          "net": 300,
+          "ports": "",
+          "status": "running",
+          "system": "fixturelinux001",
+          "updatable": false
+        }
+      ],
+      "network_monitor_stats": [
+        {
+          "monitor": "4ce6191a",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturelinux001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "eeca9661",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturelinux001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "356b8cb9",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturelinux001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "2f64c603",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturelinux001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "682f4473",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturelinux001",
+          "total_count": 4,
+          "type": "1m"
+        }
+      ],
+      "network_monitors": [
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "tcp",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturelinux001",
+          "target": "127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "http",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturelinux001",
+          "target": "https://127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "http",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturelinux001",
+          "target": "http://127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "dns",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturelinux001",
+          "target": "127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "icmp",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturelinux001",
+          "target": "127.0.0.1"
+        }
+      ],
+      "system_stats": [
+        {
+          "stats": {
+            "b": [
+              1024,
+              2048
+            ],
+            "cpu": 25,
+            "cpub": [
+              20,
+              5,
+              0,
+              0,
+              75
+            ],
+            "cpus": [
+              0,
+              25,
+              50,
+              25
+            ],
+            "d": 100,
+            "dio": [
+              4096,
+              8192
+            ],
+            "diot": [
+              1048576,
+              2097152
+            ],
+            "dp": 40,
+            "du": 40,
+            "efs": {
+              "btrfs-data": {
+                "d": 500,
+                "du": 100,
+                "r": 0,
+                "rb": 512,
+                "w": 0,
+                "wb": 1024
+              },
+              "data": {
+                "d": 200,
+                "du": 50,
+                "r": 0,
+                "rb": 1024,
+                "w": 0,
+                "wb": 2048
+              }
+            },
+            "f": {
+              "hwmon_fan1": 1200
+            },
+            "g": {
+              "0": {
+                "mt": 4096,
+                "mu": 512,
+                "n": "NVIDIA fixture",
+                "u": 42
+              },
+              "1": {
+                "mt": 2048,
+                "n": "AMD fixture",
+                "u": 0
+              }
+            },
+            "la": [
+              1,
+              0.5,
+              0.25
+            ],
+            "m": 8,
+            "mb": 0,
+            "mp": 50,
+            "mu": 4,
+            "ni": {
+              "eth0": [
+                1024,
+                2048,
+                1048576,
+                2097152
+              ]
+            },
+            "t": {
+              "NVIDIA fixture": 55,
+              "coretemp": 42
+            },
+            "wf": {
+              "wlan0": -55
+            },
+            "z": {
+              "tank": {
+                "d": 1024,
+                "du": 256,
+                "h": "ONLINE",
+                "rb": 1024,
+                "wb": 2048
+              }
+            }
+          },
+          "system": "fixturelinux001",
+          "type": "1m"
+        }
+      ],
+      "systemd_services": [
+        {
+          "cpu": 2,
+          "cpuPeak": 0,
+          "memPeak": 0,
+          "memory": 1048576,
+          "name": "fixture.service",
+          "state": 0,
+          "sub": 1,
+          "system": "fixturelinux001"
+        }
+      ]
+    },
+    "details": {
+      "arch": "amd64",
+      "cores": 4,
+      "cpu": "fixture CPU",
+      "hostname": "synthetic-linux",
+      "id": "fixturelinux001",
+      "kernel": "fixture-kernel",
+      "memory": 8589934592,
+      "os": 0,
+      "os_name": "Debian GNU/Linux (synthetic)",
+      "podman": false,
+      "system": "fixturelinux001",
+      "threads": 4
+    },
+    "system": {
+      "host": "127.0.0.1",
+      "id": "fixturelinux001",
+      "info": {
+        "bb": 3072,
+        "cpu": 25,
+        "dp": 40,
+        "dt": 55,
+        "g": 42,
+        "jl": true,
+        "la": [
+          1,
+          0.5,
+          0.25
+        ],
+        "mp": 50,
+        "pu": [
+          2,
+          1
+        ],
+        "sv": [
+          1,
+          0
+        ],
+        "t": 4,
+        "u": 86400,
+        "v": "0.21.0",
+        "wf": {
+          "wlan0": {
+            "r": -55,
+            "s": "synthetic network"
+          }
+        }
+      },
+      "name": "synthetic-linux",
+      "port": "1",
+      "status": "up",
+      "users": [
+        "ownerlinux00001"
+      ]
+    }
+  },
+  "macos": {
+    "collections": {
+      "container_stats": [],
+      "containers": [],
+      "network_monitor_stats": [
+        {
+          "monitor": "f49509e2",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturemacos001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "6ebcb612",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturemacos001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "bafd57c3",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturemacos001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "bd916bc2",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturemacos001",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "fddd12b6",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturemacos001",
+          "total_count": 4,
+          "type": "1m"
+        }
+      ],
+      "network_monitors": [
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "http",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturemacos001",
+          "target": "https://127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "http",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturemacos001",
+          "target": "http://127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "dns",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturemacos001",
+          "target": "127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "tcp",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturemacos001",
+          "target": "127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "icmp",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturemacos001",
+          "target": "127.0.0.1"
+        }
+      ],
+      "system_stats": [
+        {
+          "stats": {
+            "b": [
+              1024,
+              2048
+            ],
+            "bat": [
+              75,
+              1
+            ],
+            "bats": {
+              "battery": 75
+            },
+            "cpu": 25,
+            "cpub": [
+              20,
+              5,
+              0,
+              0,
+              75
+            ],
+            "cpus": [
+              0,
+              25,
+              50,
+              25
+            ],
+            "d": 100,
+            "dio": [
+              4096,
+              8192
+            ],
+            "diot": [
+              1048576,
+              2097152
+            ],
+            "dp": 40,
+            "du": 40,
+            "efs": {
+              "data": {
+                "d": 200,
+                "du": 50,
+                "r": 0,
+                "rb": 1024,
+                "w": 0,
+                "wb": 2048
+              }
+            },
+            "g": {
+              "0": {
+                "n": "Apple GPU fixture",
+                "p": 2,
+                "u": 12
+              }
+            },
+            "la": [
+              0.5,
+              0.25,
+              0.1
+            ],
+            "m": 8,
+            "mb": 0,
+            "mp": 50,
+            "mu": 4,
+            "ni": {
+              "en0": [
+                1024,
+                2048,
+                1048576,
+                2097152
+              ]
+            },
+            "t": {
+              "Apple GPU fixture": 45
+            },
+            "wf": {
+              "en0": -57
+            }
+          },
+          "system": "fixturemacos001",
+          "type": "1m"
+        }
+      ],
+      "systemd_services": []
+    },
+    "details": {
+      "arch": "arm64",
+      "cores": 4,
+      "cpu": "Apple Silicon fixture",
+      "hostname": "synthetic-macos",
+      "id": "fixturemacos001",
+      "kernel": "fixture-kernel",
+      "memory": 8589934592,
+      "os": 1,
+      "os_name": "macOS (synthetic)",
+      "podman": false,
+      "system": "fixturemacos001",
+      "threads": 4
+    },
+    "system": {
+      "host": "127.0.0.1",
+      "id": "fixturemacos001",
+      "info": {
+        "bat": [
+          75,
+          1
+        ],
+        "bb": 3072,
+        "cpu": 25,
+        "dp": 40,
+        "dt": 45,
+        "g": 12,
+        "la": [
+          0.5,
+          0.25,
+          0.1
+        ],
+        "mp": 50,
+        "t": 4,
+        "u": 86402,
+        "v": "0.21.0",
+        "wf": {
+          "en0": {
+            "r": -57,
+            "s": "synthetic network"
+          }
+        }
+      },
+      "name": "synthetic-macos",
+      "port": "1",
+      "status": "up",
+      "users": [
+        "ownermacos00001"
+      ]
+    }
+  },
+  "windows": {
+    "collections": {
+      "container_stats": [],
+      "containers": [],
+      "network_monitor_stats": [
+        {
+          "monitor": "56e9bf1a",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturewindows1",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "e3efc90e",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturewindows1",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "ddae0e5b",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturewindows1",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "9fd1a43a",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturewindows1",
+          "total_count": 4,
+          "type": "1m"
+        },
+        {
+          "monitor": "9ad323fa",
+          "res_max": 2000,
+          "res_min": 1000,
+          "res_sum": 4500,
+          "success_count": 3,
+          "system": "fixturewindows1",
+          "total_count": 4,
+          "type": "1m"
+        }
+      ],
+      "network_monitors": [
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "dns",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturewindows1",
+          "target": "127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "tcp",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturewindows1",
+          "target": "127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "http",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturewindows1",
+          "target": "https://127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "http",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturewindows1",
+          "target": "http://127.0.0.1"
+        },
+        {
+          "certInfo": null,
+          "enabled": true,
+          "interval": 60,
+          "loss1h": 25,
+          "port": 80,
+          "protocol": "icmp",
+          "res": 1500,
+          "resAvg1h": 1500,
+          "resMax1h": 2000,
+          "resMin1h": 1000,
+          "server": "",
+          "skipTlsVerify": false,
+          "system": "fixturewindows1",
+          "target": "127.0.0.1"
+        }
+      ],
+      "system_stats": [
+        {
+          "stats": {
+            "b": [
+              1024,
+              2048
+            ],
+            "cpu": 25,
+            "cpub": [
+              20,
+              5,
+              0,
+              0,
+              75
+            ],
+            "cpus": [
+              0,
+              25,
+              50,
+              25
+            ],
+            "d": 100,
+            "dio": [
+              4096,
+              8192
+            ],
+            "diot": [
+              1048576,
+              2097152
+            ],
+            "dp": 40,
+            "du": 40,
+            "efs": {
+              "data": {
+                "d": 200,
+                "du": 50,
+                "r": 0,
+                "rb": 1024,
+                "w": 0,
+                "wb": 2048
+              }
+            },
+            "g": {
+              "0": {
+                "mt": 4096,
+                "mu": 128,
+                "n": "NVIDIA Windows fixture",
+                "u": 0
+              }
+            },
+            "la": [
+              0,
+              0,
+              0
+            ],
+            "m": 8,
+            "mb": 0,
+            "mp": 50,
+            "mu": 4,
+            "ni": {
+              "Ethernet": [
+                1024,
+                2048,
+                1048576,
+                2097152
+              ]
+            },
+            "wf": {
+              "Wi-Fi": -56
+            }
+          },
+          "system": "fixturewindows1",
+          "type": "1m"
+        }
+      ],
+      "systemd_services": []
+    },
+    "details": {
+      "arch": "amd64",
+      "cores": 4,
+      "cpu": "fixture CPU",
+      "hostname": "synthetic-windows",
+      "id": "fixturewindows1",
+      "kernel": "10.0.26100",
+      "memory": 8589934592,
+      "os": 2,
+      "os_name": "Windows 11 (synthetic)",
+      "podman": false,
+      "system": "fixturewindows1",
+      "threads": 4
+    },
+    "system": {
+      "host": "127.0.0.1",
+      "id": "fixturewindows1",
+      "info": {
+        "bb": 3072,
+        "cpu": 25,
+        "dp": 40,
+        "g": 0,
+        "la": [
+          0,
+          0,
+          0
+        ],
+        "mp": 50,
+        "t": 4,
+        "u": 86401,
+        "v": "0.21.0",
+        "wf": {
+          "Wi-Fi": {
+            "r": -56,
+            "s": "synthetic network"
+          }
+        }
+      },
+      "name": "synthetic-windows",
+      "port": "1",
+      "status": "up",
+      "users": [
+        "ownerwindows001"
+      ]
+    }
+  }
+}
