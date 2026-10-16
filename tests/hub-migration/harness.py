@@ -369,11 +369,13 @@ def verify_migrated_monitor_alert_api(
         "PATCH",
         f"/api/collections/network_monitors/records/{monitor_id}",
         token=regular_token,
-        body={"target": "http://p013-updated.synthetic.invalid/ready", "interval": 120, "skipTlsVerify": False},
+        # Target/protocol/port/server form the stable ID; update configuration
+        # fields that preserve identity so the API returns the updated record.
+        body={"interval": 120, "skipTlsVerify": False},
     )
     if monitor_patch_status != 200 or not isinstance(patched_monitor, dict):
         raise HarnessError(f"regular-user network monitor update failed: HTTP {monitor_patch_status}, {patched_monitor}")
-    if patched_monitor.get("target") != "http://p013-updated.synthetic.invalid/ready" or patched_monitor.get("interval") != 120:
+    if patched_monitor.get("target") != "http://p013.synthetic.invalid/health" or patched_monitor.get("interval") != 120 or patched_monitor.get("skipTlsVerify") is not False:
         raise HarnessError("network monitor update did not persist through the supported API")
     monitor_read_status, _, monitor_read = request(
         base, "GET", f"/api/collections/network_monitors/records/{monitor_id}", token=regular_token,
