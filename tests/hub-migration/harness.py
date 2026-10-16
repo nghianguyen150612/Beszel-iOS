@@ -350,6 +350,7 @@ def verify_migrated_monitor_alert_api(
     """Exercise migrated collections with regular-user PocketBase API auth."""
     regular_token = auth_token(base, "users", regular_email, password)
     owner_token = auth_token(base, "users", owner_email, password)
+    owner_superuser_token = auth_token(base, "_superusers", owner_email, password)
     monitor_status, _, monitor = request(base, "POST", "/api/collections/network_monitors/records", token=regular_token, body={
         "system": system_id,
         "target": "http://p013.synthetic.invalid/health",
@@ -435,7 +436,7 @@ def verify_migrated_monitor_alert_api(
         base,
         "POST",
         "/api/collections/users/records",
-        token=owner_token,
+        token=owner_superuser_token,
         body={
             "email": outsider_email,
             "password": password,
@@ -504,7 +505,7 @@ def verify_migrated_monitor_alert_api(
         raise HarnessError("nonmember alert-history query exposed another user's history")
 
     outsider_delete_status, _, _ = request(
-        base, "DELETE", f"/api/collections/users/records/{outsider_id}", token=owner_token,
+        base, "DELETE", f"/api/collections/users/records/{outsider_id}", token=owner_superuser_token,
     )
     if outsider_delete_status not in (200, 204):
         raise HarnessError(f"could not remove synthetic nonmember through the supported API: HTTP {outsider_delete_status}")
