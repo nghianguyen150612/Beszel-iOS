@@ -8,10 +8,10 @@
     "production_ios": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
     "frozen_main": "bb23f99b3eeaced9608e11e280e7c986dba650be",
     "branch": "ios/wifi-rssi-compatibility",
-    "source_tested_sha": "d3f33c83c8d6164717a26749826408359fed84ea",
+    "source_tested_sha": "2a16d0f46f6fd1c91f40e295190b89fb8713b8cd",
     "pr_url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/14",
-    "pr_state": "OPEN_DRAFT",
-    "merge_sha": null,
+    "pr_state": "MERGED",
+    "merge_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
     "implementation_commits": [
       "1233726669cdf53422dbaebc25785651f665c1de",
       "2c6abe5733cbc736fc6b3bdc4edb917a63811803",
@@ -20,7 +20,11 @@
       "d3f33c83c8d6164717a26749826408359fed84ea"
     ],
     "initial_tags_snapshot_sha256": "a141d79ec217eba5df5e85790db10f80a2cae9b83c0c36c06dd5b28ab7cd223c",
-    "cloud_shell_credential": "expired after source checkpoints; connected GitHub tools used for later publication; no plaintext read or replacement"
+    "cloud_shell_credential": "expired after source checkpoints; connected GitHub tools used for later publication; no plaintext read or replacement",
+    "final_pr_head_sha": "db20af2af4ea3d41ed7d29e8100cc2dd8ef2e508",
+    "integration_head_after_merge": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "p013_starting_integration_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "p013_branch": "ios/hub-database-migration"
   },
   "history": {
     "tested_sha": "d3f33c83c8d6164717a26749826408359fed84ea",
@@ -614,8 +618,7 @@
     "real denied or authorized daemon calls / entitlement sufficiency",
     "actual connected interface discovery / measured RSSI dBm / SSID privacy / lifecycle on iOS",
     "native blocked-call cancellation / resource and battery behavior on Apple A7",
-    "iOS device, Windows or FreeBSD test executable execution",
-    "merge or post-merge verification: PR intentionally Draft while native capability blocked"
+    "iOS device, Windows or FreeBSD test executable execution"
   ],
   "acceptance": {
     "p012_native_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE",
@@ -628,7 +631,10 @@
     "gate_c_p012_fallback_source": "ACCEPTED FOR INTEGRATION",
     "gate_c_physical_device_evidence": "PENDING P018",
     "gate_c_overall": "PENDING",
-    "release_authorized": false
+    "release_authorized": false,
+    "p013_started_after_pr14_merge": true,
+    "p013_starting_integration_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "pr14_final_state": "MERGED"
   },
   "safety": {
     "physical_device_accessed": false,
@@ -789,7 +795,7 @@
     "jailbreak": "Amethyst / Procursus",
     "accessed": false
   },
-  "final_head_validation": "A final evidence/workflow-branch checkpoint will receive push-triggered CI. Exact final HEAD and final runs will be recorded in PR #14; no further source changes are planned.",
+  "final_head_validation": "PR #14 final docs head db20af2af4ea3d41ed7d29e8100cc2dd8ef2e508 passed iOS Build run 38837362864 and installer run 38837362750; release skipped. PR #14 merged normally at d6239915e404668c10453ab2ec44f797b2f0178e. P013 started from that actual integration SHA. These checks validate source/build scope only; native RSSI and physical iPad behavior remain unmeasured and deferred to P018.",
   "p012a": {
     "starting_feature_sha": "88dcf9b89389cd58de6f4859d4619485451dfa82",
     "checkpoints": [
@@ -1836,7 +1842,15 @@
       "installer_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38824469926",
       "release": "SKIPPED",
       "native_rssi_or_device_behavior": "NOT MEASURED"
-    }
+    },
+    "p012_pr_final_state": "MERGED",
+    "p012_final_pr_head_sha": "db20af2af4ea3d41ed7d29e8100cc2dd8ef2e508",
+    "p012_merge_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "p013_starting_integration_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "p013_branch": "ios/hub-database-migration",
+    "p012_final_iOS_build_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362864",
+    "p012_final_installer_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362750",
+    "p012_final_release_job": "SKIPPED"
   },
   "historical_acceptance_before_owner_scope_decision": {
     "p012_native_gate": "BLOCKED",
@@ -1845,5 +1859,86 @@
     "physical_wifi_rssi": "P018 / Gate F pending",
     "p013_started": false,
     "next_action": "resolve pinned firmware ABI/freshness and bounded-call blockers; P016 least privilege and P018 physical validation; resume published branch/ledger"
+  },
+  "historical_pre_merge_finalization_checkpoint": {
+    "git": {
+      "starting_integration": "33840093bb465f0b164bb7d66aebc8cd85f86a4e",
+      "production_ios": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+      "frozen_main": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+      "branch": "ios/wifi-rssi-compatibility",
+      "source_tested_sha": "d3f33c83c8d6164717a26749826408359fed84ea",
+      "pr_url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/14",
+      "pr_state": "OPEN_DRAFT",
+      "merge_sha": null,
+      "implementation_commits": [
+        "1233726669cdf53422dbaebc25785651f665c1de",
+        "2c6abe5733cbc736fc6b3bdc4edb917a63811803",
+        "e813343d335bc821727c8a55cd2f33b15a2c4ca9",
+        "63e97a30a9440cab75ba27450d8eb2da5a87774e",
+        "d3f33c83c8d6164717a26749826408359fed84ea"
+      ],
+      "initial_tags_snapshot_sha256": "a141d79ec217eba5df5e85790db10f80a2cae9b83c0c36c06dd5b28ab7cd223c",
+      "cloud_shell_credential": "expired after source checkpoints; connected GitHub tools used for later publication; no plaintext read or replacement"
+    },
+    "final_head_validation": "A final evidence/workflow-branch checkpoint will receive push-triggered CI. Exact final HEAD and final runs will be recorded in PR #14; no further source changes are planned.",
+    "not_executed": [
+      "actual MobileWiFi dlopen/dlsym or missing-symbol injection: no native loader shipped",
+      "native CF dictionary/type/ownership fixtures: no native parser shipped",
+      "real denied or authorized daemon calls / entitlement sufficiency",
+      "actual connected interface discovery / measured RSSI dBm / SSID privacy / lifecycle on iOS",
+      "native blocked-call cancellation / resource and battery behavior on Apple A7",
+      "iOS device, Windows or FreeBSD test executable execution",
+      "merge or post-merge verification: PR intentionally Draft while native capability blocked"
+    ],
+    "note": "Preserved administrative and test-scope state immediately before PR #14 final-head CI and merge; original blocker/test evidence remains unchanged."
+  },
+  "lifecycle_finalization": {
+    "recorded_date": "2026-10-16",
+    "owner_approval": "https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758",
+    "p012_native_wifi_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE",
+    "fallback_source_ci": "ACCEPTED FOR INTEGRATION",
+    "native_rssi_measured": false,
+    "normal_ios_wifi_rssi": "UNAVAILABLE / NIL",
+    "physical_validation_owner": "P018",
+    "additional_signing_entitlement_or_helper_owner": "P016, only for a future evidence-backed change",
+    "deferred_risks": [
+      "WIFI-ABI-12",
+      "WIFI-ASSOCIATION-12",
+      "WIFI-AUTH-12",
+      "physical iOS portion of WIFI-BOUND-12"
+    ],
+    "p012_last_verified_source_head": "2a16d0f46f6fd1c91f40e295190b89fb8713b8cd",
+    "p012_final_pr_head": "db20af2af4ea3d41ed7d29e8100cc2dd8ef2e508",
+    "p012_premerge_integration_head": "33840093bb465f0b164bb7d66aebc8cd85f86a4e",
+    "p012_pr_state": "MERGED",
+    "p012_merge_strategy": "normal merge commit; no squash, rebase, force-push, or bypass",
+    "p012_merge_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "integration_head_after_p012": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "p012_final_ci": [
+      {
+        "workflow": "iOS Build",
+        "run_id": 38837362864,
+        "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362864",
+        "head_sha": "db20af2af4ea3d41ed7d29e8100cc2dd8ef2e508",
+        "result": "PASS",
+        "release_job": "SKIPPED"
+      },
+      {
+        "workflow": "iOS installer lifecycle",
+        "run_id": 38837362750,
+        "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362750",
+        "head_sha": "db20af2af4ea3d41ed7d29e8100cc2dd8ef2e508",
+        "result": "PASS"
+      }
+    ],
+    "evidence_level": "Hosted source, fixtures, Go/race/audit/frontend/Linux evidence and native build/installer CI. Native RSSI was not measured; no physical iPad migration or launch is claimed.",
+    "gate_c_source_fallback": "ACCEPTED FOR INTEGRATION",
+    "gate_c_physical_evidence": "PENDING P018",
+    "release_authorized": false,
+    "p013_authorized": true,
+    "p013_starting_integration_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "p013_branch": "ios/hub-database-migration",
+    "production_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be"
   }
 }

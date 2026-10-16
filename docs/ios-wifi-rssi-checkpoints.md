@@ -317,3 +317,32 @@ resulting HEAD, review the re-scoped fallback/source diff, then normally merge
 PR #14 into `ios/upstream-v021-integration` if its required checks pass. Start
 P013 only from the actual resulting integration HEAD and record that SHA. Do not
 change production `iOS`, frozen `main`, device state, or release state.
+
+## P012 post-merge finalization — 2026-10-16
+
+The preceding owner-deferral checkpoint records the decision and the tests as
+they stood before PR #14 was finalized. Its next-action text is retained as
+historical checkpoint evidence. The actual final PR head was
+`db20af2af4ea3d41ed7d29e8100cc2dd8ef2e508`; the last verified P012 source head
+was `2a16d0f46f6fd1c91f40e295190b89fb8713b8cd`. PR #14's final-head iOS Build
+passed at [run 38837362864](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362864)
+and installer lifecycle passed at [run 38837362750](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362750);
+both target `db20af2`. Release was skipped. This is hosted source/build evidence
+only and did not measure native RSSI or physical iPad behavior.
+
+PR [#14](https://github.com/nghianguyen150612/Beszel-iOS/pull/14) is
+**MERGED** by a normal merge commit into `ios/upstream-v021-integration`:
+`d6239915e404668c10453ab2ec44f797b2f0178e`. The pre-merge integration head was
+`33840093bb465f0b164bb7d66aebc8cd85f86a4e`; the actual merge commit became the
+new integration head and P013 starting SHA. P013 uses branch
+`ios/hub-database-migration`; no cherry-pick or history rewrite was used.
+
+P012's final disposition remains unchanged: native Wi-Fi RSSI is
+`DEFERRED — REFERENCE DEVICE UNAVAILABLE`; the unavailable fallback/source/CI
+was accepted; native RSSI was not measured and normal iOS RSSI remains
+unavailable/nil. P018 owns physical validation of `WIFI-ABI-12`,
+`WIFI-ASSOCIATION-12`, `WIFI-AUTH-12`, and physical `WIFI-BOUND-12`. P016 owns
+only any future evidence-backed signing, entitlement, or helper-packaging work.
+Gate C physical evidence is pending, and no release is authorized. P013 is
+authorized from the actual integration SHA above. Do not start P014 without a
+separate request.

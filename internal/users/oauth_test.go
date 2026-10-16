@@ -3,6 +3,7 @@
 package users_test
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -17,6 +18,7 @@ import (
 
 type roleTestProvider struct {
 	auth.BaseProvider
+	user *auth.AuthUser
 }
 
 func (p *roleTestProvider) FetchToken(string, ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
@@ -24,7 +26,56 @@ func (p *roleTestProvider) FetchToken(string, ...oauth2.AuthCodeOption) (*oauth2
 }
 
 func (p *roleTestProvider) FetchAuthUser(*oauth2.Token) (*auth.AuthUser, error) {
+	if p.user != nil {
+		return p.user, nil
+	}
 	return &auth.AuthUser{Id: "role-test-user", Email: "oauth@example.com"}, nil
+}
+
+func TestOAuthInvalidIdentityDoesNotCreateAccount(t *testing.T) {
+	t.Setenv("USER_CREATION", "true")
+	const provider = "beszel-invalid-role-test"
+	for _, tc := range []struct {
+		name string
+		user *auth.AuthUser
+	}{
+		{name: "missing provider id", user: &auth.AuthUser{Email: "oauth-invalid@example.com"}},
+		{name: "missing email", user: &auth.AuthUser{Id: "invalid-email-user"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			auth.Providers[provider] = func() auth.Provider { return &roleTestProvider{user: tc.user} }
+			t.Cleanup(func() { delete(auth.Providers, provider) })
+
+			h, err := beszelTests.NewTestHub(t.TempDir())
+			require.NoError(t, err)
+			defer h.Cleanup()
+			h.StartHub()
+
+			collection, err := h.FindCollectionByNameOrId("users")
+			require.NoError(t, err)
+			collection.OAuth2.Enabled = true
+			collection.OAuth2.Providers = []core.OAuth2ProviderConfig{{
+				Name: provider, ClientId: "test-client", ClientSecret: "test-secret",
+			}}
+			require.NoError(t, h.Save(collection))
+			r, err := apis.NewRouter(h.App)
+			require.NoError(t, err)
+			mux, err := r.BuildMux()
+			require.NoError(t, err)
+			body := `{"provider":"` + provider + `","code":"test-code","codeVerifier":"test-verifier","redirectUrl":"http://localhost/callback","createData":{}}`
+			req := httptest.NewRequest("POST", "/api/collections/users/auth-with-oauth2", strings.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			res := httptest.NewRecorder()
+			mux.ServeHTTP(res, req)
+			require.NotEqual(t, 200, res.Code, res.Body.String())
+			count, err := h.CountRecords("users")
+			require.NoError(t, err)
+			require.Zero(t, count, "invalid OAuth identity must not create an account")
+			count, err = h.CountRecords("_externalAuths")
+			require.NoError(t, err)
+			require.Zero(t, count, "invalid OAuth identity must not create an identity link")
+		})
+	}
 }
 
 func TestOAuthUserRole(t *testing.T) {
@@ -73,6 +124,126 @@ func TestOAuthUserRole(t *testing.T) {
 			require.Equal(t, "admin", user.GetString("role"))
 		})
 	}
+}
+
+func TestOAuthDuplicateIdentityUsesExistingAccount(t *testing.T) {
+	t.Setenv("USER_CREATION", "true")
+	const provider = "beszel-duplicate-identity-test"
+	providerUser := &auth.AuthUser{Id: "shared-provider-id", Email: "first@example.com"}
+	auth.Providers[provider] = func() auth.Provider { return &roleTestProvider{user: providerUser} }
+	t.Cleanup(func() { delete(auth.Providers, provider) })
+
+	h, err := beszelTests.NewTestHub(t.TempDir())
+	require.NoError(t, err)
+	defer h.Cleanup()
+	h.StartHub()
+
+	collection, err := h.FindCollectionByNameOrId("users")
+	require.NoError(t, err)
+	collection.OAuth2.Enabled = true
+	collection.OAuth2.Providers = []core.OAuth2ProviderConfig{{
+		Name: provider, ClientId: "test-client", ClientSecret: "test-secret",
+	}}
+	require.NoError(t, h.Save(collection))
+	r, err := apis.NewRouter(h.App)
+	require.NoError(t, err)
+	mux, err := r.BuildMux()
+	require.NoError(t, err)
+
+	login := func() string {
+		body := `{"provider":"` + provider + `","code":"test-code","codeVerifier":"test-verifier","redirectUrl":"http://localhost/callback","createData":{"role":"admin"}}`
+		req := httptest.NewRequest("POST", "/api/collections/users/auth-with-oauth2", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		res := httptest.NewRecorder()
+		mux.ServeHTTP(res, req)
+		require.Equal(t, 200, res.Code, res.Body.String())
+		var response struct {
+			Record struct {
+				ID string `json:"id"`
+			} `json:"record"`
+		}
+		require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+		require.NotEmpty(t, response.Record.ID)
+		return response.Record.ID
+	}
+
+	firstID := login()
+	firstUser, err := h.FindRecordById("users", firstID)
+	require.NoError(t, err)
+	require.Equal(t, "user", firstUser.GetString("role"), "OAuth createData must not grant admin role")
+	firstUser.Set("role", "admin")
+	require.NoError(t, h.Save(firstUser))
+
+	// A provider identity already linked to an account must not create a second
+	// account when the provider later returns a different email address.
+	providerUser = &auth.AuthUser{Id: "shared-provider-id", Email: "second@example.com"}
+	secondID := login()
+	require.Equal(t, firstID, secondID)
+
+	count, err := h.CountRecords("users")
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+	count, err = h.CountRecords("_externalAuths")
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+
+	linkedUser, err := h.FindRecordById("users", firstID)
+	require.NoError(t, err)
+	require.Equal(t, "admin", linkedUser.GetString("role"), "existing administrator role must remain unchanged")
+	require.Equal(t, "first@example.com", linkedUser.Email(), "identity mismatch must not rewrite the linked account email")
+}
+
+func TestOAuthAccountLinkingPreservesExistingRole(t *testing.T) {
+	t.Setenv("USER_CREATION", "true")
+	const provider = "beszel-account-link-test"
+	providerUser := &auth.AuthUser{Id: "linked-provider-id", Email: "linked@example.com"}
+	auth.Providers[provider] = func() auth.Provider { return &roleTestProvider{user: providerUser} }
+	t.Cleanup(func() { delete(auth.Providers, provider) })
+
+	h, err := beszelTests.NewTestHub(t.TempDir())
+	require.NoError(t, err)
+	defer h.Cleanup()
+	h.StartHub()
+
+	user, err := beszelTests.CreateUserWithRole(h, "linked@example.com", "synthetic-password", "readonly")
+	require.NoError(t, err)
+	user.SetVerified(true)
+	require.NoError(t, h.Save(user))
+
+	collection, err := h.FindCollectionByNameOrId("users")
+	require.NoError(t, err)
+	collection.OAuth2.Enabled = true
+	collection.OAuth2.Providers = []core.OAuth2ProviderConfig{{
+		Name: provider, ClientId: "test-client", ClientSecret: "test-secret",
+	}}
+	require.NoError(t, h.Save(collection))
+	r, err := apis.NewRouter(h.App)
+	require.NoError(t, err)
+	mux, err := r.BuildMux()
+	require.NoError(t, err)
+	body := `{"provider":"` + provider + `","code":"test-code","codeVerifier":"test-verifier","redirectUrl":"http://localhost/callback","createData":{"role":"admin"}}`
+	req := httptest.NewRequest("POST", "/api/collections/users/auth-with-oauth2", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	res := httptest.NewRecorder()
+	mux.ServeHTTP(res, req)
+	require.Equal(t, 200, res.Code, res.Body.String())
+	var response struct {
+		Record struct {
+			ID string `json:"id"`
+		} `json:"record"`
+	}
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+	require.Equal(t, user.Id, response.Record.ID, "OAuth email linking must reuse the verified account")
+
+	linkedUser, err := h.FindRecordById("users", user.Id)
+	require.NoError(t, err)
+	require.Equal(t, "readonly", linkedUser.GetString("role"), "OAuth account linking must not elevate the existing role")
+	count, err := h.CountRecords("users")
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+	count, err = h.CountRecords("_externalAuths")
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
 }
 
 func TestInternalUserRole(t *testing.T) {

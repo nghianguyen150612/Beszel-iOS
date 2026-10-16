@@ -248,6 +248,13 @@ func TestConnectionManager_ReconnectionLogic(t *testing.T) {
 	agent := createTestAgent(t)
 	cm := agent.connectionManager
 	cm.eventChan = make(chan ConnectionEvent, 1)
+	// Keep the asynchronous connection attempt in-flight until the assertion so
+	// this test checks the reconnect guard, not goroutine scheduling speed.
+	cm.wsClient = &WebSocketClient{
+		hubURL:             &url.URL{Host: "synthetic-hub"},
+		lastConnectAttempt: time.Now(),
+	}
+	t.Cleanup(func() { _ = cm.stop() })
 
 	// Test that isConnecting flag prevents duplicate reconnection attempts
 	// Start from connected state, then simulate disconnect

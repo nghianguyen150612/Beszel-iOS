@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sort"
 	"testing"
 	"time"
@@ -71,6 +72,19 @@ func firstUserTestMux(t *testing.T) (*beszelTests.TestHub, http.Handler) {
 	require.NoError(t, err)
 	require.NotNil(t, handler)
 	return hub, handler
+}
+
+func unsetEnvForTest(t *testing.T, key string) {
+	t.Helper()
+	previous, wasSet := os.LookupEnv(key)
+	t.Cleanup(func() {
+		if wasSet {
+			_ = os.Setenv(key, previous)
+		} else {
+			_ = os.Unsetenv(key)
+		}
+	})
+	_ = os.Unsetenv(key)
 }
 
 func postFirstUser(handler http.Handler, email string) *httptest.ResponseRecorder {
@@ -1133,6 +1147,8 @@ func TestTrustedHeaderMiddleware(t *testing.T) {
 	}()
 
 	t.Setenv("TRUSTED_AUTH_HEADER", "X-Beszel-Trusted")
+	t.Setenv("TRUSTED_PROXY_IPS", "192.0.2.1")
+	t.Setenv("BESZEL_HUB_TRUSTED_PROXY_IPS", "192.0.2.1")
 
 	testAppFactory := func(t testing.TB) *pbTests.TestApp {
 		hub, _ := beszelTests.NewTestHub(t.TempDir())
@@ -1162,6 +1178,20 @@ func TestTrustedHeaderMiddleware(t *testing.T) {
 			TestAppFactory:  testAppFactory,
 		},
 		{
+			Name:   "GET /getkey - malformed trusted identity must fail closed",
+			Method: http.MethodGet,
+			URL:    "/api/beszel/getkey",
+			Headers: map[string]string{
+				"X-Beszel-Trusted": "user@test.com, attacker@example.com",
+			},
+			ExpectedStatus:  401,
+			ExpectedContent: []string{"requires valid"},
+			TestAppFactory:  testAppFactory,
+			BeforeTestFunc: func(t testing.TB, app *pbTests.TestApp, e *core.ServeEvent) {
+				beszelTests.CreateUser(app, "user@test.com", "password123")
+			},
+		},
+		{
 			Name:   "GET /getkey - with trusted header should succeed",
 			Method: http.MethodGet,
 			URL:    "/api/beszel/getkey",
@@ -1180,6 +1210,30 @@ func TestTrustedHeaderMiddleware(t *testing.T) {
 	for _, scenario := range scenarios {
 		scenario.Test(t)
 	}
+}
+
+func TestTrustedHeaderIgnoredWhenNotConfigured(t *testing.T) {
+	t.Setenv("TRUSTED_AUTH_HEADER", "")
+	t.Setenv("BESZEL_HUB_TRUSTED_AUTH_HEADER", "")
+	t.Setenv("TRUSTED_PROXY_IPS", "192.0.2.1")
+	t.Setenv("BESZEL_HUB_TRUSTED_PROXY_IPS", "192.0.2.1")
+	hub, err := beszelTests.NewTestHub(t.TempDir())
+	require.NoError(t, err)
+	defer hub.Cleanup()
+	hub.StartHub()
+	_, err = beszelTests.CreateUser(hub, "user@test.com", "password123")
+	require.NoError(t, err)
+	router, err := apis.NewRouter(hub)
+	require.NoError(t, err)
+	// Run the registered Hub middleware through the same route stack as requests.
+	require.NoError(t, hub.OnServe().Trigger(&core.ServeEvent{App: hub, Router: router}))
+	mux, err := router.BuildMux()
+	require.NoError(t, err)
+	req := httptest.NewRequest(http.MethodGet, "/api/beszel/getkey", nil)
+	req.Header.Set("X-Beszel-Trusted", "user@test.com")
+	res := httptest.NewRecorder()
+	mux.ServeHTTP(res, req)
+	require.Equal(t, http.StatusUnauthorized, res.Code, res.Body.String())
 }
 
 func TestTrustedHeaderProxyAllowlist(t *testing.T) {
@@ -1202,9 +1256,28 @@ func TestTrustedHeaderProxyAllowlist(t *testing.T) {
 	testCases := []struct {
 		name            string
 		proxies         string
+		unset           bool
 		expectedStatus  int
 		expectedContent []string
 	}{
+		{
+			name:            "allowlist is absent, so supplied identity is ignored",
+			unset:           true,
+			expectedStatus:  401,
+			expectedContent: []string{"requires valid"},
+		},
+		{
+			name:            "allowlist is explicitly empty, so supplied identity is ignored",
+			proxies:         "",
+			expectedStatus:  401,
+			expectedContent: []string{"requires valid"},
+		},
+		{
+			name:            "blank allowlist trusts nobody",
+			proxies:         " , ",
+			expectedStatus:  401,
+			expectedContent: []string{"requires valid"},
+		},
 		{
 			name:            "peer inside an allowed range",
 			proxies:         "10.0.0.0/8, 192.0.2.0/24",
@@ -1234,7 +1307,14 @@ func TestTrustedHeaderProxyAllowlist(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("TRUSTED_AUTH_HEADER", "X-Beszel-Trusted")
-			t.Setenv("TRUSTED_PROXY_IPS", tc.proxies)
+			t.Setenv("BESZEL_HUB_TRUSTED_AUTH_HEADER", "X-Beszel-Trusted")
+			if tc.unset {
+				unsetEnvForTest(t, "TRUSTED_PROXY_IPS")
+				unsetEnvForTest(t, "BESZEL_HUB_TRUSTED_PROXY_IPS")
+			} else {
+				t.Setenv("TRUSTED_PROXY_IPS", tc.proxies)
+				t.Setenv("BESZEL_HUB_TRUSTED_PROXY_IPS", tc.proxies)
+			}
 
 			scenario := beszelTests.ApiScenario{
 				Name:   "GET /getkey - with trusted header",

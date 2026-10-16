@@ -1,0 +1,73 @@
+name: P013 Hub migration fixture
+
+on:
+  pull_request:
+    branches: [ios/upstream-v021-integration]
+    paths:
+      - "internal/**"
+      - "go.mod"
+      - "go.sum"
+      - "internal/site/**"
+      - "tests/hub-migration/**"
+      - "docs/ios-hub-*"
+      - "docs/ios-wifi-rssi-*"
+      - ".github/workflows/p013-hub-migration.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p013-hub-migration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  genuine-hub-fixture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact feature source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Verify pinned toolchain and source matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(go version | awk '{print $3}')" = "go1.27.1"
+          test "$(bun --version)" = "1.4.0"
+          python3 scripts/audit/validate-upstream-v021-matrix.py
+          python3 scripts/audit/validate-upstream-v021-readiness.py
+
+      - name: Test backup and restore failure cases
+        shell: bash
+        run: python3 -m unittest discover -s tests/hub-migration -p 'test_*.py' -v
+
+      - name: Build genuine v0.19 fixture and reopen with v0.19
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/hub-migration/harness.py --output "$RUNNER_TEMP/p013-hub-fixture-evidence"
+
+      - name: Upload synthetic fixture manifest only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p013-hub-recovery-evidence
+          path: ${{ runner.temp }}/p013-hub-fixture-evidence/
+          if-no-files-found: ignore
+          retention-days: 14

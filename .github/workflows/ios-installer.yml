@@ -27,6 +27,8 @@ on:
       - docs/ios-port-status.vi.md
       - docs/ios-wifi-rssi-*
       - docs/ios-wifi-native-blocker-resolution*
+      - docs/ios-hub-*
+      - tests/hub-migration/**
       - docs/upstream-v021-acceptance.md
       - docs/upstream-v021-acceptance.vi.md
       - docs/upstream-v021-risk-register.csv
@@ -35,7 +37,7 @@ on:
       - .github/workflows/ios-installer.yml
       - .github/workflows/ios-build.yml
   pull_request:
-    branches: [iOS]
+    branches: [iOS, ios/upstream-v021-integration]
     paths:
       - install.sh
       - scripts/ios/install-beszel.sh
@@ -49,6 +51,8 @@ on:
       - docs/architecture.vi.md
       - docs/device-validation.md
       - docs/device-validation.vi.md
+      - docs/ios-hub-*
+      - tests/hub-migration/**
       - docs/ios-build-notes.md
       - docs/ios-build-notes.vi.md
       - docs/ios-port-status.md
@@ -57,10 +61,15 @@ on:
       - docs/upstream-sync.vi.md
       - .github/workflows/ios-installer.yml
       - .github/workflows/ios-build.yml
+      - .github/workflows/p013-hub-migration.yml
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ios-installer-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   installer:

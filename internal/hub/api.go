@@ -83,10 +83,11 @@ func (h *Hub) registerMiddlewares(se *core.ServeEvent) {
 	}
 	// authenticate with trusted header
 	if trustedHeader, _ := utils.GetEnv("TRUSTED_AUTH_HEADER"); trustedHeader != "" {
-		// only honor the header from these peers, if set
+		// Require an explicit proxy allowlist before honoring a client supplied
+		// identity header. Without it, the header is ignored and normal auth runs.
 		trustedProxies, restricted := parseTrustedProxies()
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
-			if restricted && !isTrustedProxy(trustedProxies, e.Request.RemoteAddr) {
+			if !restricted || !isTrustedProxy(trustedProxies, e.Request.RemoteAddr) {
 				return e.Next()
 			}
 			return authorizeRequestWithEmail(e, e.Request.Header.Get(trustedHeader))
@@ -95,9 +96,10 @@ func (h *Hub) registerMiddlewares(se *core.ServeEvent) {
 }
 
 // parseTrustedProxies reads TRUSTED_PROXY_IPS (comma-separated IPs or CIDRs).
-// restricted is false when the variable is unset or empty, meaning the trusted
-// header is accepted from any peer. Invalid entries are skipped with a warning,
-// so a typo narrows the allowlist rather than widening it.
+// restricted is false when the variable is unset or empty. The authentication
+// middleware treats that as no configured trusted proxies and ignores the
+// supplied identity header. Invalid entries are skipped with a warning, so a
+// typo narrows the allowlist rather than widening it.
 func parseTrustedProxies() (prefixes []netip.Prefix, restricted bool) {
 	value, _ := utils.GetEnv("TRUSTED_PROXY_IPS")
 	if value == "" {

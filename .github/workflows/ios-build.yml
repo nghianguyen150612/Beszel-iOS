@@ -7,6 +7,7 @@ on:
       - iOS
       - ios/procursus-package-updates
       - ios/wifi-rssi-compatibility
+      - ios/hub-database-migration
     # NOTE: path filters are NOT evaluated for tag pushes by GitHub Actions,
     # so iOS release tags always run the full build + release pipeline below,
     # while branch pushes to `iOS` still skip docs-only changes.
@@ -28,9 +29,15 @@ on:
       - "docs/ios-wifi-native-blocker-resolution*"
       - "docs/upstream-v021-acceptance*"
       - "docs/upstream-v021-risk-register.*"
+      - "docs/ios-hub-*"
+      - "tests/hub-migration/**"
       - "tests/audit/**"
       - "tests/ios-patch-sentinels.sh"
       - "tests/upstream-sync-test.sh"
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
