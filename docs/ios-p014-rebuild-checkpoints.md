@@ -168,3 +168,24 @@ are rejected rather than fabricated as idle devices.
 Focused entity/fixture/record tests PASS, including legacy zero round trips,
 current zero-package-power omission, zero/absent distinction and the corrected
 power averages. Final canonical and affected race checks remain required.
+
+## G — reproduced race/fixture findings (in progress)
+
+The reported P009 race was independently reproduced: the Hub integration test
+read ConnectionManager.State while handleStateChange wrote it under the mutex.
+A testing-only accessor now uses the existing production reader lock. Repeated
+checks also exposed a premature fingerprint assertion and unowned test Agents;
+those fixtures now wait for committed fingerprint state and cancel/join Agents.
+Production WebSocket authentication/state algorithms are unchanged.
+
+The broad race attempt also reproduced a P010 test hang: a 30ms context could
+expire before TCP accept, leaving its fixture waiting forever on Accept. The
+fixture now cancels only after an explicit accept barrier and bounds cleanup.
+That test PASSES three times under -race. The expired broad run is NOT a pass.
+
+A second race showed the Hub startup producer adding child updaters while test
+cleanup waited on an empty WaitGroup. Startup registration is now tracked before
+it spawns children, and test cleanup cancels producers before joining. The short
+SSH handshake-deadline fixture also needs a realistic race-build setup budget;
+it still verifies that established sessions outlive the original deadline.
+Repeated Hub/SSH checks and final source validation remain in progress.

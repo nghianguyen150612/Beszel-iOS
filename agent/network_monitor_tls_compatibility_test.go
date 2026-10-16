@@ -117,21 +117,43 @@ func TestP010CertificateRotationCancellationAndRecovery(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	defer listener.Close()
-	ctx, cancel = context.WithTimeout(t.Context(), 30*time.Millisecond)
+	ctx, cancel = context.WithCancel(t.Context())
+	defer cancel()
 	waitCtx := ctx
+	accepted := make(chan struct{})
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		conn, err := listener.Accept()
 		if err == nil {
 			defer conn.Close()
+			close(accepted)
 			<-waitCtx.Done()
 		}
 	}()
-	_, err = checkCert(ctx, "https://"+listener.Addr().String())
+	inspected := make(chan error, 1)
+	go func() { _, err := checkCert(ctx, "https://"+listener.Addr().String()); inspected <- err }()
+	select {
+	case <-accepted:
+	case <-time.After(5 * time.Second):
+		cancel()
+		_ = listener.Close()
+		t.Fatal("certificate fixture did not accept the inspection connection")
+	}
 	cancel()
-	require.Error(t, err)
-	<-done
+	select {
+	case err := <-inspected:
+		require.Error(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("certificate inspection ignored cancellation")
+	}
+	_ = listener.Close()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("certificate fixture listener did not stop")
+	}
+
 	// A failed inspection keeps known metadata, does not mark it newly unsent,
 	// then a later due successful inspection recovers.
 	task.nextCertCheck = time.Time{}
