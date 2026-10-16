@@ -116,3 +116,26 @@ Actual alert-manager tests PASS for trigger, unchanged incident, unavailable dat
 and fresh zero recovery. Test mailers are synthetic; no real notifications are
 sent. Full supported alert, authorization and notification-queue regressions are
 running in the canonical and race suites; no complete P014 acceptance is claimed.
+
+## F — complete shared payload checks
+
+Authenticated optional-action fixtures now exercise actual SMART and ZFS refresh
+requests, Linux package inventory, container history and systemd rows with owner
+API reads and outsider denial. Unsupported collectors return errors and leave
+empty collections. Synthetic per-platform action JSON files accompany the API
+goldens. All four-platform authenticated API cases PASS.
+
+Bun frozen install, genuine production build and 52 frontend tests PASS, including
+source-derived API snapshots, measured zero CPU/per-core/GPU/battery/sensors,
+package inventory, container history, absent iOS collectors, missing monitor
+history and loss-only/null-latency windows. GPU usage/VRAM/engine charts now also
+leave gaps for missing devices, and malformed null Wi-Fi entries are ignored.
+No visual redesign or P015 route/localization/dependency acceptance is included.
+
+Platform source selection PASS for iOS/macOS/Linux and all five Wi-Fi targets.
+Full Go run initially passed Agent, Hub, systems, transport, WS, migrations and
+users, but failed an old rollup assertion expecting absent samples to count as
+zero, and the alert suite reached its default 10-minute timeout during active
+fixture setup. This is NOT a pass. The assertion is being corrected and the full
+suite will be rerun with a realistic timeout after the newly reproduced sparse
+alert-window issue is repaired.

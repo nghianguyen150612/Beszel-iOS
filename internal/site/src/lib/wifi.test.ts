@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { MeterState } from "@/lib/enums"
 import { connectedWiFi, strongestWiFiSignal, wifiColor, wifiSignalState } from "./wifi"
-import type { SystemInfo } from "@/types"
+import type { SystemInfo, SystemRecord } from "@/types"
 
 const system = (wf?: SystemInfo["wf"], status: "up" | "down" = "up") => ({ status, info: { wf } as SystemInfo })
 
@@ -37,4 +37,10 @@ test("wifiSignalState thresholds", () => {
 	expect(wifiSignalState(-66)).toBe(MeterState.Warn)
 	expect(wifiSignalState(-75)).toBe(MeterState.Warn)
 	expect(wifiSignalState(-76)).toBe(MeterState.Crit)
+})
+
+test("null Wi-Fi entries remain unavailable", () => {
+ const system = { status: "up", info: { wf: { missing: null, valid: { s: "synthetic", r: 0 } } } } as unknown as SystemRecord
+ expect(connectedWiFi(system).map(([id]) => id)).toEqual(["valid"])
+ expect(strongestWiFiSignal(system)).toBe(0)
 })

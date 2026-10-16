@@ -85,7 +85,7 @@ export function GpuCharts({
 	hasGpuEnginesData: boolean
 	children?: ReactNode
 }) {
-	const gpuIds = Object.keys(lastGpus)
+	const gpuIds = Object.keys(lastGpus).filter((id) => lastGpus[id])
 	return (
 		<div className="grid gap-4">
 			{(children || hasGpuEnginesData) && (
@@ -121,7 +121,7 @@ export function GpuCharts({
 										dataPoints={[
 											{
 												label: t`Usage`,
-												dataKey: ({ stats }) => stats?.g?.[id]?.u ?? 0,
+												dataKey: ({ stats }) => stats?.g?.[id]?.u ?? null,
 												color: 1,
 												opacity: 0.35,
 											},
@@ -143,7 +143,7 @@ export function GpuCharts({
 											dataPoints={[
 												{
 													label: t`Usage`,
-													dataKey: ({ stats }) => stats?.g?.[id]?.mu ?? 0,
+													dataKey: ({ stats }) => stats?.g?.[id]?.mu ?? null,
 													color: 2,
 													opacity: 0.25,
 												},
@@ -176,7 +176,7 @@ function GpuEnginesChart({ chartData }: { chartData: ChartData }) {
 		const gpus = chartData.systemStats[i].stats?.g
 		if (!gpus) continue
 		for (const id in gpus) {
-			if (gpus[id].e) {
+			if (gpus[id]?.e) {
 				enginesKey = id + "\0" + Object.keys(gpus[id].e).sort().join("\0")
 				break
 			}
@@ -193,7 +193,7 @@ function GpuEnginesChart({ chartData }: { chartData: ChartData }) {
 			gpuId: gId,
 			dataPoints: engineNames.map((engine, i) => ({
 				label: engine,
-				dataKey: ({ stats }: SystemStatsRecord) => stats?.g?.[gId]?.e?.[engine] ?? 0,
+				dataKey: ({ stats }: SystemStatsRecord) => stats?.g?.[gId]?.e?.[engine] ?? null,
 				color: `hsl(${140 + (((i * 360) / engineNames.length) % 360)}, 65%, 52%)`,
 				opacity: 0.35,
 			})),

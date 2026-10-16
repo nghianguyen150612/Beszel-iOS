@@ -1,0 +1,51 @@
+{
+  "provenance": "P014 independently authored synthetic optional-action fixture; no native OS capture",
+  "smart": {
+    "data": {
+      "disk0": {
+        "mn": "P014 synthetic disk",
+        "sn": "P014-linux",
+        "c": 107374182400,
+        "s": "PASSED",
+        "dn": "disk0",
+        "dt": "nvme",
+        "t": 42,
+        "a": [
+          {
+            "n": "Media Errors",
+            "rv": 0
+          }
+        ]
+      }
+    },
+    "complete": true
+  },
+  "zfs": {
+    "complete": true,
+    "pools": [
+      {
+        "name": "pool0",
+        "health": "ONLINE",
+        "size": 107374182400,
+        "alloc": 21474836480,
+        "free": 85899345920,
+        "scrub": {
+          "state": "NONE",
+          "errors": 0
+        },
+        "vdevs": [
+          {
+            "name": "disk0",
+            "state": "ONLINE"
+          }
+        ]
+      }
+    ]
+  },
+  "packages": {
+    "manager": "apt",
+    "checkedAt": 1792108800,
+    "securityKnown": true,
+    "packages": []
+  }
+}

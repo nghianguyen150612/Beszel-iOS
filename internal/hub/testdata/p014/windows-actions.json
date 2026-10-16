@@ -1,0 +1,23 @@
+{
+  "provenance": "P014 independently authored synthetic optional-action fixture; no native OS capture",
+  "smart": {
+    "data": {
+      "disk0": {
+        "mn": "P014 synthetic disk",
+        "sn": "P014-windows",
+        "c": 107374182400,
+        "s": "PASSED",
+        "dn": "disk0",
+        "dt": "nvme",
+        "t": 42,
+        "a": [
+          {
+            "n": "Media Errors",
+            "rv": 0
+          }
+        ]
+      }
+    },
+    "complete": true
+  }
+}

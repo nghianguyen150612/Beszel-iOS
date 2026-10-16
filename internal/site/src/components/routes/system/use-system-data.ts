@@ -351,6 +351,7 @@ export function useSystemData(id: string) {
 			const gpus = systemStats[i].stats?.g
 			if (!gpus) continue
 			for (const id in gpus) {
+				if (!gpus[id]) continue
 				if (!hasGpuEnginesData && gpus[id].e !== undefined) {
 					hasGpuEnginesData = true
 				}

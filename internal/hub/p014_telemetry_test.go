@@ -17,7 +17,9 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/henrygd/beszel/internal/common"
+	"github.com/henrygd/beszel/internal/entities/smart"
 	"github.com/henrygd/beszel/internal/entities/system"
+	"github.com/henrygd/beszel/internal/entities/zfs"
 	beszelTests "github.com/henrygd/beszel/internal/tests"
 	"github.com/henrygd/beszel/internal/testutil/telemetry"
 	"github.com/lxzan/gws"
@@ -29,12 +31,19 @@ import (
 // This peer verifies the actual Hub signature and answers authenticated polls.
 // It never calls a database write or a Hub CreateRecords testing helper.
 type p014Agent struct {
+	optional p014OptionalActions
 	gws.BuiltinEventHandler
 	t                  *testing.T
 	token, fingerprint string
 	key                ssh.PublicKey
 	data               atomic.Pointer[system.CombinedData]
 	polls              atomic.Int32
+}
+
+type p014OptionalActions struct {
+	Smart    *smart.SmartDataResponse `json:"smart"`
+	Zfs      *zfs.ZfsData             `json:"zfs"`
+	Packages *system.PackageUpdates   `json:"packages"`
 }
 
 func (a *p014Agent) OnMessage(conn *gws.Conn, msg *gws.Message) {
@@ -61,6 +70,24 @@ func (a *p014Agent) OnMessage(conn *gws.Conn, msg *gws.Message) {
 		resp.SystemData = a.data.Load()
 		resp.Data, _ = cbor.Marshal(resp.SystemData)
 		a.polls.Add(1)
+	case common.GetSmartData:
+		if a.optional.Smart != nil {
+			resp.Data, _ = cbor.Marshal(a.optional.Smart)
+		} else {
+			resp.Error = "collector unavailable"
+		}
+	case common.GetZfsData:
+		if a.optional.Zfs != nil {
+			resp.Data, _ = cbor.Marshal(a.optional.Zfs)
+		} else {
+			resp.Error = "collector unavailable"
+		}
+	case common.GetPackageUpdates:
+		if a.optional.Packages != nil {
+			resp.Data, _ = cbor.Marshal(a.optional.Packages)
+		} else {
+			resp.Error = "collector unavailable"
+		}
 	case common.SyncNetworkMonitors:
 		resp.Data, _ = cbor.Marshal(map[int]any{})
 	default:
@@ -90,8 +117,12 @@ func TestP014AuthenticatedRemoteTelemetryAPI(t *testing.T) {
 		require.NoError(t, e)
 		return c
 	}
-	get := func(path, token string) (int, []byte) {
-		req := httptest.NewRequest(http.MethodGet, path, nil)
+	get := func(path, token string, methods ...string) (int, []byte) {
+		method := http.MethodGet
+		if len(methods) > 0 {
+			method = methods[0]
+		}
+		req := httptest.NewRequest(method, path, nil)
 		req.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
@@ -122,6 +153,9 @@ func TestP014AuthenticatedRemoteTelemetryAPI(t *testing.T) {
 			fp.Load(map[string]any{"system": record.Id, "token": agentToken})
 			require.NoError(t, hub.SaveNoValidate(fp))
 			peer := &p014Agent{t: t, token: agentToken, fingerprint: "p014-fingerprint-" + platform, key: signer.PublicKey()}
+			actionsRaw, err := os.ReadFile(filepath.Join("testdata", "p014", platform+"-actions.json"))
+			require.NoError(t, err)
+			require.NoError(t, json.Unmarshal(actionsRaw, &peer.optional))
 			peer.data.Store(&f.Data)
 			dial := func() *gws.Conn {
 				conn, _, err := gws.NewClient(peer, &gws.ClientOption{Addr: "ws" + strings.TrimPrefix(server.URL, "http") + "/api/beszel/agent-connect", RequestHeader: http.Header{"X-Token": {agentToken}, "X-Beszel": {"0.21.0"}}})
@@ -170,6 +204,67 @@ func TestP014AuthenticatedRemoteTelemetryAPI(t *testing.T) {
 			}
 			require.NoError(t, json.Unmarshal(body, &apiSystem))
 			snapshot := map[string]json.RawMessage{"info": apiSystem.Info, "stats": history.Items[0].Stats}
+			list := func(collection string) []map[string]json.RawMessage {
+				t.Helper()
+				path := "/api/collections/" + collection + "/records?filter=" + url.QueryEscape(fmt.Sprintf("system='%s'", record.Id))
+				code, body := get(path, token)
+				require.Equal(t, 200, code)
+				var result struct {
+					Items []map[string]json.RawMessage `json:"items"`
+				}
+				require.NoError(t, json.Unmarshal(body, &result))
+				_, other := get(path, otherToken)
+				var denied struct {
+					TotalItems int `json:"totalItems"`
+				}
+				require.NoError(t, json.Unmarshal(other, &denied))
+				require.Zero(t, denied.TotalItems)
+				return result.Items
+			}
+			for _, collection := range []string{"container_stats", "systemd_services"} {
+				items := list(collection)
+				expected := 0
+				if collection == "container_stats" && len(f.Data.Containers) > 0 {
+					expected = 1
+				}
+				if collection == "systemd_services" {
+					expected = len(f.Data.SystemdServices)
+				}
+				require.Len(t, items, expected)
+				if collection == "container_stats" && len(items) > 0 {
+					snapshot["containers"] = items[0]["stats"]
+				}
+			}
+			for _, action := range []struct {
+				path, collection string
+				supported        bool
+			}{
+				{"/api/beszel/smart/refresh", "smart_devices", peer.optional.Smart != nil},
+				{"/api/beszel/zfs/refresh", "zfs_pools", peer.optional.Zfs != nil},
+			} {
+				path := action.path + "?system=" + record.Id
+				code, _ := get(path, otherToken, http.MethodPost)
+				require.Equal(t, 404, code)
+				code, _ = get(path, token, http.MethodPost)
+				if action.supported {
+					require.Equal(t, 200, code)
+					require.Len(t, list(action.collection), 1)
+				} else {
+					require.Equal(t, 500, code)
+					require.Empty(t, list(action.collection))
+				}
+			}
+			code, body = get("/api/beszel/package-updates?system="+record.Id, token)
+			if peer.optional.Packages != nil {
+				require.Equal(t, 200, code)
+				var updates system.PackageUpdates
+				require.NoError(t, json.Unmarshal(body, &updates))
+				require.Equal(t, *peer.optional.Packages, updates)
+				snapshot["packages"] = body
+			} else {
+				require.Equal(t, 500, code)
+			}
+
 			encoded, err := json.MarshalIndent(snapshot, "", "  ")
 			require.NoError(t, err)
 			golden := filepath.Join("testdata", "p014", platform+"-api.json")
