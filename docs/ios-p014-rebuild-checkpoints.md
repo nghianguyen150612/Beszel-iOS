@@ -154,3 +154,17 @@ The DB restart/rollup fixture was strengthened to date its rows the same way.
 The old mixed-optional rollup test now expects the available sample rather than
 half its value. No threshold, retention interval, notification authorization or
 database migration changed.
+
+## C follow-up — individual power-field presence
+
+Reproduced an omitted power field being treated as 0W while its GPU still reported
+usage: available 8W and explicit 0W should average 4W; the old result was 2.67W.
+GPU power and package power now have independent observation counts. JSON/CBOR
+decoding retains explicit legacy zero presence; null/omitted fields are unavailable.
+Current Agent struct omission rules and numeric CBOR tags are unchanged. Explicit
+zero survives JSON v1/v2, CBOR and persisted rollups. Null/empty GPU device payloads
+are rejected rather than fabricated as idle devices.
+
+Focused entity/fixture/record tests PASS, including legacy zero round trips,
+current zero-package-power omission, zero/absent distinction and the corrected
+power averages. Final canonical and affected race checks remain required.

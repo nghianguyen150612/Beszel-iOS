@@ -284,6 +284,8 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	fsCounts := make(map[string]uint64)
 	networkCounts := make(map[string]uint64)
 	gpuCounts := make(map[string]uint64)
+	powerCounts := make(map[string]uint64)
+	packagePowerCounts := make(map[string]uint64)
 	engineCounts := make(map[string]map[string]uint64)
 	var fanSums map[string]uint64
 
@@ -491,6 +493,8 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 				if !ok || gpu.Name != value.Name {
 					gpu = system.GPUData{Name: value.Name}
 					gpuCounts[id] = 0
+					powerCounts[id] = 0
+					packagePowerCounts[id] = 0
 					engineCounts[id] = make(map[string]uint64)
 				}
 				gpuCounts[id]++
@@ -498,8 +502,14 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 				gpu.MemoryUsed += value.MemoryUsed
 				gpu.MemoryTotal += value.MemoryTotal
 				gpu.Usage += value.Usage
-				gpu.Power += value.Power
-				gpu.PowerPkg += value.PowerPkg
+				if value.HasPower() {
+					gpu.Power += value.Power
+					powerCounts[id]++
+				}
+				if value.HasPackagePower() {
+					gpu.PowerPkg += value.PowerPkg
+					packagePowerCounts[id]++
+				}
 				gpu.Count += value.Count
 
 				if value.Engines != nil {
@@ -614,8 +624,12 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 			gpu.MemoryUsed = twoDecimals(gpu.MemoryUsed / count)
 			gpu.MemoryTotal = twoDecimals(gpu.MemoryTotal / count)
 			gpu.Usage = twoDecimals(gpu.Usage / count)
-			gpu.Power = twoDecimals(gpu.Power / count)
-			gpu.PowerPkg = twoDecimals(gpu.PowerPkg / count)
+			if powerCounts[id] > 0 {
+				gpu.SetPower(twoDecimals(gpu.Power / float64(powerCounts[id])))
+			}
+			if packagePowerCounts[id] > 0 {
+				gpu.SetPackagePower(twoDecimals(gpu.PowerPkg / float64(packagePowerCounts[id])))
+			}
 			gpu.Count = twoDecimals(gpu.Count / count)
 
 			if gpu.Engines != nil {

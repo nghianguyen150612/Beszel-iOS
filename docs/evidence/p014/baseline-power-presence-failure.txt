@@ -1,0 +1,12 @@
+Test output; tabs expanded and trailing whitespace removed.
+--- FAIL: TestP014OptionalPowerPresence (0.01s)
+    p014_optional_test.go:49:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:49
+            Error:          Not equal:
+                            expected: 4
+                            actual  : 2.67
+            Test:           TestP014OptionalPowerPresence
+            Messages:       only the available 8W and measured 0W are observations
+FAIL
+FAIL    github.com/henrygd/beszel/internal/records  0.042s
+FAIL

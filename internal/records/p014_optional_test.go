@@ -3,6 +3,7 @@
 package records_test
 
 import (
+	"encoding/json"
 	"github.com/henrygd/beszel/internal/entities/system"
 	"github.com/henrygd/beszel/internal/records"
 	"github.com/stretchr/testify/assert"
@@ -35,4 +36,16 @@ func TestP014NullOptionalFilesystem(t *testing.T) {
 		got := records.AverageSystemStatsSlice([]system.Stats{{ExtraFs: map[string]*system.FsStats{"bad": nil}}, {}})
 		require.Empty(t, got.ExtraFs)
 	})
+}
+
+func TestP014OptionalPowerPresence(t *testing.T) {
+	var input []system.Stats
+	require.NoError(t, json.Unmarshal([]byte(`[
+ {"g":{"a":{"n":"A","u":0,"p":8,"pp":20}}},
+ {"g":{"a":{"n":"A","u":0}}},
+ {"g":{"a":{"n":"A","u":0,"p":0,"pp":0}}}
+ ]`), &input))
+	got := records.AverageSystemStatsSlice(input)
+	require.Equal(t, 4.0, got.GPUData["a"].Power, "only the available 8W and measured 0W are observations")
+	require.Equal(t, 10.0, got.GPUData["a"].PowerPkg)
 }
