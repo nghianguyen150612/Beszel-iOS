@@ -388,6 +388,29 @@ def verify_migrated_monitor_alert_api(
     )
     if monitor_list_status != 200 or not isinstance(monitor_list, dict) or monitor_id not in {item.get("id") for item in monitor_list.get("items", [])}:
         raise HarnessError("regular-user network monitor list did not include the owned monitor")
+    # Network-monitor results are written by the Hub's internal Agent ingestion
+    # path, not by regular users. Use a synthetic superuser through the supported
+    # collection API to create one result and exercise history visibility/rules.
+    monitor_stats_status, _, monitor_stats = request(
+        base,
+        "POST",
+        "/api/collections/network_monitor_stats/records",
+        token=owner_superuser_token,
+        body={
+            "system": system_id,
+            "monitor": monitor_id,
+            "type": "1m",
+            "created": int(time.time() * 1000),
+            "res_min": 12,
+            "res_max": 24,
+            "total_count": 4,
+            "success_count": 3,
+            "res_sum": 54,
+        },
+    )
+    if monitor_stats_status not in (200, 201) or not isinstance(monitor_stats, dict) or not monitor_stats.get("id"):
+        raise HarnessError(f"synthetic monitor result create failed: HTTP {monitor_stats_status}, {monitor_stats}")
+    monitor_stats_id = str(monitor_stats["id"])
     stats_status, _, stats = request(
         base,
         "GET",
@@ -396,6 +419,14 @@ def verify_migrated_monitor_alert_api(
     )
     if stats_status != 200 or not isinstance(stats, dict):
         raise HarnessError(f"regular-user network monitor history query failed: HTTP {stats_status}, {stats}")
+    history_matches = [item for item in stats.get("items", []) if item.get("id") == monitor_stats_id]
+    if len(history_matches) != 1:
+        raise HarnessError("owned network monitor history query omitted its synthetic result")
+    history_record = history_matches[0]
+    if history_record.get("system") != system_id or history_record.get("monitor") != monitor_id:
+        raise HarnessError("synthetic network monitor result has invalid system/monitor relations")
+    if history_record.get("total_count") != 4 or history_record.get("success_count") != 3 or history_record.get("res_sum") != 54:
+        raise HarnessError("synthetic network monitor result values changed through the history API")
 
     alert_status, _, alert = request(base, "POST", "/api/collections/alerts/records", token=regular_token, body={
         "user": regular_id,
@@ -515,6 +546,8 @@ def verify_migrated_monitor_alert_api(
         "regular_user_monitor_create_update_read_list": True,
         "regular_user_monitor_history_query_http": stats_status,
         "regular_user_monitor_history_record_count": len(stats.get("items", [])),
+        "regular_user_monitor_result_preserved_by_history_api": True,
+        "monitor_stats_id": monitor_stats_id,
         "nonmember_monitor_view_http": outsider_monitor_read,
         "nonmember_monitor_update_http": outsider_monitor_update,
         "nonmember_monitor_query_no_leak": True,
@@ -539,11 +572,19 @@ def verify_migrated_monitor_alert_api(
 def verify_and_delete_migrated_monitor_alert_api(base: str, *, regular_email: str, password: str, expected: dict[str, Any]) -> dict[str, Any]:
     """Verify migrated API records survive restart, then remove via API."""
     token = auth_token(base, "users", regular_email, password)
-    ids = {"network_monitors": str(expected["monitor_id"]), "alerts": str(expected["alert_id"])}
+    ids = {
+        "network_monitors": str(expected["monitor_id"]),
+        "network_monitor_stats": str(expected["monitor_stats_id"]),
+        "alerts": str(expected["alert_id"]),
+    }
     for collection, record_id in ids.items():
         if collection == "alerts":
             # The migrated alerts collection intentionally has no view rule;
             # owners read their alerts through the authorized list endpoint.
+            matches = [item for item in list_records(base, token, collection) if item.get("id") == record_id]
+            record = matches[0] if len(matches) == 1 else None
+            status = 200 if record is not None else 404
+        elif collection == "network_monitor_stats":
             matches = [item for item in list_records(base, token, collection) if item.get("id") == record_id]
             record = matches[0] if len(matches) == 1 else None
             status = 200 if record is not None else 404
@@ -553,10 +594,16 @@ def verify_and_delete_migrated_monitor_alert_api(base: str, *, regular_email: st
             raise HarnessError(f"{collection} record {record_id} did not survive Hub restart: HTTP {status}, {record}")
         if record.get("system") != expected["system_id"]:
             raise HarnessError(f"{collection} record {record_id} changed system ownership across restart")
+        if collection == "network_monitor_stats" and record.get("monitor") != expected["monitor_id"]:
+            raise HarnessError(f"monitor result {record_id} changed monitor ownership across restart")
         if collection == "alerts" and record.get("user") != expected["regular_user_id"]:
             raise HarnessError(f"alert record {record_id} changed user ownership across restart")
     deleted: dict[str, int] = {}
     for collection, record_id in ids.items():
+        if collection == "network_monitor_stats":
+            # The monitor's delete route owns cascade cleanup of result history;
+            # the result collection intentionally denies direct user deletes.
+            continue
         status, _, _ = request(base, "DELETE", f"/api/collections/{collection}/records/{record_id}", token=token)
         if status not in (200, 204):
             raise HarnessError(f"regular-user {collection} delete failed: HTTP {status}")
@@ -566,9 +613,14 @@ def verify_and_delete_migrated_monitor_alert_api(base: str, *, regular_email: st
             if remaining:
                 raise HarnessError(f"deleted alert record {record_id} remained in the authorized list")
         else:
-            read_status, _, _ = request(base, "GET", f"/api/collections/{collection}/records/{record_id}", token=token)
-            if read_status != 404:
-                raise HarnessError(f"deleted {collection} record remained visible: HTTP {read_status}")
+            if collection == "network_monitor_stats":
+                remaining = [item for item in list_records(base, token, collection) if item.get("id") == record_id]
+                if remaining:
+                    raise HarnessError(f"deleted monitor or monitor result remained visible: {record_id}")
+            else:
+                read_status, _, _ = request(base, "GET", f"/api/collections/{collection}/records/{record_id}", token=token)
+                if read_status != 404:
+                    raise HarnessError(f"deleted {collection} record remained visible: HTTP {read_status}")
     return {"post_restart_records_preserved": True, "regular_user_delete_http": deleted, "deleted_records_not_found": True}
 
 
