@@ -60,6 +60,17 @@ Câu hỏi khả thi như Wi-Fi RSSI native có thể hoãn nếu có owner và 
 absent/no-op rõ ràng. Chỉ bắt đầu P004 sau khi Gate A hoàn tất về cấu trúc; quyết
 định đó không cho phép nâng cấp production.
 
+## Hoãn P012 được chủ dự án phê duyệt — 2026-10-16
+
+Quyết định của chủ dự án trong [PR #14](https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758)
+hoãn RSSI Wi-Fi native trên iOS vì iPad tham chiếu chưa có sẵn. Quyết định chấp
+nhận fallback unavailable/nil an toàn, kiểm tra source và cloud CI đã ghi nhận
+của P012 để tích hợp, đồng thời cho phép P013 sau khi hoàn tất PR #14 theo cách
+merge thường. Đây không phải bằng chứng RSSI đã đo hoặc native acquisition hoạt
+động. P018 phụ trách kiểm chứng vật lý; P016 phụ trách thay đổi ký mã, entitlement
+hoặc đóng gói helper trong tương lai nếu có bằng chứng. Phần thiết bị/vật lý P012
+của Gate C vẫn chờ P018; quyết định này không cho phép phát hành.
+
 
 ## Bằng chứng nguồn, fixture và native build của P008
 

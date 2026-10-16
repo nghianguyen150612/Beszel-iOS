@@ -1,6 +1,6 @@
 {
   "milestone": "P012",
-  "status": "BLOCKED_NATIVE_RSSI",
+  "status": "SCOPE_DEFERRED_NATIVE_RSSI",
   "date": "2026-10-15",
   "repository": "https://github.com/nghianguyen150612/Beszel-iOS",
   "git": {
@@ -254,13 +254,13 @@
     {
       "id": "WIFI-ABI-12",
       "status": "DEFERRED",
-      "owner": "P012 follow-up",
+      "owner": "P018",
       "requirement": "firmware-matched calling/object validation contract and raw RSSI_CTL_AGR units; old declarations and 12.4 stub exports are evidence, not firmware proof"
     },
     {
       "id": "WIFI-ASSOCIATION-12",
       "status": "DEFERRED",
-      "owner": "P012 follow-up / P018",
+      "owner": "P018",
       "requirement": "fresh associated station identity, power/disconnect/recovery behavior; no index-zero assumption"
     },
     {
@@ -271,9 +271,11 @@
     },
     {
       "id": "WIFI-BOUND-12",
-      "status": "BLOCKED",
-      "owner": "P012 follow-up",
-      "requirement": "verified bounded private acquisition or reviewed process isolation, cancellation, shutdown and reaping"
+      "status": "DEFERRED",
+      "owner": "P018",
+      "requirement": "verified bounded private acquisition or reviewed process isolation, cancellation, shutdown and reaping",
+      "historical_status_before_scope_decision": "BLOCKED",
+      "evidence": "Source/host process isolation and lifecycle fixtures PASS; actual iOS process behavior remains PENDING P018."
     }
   ],
   "findings": [
@@ -616,12 +618,17 @@
     "merge or post-merge verification: PR intentionally Draft while native capability blocked"
   ],
   "acceptance": {
-    "p012_native_gate": "BLOCKED",
-    "fallback_source_fixture_gate": "PASS — source/fixture/native-build unavailable adapter only; P012 native RSSI acceptance remains BLOCKED",
-    "gate_c": "PENDING; no acceptance definition changed; no claimed waiver of native capability",
-    "physical_wifi_rssi": "P018 / Gate F pending",
-    "p013_started": false,
-    "next_action": "resolve pinned firmware ABI/freshness and bounded-call blockers; P016 least privilege and P018 physical validation; resume published branch/ledger"
+    "p012_native_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE",
+    "p012_fallback_source_ci": "ACCEPTED FOR INTEGRATION",
+    "native_rssi_measured": false,
+    "normal_ios_wifi": "UNAVAILABLE / NIL",
+    "p018_physical_validation": "PENDING",
+    "p013": "AUTHORIZED",
+    "p013_started_at_p012_finalization": false,
+    "gate_c_p012_fallback_source": "ACCEPTED FOR INTEGRATION",
+    "gate_c_physical_device_evidence": "PENDING P018",
+    "gate_c_overall": "PENDING",
+    "release_authorized": false
   },
   "safety": {
     "physical_device_accessed": false,
@@ -1804,5 +1811,39 @@
       "completed_steps": "extended public-CF ASan/UBSan, loader cleanup and C→Go client PASS",
       "overall": "superseded for test-fixture repair; not counted as final native build"
     }
+  },
+  "historical_status_before_owner_scope_decision": "BLOCKED_NATIVE_RSSI",
+  "scope_disposition": {
+    "decision_date": "2026-10-16",
+    "approved_by": "project owner",
+    "approval_url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758",
+    "reason": "Reference iPad unavailable",
+    "p012_native_wifi_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE",
+    "p012_fallback_source_ci": "ACCEPTED FOR INTEGRATION",
+    "native_rssi_measured": false,
+    "normal_ios_wifi_rssi": "UNAVAILABLE / NIL",
+    "p018_physical_validation": "PENDING",
+    "p018_owner": "P018",
+    "p016_owner": "P016 for any evidence-backed signing, entitlement, or helper packaging changes",
+    "p013": "AUTHORIZED",
+    "release_authorized": false,
+    "final_pre_documentation_source_sha": "2a16d0f46f6fd1c91f40e295190b89fb8713b8cd",
+    "cloud_evidence": {
+      "level": "source, fixtures, cloud tests, hosted native build and installer; no physical execution",
+      "iOS_build": "PASS",
+      "iOS_build_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38824463536",
+      "installer": "PASS",
+      "installer_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38824469926",
+      "release": "SKIPPED",
+      "native_rssi_or_device_behavior": "NOT MEASURED"
+    }
+  },
+  "historical_acceptance_before_owner_scope_decision": {
+    "p012_native_gate": "BLOCKED",
+    "fallback_source_fixture_gate": "PASS — source/fixture/native-build unavailable adapter only; P012 native RSSI acceptance remains BLOCKED",
+    "gate_c": "PENDING; no acceptance definition changed; no claimed waiver of native capability",
+    "physical_wifi_rssi": "P018 / Gate F pending",
+    "p013_started": false,
+    "next_action": "resolve pinned firmware ABI/freshness and bounded-call blockers; P016 least privilege and P018 physical validation; resume published branch/ledger"
   }
 }

@@ -1,5 +1,43 @@
 # P012 — iOS Wi-Fi RSSI compatibility
 
+## Owner-approved scope disposition — 2026-10-16
+
+The project owner approved deferring native iOS Wi-Fi RSSI because the
+reference iPad is temporarily unavailable. This decision authorizes the accepted
+unavailable fallback/source scope for integration and authorizes P013 to proceed
+after PR #14 is finalized. It changes sequencing and scope only; it does not
+change any test result or establish native RSSI support.
+
+```text
+P012 native Wi-Fi RSSI: DEFERRED — REFERENCE DEVICE UNAVAILABLE
+P012 fallback/source/CI: ACCEPTED FOR INTEGRATION
+Native RSSI measured: NO
+Normal iOS Wi-Fi RSSI: UNAVAILABLE / NIL
+P018 physical validation: PENDING
+P013: AUTHORIZED
+```
+
+P018 owns the physical Wi-Fi validation. P016 owns any future evidence-backed
+signing, entitlement, or helper packaging changes. `WIFI-ABI-12`,
+`WIFI-ASSOCIATION-12`, `WIFI-AUTH-12`, and the physical iOS portion of
+`WIFI-BOUND-12` remain deferred; none is recorded as PASS. Gate C's P012
+fallback/source portion is accepted for progression, while physical/device
+evidence remains pending P018. There is no release authorization.
+
+The accepted cloud evidence is tied to final P012 source HEAD
+`2a16d0f46f6fd1c91f40e295190b89fb8713b8cd`: hosted iOS Build and installer
+checks passed, release was skipped, and the documented Go, race, audit,
+frontend, Linux build, sanitizer, artifact, checksum, provenance, and
+unavailable-adapter checks passed. These establish only the safe nil fallback
+and source/build behavior. They do not measure RSSI or test the physical iPad.
+See [the final-head evidence](https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6204677937).
+
+## Historical technical checkpoint before the scope decision
+
+The following status and test results record the technical acceptance state
+before the owner approved this deferral. Preserve them as historical evidence;
+the scope decision does not convert their native blockers into passes.
+
 P012 is **BLOCKED for native RSSI acquisition**. The implemented iOS adapter
 returns unavailable safely. This is a published source/fixture checkpoint, not a
 claim that MobileWiFi works on the reference device. The PR remains Draft and

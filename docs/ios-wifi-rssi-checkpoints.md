@@ -279,3 +279,41 @@ final-head iOS Build and installer; artifact revalidation; final PR checkpoint.
 No firmware extraction, toolchain reinstall or unchanged frontend rebuild needed
 locally. Existing independent Hub/platform/frontend results remain valid; hosted
 final-head workflow repeats its required checks. P012 BLOCKED / Gate C PENDING.
+
+## P012 owner-approved deferral finalization — 2026-10-16
+
+The owner-approved decision is recorded at
+[PR #14 comment 6206076758](https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758).
+It supersedes the earlier sequencing rule that required native RSSI before P013;
+it does not alter the earlier technical results. The final source tested before
+this documentation update was `2a16d0f46f6fd1c91f40e295190b89fb8713b8cd`, on
+integration `33840093bb465f0b164bb7d66aebc8cd85f86a4e`.
+
+```text
+P012 native Wi-Fi RSSI: DEFERRED — REFERENCE DEVICE UNAVAILABLE
+P012 fallback/source/CI: ACCEPTED FOR INTEGRATION
+Native RSSI measured: NO
+Normal iOS Wi-Fi RSSI: UNAVAILABLE / NIL
+P018 physical validation: PENDING
+P013: AUTHORIZED
+```
+
+P018 owns physical validation. P016 owns any justified future signing,
+entitlement, or helper packaging changes. `WIFI-ABI-12`,
+`WIFI-ASSOCIATION-12`, `WIFI-AUTH-12`, and physical iOS `WIFI-BOUND-12` remain
+deferred. P012's fallback/source portion is accepted for integration; Gate C's
+physical evidence remains pending, and no release is authorized.
+
+The exact cloud evidence remains at source HEAD `2a16d0f`: final hosted iOS
+Build (`38824463536`) and installer (`38824469926`) passed; release was skipped.
+The PR verification comment records the full Go/race/audit/frontend/Linux,
+artifact, checksum, provenance, sanitizer, and unavailable-adapter evidence and
+its limits. Native RSSI and physical behavior were not measured. These runs are
+evidence for the source HEAD above; a documentation checkpoint still needs
+applicable final-head CI before PR #14 is marked ready or merged.
+
+Next exact action: publish this scope record on PR #14, verify checks at the
+resulting HEAD, review the re-scoped fallback/source diff, then normally merge
+PR #14 into `ios/upstream-v021-integration` if its required checks pass. Start
+P013 only from the actual resulting integration HEAD and record that SHA. Do not
+change production `iOS`, frozen `main`, device state, or release state.

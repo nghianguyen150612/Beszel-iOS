@@ -1,5 +1,16 @@
 # P012A — Giải quyết các điểm chặn Wi-Fi native
 
+## Quyết định phạm vi hiện tại được chủ dự án phê duyệt — 2026-10-16
+
+Quyết định trong [PR #14](https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758)
+hoãn RSSI native vì iPad tham chiếu chưa có sẵn. Fallback nil/source/cloud của
+P012 được chấp nhận để tích hợp và cho phép P013 sau khi hoàn tất PR #14. Các
+blocker kỹ thuật bên dưới vẫn chưa được giải quyết và giữ nguyên chứng cứ cũ;
+không blocker nào là native PASS. P018 phụ trách kiểm chứng vật lý, P016 phụ
+trách mọi thay đổi ký mã/entitlement/đóng gói helper có căn cứ, và không có phép
+phát hành. Các câu cũ về giữ Draft hoặc chưa bắt đầu P013 mô tả trạng thái trước
+quyết định này.
+
 P012 vẫn **BLOCKED**, Gate C **PENDING**, PR #14 giữ Draft. Bắt đầu từ
 `88dcf9b89389cd58de6f4859d4619485451dfa82`, nhánh tích hợp
 `33840093bb465f0b164bb7d66aebc8cd85f86a4e`. Giữ nguyên chứng cứ P012 cũ.

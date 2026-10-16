@@ -1,5 +1,43 @@
 # P012 — Tương thích RSSI Wi-Fi trên iOS
 
+## Quyết định hoãn phạm vi được chủ dự án phê duyệt — 2026-10-16
+
+Chủ dự án đã phê duyệt hoãn thu thập RSSI Wi-Fi native trên iOS vì iPad tham
+chiếu tạm thời không có sẵn. Quyết định này chấp nhận phạm vi fallback/source
+không khả dụng để tích hợp và cho phép tiếp tục P013 sau khi hoàn tất PR #14.
+Quyết định chỉ đổi phạm vi và trình tự; không đổi kết quả kiểm thử và không
+chứng minh RSSI native hoạt động.
+
+```text
+P012 native Wi-Fi RSSI: DEFERRED — REFERENCE DEVICE UNAVAILABLE
+P012 fallback/source/CI: ACCEPTED FOR INTEGRATION
+Native RSSI measured: NO
+Normal iOS Wi-Fi RSSI: UNAVAILABLE / NIL
+P018 physical validation: PENDING
+P013: AUTHORIZED
+```
+
+P018 phụ trách kiểm chứng Wi-Fi trên thiết bị thật. P016 phụ trách mọi thay đổi
+đóng gói helper, entitlement hoặc ký mã có bằng chứng trong tương lai.
+`WIFI-ABI-12`, `WIFI-ASSOCIATION-12`, `WIFI-AUTH-12` và phần kiểm chứng iOS vật
+lý của `WIFI-BOUND-12` vẫn được hoãn; không mục nào được ghi là PASS. Phần
+fallback/source P012 của Gate C được chấp nhận để tiếp tục, còn bằng chứng
+thiết bị/vật lý vẫn chờ P018. Không có ủy quyền phát hành.
+
+Bằng chứng cloud được chấp nhận gắn với P012 source HEAD cuối cùng
+`2a16d0f46f6fd1c91f40e295190b89fb8713b8cd`: iOS Build và installer trên hosted
+CI đều pass, release bị bỏ qua; các kiểm tra Go, race, audit, frontend, build
+Linux, sanitizer, artifact, checksum, provenance và fallback nil đã được ghi
+nhận là pass. Bằng chứng này chỉ xác nhận fallback nil an toàn và hành vi
+source/build; không đo RSSI và không kiểm thử iPad thật. Xem [bằng chứng HEAD
+cuối](https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6204677937).
+
+## Trạng thái kỹ thuật lịch sử trước quyết định hoãn
+
+Phần dưới đây ghi lại trạng thái nghiệm thu kỹ thuật và kết quả kiểm thử trước
+khi chủ dự án phê duyệt hoãn. Giữ nguyên chúng làm bằng chứng lịch sử; quyết
+định phạm vi không biến blocker native thành PASS.
+
 P012 **BLOCKED đối với thu thập RSSI native**. Adapter iOS đã triển khai trả về
 unavailable an toàn. Đây là checkpoint source/fixture đã công bố, không phải
 khẳng định MobileWiFi hoạt động trên thiết bị tham chiếu. PR giữ Draft, không

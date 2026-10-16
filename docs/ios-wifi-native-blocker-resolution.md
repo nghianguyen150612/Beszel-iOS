@@ -1,5 +1,16 @@
 # P012A native Wi-Fi blocker resolution
 
+## Current owner-approved scope disposition — 2026-10-16
+
+The owner-approved decision in [PR #14](https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758)
+defers native RSSI because the reference iPad is unavailable. P012's nil
+fallback/source/cloud evidence is accepted for integration, and P013 is
+authorized after PR #14 is finalized. The technical blockers below remain
+unresolved and retain their original evidence; none is a native PASS. P018 owns
+physical validation, P016 owns any justified signing/entitlement/helper
+packaging work, and no release is authorized. Older statements about keeping
+the PR Draft or withholding P013 describe the pre-decision state.
+
 P012 remains **BLOCKED**; Gate C remains **PENDING**. PR #14 remains Draft.
 Starting feature: `88dcf9b89389cd58de6f4859d4619485451dfa82`; integration:
 `33840093bb465f0b164bb7d66aebc8cd85f86a4e`. This continuation preserves original
