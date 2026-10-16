@@ -56,3 +56,21 @@ snapshots, frontend contracts and final build are still pending.
 Fresh Python audit suite: 54 PASS. Upstream sync, patch sentinels and bootstrap
 suites PASS. Installer lifecycle remains in progress. Initial Hub/race dependency
 compilation is still in progress; these runs are not yet passing evidence.
+
+## C — optional history repair
+
+Independently reproduced on unchanged P013 rollup source: sparse temperatures,
+fans, filesystems, GPUs/engines, CPU arrays and network interfaces were diluted
+by absent observations; GPU package power was dropped; a null filesystem panicked.
+The original failing transcript is `docs/evidence/p014/baseline-json-rollup-failures.txt`.
+
+Rollups now use observation counts for each optional device/array entry, preserve
+zero readings, retain GPU package power in watts at existing precision, and skip
+null filesystems. A changed GPU name at the same identity begins a new aggregate.
+The existing per-pool ZFS and per-interface Wi-Fi policies remain intact.
+
+`go test -tags 'testing no_ui' ./internal/records -run '^TestP014'` PASS in the
+combined focused run: slice regressions plus real PocketBase ten-minute rollup,
+close/reopen of the same disposable DB, valid zero, package power, and no new
+system history after disconnection. Broader regression/retention checks remain
+pending. No database schema/migration or retention interval changed.

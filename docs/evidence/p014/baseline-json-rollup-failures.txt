@@ -1,0 +1,134 @@
+Test output; tabs expanded and trailing whitespace removed.
+--- FAIL: TestP014ByteMetricJSONDecoding (0.00s)
+    --- FAIL: TestP014ByteMetricJSONDecoding/v1 (0.00s)
+        p014_decoding_test.go:17:
+                Error Trace:    /workspace/Beszel-iOS/internal/entities/system/p014_decoding_test.go:17
+                Error:          Received unexpected error:
+                                json: cannot unmarshal string into Go struct field Stats.bat of type system.Battery
+                Test:           TestP014ByteMetricJSONDecoding/v1
+    --- FAIL: TestP014ByteMetricJSONDecoding/v2 (0.00s)
+        p014_decoding_test.go:17:
+                Error Trace:    /workspace/Beszel-iOS/internal/entities/system/p014_decoding_test.go:17
+                Error:          Received unexpected error:
+                                json: cannot unmarshal JSON array into Go system.Uint8Slice within "/cpus"
+                Test:           TestP014ByteMetricJSONDecoding/v2
+FAIL
+FAIL    github.com/henrygd/beszel/internal/entities/system  0.132s
+--- FAIL: TestP014SparseDeviceRollups (0.00s)
+    p014_optional_test.go:20:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:20
+            Error:          Not equal:
+                            expected: 40
+                            actual  : 20
+            Test:           TestP014SparseDeviceRollups
+    p014_optional_test.go:22:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:22
+            Error:          Not equal:
+                            expected: 0x3e8
+                            actual  : 0x1f4
+            Test:           TestP014SparseDeviceRollups
+    p014_optional_test.go:23:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:23
+            Error:          Not equal:
+                            expected: 100
+                            actual  : 33.33
+            Test:           TestP014SparseDeviceRollups
+    p014_optional_test.go:24:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:24
+            Error:          Not equal:
+                            expected: 60
+                            actual  : 20
+            Test:           TestP014SparseDeviceRollups
+    p014_optional_test.go:25:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:25
+            Error:          Not equal:
+                            expected: 22.75
+                            actual  : 0
+            Test:           TestP014SparseDeviceRollups
+    p014_optional_test.go:26:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:26
+            Error:          Not equal:
+                            expected: 40
+                            actual  : 13.33
+            Test:           TestP014SparseDeviceRollups
+    p014_optional_test.go:27:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:27
+            Error:          Not equal:
+                            expected: system.Uint8Slice{0x28, 0x28}
+                            actual  : system.Uint8Slice{0x1b, 0xd}
+
+                            Diff:
+                            --- Expected
+                            +++ Actual
+                            @@ -1,3 +1,3 @@
+                             (system.Uint8Slice) (len=2) {
+                            - 00000000  28 28                                             |((|
+                            + 00000000  1b 0d                                             |..|
+                             }
+            Test:           TestP014SparseDeviceRollups
+    p014_optional_test.go:28:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:28
+            Error:          Not equal:
+                            expected: []float64{20, 10}
+                            actual  : []float64{6.67, 3.33}
+
+                            Diff:
+                            --- Expected
+                            +++ Actual
+                            @@ -1,4 +1,4 @@
+                             ([]float64) (len=2) {
+                            - (float64) 20,
+                            - (float64) 10
+                            + (float64) 6.67,
+                            + (float64) 3.33
+                             }
+            Test:           TestP014SparseDeviceRollups
+    p014_optional_test.go:29:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:29
+            Error:          Not equal:
+                            expected: [4]uint64{0x64, 0xc8, 0x1f4, 0x384}
+                            actual  : [4]uint64{0x21, 0x42, 0x1f4, 0x384}
+
+                            Diff:
+                            --- Expected
+                            +++ Actual
+                            @@ -1,4 +1,4 @@
+                             ([4]uint64) (len=4) {
+                            - (uint64) 100,
+                            - (uint64) 200,
+                            + (uint64) 33,
+                            + (uint64) 66,
+                              (uint64) 500,
+            Test:           TestP014SparseDeviceRollups
+--- FAIL: TestP014NullOptionalFilesystem (0.00s)
+    p014_optional_test.go:34:
+            Error Trace:    /workspace/Beszel-iOS/internal/records/p014_optional_test.go:34
+            Error:          func (assert.PanicTestFunc)(0x10880e0) should not panic
+                                Panic value:    runtime error: invalid memory address or nil pointer dereference
+                                Panic stack:    goroutine 36 [running]:
+                            runtime/debug.Stack()
+                                /workspace/toolchains/go/src/runtime/debug/stack.go:26 +0x5e
+                            github.com/stretchr/testify/assert.didPanic.func1()
+                                /home/agent/go/pkg/mod/github.com/stretchr/testify@v1.12.1/assert/assertions.go:1287 +0x67
+                            panic({0x2090390?, 0x222f960?})
+                                /workspace/toolchains/go/src/runtime/panic.go:859 +0x125
+                            github.com/henrygd/beszel/internal/records.AverageSystemStatsSlice({_, _, _})
+                                /workspace/Beszel-iOS/internal/records/records.go:411 +0x154b
+                            github.com/henrygd/beszel/internal/records_test.TestP014NullOptionalFilesystem.func1()
+                                /workspace/Beszel-iOS/internal/records/p014_optional_test.go:35 +0x126
+                            github.com/stretchr/testify/assert.didPanic(0x2237de0?)
+                                /home/agent/go/pkg/mod/github.com/stretchr/testify@v1.12.1/assert/assertions.go:1292 +0x70
+                            github.com/stretchr/testify/assert.NotPanics({0x217e178, 0x321b47637d48}, 0x321b47876be0, {0x0, 0x0, 0x0})
+                                /home/agent/go/pkg/mod/github.com/stretchr/testify@v1.12.1/assert/assertions.go:1369 +0x7e
+                            github.com/stretchr/testify/require.NotPanics({0x2181cb0, 0x321b47637d48}, 0x321b47876be0, {0x0, 0x0, 0x0})
+                                /home/agent/go/pkg/mod/github.com/stretchr/testify@v1.12.1/require/require.go:1683 +0xa5
+                            github.com/henrygd/beszel/internal/records_test.TestP014NullOptionalFilesystem(0x321b47637d48)
+                                /workspace/Beszel-iOS/internal/records/p014_optional_test.go:34 +0x6a
+                            testing.tRunner(0x321b47637d48, 0x2190540)
+                                /workspace/toolchains/go/src/testing/testing.go:2193 +0xea
+                            created by testing.(*T).Run in goroutine 1
+                                /workspace/toolchains/go/src/testing/testing.go:2258 +0x4d4
+            Test:           TestP014NullOptionalFilesystem
+FAIL
+FAIL    github.com/henrygd/beszel/internal/records  0.207s
+FAIL
