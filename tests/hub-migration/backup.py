@@ -232,10 +232,27 @@ def verify_backup(backup_dir: pathlib.Path) -> dict[str, Any]:
         raise BackupError(f"checkpoint inventory lacks required files: {', '.join(missing)}")
     if _archive_names(archive) != _expected_archive_names(inventory):
         raise BackupError("checkpoint archive entries differ from the full-state inventory")
+    # Expose the non-secret ownership/mode inventory in the public synthetic
+    # evidence manifest. The full inventory remains content-hashed and
+    # committed by inventory_sha256; do not expose file content hashes for
+    # databases, keys, or credentials in the workflow artifact.
+    file_metadata = [
+        {
+            "path": entry["path"],
+            "kind": entry["kind"],
+            "mode": f"0o{int(entry['mode']):04o}",
+            "uid": int(entry["uid"]),
+            "gid": int(entry["gid"]),
+            "size": int(entry["size"]),
+            **({"target": entry["target"]} if entry["kind"] == "symlink" else {}),
+        }
+        for entry in inventory
+    ]
     return {
         "archive_sha256": expected_sums["hub-state.tar.gz"],
         "inventory_sha256": expected_sums["checkpoint-inventory.json"],
         "entry_count": len(inventory),
+        "file_metadata": file_metadata,
         "sidecars": inventory_doc.get("sidecars", {}),
         "verified": True,
     }

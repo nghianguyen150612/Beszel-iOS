@@ -79,6 +79,12 @@ class ColdBackupTests(unittest.TestCase):
     def test_archive_contains_full_data_and_checkpoint_state_then_restores(self) -> None:
         result = self.make_backup()
         self.assertTrue(result["verified"])
+        metadata = {item["path"]: item for item in result["file_metadata"]}
+        self.assertEqual(metadata["var/lib/beszel-hub/config.yml"]["mode"], "0o0600")
+        self.assertEqual(metadata["var/lib/beszel-hub/id_ed25519"]["mode"], "0o0600")
+        self.assertEqual(metadata["usr/local/bin/beszel-hub"]["mode"], "0o0755")
+        self.assertIn("uid", metadata["var/lib/beszel-hub/data.db"])
+        self.assertIn("gid", metadata["var/lib/beszel-hub/data.db"])
         inventory = (self.output / "checkpoint-inventory.json").read_text(encoding="utf-8")
         for expected in (
             "data.db", "data.db-wal", "data.db-shm", "auxiliary.db", "id_ed25519",
