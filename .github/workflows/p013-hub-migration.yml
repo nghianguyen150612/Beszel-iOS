@@ -10,6 +10,7 @@ on:
       - "internal/site/**"
       - "tests/hub-migration/**"
       - "docs/ios-hub-*"
+      - "docs/ios-wifi-rssi-*"
       - ".github/workflows/p013-hub-migration.yml"
 
 permissions:
