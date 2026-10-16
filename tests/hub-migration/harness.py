@@ -451,7 +451,14 @@ def verify_and_delete_migrated_monitor_alert_api(base: str, *, regular_email: st
     token = auth_token(base, "users", regular_email, password)
     ids = {"network_monitors": str(expected["monitor_id"]), "alerts": str(expected["alert_id"])}
     for collection, record_id in ids.items():
-        status, _, record = request(base, "GET", f"/api/collections/{collection}/records/{record_id}", token=token)
+        if collection == "alerts":
+            # The migrated alerts collection intentionally has no view rule;
+            # owners read their alerts through the authorized list endpoint.
+            matches = [item for item in list_records(base, token, collection) if item.get("id") == record_id]
+            record = matches[0] if len(matches) == 1 else None
+            status = 200 if record is not None else 404
+        else:
+            status, _, record = request(base, "GET", f"/api/collections/{collection}/records/{record_id}", token=token)
         if status != 200 or not isinstance(record, dict):
             raise HarnessError(f"{collection} record {record_id} did not survive Hub restart: HTTP {status}, {record}")
         if record.get("system") != expected["system_id"]:
@@ -464,9 +471,14 @@ def verify_and_delete_migrated_monitor_alert_api(base: str, *, regular_email: st
         if status not in (200, 204):
             raise HarnessError(f"regular-user {collection} delete failed: HTTP {status}")
         deleted[collection] = status
-        read_status, _, _ = request(base, "GET", f"/api/collections/{collection}/records/{record_id}", token=token)
-        if read_status != 404:
-            raise HarnessError(f"deleted {collection} record remained visible: HTTP {read_status}")
+        if collection == "alerts":
+            remaining = [item for item in list_records(base, token, collection) if item.get("id") == record_id]
+            if remaining:
+                raise HarnessError(f"deleted alert record {record_id} remained in the authorized list")
+        else:
+            read_status, _, _ = request(base, "GET", f"/api/collections/{collection}/records/{record_id}", token=token)
+            if read_status != 404:
+                raise HarnessError(f"deleted {collection} record remained visible: HTTP {read_status}")
     return {"post_restart_records_preserved": True, "regular_user_delete_http": deleted, "deleted_records_not_found": True}
 
 
