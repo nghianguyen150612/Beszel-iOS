@@ -160,7 +160,7 @@ def packages(target):
     add(prefix + '/agent/zfs', ['zfs_ios.go' if target == 'ios' else 'zfs_linux.go' if target == 'linux' else 'zfs_nonlinux.go'])
     add(prefix + '/agent/btrfs', ['btrfs_linux.go' if target == 'linux' else 'btrfs_unsupported.go'])
     for name in ['battery','wifi']:
-        suffix = 'unsupported' if name == 'wifi' and target == 'ios' else target
+        suffix = target
         add(prefix + '/agent/' + name, [name + '.go', name + '_' + suffix + '.go'] + (['ios_ioreg.go'] if name == 'battery' else []))
     for name in ['cpu','mem','disk','net','host','load','sensors']:
         suffix = 'linux' if target == 'linux' else 'darwin'
@@ -170,13 +170,31 @@ def packages(target):
 
 
 class SelectionTests(unittest.TestCase):
+    def test_five_wifi_targets_reject_foreign_implementations(self):
+        for target in ['ios', 'darwin', 'linux', 'windows', 'freebsd']:
+            expected = 'wifi_unsupported.go' if target == 'freebsd' else 'wifi_' + target + '.go'
+            package = {'GoFiles': ['wifi.go', expected]}
+            selection.validate_wifi(package, target)
+            for foreign in ['ios', 'darwin', 'linux', 'windows', 'unsupported']:
+                name = 'wifi_' + foreign + '.go'
+                if name == expected:
+                    continue
+                with self.subTest(target=target, foreign=name), self.assertRaises(ValueError):
+                    selection.validate_wifi({'GoFiles': ['wifi.go', expected, name]}, target)
+
     def test_all_targets(self):
         for target in ['ios','darwin','linux']:selection.validate(packages(target), target)
 
     def test_unsupported_macos_collectors_and_duplicates(self):
-        for path, filename in [('/agent','gpu_darwin.go'),('/agent','sensors_default.go'),('/agent/zfs','zfs_nonlinux.go'),('/agent','system_platform_other.go'),('/agent','cpu_linux.go'),('/agent/battery','battery_darwin.go'),('/agent/wifi','wifi_darwin.go')]:
+        for path, filename in [('/agent','gpu_darwin.go'),('/agent','sensors_default.go'),('/agent/zfs','zfs_nonlinux.go'),('/agent','system_platform_other.go'),('/agent','cpu_linux.go'),('/agent/battery','battery_darwin.go'),('/agent/wifi','wifi_darwin.go'),('/agent/wifi','wifi_linux.go'),('/agent/wifi','wifi_windows.go'),('/agent/wifi','wifi_unsupported.go')]:
             graph = packages('ios');graph[selection.MODULE + path]['GoFiles'].append(filename)
             with self.subTest(filename=filename), self.assertRaises(ValueError):selection.validate(graph, 'ios')
+
+    def test_inactive_wifi_helper_is_not_a_main_binary_dependency(self):
+        for target in ['ios', 'darwin', 'linux']:
+            graph = packages(target)
+            graph[selection.MODULE + '/agent/wifi/ioshelper'] = {'GoFiles':['client.go']}
+            with self.subTest(target=target), self.assertRaises(ValueError):selection.validate(graph,target)
 
     def test_missing_dependencies_and_embed(self):
         for path in ['/internal/cmd/hub','/agent/battery']:

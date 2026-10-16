@@ -1,4 +1,4 @@
-//go:build ios || (!linux && !windows && !darwin)
+//go:build !ios && !linux && !windows && !darwin
 
 package wifi
 

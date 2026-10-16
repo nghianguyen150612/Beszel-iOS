@@ -7,7 +7,7 @@ name: iOS installer lifecycle
 
 on:
   push:
-    branches: [iOS, ios/procursus-package-updates]
+    branches: [iOS, ios/procursus-package-updates, ios/wifi-rssi-compatibility]
     paths:
       - install.sh
       - scripts/ios/install-beszel.sh
@@ -25,6 +25,11 @@ on:
       - docs/ios-build-notes.vi.md
       - docs/ios-port-status.md
       - docs/ios-port-status.vi.md
+      - docs/ios-wifi-rssi-*
+      - docs/ios-wifi-native-blocker-resolution*
+      - docs/upstream-v021-acceptance.md
+      - docs/upstream-v021-acceptance.vi.md
+      - docs/upstream-v021-risk-register.csv
       - docs/upstream-sync.md
       - docs/upstream-sync.vi.md
       - .github/workflows/ios-installer.yml

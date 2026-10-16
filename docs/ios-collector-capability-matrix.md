@@ -1,4 +1,4 @@
-# Local iOS Agent capability matrix — P011
+# Local iOS Agent capability matrix — P012
 
 This matrix covers the local Agent compiled with `GOOS=ios GOARCH=arm64
 CGO_ENABLED=1`. Build selection and portable fixtures do not establish physical
@@ -23,7 +23,7 @@ Linux, Windows and macOS Agents. No protocol keys or migrations are removed.
 | Filesystem usage / physical disk I/O | P008 `ios_disk.go` actual mount/statfs usage; physical I/O unavailable | Optional physical I/O absent; no inferred disk throughput or device. Linux storage paths retained. |
 | Battery / metadata | P008 ioreg/Mach/sysctl adapters and their safe absence/cache rules retained | Optional battery absent on failure; source fixtures are not current hardware measurements. |
 | Package updates | P011 iOS-only Procursus/APT adapter; rootful and rootless binary candidates, APT-config-derived database/index paths, allowlisted simulation only | Nil means unknown/unavailable; [0] means verified zero. Procursus security classification is unknown. Cached metadata may be stale; no refresh/download/mutation. Physical iPad validation remains P018. Linux and remote Hub package telemetry remain supported. |
-| Wi-Fi RSSI | `wifi_unsupported.go` | Nil RSSI map, no guessed zero signal; P012 owns the native adapter. |
+| Wi-Fi RSSI | `wifi_ios.go`: explicit unavailable adapter; MobileWiFi acquisition DEFERRED | Nil snapshot / RSSI map; no private calls or guessed zero. ABI, fresh association, authorization and bounded-call blockers: [feasibility](ios-wifi-provider-feasibility.md). P012 follow-up; P016 privilege packaging; P018 hardware. Remote Linux/macOS/Windows paths retained. |
 
 The actual Go dependency graphs are checked for ios/darwin/linux ARM64 with
 CGO=1 by `.github/scripts/check-ios-source-selection.py`. Negative fixtures
@@ -36,3 +36,11 @@ Unsupported optional maps/slices stay nil or empty according to their existing
 JSON/CBOR contract. Upstream required scalars may retain zero defaults; those
 zeros must not be represented as measured temperatures, GPU load or health.
 No capability is disabled globally in the Hub based on the local Agent's OS.
+
+P012A also checks Wi-Fi-only source selection for Windows and FreeBSD. The
+inactive `agent/wifi/ioshelper` boundary and separate native diagnostic are
+excluded from normal Agent/Hub dependencies and payload. They do not add a local
+RSSI capability; normal iOS polling remains nil. Exact reference-firmware exports
+are now verified, while typed ABI, association/raw dBm and minimal authorization
+remain unresolved. Bounded host-process fixtures pass; target behavior remains
+P018. See [P012A blocker resolution](ios-wifi-native-blocker-resolution.md).

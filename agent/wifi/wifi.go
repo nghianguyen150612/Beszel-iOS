@@ -52,17 +52,24 @@ func Collect() map[string]system.WiFi {
 }
 
 // Signals reduces a snapshot to the RSSI values stored in stats history.
-// Interfaces without an available reading are omitted.
+// Interfaces without a finite reading in the collectors' native dBm range
+// are omitted. Values below int8 range retain the existing -128 clamp policy.
 func Signals(snapshot map[string]system.WiFi) map[string]int8 {
 	var signals map[string]int8
 	for id, reading := range snapshot {
 		if reading.Signal == nil {
 			continue
 		}
+		signal := *reading.Signal
+		// Validate before conversion: positive/huge/non-finite inputs can
+		// otherwise wrap into plausible negative history or fabricate zero.
+		if math.IsNaN(signal) || signal < -150 || signal > -1 {
+			continue
+		}
 		if signals == nil {
 			signals = make(map[string]int8, len(snapshot))
 		}
-		signals[id] = int8(max(math.Round(*reading.Signal), math.MinInt8))
+		signals[id] = int8(max(math.Round(signal), math.MinInt8))
 	}
 	return signals
 }

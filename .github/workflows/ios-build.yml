@@ -6,6 +6,7 @@ on:
     branches:
       - iOS
       - ios/procursus-package-updates
+      - ios/wifi-rssi-compatibility
     # NOTE: path filters are NOT evaluated for tag pushes by GitHub Actions,
     # so iOS release tags always run the full build + release pipeline below,
     # while branch pushes to `iOS` still skip docs-only changes.
@@ -21,6 +22,12 @@ on:
       - "go.work.sum"
       - ".github/workflows/ios-build.yml"
       - ".github/scripts/**"
+      - "scripts/audit/ios_wifi/native.py"
+      - "tools/ios-wifi-probe/**"
+      - "docs/ios-wifi-rssi-*"
+      - "docs/ios-wifi-native-blocker-resolution*"
+      - "docs/upstream-v021-acceptance*"
+      - "docs/upstream-v021-risk-register.*"
       - "tests/audit/**"
       - "tests/ios-patch-sentinels.sh"
       - "tests/upstream-sync-test.sh"
@@ -108,6 +115,27 @@ jobs:
           env -u NETWORK go test -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system
           env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system -run 'Test(P008|IOSBattery|CalculateHostMemory|CpuMetrics|GetAllBusy|Disk|SumAndTrack|SkipNetwork|Serialization|Battery|Primary|Normalize)' -count=1
 
+      - name: Test disabled native Wi-Fi diagnostic and public CF ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit/ios_wifi/native.py --host --output "$RUNNER_TEMP/wifi-host" --revision "$GITHUB_SHA"
+          cp "$RUNNER_TEMP/wifi-host/validation.json" "$RUNNER_TEMP/wifi-host-validation.json"
+          BESZEL_WIFI_PROBE_TEST_PATH="$RUNNER_TEMP/wifi-host/beszel-ios-wifi-probe" \
+            env -u NETWORK go test -race -v ./agent/wifi/ioshelper -count=3 -timeout=180s
+
+      - name: Test iOS Wi-Fi unavailable adapter and shared telemetry contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Explicit files execute the production iOS fallback unchanged on
+          # macOS; this does not simulate or claim MobileWiFi hardware access.
+          env -u NETWORK go test -race -tags 'testing no_ui' \
+            agent/wifi/wifi.go agent/wifi/wifi_ios.go \
+            agent/wifi/wifi_test.go agent/wifi/wifi_ios_test.go -count=3
+          env -u NETWORK go test -race -tags 'testing no_ui' ./agent/wifi ./agent ./internal/hub/transport ./internal/hub/systems \
+            -run 'TestP012|TestCreateRecordsWiFi|TestFetchDataViaWebSocketDoesNotRetainOmittedFields' -count=3 -timeout=180s
+
       - name: Test transport faults and races
         shell: bash
         run: |
@@ -176,6 +204,13 @@ jobs:
           echo "CGO_ENABLED=1" >> "$GITHUB_ENV"
           echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh" >> "$GITHUB_ENV"
 
+      - name: Build separate disabled iOS Wi-Fi diagnostic and client compile fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit/ios_wifi/native.py --ios --output "$RUNNER_TEMP/wifi-ios" --revision "$GITHUB_SHA"
+          go test -c -o "$RUNNER_TEMP/ios-wifi-client.test" ./agent/wifi/ioshelper
+
       - name: Build Beszel Agent and Hub twice with isolated caches
         shell: bash
         run: |
@@ -214,6 +249,20 @@ jobs:
             otool -l "$bin" | grep -A8 -E 'LC_BUILD_VERSION|LC_VERSION_MIN_IPHONEOS|LC_MAIN|LC_UNIXTHREAD'
           done
 
+      - name: Verify unavailable Wi-Fi adds no private linkage
+        shell: bash
+        run: |
+          set -euo pipefail
+          for bin in build/ios/beszel-agent-ios-arm64 build/ios/beszel-hub-ios-arm64; do
+            otool -L "$bin" >> "$RUNNER_TEMP/wifi-linkage.txt"
+            nm -u "$bin" >> "$RUNNER_TEMP/wifi-linkage.txt"
+          done
+          cat "$RUNNER_TEMP/wifi-linkage.txt"
+          if grep -E 'MobileWiFi|CoreWLAN|Apple80211|_WiFi(Manager|Device|Network)' "$RUNNER_TEMP/wifi-linkage.txt"; then
+            echo 'ERROR: unavailable Wi-Fi must have no private imports' >&2
+            exit 1
+          fi
+
       - name: Generate and verify exact payload and frontend embedding
         shell: bash
         run: |
@@ -233,6 +282,17 @@ jobs:
             build/ios/beszel-hub-ios-arm64
             build/ios/SHA256SUMS
 
+      - name: Upload separate disabled Wi-Fi diagnostic review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-wifi-diagnostic-disabled
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/wifi-ios/beszel-ios-wifi-probe
+            ${{ runner.temp }}/wifi-ios/validation.json
+            ${{ runner.temp }}/wifi-ios/linkage.txt
+            ${{ runner.temp }}/wifi-host-validation.json
+
       - name: Upload native validation evidence
         uses: actions/upload-artifact@v4
         with:
@@ -244,6 +304,7 @@ jobs:
             ${{ runner.temp }}/runtime-agent.json
             ${{ runner.temp }}/runtime-hub.json
             ${{ runner.temp }}/native-artifacts.json
+            ${{ runner.temp }}/wifi-linkage.txt
 
   release-ios:
     needs: build-ios

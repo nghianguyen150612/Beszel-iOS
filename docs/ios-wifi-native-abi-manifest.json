@@ -1,0 +1,278 @@
+{
+  "schema_version": 1,
+  "symbols": [
+    {
+      "name": "WiFiManagerClientCreate",
+      "declaration": "WiFiManagerRef WiFiManagerClientCreate(CFAllocatorRef allocator, int flags);",
+      "declared_result_kind": "opaque manager",
+      "historical_ownership": "owned by historical Create convention",
+      "historical_declaration_status": "VERIFIED",
+      "ios_12_4_sdk_export_status": "VERIFIED",
+      "ios_12_5_7_export_status": "VERIFIED",
+      "ios_12_5_7_typed_abi_status": "STRONGLY_INFERRED",
+      "ownership_on_reference_firmware_status": "STRONGLY_INFERRED",
+      "calling_convention": "historical C declaration; arm64 pointer/int ABI inferred, not verified by symbol name",
+      "null_policy": "NULL return means unavailable; never dereference. NULL argument safety is function-specific: see null_argument_policy.",
+      "release_policy": "owned by historical Create convention",
+      "header": "WiFiManager.h",
+      "null_argument_policy": "allocator NULL follows historical CF default convention; target invalid allocator behavior not established",
+      "firmware_disassembly_finding": "x0 allocator, low 32 bits of x1 stored as flags; CF-runtime allocation inferred from allocation call; server setup present; no bounded IPC guarantee",
+      "firmware_evidence": "docs/evidence/ios-wifi-12.5.7/selected-functions.txt",
+      "activation_sufficient": false
+    },
+    {
+      "name": "WiFiManagerClientCopyDevices",
+      "declaration": "CFArrayRef WiFiManagerClientCopyDevices(WiFiManagerRef manager);",
+      "declared_result_kind": "CFArrayRef",
+      "historical_ownership": "owned; array elements borrowed while array lives",
+      "historical_declaration_status": "VERIFIED",
+      "ios_12_4_sdk_export_status": "VERIFIED",
+      "ios_12_5_7_export_status": "VERIFIED",
+      "ios_12_5_7_typed_abi_status": "STRONGLY_INFERRED",
+      "ownership_on_reference_firmware_status": "STRONGLY_INFERRED",
+      "calling_convention": "historical C declaration; arm64 pointer/int ABI inferred, not verified by symbol name",
+      "null_policy": "NULL return means unavailable; never dereference. NULL argument safety is function-specific: see null_argument_policy.",
+      "release_policy": "owned; array elements borrowed while array lives",
+      "header": "WiFiManager.h",
+      "null_argument_policy": "NULL manager is UNSAFE: initial load [x0+0x30] without NULL guard; never invoke with NULL",
+      "firmware_disassembly_finding": "x0 manager; reads manager cached dictionary, filters interface-role index 0 into newly created array; freshness/population not proven",
+      "firmware_evidence": "docs/evidence/ios-wifi-12.5.7/selected-functions.txt",
+      "activation_sufficient": false
+    },
+    {
+      "name": "WiFiDeviceClientCopyProperty",
+      "declaration": "CFPropertyListRef WiFiDeviceClientCopyProperty(WiFiDeviceClientRef client, CFStringRef property);",
+      "declared_result_kind": "CFPropertyListRef",
+      "historical_ownership": "owned; dictionary children borrowed while dictionary lives",
+      "historical_declaration_status": "VERIFIED",
+      "ios_12_4_sdk_export_status": "VERIFIED",
+      "ios_12_5_7_export_status": "VERIFIED",
+      "ios_12_5_7_typed_abi_status": "STRONGLY_INFERRED",
+      "ownership_on_reference_firmware_status": "STRONGLY_INFERRED",
+      "calling_convention": "historical C declaration; arm64 pointer/int ABI inferred, not verified by symbol name",
+      "null_policy": "NULL return means unavailable; never dereference. NULL argument safety is function-specific: see null_argument_policy.",
+      "release_policy": "owned; dictionary children borrowed while dictionary lives",
+      "header": "WiFiDeviceClient.h",
+      "null_argument_policy": "NULL client or property returns NULL in observed target control flow; invalid non-NULL pointers remain unsafe",
+      "firmware_disassembly_finding": "x0 device, x1 serialized property; invokes wifi_device_copy_property MIG routine, unserializes reply; no dBm contract or timeout proof",
+      "firmware_evidence": "docs/evidence/ios-wifi-12.5.7/selected-functions.txt",
+      "activation_sufficient": false
+    },
+    {
+      "name": "WiFiDeviceClientCopyCurrentNetwork",
+      "declaration": "WiFiNetworkRef WiFiDeviceClientCopyCurrentNetwork(WiFiDeviceClientRef client);",
+      "declared_result_kind": "opaque network",
+      "historical_ownership": "owned by historical Copy convention",
+      "historical_declaration_status": "VERIFIED",
+      "ios_12_4_sdk_export_status": "VERIFIED",
+      "ios_12_5_7_export_status": "VERIFIED",
+      "ios_12_5_7_typed_abi_status": "STRONGLY_INFERRED",
+      "ownership_on_reference_firmware_status": "STRONGLY_INFERRED",
+      "calling_convention": "historical C declaration; arm64 pointer/int ABI inferred, not verified by symbol name",
+      "null_policy": "NULL return means unavailable; never dereference. NULL argument safety is function-specific: see null_argument_policy.",
+      "release_policy": "owned by historical Copy convention",
+      "header": "WiFiDeviceClient.h",
+      "null_argument_policy": "NULL client is UNSAFE: load [x0+0x10] without NULL guard",
+      "firmware_disassembly_finding": "x0 device; invokes wifi_device_copy_current_network; constructs WiFiNetworkCreate from unserialized reply; daemon association/cache semantics unknown",
+      "firmware_evidence": "docs/evidence/ios-wifi-12.5.7/selected-functions.txt",
+      "activation_sufficient": false
+    },
+    {
+      "name": "WiFiDeviceClientGetInterfaceName",
+      "declaration": "CFStringRef WiFiDeviceClientGetInterfaceName(WiFiDeviceClientRef client);",
+      "declared_result_kind": "CFStringRef",
+      "historical_ownership": "borrowed; device owner must remain alive",
+      "historical_declaration_status": "VERIFIED",
+      "ios_12_4_sdk_export_status": "VERIFIED",
+      "ios_12_5_7_export_status": "VERIFIED",
+      "ios_12_5_7_typed_abi_status": "STRONGLY_INFERRED",
+      "ownership_on_reference_firmware_status": "STRONGLY_INFERRED",
+      "calling_convention": "historical C declaration; arm64 pointer/int ABI inferred, not verified by symbol name",
+      "null_policy": "NULL return means unavailable; never dereference. NULL argument safety is function-specific: see null_argument_policy.",
+      "release_policy": "borrowed; device owner must remain alive",
+      "header": "WiFiDeviceClient.h",
+      "null_argument_policy": "NULL client is UNSAFE: load [x0+0x18] without NULL guard",
+      "firmware_disassembly_finding": "returns pointer at device+0x18 without retain; borrow strongly corroborated; actual pointed-to CF type needs constructor/type corroboration",
+      "firmware_evidence": "docs/evidence/ios-wifi-12.5.7/selected-functions.txt",
+      "activation_sufficient": false
+    },
+    {
+      "name": "WiFiNetworkGetSSID",
+      "declaration": "CFStringRef WiFiNetworkGetSSID(WiFiNetworkRef network);",
+      "declared_result_kind": "CFStringRef",
+      "historical_ownership": "borrowed; network owner must remain alive",
+      "historical_declaration_status": "VERIFIED",
+      "ios_12_4_sdk_export_status": "VERIFIED",
+      "ios_12_5_7_export_status": "VERIFIED",
+      "ios_12_5_7_typed_abi_status": "STRONGLY_INFERRED",
+      "ownership_on_reference_firmware_status": "STRONGLY_INFERRED",
+      "calling_convention": "historical C declaration; arm64 pointer/int ABI inferred, not verified by symbol name",
+      "null_policy": "NULL return means unavailable; never dereference. NULL argument safety is function-specific: see null_argument_policy.",
+      "release_policy": "borrowed; network owner must remain alive",
+      "header": "WiFiNetwork.h",
+      "null_argument_policy": "NULL network returns NULL in observed target control flow; invalid non-NULL pointers remain unsafe",
+      "firmware_disassembly_finding": "x0 network; GetProperty result borrowed; may create/cache local SSID property then release created string; no observed system configuration write; firmware extraction CF-string annotations unresolved",
+      "firmware_evidence": "docs/evidence/ios-wifi-12.5.7/selected-functions.txt",
+      "activation_sufficient": false
+    }
+  ],
+  "pinned_source_hashes": {
+    "WiFiManager.h": "b4549c720b5766307a0888ba0c736ad2d940334ad101a101c996e127c31b803d",
+    "WiFiDeviceClient.h": "ee33e3699db2bb564b9627429baa3af8402f7804f94942938e6f9524a0bdcac6",
+    "WiFiNetwork.h": "68c963636c1529258761ec81b7e6a64dbb02ed4f63d420cf58329683b3d61835",
+    "MobileWiFi.tbd": "f7ac468998f286a1e0bc850a16c1f8c12027b6032f7485c41ac4660bc679efdf"
+  },
+  "starting_feature_sha": "88dcf9b89389cd58de6f4859d4619485451dfa82",
+  "activation_allowed": false,
+  "firmware": {
+    "model": "iPad4,4",
+    "board": "j85ap",
+    "version": "12.5.7",
+    "build": "16H81",
+    "image": {
+      "identifier": "iPad4,4",
+      "version": "12.5.7",
+      "buildid": "16H81",
+      "sha1sum": "614d376484383cf9a90333bfad0999402e9d53c8",
+      "md5sum": "5edae2381b35a73953ed415755a4414f",
+      "sha256sum": "780aa5b20fa9fb5770c18311663bd098dbbf8e89311675a19b4860303edc0cd9",
+      "filesize": 2961469678,
+      "url": "https://updates.cdn-apple.com/2023FCSWinter/fullrestores/032-14132/A3C10B93-0E34-405D-8A92-92AA354BABF0/iPad_64bit_12.5.7_16H81_Restore.ipsw",
+      "releasedate": "2023-01-23T21:37:32Z",
+      "uploaddate": "2023-01-14T18:21:34Z",
+      "signed": false
+    },
+    "image_sha256_scope": "Downloaded and independently verified in hosted read-only restore inspection",
+    "inspection_status": "EXACT_REFERENCE_CACHE_EXTRACTED; exports VERIFIED; typed ABI not established completely",
+    "first_inspection": {
+      "source_sha": "0edafbd07a14778c91583b1927d2f2192caca19f",
+      "run_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38738978309",
+      "artifact_sha256": "343f39b0c61c12ca67b14727931aa16eeb08803dfa458847f1daf0e5f0e9af0b",
+      "report": {
+        "model": "iPad4,4",
+        "board": "j85ap",
+        "version": "12.5.7",
+        "build": "16H81",
+        "ipsw_sha256": "780aa5b20fa9fb5770c18311663bd098dbbf8e89311675a19b4860303edc0cd9",
+        "filesystem_version_verified": true,
+        "private_calls_executed": false,
+        "device_accessed": false,
+        "binary_status": "ABSENT_FROM_FILESYSTEM; dyld cache extraction required",
+        "filesystem_image": "038-87004-055.dmg"
+      }
+    },
+    "cache_inspection": {
+      "source_sha": "6b859dd6bdf4b7be457546567ba77ef5dfc4e070",
+      "run_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38741425098",
+      "artifact_sha256": "9fbb17009f59f2b6b68c89dbc7d9003de46e8ad1c5315cf7d40d9996a7a5cd86",
+      "report": {
+        "model": "iPad4,4",
+        "board": "j85ap",
+        "version": "12.5.7",
+        "build": "16H81",
+        "ipsw_sha256": "780aa5b20fa9fb5770c18311663bd098dbbf8e89311675a19b4860303edc0cd9",
+        "filesystem_version_verified": true,
+        "private_calls_executed": false,
+        "device_accessed": false,
+        "cache_path": "System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64",
+        "cache_sha256": "e11344fd5c2cb27a87c578ed83d8169e3243cabea1c6439b4593dab243505c28",
+        "binary_status": "EXTRACTED_FROM_REFERENCE_CACHE",
+        "binary_sha256": "052eef70beb4e8471471c9562772ea79437dc2aba51e0cb302f054e0972009ba",
+        "binary_bytes": 356352,
+        "file": "/Users/runner/work/_temp/extracted-cache/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi: Mach-O 64-bit dynamically linked shared library arm64\n",
+        "uuid": "UUID: FA49B5A2-2578-38A0-AE5E-5DDBB37D68EA (arm64) /Users/runner/work/_temp/extracted-cache/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi\n",
+        "exports": {
+          "WiFiManagerClientCreate": true,
+          "WiFiManagerClientCopyDevices": true,
+          "WiFiDeviceClientCopyProperty": true,
+          "WiFiDeviceClientCopyCurrentNetwork": true,
+          "WiFiDeviceClientGetInterfaceName": true,
+          "WiFiNetworkGetSSID": true
+        },
+        "selected_strings": [
+          "RSSI",
+          "com.apple.wifi.manager-access",
+          "RSSI_CTL_AGR"
+        ],
+        "disassembly_status": {
+          "WiFiManagerClientCreate": "EXTRACTED",
+          "WiFiManagerClientCopyDevices": "EXTRACTED",
+          "WiFiDeviceClientCopyProperty": "EXTRACTED",
+          "WiFiDeviceClientCopyCurrentNetwork": "EXTRACTED",
+          "WiFiDeviceClientGetInterfaceName": "EXTRACTED",
+          "WiFiNetworkGetSSID": "EXTRACTED"
+        },
+        "selected_functions_sha256": "6f3e56bcd6c34c83074f5452f9650a2542bfd12ceb129a01947c834f0d49bd43",
+        "wifid": {
+          "path": "usr/sbin/wifid",
+          "sha256": "85668efb6c6141831f30f2da3c7eee799aa3fed111302fd7866bd8f36ae56d52",
+          "manager_access_string_present": true
+        },
+        "filesystem_image": "038-87004-055.dmg"
+      }
+    }
+  },
+  "sources": [
+    {
+      "url": "https://github.com/Cykey/ios-reversed-headers/tree/c613e45f3ee5ad9f85ec7d43906cf69ee812ec6a/MobileWiFi",
+      "revision": "c613e45f3ee5ad9f85ec7d43906cf69ee812ec6a",
+      "hashes": {
+        "WiFiManager.h": "b4549c720b5766307a0888ba0c736ad2d940334ad101a101c996e127c31b803d",
+        "WiFiDeviceClient.h": "ee33e3699db2bb564b9627429baa3af8402f7804f94942938e6f9524a0bdcac6",
+        "WiFiNetwork.h": "68c963636c1529258761ec81b7e6a64dbb02ed4f63d420cf58329683b3d61835"
+      }
+    },
+    {
+      "url": "https://github.com/theos/sdks/blob/0222fd5413cf4b9af096f37b4621afa2688572f7/iPhoneOS12.4.sdk/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi.tbd",
+      "revision": "0222fd5413cf4b9af096f37b4621afa2688572f7",
+      "sha256": "f7ac468998f286a1e0bc850a16c1f8c12027b6032f7485c41ac4660bc679efdf"
+    },
+    {
+      "url": "https://github.com/ProcursusTeam/netctl/tree/3db04194c08fe93b723bc3da82cca80ae0d7ffa7",
+      "revision": "3db04194c08fe93b723bc3da82cca80ae0d7ffa7",
+      "files": {
+        "README.md": "17c96668d048106ec0f062d9c8538d3ca49a1fbcd0cbe936b458aefbda87eb73",
+        "Makefile": "0d96b102cb2d056a0bf4f88843974886ad9bb73bcf2c8e98c3408da3aaebb748",
+        "wifi_wifi.m": "32245e6b9cbc2511c94f69cdba9887b591db8b7718ebc6fdb8c91e29d85db3b0",
+        "Frameworks_MobileWiFi.framework_Headers_WiFiDeviceClient.h": "8f5e961d1f6bb46fa5b0881be13dcef63645159bb32e3cc8fc5d486efdcf195a",
+        "Frameworks_MobileWiFi.framework_Headers_WiFiManager.h": "99d01c50ba222bd296fcc72ed074013a870afd75065ef29bca96d7b11cc20f36",
+        "wifi_wifi-info.m": "f6e78e83157984f6e59bc4e0ed51c723f43d0b7e2e9e8190b9731145b6013191",
+        "entitlements.plist": "9774652d80e575881bf6a16ba63b17e7c3b13b77f68738428513d07d792a8a24"
+      }
+    },
+    {
+      "url": "https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html",
+      "scope": "public CF ownership contract; private opaque objects require firmware corroboration"
+    }
+  ],
+  "derived_firmware_metadata": {
+    "url": "https://raw.githubusercontent.com/blacktop/ipsw-diffs/af456047befbab058df4c3d7c7094462ad4753d6/iOS/12_5_7_16H81__vs_12_5_8_16H88/README.md",
+    "revision": "af456047befbab058df4c3d7c7094462ad4753d6",
+    "sha256": "c90b76e302e6793ca2dc6e3c4d07aa2c53b9cc9a2eb5c4c620996ed54e34bed7",
+    "artifact_scope": "iPhone_5.5_12.5.7_16H81_Restore.ipsw; not the reference iPad image",
+    "mobilewifi_version": "634.21.0.0.0",
+    "mobilewifi_uuid_12_5_7": "FA49B5A2-2578-38A0-AE5E-5DDBB37D68EA",
+    "symbol_count": 1385,
+    "function_count": 697,
+    "status": "VERIFIED report bytes; STRONGLY_INFERRED firmware metadata; no typed prototypes or per-function exports in this report"
+  },
+  "statuses": {
+    "VERIFIED": "only the explicit evidence scope, never automatically ABI or authorization",
+    "STRONGLY_INFERRED": "corroborated but missing target contract/runtime proof",
+    "UNKNOWN": "missing sufficient evidence",
+    "CONTRADICTED": "evidence demonstrates a prior assumption is false"
+  },
+  "host_cache_extractor": {
+    "scope": "macOS cloud research only; not an iOS helper or Agent dependency",
+    "source_url": "https://github.com/apple-oss-distributions/dyld/blob/3f24a36068a96722cf3acbd5087983ce658e9d70/dyld3/shared-cache/dsc_extractor.h",
+    "revision": "3f24a36068a96722cf3acbd5087983ce658e9d70",
+    "source_sha256": "759572b3f56a2126a193094237fa3597cc1f4d7de453b1cf6ce11cb48b14dd59"
+  },
+  "target_contract_remaining": [
+    "private opaque CF runtime type/ownership and complete constructor/callee corroboration",
+    "authoritative current station/power state and stale daemon cache behavior",
+    "RSSI_CTL_AGR unit/type semantics on reference firmware",
+    "per-call authorization and denial behavior; minimal entitlement sufficiency",
+    "actual iOS helper kill/wait behavior"
+  ]
+}

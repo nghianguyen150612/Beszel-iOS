@@ -258,13 +258,7 @@ func (a *Agent) getSystemStats(cacheTimeMs uint16) system.Stats {
 		}
 	}
 
-	// Wi-Fi collection spawns a process on macOS and dumps the BSS cache on
-	// Linux, so only refresh on the default interval. Real-time requests reuse
-	// the last snapshot.
-	if cacheTimeMs == defaultDataCacheTimeMs {
-		a.systemInfo.WiFi = wifi.Collect()
-	}
-	systemStats.WiFi = wifi.Signals(a.systemInfo.WiFi)
+	a.updateWiFiStats(cacheTimeMs, &systemStats, wifi.Collect)
 
 	// update system info
 	a.systemInfo.Cpu = systemStats.Cpu
@@ -384,4 +378,14 @@ func getOsPrettyName() (string, error) {
 	}
 
 	return "", errors.New("pretty name not found")
+}
+
+// updateWiFiStats refreshes only on the default interval. Realtime requests
+// reuse the last snapshot; a failed default poll replaces it with unavailable.
+// The collector parameter allows deterministic lifecycle tests without hardware.
+func (a *Agent) updateWiFiStats(cacheTimeMs uint16, stats *system.Stats, collect func() map[string]system.WiFi) {
+	if cacheTimeMs == defaultDataCacheTimeMs {
+		a.systemInfo.WiFi = collect()
+	}
+	stats.WiFi = wifi.Signals(a.systemInfo.WiFi)
 }

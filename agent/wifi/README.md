@@ -11,4 +11,21 @@ on the agent to disable collection.
 - macOS: CoreWLAN via `osascript` (JXA). SSID may be redacted by privacy settings.
 - Windows: native WLAN API, keyed by adapter alias (e.g. `Wi-Fi`), falling back
   to interface GUID.
+- iOS: explicit `wifi_ios.go` unavailable adapter. Native MobileWiFi acquisition
+  is deferred pending a verified iOS 12 ABI, fresh association, authorization and
+  bounded-call contract. No private framework is loaded or linked. See
+  [provider feasibility](../../docs/ios-wifi-provider-feasibility.md).
 - Other platforms: unsupported.
+
+History conversion accepts finite readings in the existing collectors' -150..-1
+native dBm range. Invalid, positive, normalized 0..1, and non-finite values are
+omitted. The existing int8 history policy saturates valid -150..-129 values to
+-128; Info retains the original valid reading. Range checking alone cannot prove
+units: a provider must establish that its source is raw dBm before supplying it.
+
+P012A adds an **inactive** `ioshelper` parser/process client and a separate disabled
+native diagnostic in `tools/ios-wifi-probe`. Neither enters the normal Agent/Hub
+dependency graph or payload. The diagnostic inventories symbols without private
+calls; its snapshot is always unavailable. Exact 12.5.7 firmware exports have been
+verified, but ABI/association/raw-unit/authorization requirements still block
+activation. See [blocker resolution](../../docs/ios-wifi-native-blocker-resolution.md).

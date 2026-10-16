@@ -61,6 +61,17 @@ may remain deferred only with an owner and a defined absent/no-op fallback.
 P004 may begin only after Gate A is structurally complete; no production upgrade
 is authorized by that decision.
 
+## P012 owner-approved deferral — 2026-10-16
+
+The owner-approved decision in [PR #14](https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758)
+defers native iOS Wi-Fi RSSI because the reference iPad is unavailable. It
+accepts P012's safe unavailable/nil fallback, source checks, and documented cloud
+CI for integration and authorizes P013 after normal finalization of PR #14. This
+is not evidence that RSSI was measured or that native acquisition works. P018
+owns physical validation; P016 owns any future evidence-backed signing,
+entitlement, or helper packaging changes. The P012 physical/device portion of
+Gate C remains pending P018, and no release is authorized by this decision.
+
 
 ## P008 source, fixture and native-build evidence
 

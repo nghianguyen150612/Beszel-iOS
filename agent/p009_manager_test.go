@@ -62,19 +62,17 @@ func TestP009ManagerRetriesAsynchronousFailure(t *testing.T) {
 	})
 	// TCP and upgrade succeed, but the first endpoint vanishes before auth.
 	select {
-	case <-h.connections:
-		raw := <-h.sockets
-		require.NoError(t, raw.NetConn().Close())
+	case pair := <-h.connections:
+		require.NoError(t, pair.raw.NetConn().Close())
 	case <-time.After(2 * time.Second):
 		t.Fatal("first attempt missing")
 	}
 	// The production retry interval is ten seconds, without a shortened test clock.
 	select {
-	case wc := <-h.connections:
-		<-h.sockets
+	case pair := <-h.connections:
 		ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 		defer cancel()
-		_, err := wc.GetFingerprint(ctx, "p009-synthetic", h.signer, false)
+		_, err := pair.wc.GetFingerprint(ctx, "p009-synthetic", h.signer, false)
 		require.NoError(t, err)
 	case <-time.After(13 * time.Second):
 		t.Fatal("async handshake failure stopped retries")
@@ -95,9 +93,6 @@ func TestP009ConcurrentConnectClose(t *testing.T) {
 	require.False(t, h.c.isVerified())
 	for len(h.connections) > 0 {
 		<-h.connections
-	}
-	for len(h.sockets) > 0 {
-		<-h.sockets
 	}
 	wc, _ := h.connect(t)
 	h.authenticate(t, wc)
