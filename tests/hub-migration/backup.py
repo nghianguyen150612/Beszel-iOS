@@ -321,6 +321,33 @@ def create_cold_backup(
         raise
 
 
+def _restore_recorded_metadata(root: pathlib.Path, entries: list[dict[str, Any]]) -> None:
+    """Restore metadata that safe extraction intentionally omits, then verify it."""
+    is_root = os.geteuid() == 0
+    ordered = [entry for entry in entries if entry["kind"] != "directory"]
+    ordered.extend(sorted(
+        (entry for entry in entries if entry["kind"] == "directory"),
+        key=lambda entry: entry["path"].count("/"),
+        reverse=True,
+    ))
+    for entry in ordered:
+        path = root / pathlib.PurePosixPath(entry["path"])
+        if not path.exists() and not path.is_symlink():
+            raise BackupError(f"restored checkpoint entry missing before metadata restore: {entry['path']}")
+        if is_root:
+            os.chown(path, int(entry["uid"]), int(entry["gid"]), follow_symlinks=False)
+        else:
+            info = path.lstat()
+            if info.st_uid != int(entry["uid"]) or info.st_gid != int(entry["gid"]):
+                raise BackupError(
+                    f"cannot restore checkpoint ownership without root: {entry['path']} "
+                    f"expected {entry['uid']}:{entry['gid']} got {info.st_uid}:{info.st_gid}"
+                )
+        if entry["kind"] != "symlink":
+            os.chmod(path, int(entry["mode"]))
+            os.utime(path, (int(entry["mtime_seconds"]), int(entry["mtime_seconds"])), follow_symlinks=False)
+
+
 def restore_and_compare(backup_dir: pathlib.Path, restore_parent: pathlib.Path) -> dict[str, Any]:
     """Extract a verified archive to a separate disposable location and compare."""
     verification = verify_backup(backup_dir)
@@ -334,6 +361,7 @@ def restore_and_compare(backup_dir: pathlib.Path, restore_parent: pathlib.Path) 
             source.extractall(restore_parent, filter="data")
     except (tarfile.TarError, OSError) as exc:
         raise BackupError(f"checkpoint restore failed: {exc}") from exc
+    _restore_recorded_metadata(restore_parent / "checkpoint", inventory_doc["entries"])
     restored = inventory_tree(restore_parent / "checkpoint")
     expected = inventory_doc["entries"]
     if restored != expected:
