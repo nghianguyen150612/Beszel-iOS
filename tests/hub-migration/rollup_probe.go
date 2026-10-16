@@ -59,7 +59,11 @@ func create(app core.App, collection string, data map[string]any) (*core.Record,
 	}
 	record := core.NewRecord(coll)
 	for key, value := range data {
-		record.Set(key, value)
+		if key == "created" {
+			record.SetRaw(key, value)
+		} else {
+			record.Set(key, value)
+		}
 	}
 	if err := app.SaveNoValidate(record); err != nil {
 		return nil, err
