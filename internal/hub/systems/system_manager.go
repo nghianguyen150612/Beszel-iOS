@@ -231,7 +231,7 @@ func (sm *SystemManager) onRecordAfterUpdateSuccess(e *core.RecordEvent) error {
 		_ = deactivateAlerts(e.App, e.Record.Id, true)
 		// Resume monitoring, preferring existing WebSocket connection
 		if ok && system.WsConn != nil {
-			go system.update()
+			sm.updaters.Go(func() { _ = system.update() })
 			return e.Next()
 		}
 		// Start new monitoring session

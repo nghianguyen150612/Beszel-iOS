@@ -165,6 +165,9 @@ func (sys *System) StartUpdater() {
 func (sys *System) update() error {
 	sys.pollMu.Lock()
 	defer sys.pollMu.Unlock()
+	if sys.ctx != nil && sys.ctx.Err() != nil {
+		return sys.ctx.Err()
+	}
 	if sys.GetStatus() == paused {
 		sys.handlePaused()
 		return nil
@@ -189,12 +192,16 @@ func (sys *System) update() error {
 		return err
 	}
 
+	if sys.ctx != nil && sys.ctx.Err() != nil {
+		return sys.ctx.Err()
+	}
+
 	// ensure deprecated fields from older agents are migrated to current fields
 	migrateDeprecatedFields(data, !sys.detailsFetched.Load())
 	sys.data = data
 
 	// create system records
-	_, err = sys.createRecords(data)
+	_, err = sys.createRecords(data, sys.ctx)
 
 	// if details were included and fetched successfully, mark details as fetched and update smart interval if set by agent
 	if err == nil && data.Details != nil {
@@ -260,7 +267,16 @@ func (sys *System) handlePaused() {
 }
 
 // createRecords updates the system record and adds system_stats and container_stats records
-func (sys *System) createRecords(data *system.CombinedData) (*core.Record, error) {
+func (sys *System) createRecords(data *system.CombinedData, pollContext ...context.Context) (*core.Record, error) {
+	// Live polls carry their owner context; direct fixture/manual record creation
+	// does not. Recheck after acquiring the DB transaction so a replaced system
+	// cannot commit telemetry from its retired connection.
+	pollError := func() error {
+		if len(pollContext) > 0 && pollContext[0] != nil {
+			return pollContext[0].Err()
+		}
+		return nil
+	}
 	sys.recordsMu.Lock()
 	defer sys.recordsMu.Unlock()
 
@@ -273,6 +289,9 @@ func (sys *System) createRecords(data *system.CombinedData) (*core.Record, error
 	acceptedMonitors := sys.freshMonitorResults(data.Monitors)
 	savedMonitorProbes := make(map[string]int64)
 	err = hub.RunInTransaction(func(txApp core.App) error {
+		if err := pollError(); err != nil {
+			return err
+		}
 		// add system_stats record
 		systemStatsCollection, err := txApp.FindCachedCollectionByNameOrId("system_stats")
 		if err != nil {
@@ -350,7 +369,7 @@ func (sys *System) createRecords(data *system.CombinedData) (*core.Record, error
 		if err := txApp.SaveNoValidate(systemRecord); err != nil {
 			return err
 		}
-		return nil
+		return pollError()
 	})
 
 	// Publish probe identity and sequence only after the transaction commits.

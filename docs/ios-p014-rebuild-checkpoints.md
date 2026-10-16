@@ -198,3 +198,18 @@ Read/write race excerpts and original log hashes are preserved in
 `docs/evidence/p014/concurrency-reproductions.txt`. The broad pre-final attempt
 also expired on slow Hub/systems fixtures and retained stale rollup assertions;
 remaining superseded work was stopped. It is not final acceptance evidence.
+
+## G/B follow-up — retired polling response
+
+A fresh real-WebSocket fault test reproduced a successful persistence result after
+its owning system context was cancelled while telemetry was in flight. Live
+polls now check their owner before fetching, after receipt and inside the write
+transaction. A replaced connection cannot commit that late snapshot. Resume polls
+are registered with the same updater group so cleanup joins them too. Explicit
+manual test-record seeding remains available independently of live poll contexts.
+
+`go test -race -tags 'testing no_ui' ./internal/hub/systems -run
+'^TestP014CancelledPollDoesNotPersistLateResponse$|TestRemoveAllSystemsWaitsForUpdater'
+-count=3 -timeout=5m`: PASS (67.685s), including late response rejection and DB
+lifetime through cleanup. No request framing, auth algorithm or retention policy
+changed. Final frozen-source canonical/race/native validation remains pending.
