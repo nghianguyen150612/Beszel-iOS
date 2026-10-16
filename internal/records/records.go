@@ -276,11 +276,17 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	batteryCounts := make(map[string]uint64)
 	// accumulate per-core usage across records
 	var cpuCoresSums []uint64
+	var cpuCoresCounts []uint64
 	// accumulate cpu breakdown [user, system, iowait, steal, idle]
 	var cpuBreakdownSums []float64
-	tempCount := float64(0)
+	var cpuBreakdownCounts []uint64
+	tempCounts := make(map[string]uint64)
 	var fanSums map[string]uint64
-	fanCount := uint64(0)
+	fanCounts := make(map[string]uint64)
+	fsCounts := make(map[string]uint64)
+	networkCounts := make(map[string]uint64)
+	gpuCounts := make(map[string]uint64)
+	gpuEngineCounts := make(map[string]map[string]uint64)
 	zfsPoolCounts := make(map[string]uint64)
 	zfsCapacityCounts := make(map[string]uint64)
 
@@ -296,10 +302,12 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 		// accumulate cpu time breakdowns if present
 		if stats.CpuBreakdown != nil {
 			if len(cpuBreakdownSums) < len(stats.CpuBreakdown) {
+				cpuBreakdownCounts = append(cpuBreakdownCounts, make([]uint64, len(stats.CpuBreakdown)-len(cpuBreakdownSums))...)
 				cpuBreakdownSums = append(cpuBreakdownSums, make([]float64, len(stats.CpuBreakdown)-len(cpuBreakdownSums))...)
 			}
 			for j, v := range stats.CpuBreakdown {
 				cpuBreakdownSums[j] += v
+				cpuBreakdownCounts[j]++
 			}
 		}
 		sum.Mem += stats.Mem
@@ -340,10 +348,12 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 		if stats.CpuCoresUsage != nil {
 			if len(cpuCoresSums) < len(stats.CpuCoresUsage) {
 				// extend slices to accommodate core count
+				cpuCoresCounts = append(cpuCoresCounts, make([]uint64, len(stats.CpuCoresUsage)-len(cpuCoresSums))...)
 				cpuCoresSums = append(cpuCoresSums, make([]uint64, len(stats.CpuCoresUsage)-len(cpuCoresSums))...)
 			}
 			for j, v := range stats.CpuCoresUsage {
 				cpuCoresSums[j] += uint64(v)
+				cpuCoresCounts[j]++
 			}
 		}
 		// Set peak values
@@ -368,6 +378,7 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 			sum.NetworkInterfaces = make(map[string][4]uint64, len(stats.NetworkInterfaces))
 		}
 		for key, value := range stats.NetworkInterfaces {
+			networkCounts[key]++
 			sum.NetworkInterfaces[key] = [4]uint64{
 				sum.NetworkInterfaces[key][0] + value[0],
 				sum.NetworkInterfaces[key][1] + value[1],
@@ -381,9 +392,10 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 			if sum.Temperatures == nil {
 				sum.Temperatures = make(map[string]float64, len(stats.Temperatures))
 			}
-			tempCount++
+
 			for key, value := range stats.Temperatures {
 				sum.Temperatures[key] += value
+				tempCounts[key]++
 			}
 		}
 
@@ -392,9 +404,10 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 			if fanSums == nil {
 				fanSums = make(map[string]uint64, len(stats.Fans))
 			}
-			fanCount++
+
 			for key, value := range stats.Fans {
 				fanSums[key] += uint64(value)
+				fanCounts[key]++
 			}
 		}
 
@@ -404,6 +417,10 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 				sum.ExtraFs = make(map[string]*system.FsStats, len(stats.ExtraFs))
 			}
 			for key, value := range stats.ExtraFs {
+				if value == nil {
+					continue
+				}
+				fsCounts[key]++
 				if _, ok := sum.ExtraFs[key]; !ok {
 					sum.ExtraFs[key] = &system.FsStats{}
 				}
@@ -468,6 +485,7 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 				sum.GPUData = make(map[string]system.GPUData, len(stats.GPUData))
 			}
 			for id, value := range stats.GPUData {
+				gpuCounts[id]++
 				gpu, ok := sum.GPUData[id]
 				if !ok {
 					gpu = system.GPUData{Name: value.Name}
@@ -477,14 +495,17 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 				gpu.MemoryTotal += value.MemoryTotal
 				gpu.Usage += value.Usage
 				gpu.Power += value.Power
+				gpu.PowerPkg += value.PowerPkg
 				gpu.Count += value.Count
 
 				if value.Engines != nil {
 					if gpu.Engines == nil {
 						gpu.Engines = make(map[string]float64, len(value.Engines))
+						gpuEngineCounts[id] = make(map[string]uint64)
 					}
 					for engineKey, engineValue := range value.Engines {
 						gpu.Engines[engineKey] += engineValue
+						gpuEngineCounts[id][engineKey]++
 					}
 				}
 
@@ -533,8 +554,8 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	if sum.NetworkInterfaces != nil {
 		for key := range sum.NetworkInterfaces {
 			sum.NetworkInterfaces[key] = [4]uint64{
-				sum.NetworkInterfaces[key][0] / uint64(count),
-				sum.NetworkInterfaces[key][1] / uint64(count),
+				sum.NetworkInterfaces[key][0] / networkCounts[key],
+				sum.NetworkInterfaces[key][1] / networkCounts[key],
 				sum.NetworkInterfaces[key][2],
 				sum.NetworkInterfaces[key][3],
 			}
@@ -542,17 +563,17 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	}
 
 	// Average temperatures
-	if sum.Temperatures != nil && tempCount > 0 {
+	if sum.Temperatures != nil {
 		for key := range sum.Temperatures {
-			sum.Temperatures[key] = twoDecimals(sum.Temperatures[key] / tempCount)
+			sum.Temperatures[key] = twoDecimals(sum.Temperatures[key] / float64(tempCounts[key]))
 		}
 	}
 
 	// Average fan speeds
-	if fanSums != nil && fanCount > 0 {
+	if fanSums != nil {
 		sum.Fans = make(map[string]uint16, len(fanSums))
 		for key, value := range fanSums {
-			sum.Fans[key] = uint16(value / fanCount)
+			sum.Fans[key] = uint16(value / fanCounts[key])
 		}
 	}
 
@@ -560,6 +581,7 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	if sum.ExtraFs != nil {
 		for key := range sum.ExtraFs {
 			fs := sum.ExtraFs[key]
+			count := float64(fsCounts[key])
 			fs.DiskTotal = twoDecimals(fs.DiskTotal / count)
 			fs.DiskUsed = twoDecimals(fs.DiskUsed / count)
 			fs.DiskWritePs = twoDecimals(fs.DiskWritePs / count)
@@ -584,16 +606,18 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	if sum.GPUData != nil {
 		for id := range sum.GPUData {
 			gpu := sum.GPUData[id]
+			count := float64(gpuCounts[id])
 			gpu.Temperature = twoDecimals(gpu.Temperature / count)
 			gpu.MemoryUsed = twoDecimals(gpu.MemoryUsed / count)
 			gpu.MemoryTotal = twoDecimals(gpu.MemoryTotal / count)
 			gpu.Usage = twoDecimals(gpu.Usage / count)
 			gpu.Power = twoDecimals(gpu.Power / count)
+			gpu.PowerPkg = twoDecimals(gpu.PowerPkg / count)
 			gpu.Count = twoDecimals(gpu.Count / count)
 
 			if gpu.Engines != nil {
 				for engineKey := range gpu.Engines {
-					gpu.Engines[engineKey] = twoDecimals(gpu.Engines[engineKey] / count)
+					gpu.Engines[engineKey] = twoDecimals(gpu.Engines[engineKey] / float64(gpuEngineCounts[id][engineKey]))
 				}
 			}
 
@@ -605,7 +629,7 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	if len(cpuCoresSums) > 0 {
 		avg := make(system.Uint8Slice, len(cpuCoresSums))
 		for i := range cpuCoresSums {
-			v := math.Round(float64(cpuCoresSums[i]) / count)
+			v := math.Round(float64(cpuCoresSums[i]) / float64(cpuCoresCounts[i]))
 			avg[i] = uint8(v)
 		}
 		sum.CpuCoresUsage = avg
@@ -615,7 +639,7 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	if len(cpuBreakdownSums) > 0 {
 		avg := make([]float64, len(cpuBreakdownSums))
 		for i := range cpuBreakdownSums {
-			avg[i] = twoDecimals(cpuBreakdownSums[i] / count)
+			avg[i] = twoDecimals(cpuBreakdownSums[i] / float64(cpuBreakdownCounts[i]))
 		}
 		sum.CpuBreakdown = avg
 	}

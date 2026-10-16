@@ -102,6 +102,9 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 			val = data.Info.LoadAvg[2]
 			unit = ""
 		case "GPU":
+			if len(data.Stats.GPUData) == 0 {
+				continue
+			}
 			val = data.Info.GpuPct
 		case "Battery":
 			if !hasRepresentativeBattery(data.Stats.Battery, data.Stats.Batteries) {
