@@ -31,3 +31,17 @@ Checkpoint A focused validation: `go test -tags 'testing no_ui'
 New baseline regressions independently reproduced JSON v2 numeric per-core
 array rejection and JSON v1 historical battery byte-string rejection. Repairs
 belong to Checkpoint B. Existing Bun suite: 44 PASS / 0 FAIL.
+
+New Draft PR: https://github.com/nghianguyen150612/Beszel-iOS/pull/17
+Checkpoint A remote commit: `9e11e665` (push verified).
+
+## B — decoding repair
+
+Reproduced on the unchanged P013 model: JSON v2 rejects numeric `cpus` arrays;
+JSON v1 rejects historical base64 `bat` strings. Added shared strict byte-metric
+JSON decoding for numeric arrays and legacy byte strings. Battery tuples require
+exactly two bytes; invalid/overflowing input is rejected before publication.
+CBOR tags/encoding and current numeric JSON output are unchanged.
+
+Focused entity and platform-fixture suites PASS after repair (Go 1.27.1).
+Authenticated Hub ingestion/API tests are in progress; B is not yet complete.
