@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "status": "IN PROGRESS",
+  "starting_sha": "00c14bbf2756213cc2afef828ef7d5b9af26f1d6",
+  "feature_branch": "ios/hub-monitor-alert-rebuild",
+  "base_branch": "ios/upstream-v021-integration",
+  "pull_request": "https://github.com/nghianguyen150612/Beszel-iOS/pull/17",
+  "abandoned_pull_request": 16,
+  "old_implementation_imported": false,
+  "preservation": {
+    "frozen_upstream_reachable": 178,
+    "logical_ios_patches_accounted": 13,
+    "production_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be"
+  },
+  "fixture_provenance": "Independently authored synthetic Linux/Windows/macOS/iOS protocol fixtures; no native Windows/macOS/iOS runtime claim",
+  "checks": {
+    "fixture_json_v1_cbor": "PASS",
+    "byte_metric_json_decoding": "PASS after independently reproduced failure",
+    "existing_frontend_tests": "44 PASS",
+    "gpu_power_frontend_tests": "2 PASS",
+    "python_audits": "54 PASS",
+    "hub_ingestion_api": "IN PROGRESS",
+    "history_rollups": "IN PROGRESS",
+    "alerts": "IN PROGRESS",
+    "monitors": "IN PROGRESS",
+    "concurrency": "IN PROGRESS",
+    "canonical_go": "NOT RUN",
+    "native_ios_ci": "NOT RUN"
+  },
+  "P012": "DEFERRED \u2014 REFERENCE DEVICE UNAVAILABLE",
+  "gate_D": "PENDING P014/P015",
+  "limitations": [
+    "No physical iPad access",
+    "Synthetic OS payloads do not establish native remote OS execution",
+    "No final native build acceptance yet"
+  ]
+}

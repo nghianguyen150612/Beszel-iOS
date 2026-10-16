@@ -45,3 +45,14 @@ CBOR tags/encoding and current numeric JSON output are unchanged.
 
 Focused entity and platform-fixture suites PASS after repair (Go 1.27.1).
 Authenticated Hub ingestion/API tests are in progress; B is not yet complete.
+
+## F — GPU display contract (partial)
+
+The power chart now keys series by device identity and name rather than name
+alone. Missing device/power fields produce gaps, measured zero remains zero, and
+package power stays in watts. Focused Bun tests: 2 PASS, 0 FAIL. Broader API
+snapshots, frontend contracts and final build are still pending.
+
+Fresh Python audit suite: 54 PASS. Upstream sync, patch sentinels and bootstrap
+suites PASS. Installer lifecycle remains in progress. Initial Hub/race dependency
+compilation is still in progress; these runs are not yet passing evidence.
