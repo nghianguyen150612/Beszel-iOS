@@ -1,3 +1,4 @@
+import { poolByteRate } from "@/lib/metrics"
 import { t } from "@lingui/core/macro"
 import AreaChartDefault from "@/components/charts/area-chart"
 import { decimalString, formatBytes, toFixedFloat } from "@/lib/utils"
@@ -18,12 +19,10 @@ const poolUsage =
 	}
 const poolRead =
 	(name: string) =>
-	({ stats }: SystemStatsRecord) =>
-		stats?.z?.[name]?.rb ?? 0
+	(record: SystemStatsRecord) => poolByteRate(record,name,"rb")
 const poolWrite =
 	(name: string) =>
-	({ stats }: SystemStatsRecord) =>
-		stats?.z?.[name]?.wb ?? 0
+	(record: SystemStatsRecord) => poolByteRate(record,name,"wb")
 
 export function ZfsPoolUsageChart({ systemData, poolName }: { systemData: SystemData; poolName: string }) {
 	const { chartData, grid, dataEmpty } = systemData

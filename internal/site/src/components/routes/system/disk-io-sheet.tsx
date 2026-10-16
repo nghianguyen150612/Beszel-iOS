@@ -83,7 +83,7 @@ export default memo(function DiskIOSheet({
 		if ((dios?.at(2) ?? 0) > 0) hasUtilization = true
 		if ((dios?.at(3) ?? 0) > 0) hasAwait = true
 		if ((dios?.at(5) ?? 0) > 0) hasWeightedIO = true
-		if (!hasCumulative && (totalReadFn(record) > 0 || totalWriteFn(record) > 0)) {
+		if (!hasCumulative && ((totalReadFn(record) ?? 0) > 0 || (totalWriteFn(record) ?? 0) > 0)) {
 			hasCumulative = true
 		}
 		if (hasUtilization && hasAwait && hasWeightedIO && hasCumulative) {

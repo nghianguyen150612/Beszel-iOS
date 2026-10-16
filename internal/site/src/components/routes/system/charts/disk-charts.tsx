@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro"
 import AreaChartDefault from "@/components/charts/area-chart"
 import { decimalString, formatBytes, toFixedFloat } from "@/lib/utils"
-import type { SystemStatsRecord } from "@/types"
+import { diskDataFns } from "@/lib/disk"
 import { ChartCard, SelectAvgMax } from "../chart-card"
 import { Unit } from "@/lib/enums"
 import DiskIoSheet from "../disk-io-sheet"
@@ -9,99 +9,7 @@ import type { SystemData } from "../use-system-data"
 import { useStore } from "@nanostores/react"
 import { $userSettings } from "@/lib/stores"
 
-// Helpers for indexed dios/diosm access
-const dios =
-	(i: number) =>
-	({ stats }: SystemStatsRecord) =>
-		stats?.dios?.[i] ?? 0
-const diosMax =
-	(i: number) =>
-	({ stats }: SystemStatsRecord) =>
-		stats?.diosm?.[i] ?? 0
-const extraDios =
-	(name: string, i: number) =>
-	({ stats }: SystemStatsRecord) =>
-		stats?.efs?.[name]?.dios?.[i] ?? 0
-const extraDiosMax =
-	(name: string, i: number) =>
-	({ stats }: SystemStatsRecord) =>
-		stats?.efs?.[name]?.diosm?.[i] ?? 0
-
-export const diskDataFns = {
-	// usage
-	usage: ({ stats }: SystemStatsRecord) => stats?.du ?? 0,
-	extraUsage:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			stats?.efs?.[name]?.du ?? 0,
-	// throughput
-	read: ({ stats }: SystemStatsRecord) => stats?.dio?.[0] ?? (stats?.dr ?? 0) * 1024 * 1024,
-	readMax: ({ stats }: SystemStatsRecord) => stats?.diom?.[0] ?? (stats?.drm ?? 0) * 1024 * 1024,
-	write: ({ stats }: SystemStatsRecord) => stats?.dio?.[1] ?? (stats?.dw ?? 0) * 1024 * 1024,
-	writeMax: ({ stats }: SystemStatsRecord) => stats?.diom?.[1] ?? (stats?.dwm ?? 0) * 1024 * 1024,
-	// extra fs throughput
-	extraRead:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			stats?.efs?.[name]?.rb ?? (stats?.efs?.[name]?.r ?? 0) * 1024 * 1024,
-	extraReadMax:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			stats?.efs?.[name]?.rbm ?? (stats?.efs?.[name]?.rm ?? 0) * 1024 * 1024,
-	extraWrite:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			stats?.efs?.[name]?.wb ?? (stats?.efs?.[name]?.w ?? 0) * 1024 * 1024,
-	extraWriteMax:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			stats?.efs?.[name]?.wbm ?? (stats?.efs?.[name]?.wm ?? 0) * 1024 * 1024,
-	// cumulative totals
-	totalRead: ({ stats }: SystemStatsRecord) => stats?.diot?.[0] ?? 0,
-	totalWrite: ({ stats }: SystemStatsRecord) => stats?.diot?.[1] ?? 0,
-	extraTotalRead:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			stats?.efs?.[name]?.tr ?? 0,
-	extraTotalWrite:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			stats?.efs?.[name]?.tw ?? 0,
-	// read/write time
-	readTime: dios(0),
-	readTimeMax: diosMax(0),
-	extraReadTime: (name: string) => extraDios(name, 0),
-	extraReadTimeMax: (name: string) => extraDiosMax(name, 0),
-	writeTime: dios(1),
-	writeTimeMax: diosMax(1),
-	extraWriteTime: (name: string) => extraDios(name, 1),
-	extraWriteTimeMax: (name: string) => extraDiosMax(name, 1),
-	// utilization (IoTime-based, 0-100%)
-	util: dios(2),
-	utilMax: diosMax(2),
-	extraUtil: (name: string) => extraDios(name, 2),
-	extraUtilMax: (name: string) => extraDiosMax(name, 2),
-	// r_await / w_await: average service time per read/write operation (ms)
-	rAwait: dios(3),
-	rAwaitMax: diosMax(3),
-	extraRAwait: (name: string) => extraDios(name, 3),
-	extraRAwaitMax: (name: string) => extraDiosMax(name, 3),
-	wAwait: dios(4),
-	wAwaitMax: diosMax(4),
-	extraWAwait: (name: string) => extraDios(name, 4),
-	extraWAwaitMax: (name: string) => extraDiosMax(name, 4),
-	// average queue depth: stored as queue_depth * 100 in Go, divided here
-	weightedIO: ({ stats }: SystemStatsRecord) => (stats?.dios?.[5] ?? 0) / 100,
-	weightedIOMax: ({ stats }: SystemStatsRecord) => (stats?.diosm?.[5] ?? 0) / 100,
-	extraWeightedIO:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			(stats?.efs?.[name]?.dios?.[5] ?? 0) / 100,
-	extraWeightedIOMax:
-		(name: string) =>
-		({ stats }: SystemStatsRecord) =>
-			(stats?.efs?.[name]?.diosm?.[5] ?? 0) / 100,
-}
+export { diskDataFns } from "@/lib/disk"
 
 export function RootDiskCharts({ systemData }: { systemData: SystemData }) {
 	return (
@@ -276,8 +184,8 @@ export function ExtraFsCharts({ systemData }: { systemData: SystemData }) {
 
 	return (
 		<div className="grid xl:grid-cols-2 gap-4">
-			{Object.keys(extraFs).sort((a, b) => a.localeCompare(b)).map((extraFsName) => {
-				let diskSize = systemStats.at(-1)?.stats.efs?.[extraFsName].d ?? NaN
+			{Object.keys(extraFs).filter((name) => extraFs[name] != null).sort((a, b) => a.localeCompare(b)).map((extraFsName) => {
+				let diskSize = systemStats.at(-1)?.stats.efs?.[extraFsName]?.d ?? NaN
 				// round to nearest GB
 				if (diskSize >= 100) {
 					diskSize = Math.round(diskSize)

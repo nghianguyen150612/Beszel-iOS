@@ -213,3 +213,18 @@ manual test-record seeding remains available independently of live poll contexts
 -count=3 -timeout=5m`: PASS (67.685s), including late response rejection and DB
 lifetime through cleanup. No request framing, auth algorithm or retention policy
 changed. Final frozen-source canonical/race/native validation remains pending.
+
+## F follow-up — optional chart accessors
+
+Disk/network accessors returned successful zero for absent optional samples, and
+the stacked CPU-core chart fabricated a fallback fraction when a core was absent.
+Shared tested accessors now return gaps for absent/null/empty fields, retain finite
+measured zero and preserve legacy MiB-to-byte conversion. Extra-filesystem panels
+ignore null devices. ZFS distinguishes an absent pool from the schema's known
+zero counters in a present valid pool. Missing container traffic stays unavailable
+instead of producing zero totals. No labels, routes or visual layout changed.
+
+Bun suite: 55 PASS / 0 FAIL (267 assertions). TypeScript build PASS. New contracts
+exercise missing/null/empty readings, actual zero, legacy units, sparse cores and
+pools, source-derived API snapshots and loss-only monitor windows. Final native
+workflow will rebuild and embed the production UI from this exact source.
