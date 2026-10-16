@@ -1,0 +1,108 @@
+{
+  "provenance": "P014 independently authored synthetic protocol fixture; no native execution or device capture",
+  "platform": "windows",
+  "system_id": "p014system00004",
+  "owner_id": "p014owner000004",
+  "data": {
+    "stats": {
+      "cpu": 0,
+      "m": 8,
+      "mu": 2,
+      "mp": 25,
+      "mb": 1,
+      "d": 128,
+      "du": 32,
+      "dp": 25,
+      "cpus": [
+        0,
+        25,
+        50,
+        100
+      ],
+      "ni": {
+        "net0": [
+          0,
+          1024,
+          4096,
+          8192
+        ]
+      },
+      "b": [
+        0,
+        1024
+      ],
+      "bat": [
+        0,
+        1
+      ],
+      "bats": {
+        "BAT0": 0
+      },
+      "t": {
+        "sensor0": 0,
+        "sensor1": 42.5
+      },
+      "g": {
+        "gpu0": {
+          "n": "synthetic windows GPU",
+          "u": 0,
+          "mu": 1,
+          "mt": 4,
+          "p": 3.25,
+          "pp": 7.5,
+          "e": {
+            "render": 0
+          }
+        }
+      },
+      "wf": {
+        "net0": -60
+      },
+      "dio": [
+        0,
+        2048
+      ]
+    },
+    "info": {
+      "u": 3600,
+      "cpu": 0,
+      "mp": 25,
+      "dp": 25,
+      "v": "0.21.0",
+      "t": 4,
+      "bb": 1024,
+      "bat": [
+        0,
+        1
+      ],
+      "wf": {
+        "net0": {
+          "s": "P014 synthetic",
+          "r": -60
+        }
+      }
+    },
+    "container": [
+      {
+        "n": "p014-container-windows",
+        "c": 0,
+        "m": 12.5,
+        "b": [
+          0,
+          512
+        ]
+      }
+    ],
+    "Details": {
+      "Hostname": "p014-windows",
+      "Kernel": "synthetic",
+      "Cores": 4,
+      "Threads": 4,
+      "CpuModel": "fixture CPU",
+      "Os": 2,
+      "OsName": "windows",
+      "Arch": "amd64",
+      "MemoryTotal": 8589934592
+    }
+  }
+}

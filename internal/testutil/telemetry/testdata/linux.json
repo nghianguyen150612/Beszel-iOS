@@ -1,0 +1,153 @@
+{
+  "provenance": "P014 independently authored synthetic protocol fixture; no native execution or device capture",
+  "platform": "linux",
+  "system_id": "p014system00002",
+  "owner_id": "p014owner000002",
+  "data": {
+    "stats": {
+      "cpu": 0,
+      "m": 8,
+      "mu": 2,
+      "mp": 25,
+      "mb": 1,
+      "d": 128,
+      "du": 32,
+      "dp": 25,
+      "cpus": [
+        0,
+        25,
+        50,
+        100
+      ],
+      "ni": {
+        "net0": [
+          0,
+          1024,
+          4096,
+          8192
+        ]
+      },
+      "b": [
+        0,
+        1024
+      ],
+      "bat": [
+        0,
+        1
+      ],
+      "bats": {
+        "BAT0": 0
+      },
+      "t": {
+        "sensor0": 0,
+        "sensor1": 42.5
+      },
+      "g": {
+        "gpu0": {
+          "n": "synthetic linux GPU",
+          "u": 0,
+          "mu": 1,
+          "mt": 4,
+          "p": 3.25,
+          "pp": 7.5,
+          "e": {
+            "render": 0
+          }
+        }
+      },
+      "wf": {
+        "net0": -60
+      },
+      "dio": [
+        0,
+        2048
+      ],
+      "z": {
+        "pool0": {
+          "d": 100,
+          "du": 20,
+          "rb": 0,
+          "wb": 1024,
+          "h": "ONLINE"
+        }
+      },
+      "cpub": [
+        10,
+        5,
+        0,
+        0,
+        85
+      ],
+      "f": {
+        "fan0": 0
+      },
+      "efs": {
+        "btrfs0": {
+          "d": 64,
+          "du": 16,
+          "r": 0,
+          "w": 0
+        }
+      }
+    },
+    "info": {
+      "u": 3600,
+      "cpu": 0,
+      "mp": 25,
+      "dp": 25,
+      "v": "0.21.0",
+      "t": 4,
+      "bb": 1024,
+      "bat": [
+        0,
+        1
+      ],
+      "wf": {
+        "net0": {
+          "s": "P014 synthetic",
+          "r": -60
+        }
+      },
+      "pu": [
+        0,
+        0
+      ],
+      "sv": [
+        1,
+        0
+      ],
+      "jl": true
+    },
+    "container": [
+      {
+        "n": "p014-container-linux",
+        "c": 0,
+        "m": 12.5,
+        "b": [
+          0,
+          512
+        ]
+      }
+    ],
+    "Details": {
+      "Hostname": "p014-linux",
+      "Kernel": "synthetic",
+      "Cores": 4,
+      "Threads": 4,
+      "CpuModel": "fixture CPU",
+      "Os": 0,
+      "OsName": "linux",
+      "Arch": "amd64",
+      "MemoryTotal": 8589934592
+    },
+    "systemd": [
+      {
+        "Name": "fixture.service",
+        "State": 1,
+        "Cpu": 0,
+        "Mem": 1024
+      }
+    ],
+    "systemdUpdated": true
+  }
+}
