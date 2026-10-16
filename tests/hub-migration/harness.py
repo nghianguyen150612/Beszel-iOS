@@ -25,6 +25,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any
 
@@ -336,6 +337,137 @@ def verify_fixture_api_state(
     }
 
 
+def verify_migrated_monitor_alert_api(
+    base: str,
+    *,
+    owner_email: str,
+    regular_email: str,
+    password: str,
+    owner_id: str,
+    regular_id: str,
+    system_id: str,
+) -> dict[str, Any]:
+    """Exercise migrated collections with regular-user PocketBase API auth."""
+    regular_token = auth_token(base, "users", regular_email, password)
+    owner_token = auth_token(base, "users", owner_email, password)
+    monitor_status, _, monitor = request(base, "POST", "/api/collections/network_monitors/records", token=regular_token, body={
+        "system": system_id,
+        "target": "http://p013.synthetic.invalid/health",
+        "protocol": "http",
+        "port": 80,
+        "interval": 60,
+        "enabled": False,
+        "server": "p013.synthetic.invalid",
+        "skipTlsVerify": True,
+        "certInfo": {"issuer": "P013 Synthetic CA", "expires": 1800000000000},
+    })
+    if monitor_status not in (200, 201) or not isinstance(monitor, dict) or not monitor.get("id"):
+        raise HarnessError(f"regular-user network monitor create failed: HTTP {monitor_status}, {monitor}")
+    monitor_id = str(monitor["id"])
+    monitor_patch_status, _, patched_monitor = request(
+        base,
+        "PATCH",
+        f"/api/collections/network_monitors/records/{monitor_id}",
+        token=regular_token,
+        body={"target": "http://p013-updated.synthetic.invalid/ready", "interval": 120, "skipTlsVerify": False},
+    )
+    if monitor_patch_status != 200 or not isinstance(patched_monitor, dict):
+        raise HarnessError(f"regular-user network monitor update failed: HTTP {monitor_patch_status}, {patched_monitor}")
+    if patched_monitor.get("target") != "http://p013-updated.synthetic.invalid/ready" or patched_monitor.get("interval") != 120:
+        raise HarnessError("network monitor update did not persist through the supported API")
+    monitor_read_status, _, monitor_read = request(
+        base, "GET", f"/api/collections/network_monitors/records/{monitor_id}", token=regular_token,
+    )
+    if monitor_read_status != 200 or not isinstance(monitor_read, dict) or monitor_read.get("system") != system_id:
+        raise HarnessError(f"regular-user network monitor read failed: HTTP {monitor_read_status}, {monitor_read}")
+    monitor_list_status, _, monitor_list = request(
+        base, "GET", "/api/collections/network_monitors/records?perPage=500", token=regular_token,
+    )
+    if monitor_list_status != 200 or not isinstance(monitor_list, dict) or monitor_id not in {item.get("id") for item in monitor_list.get("items", [])}:
+        raise HarnessError("regular-user network monitor list did not include the owned monitor")
+    stats_status, _, stats = request(
+        base,
+        "GET",
+        f"/api/collections/network_monitor_stats/records?filter=monitor%3D%22{monitor_id}%22&perPage=500",
+        token=regular_token,
+    )
+    if stats_status != 200 or not isinstance(stats, dict):
+        raise HarnessError(f"regular-user network monitor history query failed: HTTP {stats_status}, {stats}")
+
+    alert_status, _, alert = request(base, "POST", "/api/collections/alerts/records", token=regular_token, body={
+        "user": regular_id,
+        "system": system_id,
+        "name": "Memory",
+        "min": 40,
+        "value": 60,
+        "triggered": False,
+    })
+    if alert_status not in (200, 201) or not isinstance(alert, dict) or not alert.get("id"):
+        raise HarnessError(f"regular-user alert create failed: HTTP {alert_status}, {alert}")
+    alert_id = str(alert["id"])
+    alert_patch_status, _, patched_alert = request(
+        base, "PATCH", f"/api/collections/alerts/records/{alert_id}", token=regular_token, body={"value": 61},
+    )
+    if alert_patch_status != 200 or not isinstance(patched_alert, dict) or patched_alert.get("value") != 61:
+        raise HarnessError(f"regular-user alert update failed: HTTP {alert_patch_status}, {patched_alert}")
+    alert_read_status, _, _ = request(
+        base, "GET", f"/api/collections/alerts/records/{alert_id}", token=owner_token,
+    )
+    if alert_read_status != 404:
+        raise HarnessError(f"another account read a regular user's alert: HTTP {alert_read_status}")
+    cross_user_update_status, _, _ = request(
+        base, "PATCH", f"/api/collections/alerts/records/{alert_id}", token=owner_token, body={"value": 62},
+    )
+    if cross_user_update_status != 404:
+        raise HarnessError(f"another account updated a regular user's alert: HTTP {cross_user_update_status}")
+    regular_history_status, _, regular_history = request(
+        base, "GET", "/api/collections/alerts_history/records?perPage=500", token=regular_token,
+    )
+    if regular_history_status != 200 or not isinstance(regular_history, dict):
+        raise HarnessError(f"regular-user alert history query failed: HTTP {regular_history_status}, {regular_history}")
+    if alert_id in {item.get("id") for item in regular_history.get("items", [])}:
+        raise HarnessError("alert creation unexpectedly fabricated an alert-history event")
+
+    return {
+        "regular_user_monitor_create_update_read_list": True,
+        "regular_user_monitor_history_query_http": stats_status,
+        "regular_user_monitor_history_record_count": len(stats.get("items", [])),
+        "regular_user_alert_create_update": True,
+        "cross_user_alert_read_http": alert_read_status,
+        "cross_user_alert_update_http": cross_user_update_status,
+        "regular_user_alert_history_query_http": regular_history_status,
+        "monitor_id": monitor_id,
+        "alert_id": alert_id,
+        "system_id": system_id,
+        "regular_user_id": regular_id,
+        "records_must_survive_restart": True,
+    }
+
+
+def verify_and_delete_migrated_monitor_alert_api(base: str, *, regular_email: str, password: str, expected: dict[str, Any]) -> dict[str, Any]:
+    """Verify migrated API records survive restart, then remove via API."""
+    token = auth_token(base, "users", regular_email, password)
+    ids = {"network_monitors": str(expected["monitor_id"]), "alerts": str(expected["alert_id"])}
+    for collection, record_id in ids.items():
+        status, _, record = request(base, "GET", f"/api/collections/{collection}/records/{record_id}", token=token)
+        if status != 200 or not isinstance(record, dict):
+            raise HarnessError(f"{collection} record {record_id} did not survive Hub restart: HTTP {status}, {record}")
+        if record.get("system") != expected["system_id"]:
+            raise HarnessError(f"{collection} record {record_id} changed system ownership across restart")
+        if collection == "alerts" and record.get("user") != expected["regular_user_id"]:
+            raise HarnessError(f"alert record {record_id} changed user ownership across restart")
+    deleted: dict[str, int] = {}
+    for collection, record_id in ids.items():
+        status, _, _ = request(base, "DELETE", f"/api/collections/{collection}/records/{record_id}", token=token)
+        if status not in (200, 204):
+            raise HarnessError(f"regular-user {collection} delete failed: HTTP {status}")
+        deleted[collection] = status
+        read_status, _, _ = request(base, "GET", f"/api/collections/{collection}/records/{record_id}", token=token)
+        if read_status != 404:
+            raise HarnessError(f"deleted {collection} record remained visible: HTTP {read_status}")
+    return {"post_restart_records_preserved": True, "regular_user_delete_http": deleted, "deleted_records_not_found": True}
+
+
 def write_private(path: pathlib.Path, contents: str) -> None:
     path.write_text(contents, encoding="utf-8")
     path.chmod(0o600)
@@ -637,6 +769,122 @@ def ssh_key_fingerprint(public_key: str, temp_dir: pathlib.Path) -> str:
     return result.stdout.split()[1]
 
 
+def verify_first_user_bootstrap(binary: pathlib.Path, root: pathlib.Path, logs: pathlib.Path) -> dict[str, Any]:
+    """Exercise failed/restarted and concurrent first-user setup on a fresh Hub."""
+    import sqlite3
+
+    data_dir = root / "bootstrap-021-data"
+    data_dir.mkdir()
+    bootstrap_env = {
+        "APP_URL": "https://p013-bootstrap.synthetic.invalid",
+        "BESZEL_HUB_USER_EMAIL": "",
+        "BESZEL_HUB_USER_PASSWORD": "",
+        "USER_EMAIL": "",
+        "USER_PASSWORD": "",
+    }
+    hub = HubProcess(binary, data_dir, logs / "hub-021-first-user-bootstrap.log")
+    hub.start(env=bootstrap_env)
+    health, _, _ = request(hub.base, "GET", "/api/health")
+    if health != 200:
+        raise HarnessError(f"fresh v0.21 bootstrap Hub health failed: HTTP {health}")
+    first_run_status, _, first_run = request(hub.base, "GET", "/api/beszel/first-run")
+    if first_run_status != 200 or not isinstance(first_run, dict) or first_run.get("firstRun") is not True:
+        raise HarnessError(f"fresh v0.21 Hub did not report first-run setup: HTTP {first_run_status}, {first_run}")
+    hub.stop()
+
+    failed_email = "p013-bootstrap-fail@example.invalid"
+    connection = sqlite3.connect(data_dir / "data.db")
+    try:
+        connection.execute(
+            f'''CREATE TRIGGER p013_fail_first_superuser
+                BEFORE INSERT ON "_superusers"
+                WHEN NEW."email" = '{failed_email}'
+                BEGIN SELECT RAISE(ABORT, 'P013 synthetic partial bootstrap failure'); END'''
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    hub.start(env=bootstrap_env)
+    failed_status, _, failed_body = request(
+        hub.base,
+        "POST",
+        "/api/beszel/create-user",
+        body={"email": failed_email, "password": SYNTHETIC_PASSWORD},
+    )
+    if failed_status != 500:
+        raise HarnessError(f"injected first-user partial failure returned HTTP {failed_status}, expected 500")
+    hub.stop()
+
+    connection = sqlite3.connect(data_dir / "data.db")
+    try:
+        connection.execute("DROP TRIGGER p013_fail_first_superuser")
+        connection.commit()
+        user_count = int(connection.execute('SELECT COUNT(*) FROM "users"').fetchone()[0])
+        superuser_emails = [str(row[0]) for row in connection.execute('SELECT "email" FROM "_superusers" ORDER BY "email"')]
+    finally:
+        connection.close()
+    if user_count != 0 or superuser_emails != ["_@b.b"]:
+        raise HarnessError(f"failed bootstrap transaction leaked users/admins: users={user_count}, superusers={superuser_emails}")
+
+    # This restart is after a failure between regular-user and superuser saves.
+    hub.start(env=bootstrap_env)
+    restarted_count = int(sqlite3.connect(data_dir / "data.db").execute('SELECT COUNT(*) FROM "users"').fetchone()[0])
+    if restarted_count != 0:
+        raise HarnessError("first-user bootstrap failure survived as a partially created regular user")
+    connection = sqlite3.connect(data_dir / "data.db")
+    try:
+        superuser_emails_after_restart = [str(row[0]) for row in connection.execute('SELECT "email" FROM "_superusers" ORDER BY "email"')]
+    finally:
+        connection.close()
+    if superuser_emails_after_restart != ["_@b.b"]:
+        raise HarnessError(f"restart duplicated or removed the temporary superuser: {superuser_emails_after_restart}")
+
+    candidates = ["p013-bootstrap-one@example.invalid", "p013-bootstrap-two@example.invalid"]
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        responses = list(executor.map(
+            lambda email: request(
+                hub.base,
+                "POST",
+                "/api/beszel/create-user",
+                body={"email": email, "password": SYNTHETIC_PASSWORD},
+            ),
+            candidates,
+        ))
+    status_by_email = {email: response[0] for email, response in zip(candidates, responses, strict=True)}
+    if sorted(status_by_email.values()) != [200, 403]:
+        raise HarnessError(f"concurrent first-user requests did not produce exactly one owner: {status_by_email}")
+    owner_email = next(email for email, status in status_by_email.items() if status == 200)
+    owner_token = auth_token(hub.base, "_superusers", owner_email, SYNTHETIC_PASSWORD)
+    users = list_records(hub.base, owner_token, "users")
+    superusers = list_records(hub.base, owner_token, "_superusers")
+    if len(users) != 1 or users[0].get("email") != owner_email or users[0].get("role") != "admin":
+        raise HarnessError(f"concurrent bootstrap produced unexpected users/roles: {users}")
+    if len(superusers) != 1 or superusers[0].get("email") != owner_email:
+        raise HarnessError(f"concurrent bootstrap left a duplicate/temporary superuser: {superusers}")
+    first_run_after, _, state_after = request(hub.base, "GET", "/api/beszel/first-run")
+    if first_run_after != 200 or not isinstance(state_after, dict) or state_after.get("firstRun") is not False:
+        raise HarnessError("first-run state remained enabled after the sole owner was created")
+    hub.stop()
+    return {
+        "fresh_hub_health_http": health,
+        "first_run_before_setup": first_run["firstRun"],
+        "partial_user_creation_failure_http": failed_status,
+        "partial_user_creation_failure_body": failed_body,
+        "users_after_failure": user_count,
+        "temporary_superuser_after_failure": superuser_emails,
+        "users_after_restart": restarted_count,
+        "superusers_after_restart": superuser_emails_after_restart,
+        "concurrent_first_user_http_by_email": status_by_email,
+        "successful_owner_email": owner_email,
+        "final_user_count": len(users),
+        "final_admin_role": users[0].get("role"),
+        "final_superuser_count": len(superusers),
+        "temporary_superuser_removed": "_@b.b" not in {record.get("email") for record in superusers},
+        "first_run_after_setup": state_after["firstRun"],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=pathlib.Path, help="copy the generated evidence directory here")
@@ -728,6 +976,8 @@ def main() -> int:
             raise HarnessError(f"Agent binary version mismatch: {old_agent_version!r}")
         print(f"hub_019_sha256={hashlib.sha256(old_binary.read_bytes()).hexdigest()}", flush=True)
         print(f"hub_021_sha256={hashlib.sha256(new_binary.read_bytes()).hexdigest()}", flush=True)
+
+        bootstrap_evidence = verify_first_user_bootstrap(new_binary, root, logs)
 
         old_hub = HubProcess(old_binary, data_dir, logs / "hub-019.log")
         old_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
@@ -1109,6 +1359,45 @@ def main() -> int:
         if migration_api_state != second_api_state:
             raise HarnessError("second v0.21 startup changed preserved API identities or relations")
 
+        migration_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+        functional_health, _, _ = request(migration_hub.base, "GET", "/api/health")
+        if functional_health != 200:
+            raise HarnessError(f"functional API startup health check failed: HTTP {functional_health}")
+        functional_api_evidence = verify_migrated_monitor_alert_api(
+            migration_hub.base,
+            owner_email=owner_email,
+            regular_email=regular_email,
+            password=SYNTHETIC_PASSWORD,
+            owner_id=owner_id,
+            regular_id=regular_id,
+            system_id=system_id,
+        )
+        migration_hub.stop()
+
+        # Newly-created records must survive a service restart before they are
+        # deleted through the same user-facing API.
+        migration_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+        functional_restart_health, _, _ = request(migration_hub.base, "GET", "/api/health")
+        if functional_restart_health != 200:
+            raise HarnessError(f"functional API restart health check failed: HTTP {functional_restart_health}")
+        functional_restart_evidence = verify_and_delete_migrated_monitor_alert_api(
+            migration_hub.base,
+            regular_email=regular_email,
+            password=SYNTHETIC_PASSWORD,
+            expected=functional_api_evidence,
+        )
+        migration_hub.stop()
+        after_api_cleanup = database_snapshot(migration_data_dir / "data.db")
+        if after_api_cleanup["integrity_check"] != ["ok"]:
+            raise HarnessError(f"post-API migration SQLite integrity failed: {after_api_cleanup['integrity_check']}")
+        for key in ("schema_sha256", "migration_ledger"):
+            if after_api_cleanup[key] != migrated_second[key]:
+                raise HarnessError(f"monitor/alert API exercise changed migrated database {key}")
+        cleaned_counts = {key: value for key, value in after_api_cleanup["record_counts"].items() if not key.startswith("sqlite_")}
+        baseline_counts = {key: value for key, value in migrated_second["record_counts"].items() if not key.startswith("sqlite_")}
+        if cleaned_counts != baseline_counts:
+            raise HarnessError("monitor/alert API cleanup did not restore original record counts")
+
         recovery_kwargs = {
             "backup_dir": backup_dir,
             "root": root,
@@ -1326,6 +1615,11 @@ def main() -> int:
             "config_sha256_preserved": file_sha256(migration_data_dir / "config.yml"),
             "schema_hash_second_start_stable": migrated_second["schema_sha256"] == migrated_first["schema_sha256"],
             "record_counts_second_start_stable": migrated_second["record_counts"] == migrated_first["record_counts"],
+            "functional_api_health_http": functional_health,
+            "functional_api": functional_api_evidence,
+            "functional_api_restart_health_http": functional_restart_health,
+            "functional_api_restart": functional_restart_evidence,
+            "post_api_cleanup_record_counts_match": cleaned_counts == baseline_counts,
         }
 
         fixture = {
@@ -1344,6 +1638,7 @@ def main() -> int:
             "hub_021_binary_sha256": file_sha256(new_binary),
             "toolchain": {"go": go_version, "bun": bun_version, "frontend_builds": "v0.19 and v0.21 production builds passed"},
             "initialized_by": "genuine Beszel v0.19 Hub binary and supported startup/bootstrap APIs",
+            "first_user_bootstrap_021": bootstrap_evidence,
             "captured_at_utc": datetime.now(timezone.utc).isoformat(),
             "application_version": "0.19.0",
             "accounts": [
