@@ -1515,6 +1515,29 @@ def main() -> int:
         if migration_api_state != second_api_state:
             raise HarnessError("second v0.21 startup changed preserved API identities or relations")
 
+        # The separate v0.21 process reopens the migrated data directory, runs
+        # the registered migrations immediately before the production record
+        # managers, then exercises rollup and retention on disposable rows.
+        rollup_probe = subprocess.run(
+            [go, "run", "./tests/hub-migration/rollup_probe.go", "--data-dir", str(migration_data_dir)],
+            cwd=repo,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        if rollup_probe.returncode != 0:
+            raise HarnessError(
+                "post-migration rollup/retention probe failed:\n"
+                + rollup_probe.stdout[-4000:]
+                + "\n"
+                + rollup_probe.stderr[-4000:]
+            )
+        try:
+            rollup_evidence = json.loads(rollup_probe.stdout.strip().splitlines()[-1])
+        except (IndexError, json.JSONDecodeError) as exc:
+            raise HarnessError(f"rollup probe emitted invalid JSON: {rollup_probe.stdout[-2000:]}") from exc
+
         migration_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
         functional_health, _, _ = request(migration_hub.base, "GET", "/api/health")
         if functional_health != 200:
@@ -1771,6 +1794,7 @@ def main() -> int:
             "config_sha256_preserved": file_sha256(migration_data_dir / "config.yml"),
             "schema_hash_second_start_stable": migrated_second["schema_sha256"] == migrated_first["schema_sha256"],
             "record_counts_second_start_stable": migrated_second["record_counts"] == migrated_first["record_counts"],
+            "rollup_and_retention_after_migration": rollup_evidence,
             "functional_api_health_http": functional_health,
             "functional_api": functional_api_evidence,
             "functional_api_restart_health_http": functional_restart_health,
