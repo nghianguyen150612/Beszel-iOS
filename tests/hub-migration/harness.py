@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import http.server
 import json
 import os
 import pathlib
@@ -20,6 +21,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -96,8 +98,8 @@ class HubProcess:
         self.last_pid: int | None = None
         self.last_exit_code: int | None = None
 
-    def start(self, *, env: dict[str, str] | None = None, wait: bool = True) -> None:
-        self.port = free_port()
+    def start(self, *, env: dict[str, str] | None = None, wait: bool = True, port: int | None = None) -> None:
+        self.port = free_port() if port is None else port
         self.base = f"http://127.0.0.1:{self.port}"
         merged_env = os.environ.copy()
         if env:
@@ -420,6 +422,214 @@ def database_snapshot(path: pathlib.Path) -> dict[str, Any]:
         connection.close()
 
 
+def clone_backup_data(backup_dir: pathlib.Path, root: pathlib.Path, name: str) -> pathlib.Path:
+    """Extract a verified full checkpoint and make an isolated candidate DB copy."""
+    restored = root / f"{name}-restore"
+    restore_and_compare(backup_dir, restored)
+    source_data = restored / "checkpoint/var/lib/beszel-hub"
+    candidate_data = root / f"{name}-candidate-data"
+    shutil.copytree(source_data, candidate_data, symlinks=True)
+    return candidate_data
+
+
+def inject_migration_ledger_failure(database: pathlib.Path, migration_name: str) -> None:
+    """Add a synthetic SQLite trigger that stops one named ledger insert."""
+    import sqlite3
+
+    connection = sqlite3.connect(database)
+    try:
+        columns = [row[1] for row in connection.execute('PRAGMA table_info("_migrations")')]
+        file_column = next((name for name in ("file", "name", "id") if name in columns), None)
+        if not file_column:
+            raise HarnessError("cannot inject migration failure: _migrations filename column is unknown")
+        literal = migration_name.replace("'", "''")
+        connection.execute(
+            f'''CREATE TRIGGER p013_fail_named_migration
+                BEFORE INSERT ON "_migrations"
+                WHEN NEW."{file_column}" = '{literal}'
+                BEGIN SELECT RAISE(ABORT, 'P013 deterministic migration-sequence failpoint'); END''',
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def inject_post_schema_startup_failure(database: pathlib.Path) -> None:
+    """Fail collection auth initialization only after all schema migrations ledger."""
+    import sqlite3
+
+    connection = sqlite3.connect(database)
+    try:
+        columns = [row[1] for row in connection.execute('PRAGMA table_info("_migrations")')]
+        file_column = next((name for name in ("file", "name", "id") if name in columns), None)
+        if not file_column:
+            raise HarnessError("cannot inject post-schema failure: _migrations filename column is unknown")
+        connection.execute(
+            f'''CREATE TRIGGER p013_fail_after_schema
+                BEFORE UPDATE ON "_collections"
+                WHEN OLD."name" = 'alerts'
+                  AND EXISTS (SELECT 1 FROM "_migrations" WHERE "{file_column}" = '1790964708_network_monitor_skip_tls_verify.go')
+                BEGIN SELECT RAISE(ABORT, 'P013 deterministic post-schema startup failpoint'); END'''
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def wait_for_candidate_failure(hub: HubProcess, timeout: float = 90) -> int:
+    """Wait for a deliberate startup failure and reject any healthy candidate."""
+    if hub.process is None:
+        raise HarnessError("candidate process was not started")
+    process = hub.process
+    deadline = time.monotonic() + timeout
+    healthy = False
+    while time.monotonic() < deadline and process.poll() is None:
+        try:
+            status, _, _ = request(hub.base, "GET", "/api/health")
+            if status == 200:
+                healthy = True
+                break
+        except Exception:
+            pass
+        time.sleep(0.1)
+    if healthy or process.poll() is None:
+        hub.stop(force=True)
+        if healthy:
+            raise HarnessError(f"failure injection unexpectedly produced a healthy Hub: {hub.logs}")
+        raise HarnessError(f"candidate did not exit at the deterministic failure point: {hub.logs}\n{tail(hub.logs)}")
+    hub.stop()
+    if hub.last_exit_code in (None, 0):
+        raise HarnessError(f"candidate failure point returned unexpected exit code {hub.last_exit_code}: {hub.logs}")
+    return int(hub.last_exit_code)
+
+
+def restore_and_verify_019(
+    *,
+    backup_dir: pathlib.Path,
+    root: pathlib.Path,
+    label: str,
+    logs: pathlib.Path,
+    owner_email: str,
+    regular_email: str,
+    password: str,
+    owner_id: str,
+    regular_id: str,
+    system_id: str,
+    owner_settings_id: str,
+    regular_settings_id: str,
+    info: dict[str, Any],
+    seeded: dict[str, dict[str, Any]],
+    public_key: str,
+    key_fingerprint: str,
+    expected_config_sha256: str,
+    expected_hub_sha256: str,
+    expected_agent_sha256: str,
+    evidence_output_dir: pathlib.Path | None = None,
+) -> dict[str, Any]:
+    """Recover only from a fresh full archive extraction, then verify v0.19."""
+    restore_parent = root / f"{label}-full-restore"
+    extracted = restore_and_compare(backup_dir, restore_parent)
+    checkpoint = restore_parent / "checkpoint"
+    data_dir = checkpoint / "var/lib/beszel-hub"
+    old_hub_binary = checkpoint / "usr/local/bin/beszel-hub"
+    old_agent_binary = checkpoint / "usr/local/bin/beszel-agent"
+    if file_sha256(old_hub_binary) != expected_hub_sha256 or file_sha256(old_agent_binary) != expected_agent_sha256:
+        raise HarnessError(f"{label}: restored executable checksums differ from the original v0.19 set")
+    if file_sha256(data_dir / "config.yml") != expected_config_sha256:
+        raise HarnessError(f"{label}: restored Hub config checksum changed")
+    before = database_snapshot(data_dir / "data.db")
+    if before["integrity_check"] != ["ok"]:
+        raise HarnessError(f"{label}: restored pre-start SQLite integrity failed: {before['integrity_check']}")
+    if any(str(row[0]).startswith("179") or row[0] == "0_collections_snapshot_0_20_0.go" for row in before["migration_ledger"]):
+        raise HarnessError(f"{label}: backup unexpectedly contains v0.20/v0.21 migration entries")
+
+    hub = HubProcess(old_hub_binary, data_dir, logs / f"{label}-recovered-019.log")
+    hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+    health, _, _ = request(hub.base, "GET", "/api/health")
+    if health != 200:
+        raise HarnessError(f"{label}: recovered v0.19 health check failed with HTTP {health}")
+    invariants = verify_fixture_api_state(
+        hub.base,
+        owner_email=owner_email,
+        password=password,
+        owner_id=owner_id,
+        regular_id=regular_id,
+        system_id=system_id,
+        owner_settings_id=owner_settings_id,
+        regular_settings_id=regular_settings_id,
+        info=info,
+        seeded=seeded,
+        public_key=public_key,
+        key_fingerprint=key_fingerprint,
+    )
+    restored_schema = collection_schema(hub.base, auth_token(hub.base, "_superusers", owner_email, password))
+    if "network_monitors" in restored_schema or "network_monitor_stats" in restored_schema:
+        raise HarnessError(f"{label}: v0.19 recovery opened a migrated schema instead of a clean backup")
+    hub.stop()
+    after = database_snapshot(data_dir / "data.db")
+    if after["integrity_check"] != ["ok"]:
+        raise HarnessError(f"{label}: recovered v0.19 SQLite integrity failed: {after['integrity_check']}")
+    for key in ("tables", "schema_sha256", "migration_ledger", "application_settings"):
+        if after[key] != before[key]:
+            raise HarnessError(f"{label}: v0.19 reopen changed pre-upgrade {key}")
+    before_counts = {key: value for key, value in before["record_counts"].items() if not key.startswith("sqlite_")}
+    after_counts = {key: value for key, value in after["record_counts"].items() if not key.startswith("sqlite_")}
+    if after_counts != before_counts:
+        raise HarnessError(f"{label}: v0.19 recovery changed persistent record counts")
+    recovery_log = preserve_failure_log(hub.logs, evidence_output_dir, f"{label}-v019-recovered")
+    return {
+        "failure_case": label,
+        "restore_inventory_matches": extracted["restore_inventory_matches"],
+        "old_hub_binary_sha256": file_sha256(old_hub_binary),
+        "old_agent_binary_sha256": file_sha256(old_agent_binary),
+        "health_http": health,
+        "sqlite_integrity_check": after["integrity_check"],
+        "migration_ledger_exactly_pre_upgrade": after["migration_ledger"] == before["migration_ledger"],
+        "schema_hash_pre_upgrade_preserved": after["schema_sha256"] == before["schema_sha256"],
+        "record_counts_pre_upgrade_preserved": after_counts == before_counts,
+        "api_invariants": invariants,
+        "config_sha256_preserved": file_sha256(data_dir / "config.yml"),
+        **recovery_log,
+    }
+
+
+def database_migration_names(database: pathlib.Path) -> list[str]:
+    return [str(row[0]) for row in database_snapshot(database)["migration_ledger"]]
+
+
+def sanitized_log_copy(source: pathlib.Path, destination: pathlib.Path) -> str:
+    """Preserve useful synthetic diagnostics without publishing fixture secrets."""
+    text = source.read_text(encoding="utf-8", errors="replace")
+    text = text.replace(SYNTHETIC_PASSWORD, "<redacted synthetic credential>")
+    text = text.replace(SYNTHETIC_TOKEN, "<redacted synthetic token>")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(text, encoding="utf-8")
+    return file_sha256(destination)
+
+
+def preserve_failure_log(source: pathlib.Path, output_dir: pathlib.Path | None, label: str) -> dict[str, str]:
+    if output_dir is None:
+        return {"diagnostic_log": "available in the hosted workflow log"}
+    destination = output_dir / "failure-logs" / f"{label}.log"
+    return {
+        "diagnostic_log": destination.relative_to(output_dir).as_posix(),
+        "diagnostic_log_sha256": sanitized_log_copy(source, destination),
+    }
+
+
+class HealthFailureHandler(http.server.BaseHTTPRequestHandler):
+    """A synthetic failed readiness probe used with an occupied service port."""
+
+    def do_GET(self) -> None:  # noqa: N802 - stdlib handler contract
+        self.send_response(503)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status":"p013-injected-unhealthy"}')
+
+    def log_message(self, *_: Any) -> None:
+        return
+
+
 def ssh_key_fingerprint(public_key: str, temp_dir: pathlib.Path) -> str:
     public_file = temp_dir / "synthetic-hub.pub"
     write_private(public_file, public_key.rstrip() + "\n")
@@ -436,6 +646,7 @@ def main() -> int:
         args.output = args.output.resolve()
         if args.output == PROTECTED_DATA_DIR or PROTECTED_DATA_DIR in args.output.parents:
             raise HarnessError("refusing to write evidence beneath /var/lib/beszel-hub")
+        args.output.mkdir(parents=True, exist_ok=True)
 
     repo = pathlib.Path(__file__).resolve().parents[2]
     if not (repo / ".git").exists():
@@ -897,6 +1108,206 @@ def main() -> int:
                 raise HarnessError(f"second v0.21 startup changed database {key}")
         if migration_api_state != second_api_state:
             raise HarnessError("second v0.21 startup changed preserved API identities or relations")
+
+        recovery_kwargs = {
+            "backup_dir": backup_dir,
+            "root": root,
+            "logs": logs,
+            "owner_email": owner_email,
+            "regular_email": regular_email,
+            "password": SYNTHETIC_PASSWORD,
+            "owner_id": owner_id,
+            "regular_id": regular_id,
+            "system_id": system_id,
+            "owner_settings_id": str(owner_settings["id"]),
+            "regular_settings_id": str(regular_settings["id"]),
+            "info": info,
+            "seeded": seeded,
+            "public_key": public_key,
+            "key_fingerprint": key_fingerprint,
+            "expected_config_sha256": file_sha256(config_file),
+            "expected_hub_sha256": file_sha256(old_binary),
+            "expected_agent_sha256": file_sha256(old_agent_binary),
+            "evidence_output_dir": args.output,
+        }
+
+        # Roll back a database that has completed 0.21 migration and restart.
+        # Recovery always extracts a fresh complete archive, including the old
+        # binaries and service/install state, into a separate destination.
+        migration_state_sha256 = file_sha256(migration_data_dir / "data.db")
+        rollback_evidence = restore_and_verify_019(label="post-migration-rollback", **recovery_kwargs)
+        rollback_evidence["migrated_candidate_database_sha256_before_quarantine"] = migration_state_sha256
+        rollback_evidence["verified_backup_archive_sha256"] = backup_evidence["archive_sha256"]
+
+        interrupted_evidence: list[dict[str, Any]] = []
+
+        # Fail before the Hub executable is invoked. The original database
+        # remains untouched, but recovery still uses a separate full restore.
+        before_data = clone_backup_data(backup_dir, root, "fail-before-migration")
+        before_snapshot = database_snapshot(before_data / "data.db")
+        prestart_wrapper = root / "fail-before-migration-wrapper"
+        prestart_wrapper.write_text("#!/bin/sh\necho P013_FAILPOINT_BEFORE_MIGRATION >&2\nexit 86\n", encoding="utf-8")
+        prestart_wrapper.chmod(0o755)
+        before_hub = HubProcess(prestart_wrapper, before_data, logs / "fail-before-migration-candidate.log")
+        before_hub.start(wait=False)
+        before_exit = wait_for_candidate_failure(before_hub)
+        before_log_evidence = preserve_failure_log(before_hub.logs, args.output, "before-migration")
+        if before_exit != 86 or "P013_FAILPOINT_BEFORE_MIGRATION" not in tail(before_hub.logs):
+            raise HarnessError("before-migration failure injection did not stop before invoking the candidate")
+        after_before_failure = database_snapshot(before_data / "data.db")
+        if after_before_failure != before_snapshot:
+            raise HarnessError("before-migration failure injection modified the 0.19 database")
+        before_result = {
+            "failure_point": "before migration starts (candidate launcher exits before binary invocation)",
+            "candidate_exit_code": before_exit,
+            "candidate_database_unchanged": True,
+            **before_log_evidence,
+            "recovery": restore_and_verify_019(label="recovery-before-migration", **recovery_kwargs),
+        }
+        interrupted_evidence.append(before_result)
+
+        # Stop the named migration ledger insertion after earlier schema
+        # migrations have run. This leaves a real partial 0.21 database; no
+        # v0.19 process is ever pointed at that candidate directory.
+        during_data = clone_backup_data(backup_dir, root, "fail-during-migration")
+        failing_migration = "1790273174_network_monitor_server.go"
+        inject_migration_ledger_failure(during_data / "data.db", failing_migration)
+        during_hub = HubProcess(new_binary, during_data, logs / "fail-during-migration-candidate.log")
+        during_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"}, wait=False)
+        during_exit = wait_for_candidate_failure(during_hub)
+        during_log_evidence = preserve_failure_log(during_hub.logs, args.output, "during-migration")
+        during_log = tail(during_hub.logs)
+        if "P013 deterministic migration-sequence failpoint" not in during_log:
+            raise HarnessError(f"candidate did not reach the named migration interruption point:\n{during_log}")
+        during_snapshot = database_snapshot(during_data / "data.db")
+        during_names = [str(row[0]) for row in during_snapshot["migration_ledger"]]
+        if failing_migration in during_names or during_snapshot["integrity_check"] != ["ok"]:
+            raise HarnessError("mid-migration failpoint did not leave the expected incomplete, inspectable candidate")
+        during_result = {
+            "failure_point": f"during schema sequence at {failing_migration}",
+            "candidate_exit_code": during_exit,
+            "partial_candidate_database_sha256": file_sha256(during_data / "data.db"),
+            "candidate_integrity_check": during_snapshot["integrity_check"],
+            "migration_ledger_after_failure": during_names,
+            "failing_migration_absent_from_ledger": failing_migration not in during_names,
+            "partial_candidate_opened_by_v019": False,
+            **during_log_evidence,
+            "recovery": restore_and_verify_019(label="recovery-during-migration", **recovery_kwargs),
+        }
+        interrupted_evidence.append(during_result)
+
+        # The final migration has completed before the OnServe initializer
+        # updates alert rules. Abort that update only after the new migration
+        # is recorded, leaving complete schema work but no normal service.
+        post_schema_data = clone_backup_data(backup_dir, root, "fail-after-schema")
+        inject_post_schema_startup_failure(post_schema_data / "data.db")
+        post_schema_hub = HubProcess(new_binary, post_schema_data, logs / "fail-after-schema-candidate.log")
+        post_schema_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"}, wait=False)
+        post_schema_exit = wait_for_candidate_failure(post_schema_hub)
+        post_schema_log_evidence = preserve_failure_log(post_schema_hub.logs, args.output, "after-schema-before-health")
+        post_schema_log = tail(post_schema_hub.logs)
+        if "P013 deterministic post-schema startup failpoint" not in post_schema_log:
+            raise HarnessError(f"candidate did not reach the post-schema startup failpoint:\n{post_schema_log}")
+        post_schema_snapshot = database_snapshot(post_schema_data / "data.db")
+        post_schema_names = [str(row[0]) for row in post_schema_snapshot["migration_ledger"]]
+        if any(post_schema_names.count(name) != 1 for name in required_migrations):
+            raise HarnessError("post-schema failpoint occurred before all schema migrations were applied once")
+        if post_schema_snapshot["integrity_check"] != ["ok"]:
+            raise HarnessError("post-schema failed startup left an SQLite integrity error")
+        post_schema_result = {
+            "failure_point": "after schema migration sequence, during Hub startup before health",
+            "candidate_exit_code": post_schema_exit,
+            "migration_ledger_after_failure": post_schema_names,
+            "all_required_migrations_applied_once": True,
+            "candidate_integrity_check": post_schema_snapshot["integrity_check"],
+            "partial_candidate_opened_by_v019": False,
+            **post_schema_log_evidence,
+            "recovery": restore_and_verify_019(label="recovery-after-schema", **recovery_kwargs),
+        }
+        interrupted_evidence.append(post_schema_result)
+
+        # Simulate a failed readiness probe after migrations, caused by a
+        # reserved service port returning 503. The candidate must not be
+        # treated as healthy, and recovery still replaces data and binaries.
+        failed_health_data = clone_backup_data(backup_dir, root, "fail-before-health")
+        failed_health_port = free_port()
+        failed_health_server = http.server.ThreadingHTTPServer(("127.0.0.1", failed_health_port), HealthFailureHandler)
+        failed_health_thread = threading.Thread(target=failed_health_server.serve_forever, daemon=True)
+        failed_health_thread.start()
+        failed_health_hub = HubProcess(new_binary, failed_health_data, logs / "fail-before-health-candidate.log")
+        try:
+            failed_health_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"}, wait=False, port=failed_health_port)
+            failed_probe_status, _, _ = request(failed_health_hub.base, "GET", "/api/health")
+            if failed_probe_status != 503:
+                raise HarnessError(f"health failure stub returned HTTP {failed_probe_status}, expected 503")
+            failed_health_exit = wait_for_candidate_failure(failed_health_hub)
+        finally:
+            failed_health_server.shutdown()
+            failed_health_server.server_close()
+            failed_health_thread.join(timeout=5)
+        failed_health_log_evidence = preserve_failure_log(failed_health_hub.logs, args.output, "failed-health-before-first-pass")
+        failed_health_snapshot = database_snapshot(failed_health_data / "data.db")
+        failed_health_names = [str(row[0]) for row in failed_health_snapshot["migration_ledger"]]
+        if any(failed_health_names.count(name) != 1 for name in required_migrations):
+            raise HarnessError("failed readiness startup did not finish the schema sequence exactly once")
+        failed_health_result = {
+            "failure_point": "candidate startup after schema; readiness endpoint returns injected HTTP 503 before any candidate health pass",
+            "health_probe_http": failed_probe_status,
+            "candidate_exit_code": failed_health_exit,
+            "migration_ledger_after_failure": failed_health_names,
+            "candidate_integrity_check": failed_health_snapshot["integrity_check"],
+            "partial_candidate_opened_by_v019": False,
+            **failed_health_log_evidence,
+            "recovery": restore_and_verify_019(label="recovery-after-failed-health", **recovery_kwargs),
+        }
+        interrupted_evidence.append(failed_health_result)
+
+        # A controlled v0.21 service restart that cannot bind is treated as a
+        # failed upgrade health check. This begins from a real healthy migrated
+        # run, then recovers from the complete 0.19 archive set.
+        restart_data = clone_backup_data(backup_dir, root, "fail-controlled-restart")
+        restart_hub = HubProcess(new_binary, restart_data, logs / "controlled-restart-candidate.log")
+        restart_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+        restart_initial_health, _, _ = request(restart_hub.base, "GET", "/api/health")
+        if restart_initial_health != 200:
+            raise HarnessError(f"controlled restart setup was not healthy: HTTP {restart_initial_health}")
+        restart_hub.stop()
+        restart_port = free_port()
+        restart_server = http.server.ThreadingHTTPServer(("127.0.0.1", restart_port), HealthFailureHandler)
+        restart_thread = threading.Thread(target=restart_server.serve_forever, daemon=True)
+        restart_thread.start()
+        try:
+            restart_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"}, wait=False, port=restart_port)
+            restart_probe_status, _, _ = request(restart_hub.base, "GET", "/api/health")
+            if restart_probe_status != 503:
+                raise HarnessError(f"controlled restart failure stub returned HTTP {restart_probe_status}, expected 503")
+            restart_exit = wait_for_candidate_failure(restart_hub)
+        finally:
+            restart_server.shutdown()
+            restart_server.server_close()
+            restart_thread.join(timeout=5)
+        restart_log_evidence = preserve_failure_log(restart_hub.logs, args.output, "controlled-restart-health-failure")
+        restart_snapshot = database_snapshot(restart_data / "data.db")
+        restart_names = [str(row[0]) for row in restart_snapshot["migration_ledger"]]
+        if any(restart_names.count(name) != 1 for name in required_migrations):
+            raise HarnessError("controlled restart changed the migrated schema ledger unexpectedly")
+        restart_result = {
+            "failure_point": "controlled service restart after a prior healthy v0.21 start",
+            "initial_health_http": restart_initial_health,
+            "restart_health_probe_http": restart_probe_status,
+            "restart_candidate_exit_code": restart_exit,
+            "migration_ledger_after_failure": restart_names,
+            "candidate_integrity_check": restart_snapshot["integrity_check"],
+            "partial_candidate_opened_by_v019": False,
+            **restart_log_evidence,
+            "recovery": restore_and_verify_019(label="recovery-controlled-restart", **recovery_kwargs),
+        }
+        interrupted_evidence.append(restart_result)
+
+        interrupted_migration_evidence = {
+            "status": "PASS — all injected disposable failure checkpoints recovered by a verified complete v0.19 restore",
+            "cases": interrupted_evidence,
+        }
         migration_evidence = {
             "source_backup_sha256": backup_evidence["archive_sha256"],
             "target_version": new_version,
@@ -989,6 +1400,8 @@ def main() -> int:
                 "agent_writer_pids": [],
             },
             "migration_021": migration_evidence,
+            "rollback_019": rollback_evidence,
+            "interrupted_migration": interrupted_migration_evidence,
         }
         old_hub.stop()
         fixture["database_019"] = database_snapshot(data_dir / "data.db")
@@ -1010,7 +1423,6 @@ def main() -> int:
         old_hub.stop()
 
         if args.output:
-            args.output.mkdir(parents=True, exist_ok=True)
             shutil.copy2(root / "fixture-manifest.json", args.output / "fixture-manifest.json")
         print("P013 genuine v0.19 fixture: PASS", flush=True)
     return 0
