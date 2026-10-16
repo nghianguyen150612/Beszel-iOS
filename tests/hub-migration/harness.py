@@ -316,12 +316,26 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
             raise HarnessError(f"v0.21 migration unexpectedly changed {collection} collection metadata")
 
     monitor_indexes = set(after["network_monitor_stats"].get("indexes", []))
-    for index_name in ("idx_nms_system_type_created", "idx_nms_monitor_type_created", "idx_nms_type_created"):
-        if not any(index_name in statement for statement in monitor_indexes):
-            raise HarnessError(f"v0.21 monitor history index missing: {index_name}")
+    expected_monitor_history_indexes = {
+        "idx_nms_system_type_created", "idx_nms_monitor_type_created", "idx_nms_type_created",
+    }
+    actual_monitor_history_indexes = {
+        statement for statement in monitor_indexes if "idx_nms_" in statement
+    }
+    if len(actual_monitor_history_indexes) != len(expected_monitor_history_indexes) or any(
+        not any(name in statement for statement in actual_monitor_history_indexes)
+        for name in expected_monitor_history_indexes
+    ):
+        raise HarnessError(f"v0.21 monitor history indexes differ from the accepted set: {sorted(monitor_indexes)}")
+    monitor_config_indexes = set(after["network_monitors"].get("indexes", []))
+    if len(monitor_config_indexes) != 1 or not any("idx_nm_system_enabled" in statement for statement in monitor_config_indexes):
+        raise HarnessError(f"v0.21 network monitor configuration indexes differ from the accepted set: {sorted(monitor_config_indexes)}")
     systems_id = str(after["systems"].get("id", ""))
     monitors_id = str(after["network_monitors"].get("id", ""))
+    config_fields = {field.get("name"): field for field in after["network_monitors"].get("fields", [])}
     monitor_fields = {field.get("name"): field for field in after["network_monitor_stats"].get("fields", [])}
+    if config_fields.get("system", {}).get("collectionId") != systems_id:
+        raise HarnessError("v0.21 network_monitors.system relation targets the wrong collection")
     if monitor_fields.get("system", {}).get("collectionId") != systems_id:
         raise HarnessError("v0.21 network_monitor_stats.system relation targets the wrong collection")
     if monitor_fields.get("monitor", {}).get("collectionId") != monitors_id:
