@@ -207,20 +207,113 @@ def schema_field_types(schema: dict[str, dict[str, Any]], collection: str) -> di
 
 
 def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    new_collection_names = {"network_monitors", "network_monitor_stats"}
+    added_collections = set(after) - set(before)
     missing_legacy = sorted(set(before) - set(after))
     if missing_legacy:
         raise HarnessError(f"v0.21 migration removed legacy collections: {missing_legacy}")
-    expected_fields = {
-        "network_monitors": {"certInfo": "json", "server": "text", "skipTlsVerify": "bool"},
-        "network_monitor_stats": {"system": "relation", "monitor": "relation", "res_sum": "number", "total_count": "number"},
-        "zfs_pools": {"display_name": "text", "raw": "bool", "status": "text"},
-        "containers": {"updatable": "bool"},
+    if added_collections != new_collection_names:
+        raise HarnessError(f"v0.21 added unexpected collections: {sorted(added_collections)}")
+
+    expected_added_fields = {
+        "alerts": {"state": "json"},
+        "alerts_history": {"monitor_name": "text"},
+        "zfs_pools": {"status": "text"},
     }
-    for collection, expected in expected_fields.items():
+    expected_new_collection_fields = {
+        "network_monitors": {
+            "id": "text", "system": "relation", "target": "text", "protocol": "select",
+            "port": "number", "interval": "number", "res": "number", "resAvg1h": "number",
+            "resMin1h": "number", "resMax1h": "number", "loss1h": "number", "enabled": "bool",
+            "created": "autodate", "updated": "date", "certInfo": "json", "server": "text",
+            "skipTlsVerify": "bool",
+        },
+        "network_monitor_stats": {
+            "id": "text", "system": "relation", "monitor": "relation", "total_count": "number",
+            "success_count": "number", "res_sum": "number", "res_min": "number", "res_max": "number",
+            "type": "select", "created": "number",
+        },
+    }
+
+    for collection, expected in expected_new_collection_fields.items():
         actual = schema_field_types(after, collection)
+        if actual != expected:
+            raise HarnessError(f"v0.21 {collection} fields differ from the accepted schema: {actual!r}")
+
+    actual_added_fields: dict[str, dict[str, str]] = {}
+    for collection in set(before) & set(after):
+        old_fields = {str(field.get("name")): field for field in before[collection].get("fields", [])}
+        new_fields = {str(field.get("name")): field for field in after[collection].get("fields", [])}
+        removed = sorted(set(old_fields) - set(new_fields))
+        if removed:
+            raise HarnessError(f"v0.21 migration removed fields from {collection}: {removed}")
+        added = set(new_fields) - set(old_fields)
+        if added:
+            actual_added_fields[collection] = {field: str(new_fields[field].get("type")) for field in sorted(added)}
+        for field in set(old_fields) & set(new_fields):
+            if old_fields[field] == new_fields[field]:
+                continue
+            if collection != "alerts" or field != "name":
+                raise HarnessError(f"v0.21 migration unexpectedly changed {collection}.{field}")
+            old_definition, new_definition = dict(old_fields[field]), dict(new_fields[field])
+            old_values = old_definition.pop("values", [])
+            new_values = new_definition.pop("values", [])
+            if old_definition != new_definition or new_values != [*old_values, "NetworkMonitorLoss"]:
+                raise HarnessError("v0.21 alerts.name changed beyond adding NetworkMonitorLoss")
+    if actual_added_fields != expected_added_fields:
+        raise HarnessError(f"v0.21 legacy field additions differ from the accepted migration: {actual_added_fields!r}")
+
+    # The container updatable field and the older ZFS display/raw fields are
+    # already present in a genuine 0.19 fixture; migration must preserve them.
+    for collection, expected in {
+        "containers": {"updatable": "bool"},
+        "zfs_pools": {"display_name": "text", "raw": "bool"},
+    }.items():
+        old_types = schema_field_types(before, collection)
+        new_types = schema_field_types(after, collection)
         for field, kind in expected.items():
-            if actual.get(field) != kind:
-                raise HarnessError(f"v0.21 {collection}.{field} expected {kind}, found {actual.get(field)!r}")
+            if old_types.get(field) != kind or new_types.get(field) != kind:
+                raise HarnessError(f"v0.19 {collection}.{field} must survive v0.21 migration as {kind}")
+
+    allowed_alert_index = "CREATE INDEX idx_alerts_system_name ON alerts (system, name)"
+    index_changes: dict[str, dict[str, list[str]]] = {}
+    for collection in set(before) & set(after):
+        old_indexes = set(before[collection].get("indexes", []))
+        new_indexes = set(after[collection].get("indexes", []))
+        removed = old_indexes - new_indexes
+        added = new_indexes - old_indexes
+        if removed:
+            raise HarnessError(f"v0.21 migration removed indexes from {collection}: {sorted(removed)}")
+        if added:
+            if collection != "alerts" or added != {allowed_alert_index}:
+                raise HarnessError(f"v0.21 migration added unexpected indexes to {collection}: {sorted(added)}")
+            index_changes[collection] = {"added": sorted(added), "removed": []}
+
+    expected_alert_rules = {
+        "createRule": '@request.auth.id != "" && user = @request.auth.id && system.users.id ?= @request.auth.id',
+        "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false && @request.body.system:changed = false && system.users.id ?= @request.auth.id',
+    }
+    changed_rules: dict[str, dict[str, str]] = {}
+    rule_keys = ("listRule", "viewRule", "createRule", "updateRule", "deleteRule")
+    for collection in set(before) & set(after):
+        changes = {
+            key: str(after[collection].get(key) or "")
+            for key in rule_keys
+            if before[collection].get(key) != after[collection].get(key)
+        }
+        if changes:
+            if collection != "alerts" or changes != expected_alert_rules:
+                raise HarnessError(f"v0.21 migration changed unexpected {collection} authorization rules: {changes!r}")
+            changed_rules[collection] = changes
+
+    # Apart from migration timestamps, the full collection metadata must be
+    # unchanged unless a field/index/rule delta above explicitly allows it.
+    structural_keys = {"fields", "indexes", "updated", *rule_keys}
+    for collection in set(before) & set(after):
+        old_metadata = {key: value for key, value in before[collection].items() if key not in structural_keys}
+        new_metadata = {key: value for key, value in after[collection].items() if key not in structural_keys}
+        if old_metadata != new_metadata:
+            raise HarnessError(f"v0.21 migration unexpectedly changed {collection} collection metadata")
 
     monitor_indexes = set(after["network_monitor_stats"].get("indexes", []))
     for index_name in ("idx_nms_system_type_created", "idx_nms_monitor_type_created", "idx_nms_type_created"):
@@ -234,6 +327,22 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
     if monitor_fields.get("monitor", {}).get("collectionId") != monitors_id:
         raise HarnessError("v0.21 network_monitor_stats.monitor relation targets the wrong collection")
 
+    expected_membership_rule = '@request.auth.id != "" && system.users.id ?= @request.auth.id'
+    monitor_rules = after["network_monitors"]
+    if monitor_rules.get("listRule") != expected_membership_rule or monitor_rules.get("viewRule") != expected_membership_rule:
+        raise HarnessError("v0.21 network monitor reads must be restricted to system members")
+    for rule in ("createRule", "updateRule", "deleteRule"):
+        expected = expected_membership_rule + ' && @request.auth.role != "readonly"'
+        if monitor_rules.get(rule) != expected:
+            raise HarnessError(f"v0.21 network monitor {rule} must require membership and a writable role")
+    if not any("idx_nm_system_enabled" in statement for statement in after["network_monitors"].get("indexes", [])):
+        raise HarnessError("v0.21 network monitor system/enabled index missing")
+    stats_rules = after["network_monitor_stats"]
+    if stats_rules.get("listRule") != expected_membership_rule or any(
+        stats_rules.get(rule) is not None for rule in ("viewRule", "createRule", "updateRule", "deleteRule")
+    ):
+        raise HarnessError("v0.21 monitor history rules do not enforce member reads and internal-only writes")
+
     for collection in ("alerts", "alerts_history"):
         record = after[collection]
         for rule in ("listRule", "deleteRule"):
@@ -242,10 +351,17 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
                 raise HarnessError(f"v0.21 {collection}.{rule} no longer binds access to the owning user")
     return {
         "legacy_collections_preserved": sorted(before),
-        "added_collections": sorted(set(after) - set(before)),
-        "required_fields": expected_fields,
+        "added_collections": sorted(added_collections),
+        "added_legacy_fields": actual_added_fields,
+        "changed_fields": {"alerts.name.values_added": ["NetworkMonitorLoss"]},
+        "index_changes": index_changes,
+        "authorization_rule_changes": changed_rules,
+        "preserved_preexisting_fields": {"containers.updatable": "bool", "zfs_pools.display_name": "text", "zfs_pools.raw": "bool"},
+        "new_collection_fields": expected_new_collection_fields,
         "network_monitor_indexes": sorted(index for index in monitor_indexes if "idx_nms_" in index),
         "relation_targets": {"network_monitor_stats.system": systems_id, "network_monitor_stats.monitor": monitors_id},
+        "network_monitor_rules": {rule: after["network_monitors"].get(rule) for rule in rule_keys},
+        "network_monitor_stats_rules": {rule: after["network_monitor_stats"].get(rule) for rule in rule_keys},
         "alert_rules": {
             collection: {rule: after[collection].get(rule) for rule in ("listRule", "viewRule", "createRule", "updateRule", "deleteRule")}
             for collection in ("alerts", "alerts_history")
