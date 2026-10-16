@@ -896,12 +896,22 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 
 			// Start agent in background
 			done := make(chan error, 1)
+			stopped := make(chan struct{})
+			defer func() {
+				testAgent.CancelForTesting()
+				select {
+				case <-stopped:
+				case <-time.After(5 * time.Second):
+					t.Error("agent shutdown did not finish")
+				}
+			}()
 			go func() {
 				serverOptions := agent.ServerOptions{
 					Network: "tcp",
-					Addr:    fmt.Sprintf("127.0.0.1:%d", portNum),
+					Addr:    "127.0.0.1:0",
 					Keys:    []ssh.PublicKey{tc.agentSSHKey},
 				}
+				defer close(stopped)
 				done <- testAgent.Start(serverOptions)
 			}()
 
@@ -910,25 +920,26 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 			time.Sleep(40 * time.Millisecond)
 			checkInterval := 20 * time.Millisecond
 			timeout := time.After(maxWait)
-			ticker := time.Tick(checkInterval)
-
-			connectionManager := testAgent.GetConnectionManager()
+			ticker := time.NewTicker(checkInterval)
+			defer ticker.Stop()
 
 			connectionResult := false
+			finished := false
 			for {
 				select {
 				case <-timeout:
+					finished = true
 					// Timeout reached
 					if tc.expectConnection {
-						t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.State)
+						t.Fatalf("Expected connection to succeed but timed out - agent state: %d", testAgent.ConnectionStateForTesting())
 					} else {
-						t.Logf("Connection properly rejected (timeout) - agent state: %d", connectionManager.State)
+						t.Logf("Connection properly rejected (timeout) - agent state: %d", testAgent.ConnectionStateForTesting())
 					}
 					connectionResult = false
-				case <-ticker:
-					if connectionManager.State == agent.WebSocketConnected {
+				case <-ticker.C:
+					if testAgent.ConnectionStateForTesting() == agent.WebSocketConnected {
 						if tc.expectConnection {
-							t.Logf("WebSocket connection successful - agent state: %d", connectionManager.State)
+							t.Logf("WebSocket connection successful - agent state: %d", testAgent.ConnectionStateForTesting())
 							connectionResult = true
 						} else {
 							t.Errorf("Unexpected: Connection succeeded when it should have been rejected")
@@ -947,7 +958,7 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 				}
 
 				// Break if we got the expected result or timed out
-				if connectionResult == tc.expectConnection || connectionResult {
+				if connectionResult || finished {
 					break
 				}
 			}
@@ -1061,10 +1072,8 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 	}
 
 	var systemCount int
-	for i, tc := range testCases {
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create unique port for each test
-			portNum := 46000 + i
 
 			// Create and configure agent
 			agentDataDir := t.TempDir()
@@ -1087,12 +1096,22 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 
 			// Start agent in background
 			done := make(chan error, 1)
+			stopped := make(chan struct{})
+			defer func() {
+				testAgent.CancelForTesting()
+				select {
+				case <-stopped:
+				case <-time.After(5 * time.Second):
+					t.Error("agent shutdown did not finish")
+				}
+			}()
 			go func() {
 				serverOptions := agent.ServerOptions{
 					Network: "tcp",
-					Addr:    fmt.Sprintf("127.0.0.1:%d", portNum),
+					Addr:    "127.0.0.1:0",
 					Keys:    []ssh.PublicKey{goodPubKey},
 				}
+				defer close(stopped)
 				done <- testAgent.Start(serverOptions)
 			}()
 
@@ -1101,24 +1120,26 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 			time.Sleep(20 * time.Millisecond)
 			checkInterval := 20 * time.Millisecond
 			timeout := time.After(maxWait)
-			ticker := time.Tick(checkInterval)
+			ticker := time.NewTicker(checkInterval)
+			defer ticker.Stop()
 
-			connectionManager := testAgent.GetConnectionManager()
 			connectionResult := false
+			finished := false
 
 			for {
 				select {
 				case <-timeout:
+					finished = true
 					if tc.expectConnection {
-						t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.State)
+						t.Fatalf("Expected connection to succeed but timed out - agent state: %d", testAgent.ConnectionStateForTesting())
 					} else {
-						t.Logf("Connection properly rejected (timeout) - agent state: %d", connectionManager.State)
+						t.Logf("Connection properly rejected (timeout) - agent state: %d", testAgent.ConnectionStateForTesting())
 					}
 					connectionResult = false
-				case <-ticker:
-					if connectionManager.State == agent.WebSocketConnected {
+				case <-ticker.C:
+					if testAgent.ConnectionStateForTesting() == agent.WebSocketConnected {
 						if tc.expectConnection {
-							t.Logf("WebSocket connection successful - agent state: %d", connectionManager.State)
+							t.Logf("WebSocket connection successful - agent state: %d", testAgent.ConnectionStateForTesting())
 							connectionResult = true
 						} else {
 							t.Errorf("Unexpected: Connection succeeded when it should have been rejected")
@@ -1136,7 +1157,7 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 					}
 				}
 
-				if connectionResult == tc.expectConnection || connectionResult {
+				if connectionResult || finished {
 					break
 				}
 			}
@@ -1242,12 +1263,22 @@ func TestPermanentUniversalTokenFromDB(t *testing.T) {
 
 	// Start agent in background
 	done := make(chan error, 1)
+	stopped := make(chan struct{})
+	defer func() {
+		testAgent.CancelForTesting()
+		select {
+		case <-stopped:
+		case <-time.After(5 * time.Second):
+			t.Error("agent shutdown did not finish")
+		}
+	}()
 	go func() {
 		serverOptions := agent.ServerOptions{
 			Network: "tcp",
-			Addr:    "127.0.0.1:46050",
+			Addr:    "127.0.0.1:0",
 			Keys:    []ssh.PublicKey{goodPubKey},
 		}
+		defer close(stopped)
 		done <- testAgent.Start(serverOptions)
 	}()
 
@@ -1256,15 +1287,15 @@ func TestPermanentUniversalTokenFromDB(t *testing.T) {
 	time.Sleep(20 * time.Millisecond)
 	checkInterval := 20 * time.Millisecond
 	timeout := time.After(maxWait)
-	ticker := time.Tick(checkInterval)
+	ticker := time.NewTicker(checkInterval)
+	defer ticker.Stop()
 
-	connectionManager := testAgent.GetConnectionManager()
 	for {
 		select {
 		case <-timeout:
-			t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.State)
-		case <-ticker:
-			if connectionManager.State == agent.WebSocketConnected {
+			t.Fatalf("Expected connection to succeed but timed out - agent state: %d", testAgent.ConnectionStateForTesting())
+		case <-ticker.C:
+			if testAgent.ConnectionStateForTesting() == agent.WebSocketConnected {
 				// Success
 				goto verify
 			}
