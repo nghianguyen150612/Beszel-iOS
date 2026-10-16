@@ -337,7 +337,21 @@ def restore_and_compare(backup_dir: pathlib.Path, restore_parent: pathlib.Path) 
     restored = inventory_tree(restore_parent / "checkpoint")
     expected = inventory_doc["entries"]
     if restored != expected:
-        raise BackupError("restored path, content hash, mode, or owner differs from the verified inventory")
+        expected_by_path = {entry["path"]: entry for entry in expected}
+        restored_by_path = {entry["path"]: entry for entry in restored}
+        missing = sorted(set(expected_by_path) - set(restored_by_path))
+        unexpected = sorted(set(restored_by_path) - set(expected_by_path))
+        differences: dict[str, dict[str, Any]] = {}
+        for relative in sorted(set(expected_by_path) & set(restored_by_path)):
+            before, after = expected_by_path[relative], restored_by_path[relative]
+            fields = {key for key in set(before) | set(after) if before.get(key) != after.get(key)}
+            if fields:
+                differences[relative] = {
+                    field: {"expected": before.get(field), "restored": after.get(field)}
+                    for field in sorted(fields)
+                }
+        detail = {"missing": missing[:10], "unexpected": unexpected[:10], "metadata_or_hash_differences": dict(list(differences.items())[:10])}
+        raise BackupError("restored checkpoint differs from verified inventory: " + json.dumps(detail, sort_keys=True))
     validate_required_files(restore_parent / "checkpoint")
     return {
         **verification,
