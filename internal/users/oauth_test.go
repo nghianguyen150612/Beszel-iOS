@@ -193,6 +193,59 @@ func TestOAuthDuplicateIdentityUsesExistingAccount(t *testing.T) {
 	require.Equal(t, "first@example.com", linkedUser.Email(), "identity mismatch must not rewrite the linked account email")
 }
 
+func TestOAuthAccountLinkingPreservesExistingRole(t *testing.T) {
+	t.Setenv("USER_CREATION", "true")
+	const provider = "beszel-account-link-test"
+	providerUser := &auth.AuthUser{Id: "linked-provider-id", Email: "linked@example.com"}
+	auth.Providers[provider] = func() auth.Provider { return &roleTestProvider{user: providerUser} }
+	t.Cleanup(func() { delete(auth.Providers, provider) })
+
+	h, err := beszelTests.NewTestHub(t.TempDir())
+	require.NoError(t, err)
+	defer h.Cleanup()
+	h.StartHub()
+
+	user, err := beszelTests.CreateUserWithRole(h, "linked@example.com", "synthetic-password", "readonly")
+	require.NoError(t, err)
+	user.SetVerified(true)
+	require.NoError(t, h.Save(user))
+
+	collection, err := h.FindCollectionByNameOrId("users")
+	require.NoError(t, err)
+	collection.OAuth2.Enabled = true
+	collection.OAuth2.Providers = []core.OAuth2ProviderConfig{{
+		Name: provider, ClientId: "test-client", ClientSecret: "test-secret",
+	}}
+	require.NoError(t, h.Save(collection))
+	r, err := apis.NewRouter(h.App)
+	require.NoError(t, err)
+	mux, err := r.BuildMux()
+	require.NoError(t, err)
+	body := `{"provider":"` + provider + `","code":"test-code","codeVerifier":"test-verifier","redirectUrl":"http://localhost/callback","createData":{"role":"admin"}}`
+	req := httptest.NewRequest("POST", "/api/collections/users/auth-with-oauth2", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	res := httptest.NewRecorder()
+	mux.ServeHTTP(res, req)
+	require.Equal(t, 200, res.Code, res.Body.String())
+	var response struct {
+		Record struct {
+			ID string `json:"id"`
+		} `json:"record"`
+	}
+	require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+	require.Equal(t, user.Id, response.Record.ID, "OAuth email linking must reuse the verified account")
+
+	linkedUser, err := h.FindRecordById("users", user.Id)
+	require.NoError(t, err)
+	require.Equal(t, "readonly", linkedUser.GetString("role"), "OAuth account linking must not elevate the existing role")
+	count, err := h.CountRecords("users")
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+	count, err = h.CountRecords("_externalAuths")
+	require.NoError(t, err)
+	require.Equal(t, int64(1), count)
+}
+
 func TestInternalUserRole(t *testing.T) {
 	for _, role := range []string{"", "user", "admin", "readonly"} {
 		t.Run("role="+role, func(t *testing.T) {
