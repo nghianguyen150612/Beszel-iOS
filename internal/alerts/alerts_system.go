@@ -72,6 +72,9 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 		case "Disk":
 			maxUsedPct := data.Info.DiskPct
 			for _, fs := range data.Stats.ExtraFs {
+				if fs == nil || fs.DiskTotal <= 0 {
+					continue
+				}
 				usedPct := fs.DiskUsed / fs.DiskTotal * 100
 				if usedPct > maxUsedPct {
 					maxUsedPct = usedPct
@@ -87,7 +90,7 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 			}
 			val = maxUsedPct
 		case "Temperature":
-			if data.Info.DashboardTemp < 1 {
+			if len(data.Stats.Temperatures) == 0 && data.Info.DashboardTemp < 1 {
 				continue
 			}
 			val = data.Info.DashboardTemp
@@ -102,6 +105,9 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 			val = data.Info.LoadAvg[2]
 			unit = ""
 		case "GPU":
+			if len(data.Stats.GPUData) == 0 && data.Info.GpuPct == 0 {
+				continue
+			}
 			val = data.Info.GpuPct
 		case "Battery":
 			if !hasRepresentativeBattery(data.Stats.Battery, data.Stats.Batteries) {

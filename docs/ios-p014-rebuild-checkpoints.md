@@ -102,3 +102,17 @@ Combined `go test -tags 'testing no_ui' ./internal/records ./internal/hub
 all four packages PASS after independently reproduced defects were fixed.
 The first fixture setup failure (missing fingerprint row) and an overly specific
 403/404 denial assertion were test issues, not relaxed production authorization.
+
+## E — optional alert recovery
+
+Fresh regressions reproduced immediate GPU recovery when its telemetry vanished
+and failure to recover at a genuine zero-degree temperature. GPU alerts now hold
+when optional data is absent; a present idle GPU still evaluates zero. Temperature
+presence is determined from sensor data, so zero is eligible for recovery. Positive
+legacy dashboard readings remain accepted. Invalid/null extra filesystem entries
+are ignored during instantaneous disk evaluation.
+
+Actual alert-manager tests PASS for trigger, unchanged incident, unavailable data,
+and fresh zero recovery. Test mailers are synthetic; no real notifications are
+sent. Full supported alert, authorization and notification-queue regressions are
+running in the canonical and race suites; no complete P014 acceptance is claimed.
