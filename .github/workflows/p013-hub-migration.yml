@@ -52,6 +52,10 @@ jobs:
           python3 scripts/audit/validate-upstream-v021-matrix.py
           python3 scripts/audit/validate-upstream-v021-readiness.py
 
+      - name: Test backup and restore failure cases
+        shell: bash
+        run: python3 -m unittest discover -s tests/hub-migration -p 'test_*.py' -v
+
       - name: Build genuine v0.19 fixture and reopen with v0.19
         shell: bash
         run: |

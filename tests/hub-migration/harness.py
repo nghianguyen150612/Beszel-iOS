@@ -197,6 +197,143 @@ def collection_schema(base: str, token: str) -> dict[str, dict[str, Any]]:
     return {str(item["name"]): item for item in body.get("items", [])}
 
 
+def schema_field_types(schema: dict[str, dict[str, Any]], collection: str) -> dict[str, str]:
+    if collection not in schema:
+        raise HarnessError(f"migrated collection missing: {collection}")
+    return {str(field.get("name")): str(field.get("type")) for field in schema[collection].get("fields", [])}
+
+
+def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    missing_legacy = sorted(set(before) - set(after))
+    if missing_legacy:
+        raise HarnessError(f"v0.21 migration removed legacy collections: {missing_legacy}")
+    expected_fields = {
+        "network_monitors": {"certInfo": "json", "server": "text", "skipTlsVerify": "bool"},
+        "network_monitor_stats": {"system": "relation", "monitor": "relation", "res_sum": "number", "total_count": "number"},
+        "zfs_pools": {"display_name": "text", "raw": "bool", "status": "text"},
+        "containers": {"updatable": "bool"},
+    }
+    for collection, expected in expected_fields.items():
+        actual = schema_field_types(after, collection)
+        for field, kind in expected.items():
+            if actual.get(field) != kind:
+                raise HarnessError(f"v0.21 {collection}.{field} expected {kind}, found {actual.get(field)!r}")
+
+    monitor_indexes = set(after["network_monitor_stats"].get("indexes", []))
+    for index_name in ("idx_nms_system_type_created", "idx_nms_monitor_type_created", "idx_nms_type_created"):
+        if not any(index_name in statement for statement in monitor_indexes):
+            raise HarnessError(f"v0.21 monitor history index missing: {index_name}")
+    systems_id = str(after["systems"].get("id", ""))
+    monitors_id = str(after["network_monitors"].get("id", ""))
+    monitor_fields = {field.get("name"): field for field in after["network_monitor_stats"].get("fields", [])}
+    if monitor_fields.get("system", {}).get("collectionId") != systems_id:
+        raise HarnessError("v0.21 network_monitor_stats.system relation targets the wrong collection")
+    if monitor_fields.get("monitor", {}).get("collectionId") != monitors_id:
+        raise HarnessError("v0.21 network_monitor_stats.monitor relation targets the wrong collection")
+
+    for collection in ("alerts", "alerts_history"):
+        record = after[collection]
+        for rule in ("listRule", "deleteRule"):
+            value = str(record.get(rule) or "")
+            if "user = @request.auth.id" not in value:
+                raise HarnessError(f"v0.21 {collection}.{rule} no longer binds access to the owning user")
+    return {
+        "legacy_collections_preserved": sorted(before),
+        "added_collections": sorted(set(after) - set(before)),
+        "required_fields": expected_fields,
+        "network_monitor_indexes": sorted(index for index in monitor_indexes if "idx_nms_" in index),
+        "relation_targets": {"network_monitor_stats.system": systems_id, "network_monitor_stats.monitor": monitors_id},
+        "alert_rules": {
+            collection: {rule: after[collection].get(rule) for rule in ("listRule", "viewRule", "createRule", "updateRule", "deleteRule")}
+            for collection in ("alerts", "alerts_history")
+        },
+    }
+
+
+def verify_fixture_api_state(
+    base: str,
+    *,
+    owner_email: str,
+    password: str,
+    owner_id: str,
+    regular_id: str,
+    system_id: str,
+    owner_settings_id: str,
+    regular_settings_id: str,
+    info: dict[str, Any],
+    seeded: dict[str, dict[str, Any]],
+    public_key: str,
+    key_fingerprint: str,
+) -> dict[str, Any]:
+    """Check account, relation, historical-ID, settings, and key invariants via API."""
+    token = auth_token(base, "_superusers", owner_email, password)
+    user_token = auth_token(base, "users", owner_email, password)
+    users = list_records(base, token, "users")
+    roles = {str(item["id"]): item.get("role") for item in users}
+    if roles != {owner_id: "admin", regular_id: "user"}:
+        raise HarnessError(f"account IDs or roles changed: {roles!r}")
+
+    settings = list_records(base, token, "user_settings")
+    settings_by_id = {str(item["id"]): item for item in settings}
+    if set(settings_by_id) != {owner_settings_id, regular_settings_id}:
+        raise HarnessError("user settings IDs changed or unexpected settings were created")
+    expected_settings = {owner_settings_id: (owner_id, "6h"), regular_settings_id: (regular_id, "24h")}
+    for setting_id, (user_id, chart_time) in expected_settings.items():
+        item = settings_by_id[setting_id]
+        if item.get("user") != user_id or item.get("settings", {}).get("chartTime") != chart_time:
+            raise HarnessError(f"user settings relation or value changed: {setting_id}")
+
+    systems = list_records(base, token, "systems")
+    if len(systems) != 1 or systems[0].get("id") != system_id:
+        raise HarnessError("system ID changed or an unexpected system was created")
+    if sorted(systems[0].get("users", [])) != sorted([owner_id, regular_id]):
+        raise HarnessError("system ownership changed")
+    if systems[0].get("info") != info:
+        raise HarnessError("synthetic system details changed")
+
+    collections = {
+        "system_details": "system_details", "system_stats": "system_stats", "system_stats_wal": "system_stats",
+        "container": "containers", "container_stats": "container_stats", "systemd_service": "systemd_services",
+        "smart_device": "smart_devices", "zfs_pool": "zfs_pools", "alert": "alerts", "alert_history": "alerts_history",
+    }
+    preserved_ids: dict[str, str] = {}
+    for key, collection in collections.items():
+        item_id = str(seeded[key]["id"])
+        matches = [item for item in list_records(base, token, collection) if item.get("id") == item_id]
+        if len(matches) != 1:
+            raise HarnessError(f"migration lost or duplicated {collection} record {item_id}")
+        item = matches[0]
+        if item.get("system") != system_id:
+            raise HarnessError(f"migration changed {collection} system relation for {item_id}")
+        for property_name in ("user", "alert_id", "type", "name", "value", "min", "triggered", "stats"):
+            expected = seeded[key].get(property_name)
+            if expected is not None and item.get(property_name) != expected:
+                raise HarnessError(f"migration changed {collection}.{property_name} for {item_id}")
+        preserved_ids[key] = item_id
+
+    history_ids = {item.get("id") for item in list_records(base, token, "system_stats")}
+    if seeded["system_stats"]["id"] not in history_ids or seeded["system_stats_wal"]["id"] not in history_ids:
+        raise HarnessError("historical system metric IDs did not survive")
+    _, _, info_body = request(base, "GET", "/api/beszel/info", token=user_token)
+    if not isinstance(info_body, dict) or info_body.get("key") != public_key:
+        raise HarnessError("Hub SSH public-key identity changed")
+    fingerprints = list_records(base, token, "fingerprints")
+    matching_fingerprint = [item for item in fingerprints if item.get("system") == system_id]
+    if len(matching_fingerprint) != 1:
+        raise HarnessError("Hub agent fingerprint relation changed")
+
+    return {
+        "account_roles": roles,
+        "user_settings_ids": sorted(settings_by_id),
+        "system_id": system_id,
+        "system_users": sorted(systems[0].get("users", [])),
+        "preserved_record_ids": preserved_ids,
+        "history_count": len(history_ids),
+        "fingerprint_id": matching_fingerprint[0]["id"],
+        "ssh_public_key_fingerprint": key_fingerprint,
+    }
+
+
 def write_private(path: pathlib.Path, contents: str) -> None:
     path.write_text(contents, encoding="utf-8")
     path.chmod(0o600)
@@ -574,15 +711,17 @@ def main() -> int:
             raise HarnessError("the synthetic v0.19 Hub writer was not confirmed stopped")
 
         checkpoint_root = root / "checkpoint"
-        checkpoint_root.mkdir()
         hub_port = free_port()
         hub_service_plist = f'''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>Label</key><string>dev.beszel.hub</string>
 <key>ProgramArguments</key><array><string>/usr/local/bin/beszel-hub</string><string>serve</string><string>--http</string><string>0.0.0.0:{hub_port}</string><string>--dir</string><string>/var/lib/beszel-hub</string></array>
+<key>EnvironmentVariables</key><dict><key>PATH</key><string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
 <key>WorkingDirectory</key><string>/var/lib/beszel-hub</string>
-<key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
+<key>RunAtLoad</key><true/><key>KeepAlive</key><true/><key>ThrottleInterval</key><integer>10</integer>
+<key>StandardOutPath</key><string>/var/log/beszel-hub.log</string>
+<key>StandardErrorPath</key><string>/var/log/beszel-hub.err.log</string>
 </dict></plist>
 '''
         agent_service_plist = f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -596,6 +735,8 @@ def main() -> int:
 <key>LOG_LEVEL</key><string>info</string><key>PATH</key><string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
 </dict><key>WorkingDirectory</key><string>/var/lib/beszel-agent</string>
 <key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
+<key>StandardOutPath</key><string>/var/log/beszel-agent.log</string>
+<key>StandardErrorPath</key><string>/var/log/beszel-agent.err.log</string>
 </dict></plist>
 '''
         built_bundle = build_checkpoint_bundle(
@@ -660,6 +801,121 @@ def main() -> int:
         backup_evidence.pop("backup_path", None)
         restore_evidence.pop("backup_path", None)
         restore_evidence.pop("restore_path", None)
+
+        # Run the integrated v0.21 Hub against a fresh clone extracted from
+        # the verified cold 0.19 archive. The original 0.19 fixture and the
+        # v0.19 restore validation copy remain untouched by migration.
+        migration_backup_clone = root / "migration-backup-clone"
+        restore_and_compare(backup_dir, migration_backup_clone)
+        migration_data_dir = root / "migration-021-data"
+        shutil.copytree(
+            migration_backup_clone / "checkpoint/var/lib/beszel-hub",
+            migration_data_dir,
+            symlinks=True,
+        )
+        migration_hub = HubProcess(new_binary, migration_data_dir, logs / "hub-021-migration.log")
+        migration_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+        migration_health, _, _ = request(migration_hub.base, "GET", "/api/health")
+        if migration_health != 200:
+            raise HarnessError(f"migrated v0.21 Hub health check failed: HTTP {migration_health}")
+        migration_schema = collection_schema(
+            migration_hub.base,
+            auth_token(migration_hub.base, "_superusers", owner_email, SYNTHETIC_PASSWORD),
+        )
+        schema_validation = validate_v021_schema(schema, migration_schema)
+        migration_api_state = verify_fixture_api_state(
+            migration_hub.base,
+            owner_email=owner_email,
+            password=SYNTHETIC_PASSWORD,
+            owner_id=owner_id,
+            regular_id=regular_id,
+            system_id=system_id,
+            owner_settings_id=str(owner_settings["id"]),
+            regular_settings_id=str(regular_settings["id"]),
+            info=info,
+            seeded=seeded,
+            public_key=public_key,
+            key_fingerprint=key_fingerprint,
+        )
+        if file_sha256(migration_data_dir / "config.yml") != file_sha256(config_file):
+            raise HarnessError("v0.21 startup changed the original synthetic Hub configuration")
+        migration_hub.stop()
+        migrated_first = database_snapshot(migration_data_dir / "data.db")
+        if migrated_first["integrity_check"] != ["ok"]:
+            raise HarnessError(f"migrated v0.21 database integrity failed: {migrated_first['integrity_check']}")
+        previous_ledger = [str(row[0]) for row in database_snapshot(data_dir / "data.db")["migration_ledger"]]
+        migrated_ledger = [str(row[0]) for row in migrated_first["migration_ledger"]]
+        if len(migrated_ledger) != len(set(migrated_ledger)):
+            raise HarnessError("v0.21 migration ledger contains duplicate migration entries")
+        if not set(previous_ledger).issubset(set(migrated_ledger)):
+            raise HarnessError("v0.21 migration removed previously applied v0.19 ledger entries")
+        required_migrations = [
+            "0_collections_snapshot_0_20_0.go",
+            "1790193183_network_monitor_cert.go",
+            "1790273174_network_monitor_server.go",
+            "1790924727_zfs_pool_status.go",
+            "1790964708_network_monitor_skip_tls_verify.go",
+        ]
+        missing_migrations = [name for name in required_migrations if migrated_ledger.count(name) != 1]
+        if missing_migrations:
+            raise HarnessError(f"v0.21 migrations missing or repeated: {missing_migrations}")
+        migration_positions = [migrated_ledger.index(name) for name in required_migrations]
+        if migration_positions != sorted(migration_positions):
+            raise HarnessError(f"v0.21 schema migration order is unexpected: {migration_positions}")
+
+        # A second full startup must not add ledger entries, mutate schema, or
+        # change record counts. API invariants are checked again after restart.
+        migration_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+        second_health, _, _ = request(migration_hub.base, "GET", "/api/health")
+        if second_health != 200:
+            raise HarnessError(f"second v0.21 startup health check failed: HTTP {second_health}")
+        second_schema = collection_schema(
+            migration_hub.base,
+            auth_token(migration_hub.base, "_superusers", owner_email, SYNTHETIC_PASSWORD),
+        )
+        validate_v021_schema(schema, second_schema)
+        second_api_state = verify_fixture_api_state(
+            migration_hub.base,
+            owner_email=owner_email,
+            password=SYNTHETIC_PASSWORD,
+            owner_id=owner_id,
+            regular_id=regular_id,
+            system_id=system_id,
+            owner_settings_id=str(owner_settings["id"]),
+            regular_settings_id=str(regular_settings["id"]),
+            info=info,
+            seeded=seeded,
+            public_key=public_key,
+            key_fingerprint=key_fingerprint,
+        )
+        migration_hub.stop()
+        migrated_second = database_snapshot(migration_data_dir / "data.db")
+        if migrated_second["integrity_check"] != ["ok"]:
+            raise HarnessError(f"second v0.21 database integrity failed: {migrated_second['integrity_check']}")
+        for key in ("schema_sha256", "record_counts", "migration_ledger", "application_settings"):
+            if migrated_second[key] != migrated_first[key]:
+                raise HarnessError(f"second v0.21 startup changed database {key}")
+        if migration_api_state != second_api_state:
+            raise HarnessError("second v0.21 startup changed preserved API identities or relations")
+        migration_evidence = {
+            "source_backup_sha256": backup_evidence["archive_sha256"],
+            "target_version": new_version,
+            "target_pocketbase_version": new_pocketbase,
+            "first_health_http": migration_health,
+            "second_health_http": second_health,
+            "sqlite_integrity_first": migrated_first["integrity_check"],
+            "sqlite_integrity_second": migrated_second["integrity_check"],
+            "migration_ledger_before": previous_ledger,
+            "migration_ledger_after": migrated_ledger,
+            "required_migrations_ordered_once": required_migrations,
+            "schema_validation": schema_validation,
+            "collection_schema_after": migration_schema,
+            "api_invariants_first": migration_api_state,
+            "api_invariants_second": second_api_state,
+            "config_sha256_preserved": file_sha256(migration_data_dir / "config.yml"),
+            "schema_hash_second_start_stable": migrated_second["schema_sha256"] == migrated_first["schema_sha256"],
+            "record_counts_second_start_stable": migrated_second["record_counts"] == migrated_first["record_counts"],
+        }
 
         fixture = {
             "fixture": "synthetic",
@@ -732,6 +988,7 @@ def main() -> int:
                 "backup_stored_outside_fixture_staging": backup_store not in root.parents,
                 "agent_writer_pids": [],
             },
+            "migration_021": migration_evidence,
         }
         old_hub.stop()
         fixture["database_019"] = database_snapshot(data_dir / "data.db")
