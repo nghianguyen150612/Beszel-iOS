@@ -41,6 +41,7 @@ HEALTH_TIMEOUT_SECONDS = 45
 SYNTHETIC_PASSWORD = "P013-synthetic-only-password-not-a-real-credential"
 SYNTHETIC_TOKEN = "P013-synthetic-agent-token-not-a-secret"
 ACTIVE_HUBS: list["HubProcess"] = []
+ACTIVE_TEMP_PATHS: list[pathlib.Path] = []
 
 
 class HarnessError(RuntimeError):
@@ -610,17 +611,23 @@ def main() -> int:
         checkpoint_bytes = sum(
             entry["size"] for entry in built_bundle["files"] if entry["kind"] == "file"
         )
+        backup_store = pathlib.Path(tempfile.mkdtemp(prefix="beszel-p013-backup-outside-staging-")).resolve()
+        ACTIVE_TEMP_PATHS.append(backup_store)
+        backup_dir = backup_store / "backup-019"
         backup_evidence = create_cold_backup(
             bundle_root=checkpoint_root,
-            output_dir=root / "backup-019",
+            output_dir=backup_dir,
             hub_pid=old_hub.last_pid,
             hub_exit_confirmed=old_hub.last_exit_code is not None,
             agent_writer_pids=[],
             minimum_free_bytes=(checkpoint_bytes * 120 + 99) // 100,
         )
-        restore_evidence = restore_and_compare(root / "backup-019", root / "restore-019-inventory")
+        restore_evidence = restore_and_compare(backup_dir, root / "restore-019-inventory")
         restored_checkpoint = root / "restore-019-inventory" / "checkpoint"
         restored_data = restored_checkpoint / "var/lib/beszel-hub"
+        restored_db_snapshot = database_snapshot(restored_data / "data.db")
+        if restored_db_snapshot["integrity_check"] != ["ok"]:
+            raise HarnessError(f"restored cold backup SQLite integrity failed: {restored_db_snapshot['integrity_check']}")
         restored_hub = HubProcess(
             restored_checkpoint / "usr/local/bin/beszel-hub", restored_data, logs / "hub-019-restored.log",
         )
@@ -630,14 +637,25 @@ def main() -> int:
             raise HarnessError(f"restored v0.19 Hub health check failed: HTTP {restore_health}")
         restored_owner_token = auth_token(restored_hub.base, "_superusers", owner_email, SYNTHETIC_PASSWORD)
         restored_users = list_records(restored_hub.base, restored_owner_token, "users")
+        restored_settings = list_records(restored_hub.base, restored_owner_token, "user_settings")
         restored_systems = list_records(restored_hub.base, restored_owner_token, "systems")
         restored_stats = list_records(restored_hub.base, restored_owner_token, "system_stats")
         if {item.get("id") for item in restored_users} != {owner_id, regular_id}:
             raise HarnessError("cold backup restore changed or lost the original v0.19 account IDs")
         if len(restored_systems) != 1 or restored_systems[0].get("id") != system_id:
             raise HarnessError("cold backup restore changed or lost the original v0.19 system")
+        restored_roles = {item["id"]: item.get("role") for item in restored_users}
+        if restored_roles != {owner_id: "admin", regular_id: "user"}:
+            raise HarnessError(f"cold backup restore changed account roles: {restored_roles!r}")
+        if {item.get("id") for item in restored_settings} != {owner_settings["id"], regular_settings["id"]}:
+            raise HarnessError("cold backup restore changed or lost user settings")
+        if sorted(restored_systems[0].get("users", [])) != sorted([owner_id, regular_id]):
+            raise HarnessError("cold backup restore changed system membership")
         if seeded["system_stats_wal"]["id"] not in {item.get("id") for item in restored_stats}:
             raise HarnessError("cold backup restore lost the committed synthetic history row")
+        _, _, restored_public_info = request(restored_hub.base, "GET", "/api/beszel/info", token=auth_token(restored_hub.base, "users", owner_email, SYNTHETIC_PASSWORD))
+        if not isinstance(restored_public_info, dict) or restored_public_info.get("key") != public_key:
+            raise HarnessError("cold backup restore changed the Hub SSH public-key identity")
         restored_hub.stop()
         backup_evidence.pop("backup_path", None)
         restore_evidence.pop("backup_path", None)
@@ -703,9 +721,15 @@ def main() -> int:
                 "sidecars": built_bundle["sidecars"],
                 "restore_inventory_matches": restore_evidence["restore_inventory_matches"],
                 "restored_hub_health_http": restore_health,
+                "restored_database_integrity_check": restored_db_snapshot["integrity_check"],
                 "restored_account_ids_preserved": True,
+                "restored_account_roles_preserved": True,
+                "restored_user_settings_ids_preserved": True,
                 "restored_system_id_preserved": True,
+                "restored_system_membership_preserved": True,
                 "restored_committed_history_id": seeded["system_stats_wal"]["id"],
+                "restored_ssh_public_key_fingerprint_preserved": key_fingerprint,
+                "backup_stored_outside_fixture_staging": backup_store not in root.parents,
                 "agent_writer_pids": [],
             },
         }
@@ -746,3 +770,5 @@ if __name__ == "__main__":
         # process writing into a temporary directory after it has been removed.
         for hub in list(ACTIVE_HUBS):
             hub.stop(force=True)
+        for temporary_path in ACTIVE_TEMP_PATHS:
+            shutil.rmtree(temporary_path, ignore_errors=True)
