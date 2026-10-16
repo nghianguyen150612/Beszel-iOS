@@ -1162,6 +1162,20 @@ func TestTrustedHeaderMiddleware(t *testing.T) {
 			TestAppFactory:  testAppFactory,
 		},
 		{
+			Name:   "GET /getkey - malformed trusted identity must fail closed",
+			Method: http.MethodGet,
+			URL:    "/api/beszel/getkey",
+			Headers: map[string]string{
+				"X-Beszel-Trusted": "user@test.com, attacker@example.com",
+			},
+			ExpectedStatus:  401,
+			ExpectedContent: []string{"requires valid"},
+			TestAppFactory:  testAppFactory,
+			BeforeTestFunc: func(t testing.TB, app *pbTests.TestApp, e *core.ServeEvent) {
+				beszelTests.CreateUser(app, "user@test.com", "password123")
+			},
+		},
+		{
 			Name:   "GET /getkey - with trusted header should succeed",
 			Method: http.MethodGet,
 			URL:    "/api/beszel/getkey",

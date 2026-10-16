@@ -17,6 +17,7 @@ import (
 
 type roleTestProvider struct {
 	auth.BaseProvider
+	user *auth.AuthUser
 }
 
 func (p *roleTestProvider) FetchToken(string, ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
@@ -24,7 +25,56 @@ func (p *roleTestProvider) FetchToken(string, ...oauth2.AuthCodeOption) (*oauth2
 }
 
 func (p *roleTestProvider) FetchAuthUser(*oauth2.Token) (*auth.AuthUser, error) {
+	if p.user != nil {
+		return p.user, nil
+	}
 	return &auth.AuthUser{Id: "role-test-user", Email: "oauth@example.com"}, nil
+}
+
+func TestOAuthInvalidIdentityDoesNotCreateAccount(t *testing.T) {
+	t.Setenv("USER_CREATION", "true")
+	const provider = "beszel-invalid-role-test"
+	for _, tc := range []struct {
+		name string
+		user *auth.AuthUser
+	}{
+		{name: "missing provider id", user: &auth.AuthUser{Email: "oauth-invalid@example.com"}},
+		{name: "missing email", user: &auth.AuthUser{Id: "invalid-email-user"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			auth.Providers[provider] = func() auth.Provider { return &roleTestProvider{user: tc.user} }
+			t.Cleanup(func() { delete(auth.Providers, provider) })
+
+			h, err := beszelTests.NewTestHub(t.TempDir())
+			require.NoError(t, err)
+			defer h.Cleanup()
+			h.StartHub()
+
+			collection, err := h.FindCollectionByNameOrId("users")
+			require.NoError(t, err)
+			collection.OAuth2.Enabled = true
+			collection.OAuth2.Providers = []core.OAuth2ProviderConfig{{
+				Name: provider, ClientId: "test-client", ClientSecret: "test-secret",
+			}}
+			require.NoError(t, h.Save(collection))
+			r, err := apis.NewRouter(h.App)
+			require.NoError(t, err)
+			mux, err := r.BuildMux()
+			require.NoError(t, err)
+			body := `{"provider":"` + provider + `","code":"test-code","codeVerifier":"test-verifier","redirectUrl":"http://localhost/callback","createData":{}}`
+			req := httptest.NewRequest("POST", "/api/collections/users/auth-with-oauth2", strings.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			res := httptest.NewRecorder()
+			mux.ServeHTTP(res, req)
+			require.NotEqual(t, 200, res.Code, res.Body.String())
+			count, err := h.CountRecords("users")
+			require.NoError(t, err)
+			require.Zero(t, count, "invalid OAuth identity must not create an account")
+			count, err = h.CountRecords("_externalAuths")
+			require.NoError(t, err)
+			require.Zero(t, count, "invalid OAuth identity must not create an identity link")
+		})
+	}
 }
 
 func TestOAuthUserRole(t *testing.T) {
