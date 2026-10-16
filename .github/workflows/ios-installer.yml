@@ -7,7 +7,7 @@ name: iOS installer lifecycle
 
 on:
   push:
-    branches: [iOS, ios/procursus-package-updates, ios/wifi-rssi-compatibility, ios/hub-database-migration]
+    branches: [iOS, ios/procursus-package-updates, ios/wifi-rssi-compatibility]
     paths:
       - install.sh
       - scripts/ios/install-beszel.sh
@@ -66,6 +66,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ios-installer-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   installer:

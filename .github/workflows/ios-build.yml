@@ -35,6 +35,10 @@ on:
       - "tests/ios-patch-sentinels.sh"
       - "tests/upstream-sync-test.sh"
 
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
