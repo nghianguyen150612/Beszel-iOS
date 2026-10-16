@@ -375,3 +375,73 @@ func TestNetworkMonitorCertPersistence(t *testing.T) {
 		})
 	}
 }
+
+// A delayed cached result from the same task must not overwrite newer data.
+func TestP014MonitorSampleOrdering(t *testing.T) {
+	sys, app := newTestSystemWithHub(t)
+	collection, err := app.FindCachedCollectionByNameOrId("network_monitors")
+	require.NoError(t, err)
+	record := core.NewRecord(collection)
+	record.Id = "p014monitor0001"
+	record.Load(map[string]any{"system": sys.Id, "enabled": true})
+	require.NoError(t, app.SaveNoValidate(record))
+	for _, r := range []monitor.Result{
+		{LastProbeAt: 2000, SampleCount: 5, AvgResponse: 25, TotalCount: 1, SuccessCount: 1, ResponseSum: 25},
+		{LastProbeAt: 1000, SampleCount: 4, AvgResponse: 90, TotalCount: 1, SuccessCount: 1, ResponseSum: 90},
+	} {
+		_, err = sys.createRecords(&system.CombinedData{Monitors: map[string]monitor.Result{record.Id: r}})
+		require.NoError(t, err)
+	}
+	saved, err := app.FindRecordById("network_monitors", record.Id)
+	require.NoError(t, err)
+	require.Equal(t, 25, saved.GetInt("res"))
+	count, err := app.CountRecords("network_monitor_stats")
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	// A newer completed probe remains valid even if the Agent's wall clock rolls back.
+	_, err = sys.createRecords(&system.CombinedData{Monitors: map[string]monitor.Result{record.Id: {LastProbeAt: 500, SampleCount: 6, AvgResponse: 15, TotalCount: 1, SuccessCount: 1, ResponseSum: 15}}})
+	require.NoError(t, err)
+	saved, err = app.FindRecordById("network_monitors", record.Id)
+	require.NoError(t, err)
+	require.Equal(t, 15, saved.GetInt("res"))
+}
+
+func TestP014ImmediateMonitorResultLifetime(t *testing.T) {
+	sys, app := newTestSystemWithHub(t)
+	collection, err := app.FindCachedCollectionByNameOrId("network_monitors")
+	require.NoError(t, err)
+	record := core.NewRecord(collection)
+	record.Id = "p014monitor0002"
+	config := monitor.Config{ID: record.Id, Target: "fixture.example", Protocol: "tcp", Port: 80, Interval: 30}
+	record.Load(map[string]any{"system": sys.Id, "enabled": true, "target": config.Target, "protocol": config.Protocol, "port": config.Port, "interval": config.Interval})
+	require.NoError(t, app.SaveNoValidate(record))
+	result := monitor.Result{LastProbeAt: 2000, SampleCount: 5, AvgResponse: 25, TotalCount: 1, SuccessCount: 1, ResponseSum: 25}
+	require.NoError(t, sys.SaveNetworkMonitorResult(config, result))
+	result.LastProbeAt = 1000
+	result.SampleCount = 4
+	result.AvgResponse = 90
+	require.NoError(t, sys.SaveNetworkMonitorResult(config, result))
+	saved, err := app.FindRecordById("network_monitors", record.Id)
+	require.NoError(t, err)
+	require.Equal(t, 25, saved.GetInt("res"))
+	count, err := app.CountRecords("network_monitor_stats")
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	// The same ID can retain a changed interval/TLS policy; its old request must not publish.
+	saved.Set("interval", 60)
+	require.NoError(t, app.SaveNoValidate(saved))
+	result.SampleCount = 6
+	result.LastProbeAt = 3000
+	require.NoError(t, sys.SaveNetworkMonitorResult(config, result))
+	count, err = app.CountRecords("network_monitor_stats")
+	require.NoError(t, err)
+	require.EqualValues(t, 1, count)
+	require.NoError(t, app.Delete(saved))
+	require.NoError(t, sys.SaveNetworkMonitorResult(config, result))
+	count, err = app.CountRecords("network_monitors")
+	require.NoError(t, err)
+	require.Zero(t, count)
+	count, err = app.CountRecords("network_monitor_stats")
+	require.NoError(t, err)
+	require.Zero(t, count)
+}

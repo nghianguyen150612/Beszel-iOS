@@ -62,8 +62,11 @@ type System struct {
 	monitorsNeedSync atomic.Bool
 	// Serialize persistence from scheduled updates and resumes through commit.
 	recordsMu sync.Mutex
+	// Serialize complete scheduled/resume polls and monitor configuration changes.
+	pollMu sync.Mutex
 	// Protected by recordsMu; realtime reads don't consume probes.
-	lastSavedMonitorProbe map[string]int64
+	lastSavedMonitorProbe  map[string]int64
+	lastSavedMonitorSample map[string]int64
 }
 
 // errSSHDisabled is returned instead of dialing SSH when DISABLE_SSH is set on the hub.
@@ -160,6 +163,8 @@ func (sys *System) StartUpdater() {
 
 // update updates the system data and records.
 func (sys *System) update() error {
+	sys.pollMu.Lock()
+	defer sys.pollMu.Unlock()
 	if sys.GetStatus() == paused {
 		sys.handlePaused()
 		return nil
@@ -264,6 +269,8 @@ func (sys *System) createRecords(data *system.CombinedData) (*core.Record, error
 		return nil, err
 	}
 	hub := sys.manager.hub
+	// Exclude delayed task snapshots before updating live records or alerts.
+	acceptedMonitors := sys.freshMonitorResults(data.Monitors)
 	savedMonitorProbes := make(map[string]int64)
 	err = hub.RunInTransaction(func(txApp core.App) error {
 		// add system_stats record
@@ -320,7 +327,7 @@ func (sys *System) createRecords(data *system.CombinedData) (*core.Record, error
 		}
 
 		if data.Monitors != nil {
-			if err := sys.updateNetworkMonitorsRecords(txApp, data.Monitors, savedMonitorProbes); err != nil {
+			if err := sys.updateNetworkMonitorsRecords(txApp, acceptedMonitors, savedMonitorProbes); err != nil {
 				return err
 			}
 		}
@@ -346,26 +353,21 @@ func (sys *System) createRecords(data *system.CombinedData) (*core.Record, error
 		return nil
 	})
 
-	// Publish only successful inserts after the entire transaction commits.
-	if err == nil && len(savedMonitorProbes) > 0 {
-		if sys.lastSavedMonitorProbe == nil {
-			sys.lastSavedMonitorProbe = savedMonitorProbes
-		} else {
-			for id, timestamp := range savedMonitorProbes {
-				sys.lastSavedMonitorProbe[id] = timestamp
-			}
-		}
+	// Publish probe identity and sequence only after the transaction commits.
+	if err == nil {
+		sys.rememberMonitorProbes(savedMonitorProbes, acceptedMonitors)
 	}
 	// A non-nil report includes cached results for all remaining monitors.
 	if err == nil && data.Monitors != nil {
 		for id := range sys.lastSavedMonitorProbe {
 			if _, exists := data.Monitors[id]; !exists {
 				delete(sys.lastSavedMonitorProbe, id)
+				delete(sys.lastSavedMonitorSample, id)
 			}
 		}
 	}
 	if err == nil {
-		if alertErr := hub.HandleNetworkMonitorAlerts(systemRecord, data.Monitors); alertErr != nil {
+		if alertErr := hub.HandleNetworkMonitorAlerts(systemRecord, acceptedMonitors); alertErr != nil {
 			hub.Logger().Error("Error handling network monitor alerts", "err", alertErr)
 		}
 	}
@@ -761,6 +763,9 @@ func (sys *System) getSSHTransport() (*transport.SSHTransport, error) {
 
 // onSSHConnect resets per-connection state after a new SSH connection is made.
 func (sys *System) onSSHConnect(agentVersion semver.Version) {
+	sys.recordsMu.Lock()
+	sys.lastSavedMonitorSample = nil
+	sys.recordsMu.Unlock()
 	sys.setAgentVersion(agentVersion)
 	sys.monitorsNeedSync.Store(true)
 	sys.manager.resetFailedSmartFetchState(sys.Id)
@@ -926,17 +931,24 @@ func (sys *System) fetchDataViaSSH(options common.DataRequestOptions) (*system.C
 
 		if sys.getAgentVersion().GTE(beszel.MinVersionAgentResponse) && stdinErr == nil {
 			req := common.HubRequest[any]{Action: common.GetData, Data: options}
-			_ = cbor.NewEncoder(stdin).Encode(req)
-			_ = stdin.Close()
-
-			var resp common.AgentResponse
-			if decErr := cbor.NewDecoder(stdout).Decode(&resp); decErr == nil && resp.SystemData != nil {
-				*data = *resp.SystemData
-				if err := session.Wait(); err != nil {
-					return false, err
-				}
-				return false, nil
+			if err := cbor.NewEncoder(stdin).Encode(req); err != nil {
+				return true, err
 			}
+			_ = stdin.Close()
+			var resp common.AgentResponse
+			if err := cbor.NewDecoder(stdout).Decode(&resp); err != nil {
+				return true, err
+			}
+			if resp.Error != "" {
+				return false, errors.New(resp.Error)
+			}
+			if err := transport.UnmarshalResponse(resp, common.GetData, data); err != nil {
+				return false, err
+			}
+			if err := session.Wait(); err != nil {
+				return false, err
+			}
+			return false, nil
 		}
 
 		var decodeErr error

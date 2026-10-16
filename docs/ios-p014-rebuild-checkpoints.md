@@ -74,3 +74,31 @@ combined focused run: slice regressions plus real PocketBase ten-minute rollup,
 close/reopen of the same disposable DB, valid zero, package power, and no new
 system history after disconnection. Broader regression/retention checks remain
 pending. No database schema/migration or retention interval changed.
+
+## B/D — authenticated ingestion and monitor ordering
+
+Fresh focused tests PASS for all four OS payloads through authenticated WebSocket
+(signature/token/fingerprint binding), scheduled polling, PocketBase writes,
+authorized API/history reads, denied outsider access, reconnect with partial
+telemetry, OS details and revoked membership. Source-derived API goldens are in
+`internal/hub/testdata/p014` and omit nondeterministic IDs/timestamps.
+
+Authenticated, host-key-pinned SSH tests reproduce generic-only response rejection
+for every platform at both 0.19 and 0.21. The periodic SSH path now uses the shared
+response decoder rather than discarding a valid generic response and reading EOF.
+Typed framing still passes; legacy raw framing remains version-gated.
+
+Reproduced stale monitor overwrite (new sequence 5/value 25 overwritten by
+sequence 4/value 90). Accepted probe sequences now gate both live updates and
+history/alerts; a newer sequence remains valid after wall-clock rollback. Task
+configuration changes and SSH reconnect reset sequence state. Complete polls and
+configuration requests are serialized. Immediate results recheck current ownership,
+enabled state and exact configuration under a transaction; they share history
+ordering and cannot recreate a deleted monitor. A focused immediate-lifetime
+regression has been added for the final canonical/race runs.
+
+Combined `go test -tags 'testing no_ui' ./internal/records ./internal/hub
+./internal/hub/systems ./internal/alerts -run '^TestP014' -count=1 -timeout=10m`:
+all four packages PASS after independently reproduced defects were fixed.
+The first fixture setup failure (missing fingerprint row) and an overly specific
+403/404 denial assertion were test issues, not relaxed production authorization.

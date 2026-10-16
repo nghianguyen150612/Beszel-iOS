@@ -164,8 +164,7 @@ func (h *Hub) upsertNetworkMonitor(record *core.Record, runNow bool) error {
 	if err != nil || result == nil {
 		return err
 	}
-	setMonitorResultFields(record, *result)
-	return h.App.SaveNoValidate(record)
+	return system.SaveNetworkMonitorResult(*monitorConfigFromRecord(record), *result)
 }
 
 // deleteNetworkMonitor removes the record's monitor from the target system.
