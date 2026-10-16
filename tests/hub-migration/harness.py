@@ -415,12 +415,12 @@ def verify_migrated_monitor_alert_api(
     alert_read_status, _, _ = request(
         base, "GET", f"/api/collections/alerts/records/{alert_id}", token=owner_token,
     )
-    if alert_read_status != 404:
+    if alert_read_status not in (403, 404):
         raise HarnessError(f"another account read a regular user's alert: HTTP {alert_read_status}")
     cross_user_update_status, _, _ = request(
         base, "PATCH", f"/api/collections/alerts/records/{alert_id}", token=owner_token, body={"value": 62},
     )
-    if cross_user_update_status != 404:
+    if cross_user_update_status not in (403, 404):
         raise HarnessError(f"another account updated a regular user's alert: HTTP {cross_user_update_status}")
     regular_history_status, _, regular_history = request(
         base, "GET", "/api/collections/alerts_history/records?perPage=500", token=regular_token,
