@@ -114,7 +114,7 @@ func TestConnectHandshakeTimeout(t *testing.T) {
 // carry over to the established connection, which is reused for many updates.
 func TestConnectClearsHandshakeDeadline(t *testing.T) {
 	prev := sshHandshakeTimeout
-	sshHandshakeTimeout = 200 * time.Millisecond
+	sshHandshakeTimeout = 2 * time.Second
 	t.Cleanup(func() { sshHandshakeTimeout = prev })
 
 	_, hostPriv, err := ed25519.GenerateKey(rand.Reader)

@@ -189,3 +189,12 @@ it spawns children, and test cleanup cancels producers before joining. The short
 SSH handshake-deadline fixture also needs a realistic race-build setup budget;
 it still verifies that established sessions outlive the original deadline.
 Repeated Hub/SSH checks and final source validation remain in progress.
+
+G focused repeated repair checks: PASS in Agent (3.040s), Hub (164.714s) and SSH
+transport (19.194s), three repetitions each of applicable certificate cancellation,
+Agent WS identity, universal-token isolation, API authorization/startup cleanup,
+and handshake-deadline tests. These are actual completions, not expired runs.
+Read/write race excerpts and original log hashes are preserved in
+`docs/evidence/p014/concurrency-reproductions.txt`. The broad pre-final attempt
+also expired on slow Hub/systems fixtures and retained stale rollup assertions;
+remaining superseded work was stopped. It is not final acceptance evidence.
