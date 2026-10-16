@@ -19,13 +19,19 @@ import signal
 import socket
 import subprocess
 import sys
-import tarfile
 import tempfile
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from typing import Any
+
+from backup import (
+    build_checkpoint_bundle,
+    create_cold_backup,
+    process_alive,
+    restore_and_compare,
+)
 
 
 OLD_019_REV = "0c3e4cd22ac24264834c401ad412e44aeda4e4f3"
@@ -86,6 +92,8 @@ class HubProcess:
         self.base = f"http://127.0.0.1:{self.port}"
         self.process: subprocess.Popen[bytes] | None = None
         self.log_file: Any = None
+        self.last_pid: int | None = None
+        self.last_exit_code: int | None = None
 
     def start(self, *, env: dict[str, str] | None = None, wait: bool = True) -> None:
         self.port = free_port()
@@ -126,6 +134,7 @@ class HubProcess:
     def stop(self, *, force: bool = False) -> None:
         if self.process is None:
             return
+        pid = self.process.pid
         if self.process.poll() is None:
             if force:
                 self.process.send_signal(signal.SIGKILL)
@@ -136,6 +145,8 @@ class HubProcess:
             except subprocess.TimeoutExpired:
                 self.process.kill()
                 self.process.wait(timeout=5)
+        self.last_pid = pid
+        self.last_exit_code = self.process.returncode
         if self.log_file is not None:
             self.log_file.close()
             self.log_file = None
@@ -336,6 +347,7 @@ def main() -> int:
         if "go1.27.1" not in go_version or bun_version != "1.4.0":
             raise HarnessError(f"P013 fixture requires Go 1.27.1 and Bun 1.4.0 (found {go_version!r}, Bun {bun_version!r})")
         old_binary = binaries / "beszel-hub-0.19"
+        old_agent_binary = binaries / "beszel-agent-0.19"
         new_binary = binaries / "beszel-hub-0.21"
         old_pocketbase = required_module_version(old_source, "github.com/pocketbase/pocketbase")
         for source in (old_source,):
@@ -343,6 +355,7 @@ def main() -> int:
             run([bun, "install", "--frozen-lockfile"], cwd=site)
             run([bun, "run", "build"], cwd=site)
         run([go, "build", "-trimpath", "-o", str(old_binary), "./internal/cmd/hub"], cwd=old_source)
+        run([go, "build", "-trimpath", "-o", str(old_agent_binary), "./internal/cmd/agent"], cwd=old_source)
 
         new_source = root / "source-021"
         new_source.mkdir()
@@ -358,9 +371,12 @@ def main() -> int:
         run([bun, "run", "build"], cwd=site)
         run([go, "build", "-trimpath", "-o", str(new_binary), "./internal/cmd/hub"], cwd=new_source)
         old_version = subprocess.check_output([str(old_binary), "--version"], text=True).strip()
+        old_agent_version = subprocess.check_output([str(old_agent_binary), "--version"], text=True).strip()
         new_version = subprocess.check_output([str(new_binary), "--version"], text=True).strip()
         if "0.19" not in old_version or "0.21" not in new_version:
             raise HarnessError(f"Hub binary version mismatch: v0.19={old_version!r}, v0.21={new_version!r}")
+        if "0.19" not in old_agent_version:
+            raise HarnessError(f"Agent binary version mismatch: {old_agent_version!r}")
         print(f"hub_019_sha256={hashlib.sha256(old_binary.read_bytes()).hexdigest()}", flush=True)
         print(f"hub_021_sha256={hashlib.sha256(new_binary.read_bytes()).hexdigest()}", flush=True)
 
@@ -544,7 +560,88 @@ def main() -> int:
             ids = {item.get("id") for item in list_records(old_hub.base, reopen_owner_token, collection)}
             if seeded[key].get("id") not in ids:
                 raise HarnessError(f"genuine 0.19 reopen lost synthetic {collection} record {seeded[key].get('id')}")
-        old_hub.stop()
+        # Leave one API-committed synthetic row immediately before an abrupt
+        # stop. On SQLite builds that retain a WAL, the cold archive must
+        # capture it with the main database rather than copying data.db alone.
+        seeded["system_stats_wal"] = create_record(old_hub.base, reopen_owner_token, "system_stats", {
+            "system": system_id,
+            "type": "1m",
+            "stats": {"cpu": 19.5, "mem": 4096, "load": 0.75, "disk": 2048, "net": {"sent": 300, "recv": 400}},
+        })
+        old_hub.stop(force=True)
+        if old_hub.last_pid is None or old_hub.last_exit_code is None or process_alive(old_hub.last_pid):
+            raise HarnessError("the synthetic v0.19 Hub writer was not confirmed stopped")
+
+        checkpoint_root = root / "checkpoint"
+        checkpoint_root.mkdir()
+        hub_port = free_port()
+        hub_service_plist = f'''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>Label</key><string>dev.beszel.hub</string>
+<key>ProgramArguments</key><array><string>/usr/local/bin/beszel-hub</string><string>serve</string><string>--http</string><string>0.0.0.0:{hub_port}</string><string>--dir</string><string>/var/lib/beszel-hub</string></array>
+<key>WorkingDirectory</key><string>/var/lib/beszel-hub</string>
+<key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
+</dict></plist>
+'''
+        agent_service_plist = f'''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>Label</key><string>dev.beszel.agent</string>
+<key>ProgramArguments</key><array><string>/usr/local/bin/beszel-agent</string></array>
+<key>EnvironmentVariables</key><dict>
+<key>DATA_DIR</key><string>/var/lib/beszel-agent</string>
+<key>LISTEN</key><string>:45876</string><key>KEY</key><string>{public_key.strip()}</string>
+<key>LOG_LEVEL</key><string>info</string><key>PATH</key><string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+</dict><key>WorkingDirectory</key><string>/var/lib/beszel-agent</string>
+<key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
+</dict></plist>
+'''
+        built_bundle = build_checkpoint_bundle(
+            source_data_dir=data_dir,
+            old_hub_binary=old_binary,
+            old_agent_binary=old_agent_binary,
+            bundle_root=checkpoint_root,
+            hub_release="v0.19.0-ios.2",
+            agent_release="v0.19.0-ios.2",
+            hub_service_plist=hub_service_plist,
+            agent_service_plist=agent_service_plist,
+        )
+        checkpoint_bytes = sum(
+            entry["size"] for entry in built_bundle["files"] if entry["kind"] == "file"
+        )
+        backup_evidence = create_cold_backup(
+            bundle_root=checkpoint_root,
+            output_dir=root / "backup-019",
+            hub_pid=old_hub.last_pid,
+            hub_exit_confirmed=old_hub.last_exit_code is not None,
+            agent_writer_pids=[],
+            minimum_free_bytes=(checkpoint_bytes * 120 + 99) // 100,
+        )
+        restore_evidence = restore_and_compare(root / "backup-019", root / "restore-019-inventory")
+        restored_checkpoint = root / "restore-019-inventory" / "checkpoint"
+        restored_data = restored_checkpoint / "var/lib/beszel-hub"
+        restored_hub = HubProcess(
+            restored_checkpoint / "usr/local/bin/beszel-hub", restored_data, logs / "hub-019-restored.log",
+        )
+        restored_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+        restore_health, _, _ = request(restored_hub.base, "GET", "/api/health")
+        if restore_health != 200:
+            raise HarnessError(f"restored v0.19 Hub health check failed: HTTP {restore_health}")
+        restored_owner_token = auth_token(restored_hub.base, "_superusers", owner_email, SYNTHETIC_PASSWORD)
+        restored_users = list_records(restored_hub.base, restored_owner_token, "users")
+        restored_systems = list_records(restored_hub.base, restored_owner_token, "systems")
+        restored_stats = list_records(restored_hub.base, restored_owner_token, "system_stats")
+        if {item.get("id") for item in restored_users} != {owner_id, regular_id}:
+            raise HarnessError("cold backup restore changed or lost the original v0.19 account IDs")
+        if len(restored_systems) != 1 or restored_systems[0].get("id") != system_id:
+            raise HarnessError("cold backup restore changed or lost the original v0.19 system")
+        if seeded["system_stats_wal"]["id"] not in {item.get("id") for item in restored_stats}:
+            raise HarnessError("cold backup restore lost the committed synthetic history row")
+        restored_hub.stop()
+        backup_evidence.pop("backup_path", None)
+        restore_evidence.pop("backup_path", None)
+        restore_evidence.pop("restore_path", None)
 
         fixture = {
             "fixture": "synthetic",
@@ -554,6 +651,8 @@ def main() -> int:
             "hub_019_version": old_version,
             "hub_019_pocketbase_version": old_pocketbase,
             "hub_019_binary_sha256": file_sha256(old_binary),
+            "agent_019_version": old_agent_version,
+            "agent_019_binary_sha256": file_sha256(old_agent_binary),
             "hub_021_source": source_commit,
             "hub_021_version": new_version,
             "hub_021_pocketbase_version": new_pocketbase,
@@ -599,6 +698,16 @@ def main() -> int:
             ],
             "collections": sorted(schema),
             "collection_schema": schema,
+            "cold_backup": {
+                **backup_evidence,
+                "sidecars": built_bundle["sidecars"],
+                "restore_inventory_matches": restore_evidence["restore_inventory_matches"],
+                "restored_hub_health_http": restore_health,
+                "restored_account_ids_preserved": True,
+                "restored_system_id_preserved": True,
+                "restored_committed_history_id": seeded["system_stats_wal"]["id"],
+                "agent_writer_pids": [],
+            },
         }
         old_hub.stop()
         fixture["database_019"] = database_snapshot(data_dir / "data.db")
