@@ -430,14 +430,102 @@ def verify_migrated_monitor_alert_api(
     if alert_id in {item.get("id") for item in regular_history.get("items", [])}:
         raise HarnessError("alert creation unexpectedly fabricated an alert-history event")
 
+    outsider_email = "p013-outsider@example.invalid"
+    outsider_create_status, _, outsider = request(
+        base,
+        "POST",
+        "/api/collections/users/records",
+        token=owner_token,
+        body={
+            "email": outsider_email,
+            "password": password,
+            "passwordConfirm": password,
+            "role": "user",
+        },
+    )
+    if outsider_create_status not in (200, 201) or not isinstance(outsider, dict) or not outsider.get("id"):
+        raise HarnessError(f"could not create synthetic nonmember through the supported API: HTTP {outsider_create_status}, {outsider}")
+    outsider_id = str(outsider["id"])
+    if outsider.get("role") != "user":
+        raise HarnessError(f"new synthetic OAuth/API-style account received unexpected role: {outsider.get('role')}")
+    outsider_token = auth_token(base, "users", outsider_email, password)
+
+    outsider_monitor_read, _, _ = request(
+        base, "GET", f"/api/collections/network_monitors/records/{monitor_id}", token=outsider_token,
+    )
+    if outsider_monitor_read not in (403, 404):
+        raise HarnessError(f"nonmember read another system's monitor: HTTP {outsider_monitor_read}")
+    outsider_monitor_update, _, _ = request(
+        base,
+        "PATCH",
+        f"/api/collections/network_monitors/records/{monitor_id}",
+        token=outsider_token,
+        body={"interval": 300},
+    )
+    if outsider_monitor_update not in (403, 404):
+        raise HarnessError(f"nonmember updated another system's monitor: HTTP {outsider_monitor_update}")
+    outsider_monitors = list_records(base, outsider_token, "network_monitors")
+    if monitor_id in {item.get("id") for item in outsider_monitors}:
+        raise HarnessError("nonmember monitor list exposed a foreign monitor")
+    outsider_stats_status, _, outsider_stats = request(
+        base,
+        "GET",
+        f"/api/collections/network_monitor_stats/records?filter=monitor%3D%22{monitor_id}%22&perPage=500",
+        token=outsider_token,
+    )
+    if outsider_stats_status != 200 or not isinstance(outsider_stats, dict):
+        raise HarnessError(f"nonmember monitor-history query failed: HTTP {outsider_stats_status}, {outsider_stats}")
+    if monitor_id in {item.get("monitor") for item in outsider_stats.get("items", [])}:
+        raise HarnessError("nonmember monitor-history query exposed foreign records")
+
+    outsider_alert_read, _, _ = request(
+        base, "GET", f"/api/collections/alerts/records/{alert_id}", token=outsider_token,
+    )
+    if outsider_alert_read not in (403, 404):
+        raise HarnessError(f"nonmember read another user's alert: HTTP {outsider_alert_read}")
+    outsider_alert_update, _, _ = request(
+        base,
+        "PATCH",
+        f"/api/collections/alerts/records/{alert_id}",
+        token=outsider_token,
+        body={"value": 99},
+    )
+    if outsider_alert_update not in (403, 404):
+        raise HarnessError(f"nonmember updated another user's alert: HTTP {outsider_alert_update}")
+    outsider_alerts = list_records(base, outsider_token, "alerts")
+    if alert_id in {item.get("id") for item in outsider_alerts}:
+        raise HarnessError("nonmember alert list exposed another user's alert")
+    outsider_history_status, _, outsider_history = request(
+        base, "GET", "/api/collections/alerts_history/records?perPage=500", token=outsider_token,
+    )
+    if outsider_history_status != 200 or not isinstance(outsider_history, dict):
+        raise HarnessError(f"nonmember alert-history query failed: HTTP {outsider_history_status}, {outsider_history}")
+    if regular_id in {item.get("user") for item in outsider_history.get("items", [])}:
+        raise HarnessError("nonmember alert-history query exposed another user's history")
+
+    outsider_delete_status, _, _ = request(
+        base, "DELETE", f"/api/collections/users/records/{outsider_id}", token=owner_token,
+    )
+    if outsider_delete_status not in (200, 204):
+        raise HarnessError(f"could not remove synthetic nonmember through the supported API: HTTP {outsider_delete_status}")
+
     return {
         "regular_user_monitor_create_update_read_list": True,
         "regular_user_monitor_history_query_http": stats_status,
         "regular_user_monitor_history_record_count": len(stats.get("items", [])),
+        "nonmember_monitor_view_http": outsider_monitor_read,
+        "nonmember_monitor_update_http": outsider_monitor_update,
+        "nonmember_monitor_query_no_leak": True,
+        "nonmember_monitor_history_query_no_leak": True,
         "regular_user_alert_create_update": True,
         "cross_user_alert_read_http": alert_read_status,
         "cross_user_alert_update_http": cross_user_update_status,
         "regular_user_alert_history_query_http": regular_history_status,
+        "nonmember_alert_view_http": outsider_alert_read,
+        "nonmember_alert_update_http": outsider_alert_update,
+        "nonmember_alert_query_no_leak": True,
+        "nonmember_alert_history_query_no_leak": True,
+        "synthetic_nonmember_account_deleted_http": outsider_delete_status,
         "monitor_id": monitor_id,
         "alert_id": alert_id,
         "system_id": system_id,
