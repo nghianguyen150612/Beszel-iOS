@@ -1,44 +1,61 @@
 # P013 Hub backup and restore evidence
 
-**Status:** Cold full-state backup and pre-upgrade restore passed in a hosted synthetic fixture run. Rollback from a migrated v0.21 state is still pending and is not claimed here.
+**Result:** The genuine hosted synthetic v0.19→v0.21 upgrade, full cold backup, original v0.19 restore, post-migration rollback, and five interruption recoveries passed. This is Linux hosted evidence using disposable synthetic state; it is not a physical iOS upgrade test.
 
-## Run identity
+## Source and run identity
 
-- Feature branch: `ios/hub-database-migration`
-- Tested head: `415cf3914c0347be53fe02796a6f063f1bbbced0`
-- Hosted run: [38840950368](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38840950368)
-- Artifact: `p013-hub-fixture-manifest`, ID `12020648066`, ZIP SHA-256 `a18e3974f2fde420ffcb539dd11fa672140792b325c1026cc5cfb03253fa4209`
-- Manifest SHA-256: `f93cf69ab8432ca8ae8f2157ef184ce00a18eed3da86883299ce5ea9bde8a396`
-- Fixture: synthetic only. No production database, user credential, or private SSH key was archived or committed.
+- P013 starting integration SHA: `d6239915e404668c10453ab2ec44f797b2f0178e`.
+- Tested feature source: `db82eb3b4d2066182292d1601b5e2e763ed05f68`.
+- Hosted migration workflow: [run 38848300763](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38848300763).
+- Synthetic evidence artifact: [12023723159](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38848300763), SHA-256 `01793741b798c851b6ade669be3c3d568928bb04e41d80e618ed56ef57d6a5af`; manifest SHA-256 `ce7b307de85eb5d9238227a06ea9d15bc1bdf03a6c77319486a449ace4845a17`.
+- The artifact contains `fixture-manifest.json` and diagnostic logs only. It does not contain the database archive, database contents, SSH private-key bytes, passwords, or tokens.
 
-## Cold backup procedure and inventory
+The fixture was initialized and reopened by the actual Beszel Hub `0.19.0` built from production source `0c3e4cd22ac24264834c401ad412e44aeda4e4f3` (Hub SHA-256 `bdcdf9457e6141575349b8a7967b133be4d866a1c7747b37be3585b0f679ec9b`, PocketBase `v0.40.2`). The old Agent binary SHA-256 is `454f82b7cbe74b891c183a0c6a4fa3561f272db6b83d27c606fbde73186162be`. The integrated v0.21 candidate used Go `1.27.1`, Bun `1.4.0`, and PocketBase `v0.40.4`. All fixture files were under disposable temporary directories outside `/var/lib/beszel-hub`.
 
-The harness stopped the genuine synthetic v0.19 Hub with SIGKILL after committing a metric over the API, then confirmed its PID had exited. No synthetic Agent writer was running. It measured free space before archive creation and required at least 120% of the complete staged checkpoint size. The backup was written atomically to a sibling temporary directory outside fixture staging, then checksummed and verified before publication. It was restored to a separate empty location.
+## Cold full-state backup
 
-The 24-entry archive contains:
+The harness stopped the synthetic Agent writers and Hub, confirmed no writer process remained, checked available space, then made the archive outside fixture staging. The full checkpoint included 24 entries: the complete Hub data directory, `data.db`, present `data.db-wal`/`data.db-shm`, `auxiliary.db` and its sidecars, Hub configuration, synthetic Hub SSH identity, old Hub and Agent executables, service definitions, installer state, and directory/file metadata. It restored the checkpoint to a separate directory and compared the complete inventory.
 
-- The complete Hub data tree, including `data.db`, present `data.db-wal`, `data.db-shm`, `auxiliary.db`, configuration, synthetic SSH key and all other files.
-- Old v0.19 Hub and Agent executables.
-- Hub and Agent LaunchDaemon property lists.
-- Installer state and version/checksum metadata.
-- A content-free inventory of relative paths, file hashes, sizes, modes, owners, groups, timestamps, and symlink targets.
+Run 38848300763 evidence:
 
-Archive SHA-256: `41877eaabae8bba97e24a8d2dc50aa6c2b41f1a067f99759455360d8a302ee58`.
+- Archive SHA-256: `acd575d1cba0a530d744899c453908bb64d5c8413f7a199459f6303345ee70a9`.
+- Content-hashed inventory SHA-256: `5396858d151cbb090211407717c7d09b5d7428d4d742c686ab0e536993f744d0`.
+- Entries: 24; `data.db-wal`, `data.db-shm`, `auxiliary.db`, `auxiliary.db-wal`, and `auxiliary.db-shm` were included.
+- Synthetic Agent writer PIDs at archive time: none; Hub exit was confirmed.
+- Free bytes before archive: `89,188,982,784`; required threshold: `71,719,054`.
+- Restored inventory matched; SQLite `PRAGMA integrity_check` returned `ok`.
+- The public machine-readable manifest records sanitized path, type, size, UID/GID, and mode for each entry. The synthetic fixture used UID/GID `1001:1001`; config and Hub SSH key were `0600`, old Hub and Agent binaries `0755`, service plists and installer state `0644`, and the database/SQLite sidecars `0644`.
 
-Inventory SHA-256: `fc3d1063defbc53ff8eeaa25b28f0b2cf47fbb8a8be61f3f3a17f47db687c821`.
+The inventory includes content hashes for private fixture files, so only its SHA-256 and sanitized metadata are committed. The archive and full inventory are not attached to GitHub. Negative tests reject missing required files, a live Hub, a live Agent writer, insufficient space, a checksum mismatch, and an interrupted `tar` process. A failed or incomplete archive is never published as a valid checkpoint.
 
-The synthetic filesystem had 89,190,199,296 bytes available before backup and required 71,719,054 bytes. Archive entries and inventory matched; SHA256SUMS covered both archive and inventory. Safe extraction restored the recorded file and directory metadata, then strict content/hash/mode/owner inventory comparison passed.
+## Genuine v0.19 fixture and migration
 
-## Backup negative cases
+The actual v0.19 startup/bootstrap path seeded two synthetic accounts (admin/superuser and regular user), two user settings, one shared system, system details, Agent fingerprint/configuration, Hub SSH identity, system and container metrics, a container, systemd service, SMART device, ZFS pool, alert, and alert history. Record IDs, roles, relations, counts, timestamps, schema, migration ledger, configuration hash/mode, key fingerprint, and SQLite integrity were captured.
 
-Focused Python tests cover a missing required key, a live Hub, a live Agent writer, insufficient available space, an invalid archive checksum, a real interrupted `tar` process, and successful extraction/inventory comparison. The hosted run executed all seven tests successfully. The interrupted archive was never published as a valid backup; the incomplete archive remained unreadable.
+The 12-entry v0.19 migration ledger became 17 entries after the ordered five v0.21 migrations. The first v0.21 startup and second startup both returned health HTTP 200. Schema, ledger, counts, ownership, record IDs, settings, history, config hash, and key identity remained stable; `integrity_check` returned `ok`. The harness records and validates the full schema delta: new monitor collections/relations/indexes and certificate/server/TLS fields; alert `state`, the `NetworkMonitorLoss` option and tightened create/update rules/index; alert-history `monitor_name`; and ZFS `status`. It rejects unlisted schema changes and confirms `containers.updatable` plus ZFS `display_name`/`raw` existed in v0.19 and survived migration unchanged.
 
-## Restore to v0.19
+The migrated API flow created and updated monitor and alert records, queried a non-empty monitor-history result and alert history, rejected a nonmember's reads and writes, restarted the Hub, verified persistence, and confirmed delete/cascade behavior. The real rollup manager ran immediately after migration against disposable system, container, and monitor samples; expected aggregates and response sums/counts/losses were verified. Retention cleanup removed expired samples and remained stable on a second pass.
 
-The complete archive was extracted separately and checked against the recorded inventory. SQLite `PRAGMA integrity_check` returned `ok`. The exact genuine v0.19 binary from the archived restore set started the restored directory; `/api/health` returned HTTP 200. API checks confirmed the same two account IDs and roles (admin/superuser and regular user), settings IDs, system ID and membership, committed WAL-backed metric row ID `u09cya8r9xvoba2`, and SSH public-key fingerprint `SHA256:hdTG7/5F3r/e6lKoc8GQp3PqzDjNuN1lQaLXfiQxucQ`. The original 0.19 Hub and Agent binary SHA-256 values are in the JSON manifest.
+## Restore with the original v0.19 Hub
 
-A second independent extraction of the same cold archive was migrated with v0.21; the original backup remained verified. Migration and second-start details are in [the migration report](ios-hub-database-migration.md) and the full [machine-readable manifest](ios-hub-database-validation.json).
+Before v0.21 migration, a separate extraction of the cold checkpoint was opened with the original v0.19 Hub. `/api/health` returned HTTP 200. The original account IDs and roles, user-settings IDs, system ID and membership, committed WAL-backed metric ID `megyurmgq1eaqz7`, configuration hash `d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b`, SSH public-key fingerprint `SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE`, pre-upgrade schema, and migration ledger were preserved.
 
-## Scope and remaining recovery gate
+## Complete rollback after v0.21 migration
 
-This proves the synthetic cold archive is complete and that a clean pre-upgrade restore runs with 0.19. It does **not** prove a rollback after v0.21 has modified a database, nor recovery after a partially applied migration. P013 still requires both tests to restore the entire compatible state set (data, old binaries, configuration, service definitions, and installer state) from a verified backup. Binary-only rollback is not accepted. No production upgrade is authorized.
+The v0.21 database was kept separate from the original backup and preserved for inspection. Rollback verified the backup checksum, quarantined the migrated candidate, restored the complete pre-upgrade data and metadata plus both original executables and service/configuration/installer state, and only then started v0.19 against the restore. The old Hub returned HTTP 200; schema hash, ledger, record counts, user/system/history IDs, roles, settings, configuration hash, and SSH fingerprint matched. SQLite integrity returned `ok`. Binary-only downgrade is not accepted as rollback.
+
+## Interrupted migration recovery
+
+Five deterministic disposable failure points were injected:
+
+1. Before migration invocation; the candidate launcher exited before opening the database.
+2. During schema migration at `1790273174_network_monitor_server.go`.
+3. After schema changes but before normal Hub startup.
+4. Before the first healthy candidate response, with readiness returning injected HTTP 503.
+5. During controlled service restart after a previous healthy v0.21 start.
+
+For each case the candidate was stopped and diagnostic logs preserved. No partial 0.21 database was opened by v0.19. Each recovery verified and extracted the entire original checkpoint plus old executables/configuration, then confirmed v0.19 health HTTP 200, original schema and migration ledger, record counts/IDs, account roles, system membership, settings, configuration and SSH identity. The artifact contains per-case logs and hashes.
+
+## Scope limits
+
+The fixture used only synthetic disposable data. No production data directory, user database, iPad, LaunchDaemon, signing configuration, package installation, release, or deployment was touched. The P012 Wi-Fi RSSI deferral remains in force; P018 owns physical validation. Gate D still requires P014 and P015.

@@ -5,6 +5,8 @@ PocketBase database and related persistent state. It is never disposable and is
 not a migration-test directory. P003 performs no migration and makes no claim
 that a v0.21 binary has migrated a database.
 
+That statement describes P003 scope. P013 later performed the synthetic, disposable v0.19→v0.21 migration and full restore tests recorded below; no production state was opened or modified.
+
 ## Source inspection and migration behavior
 
 The verified 0.19 iOS baseline and frozen upstream target were inspected at
@@ -221,8 +223,8 @@ or release action is performed by this document.
 
 ## P013 hosted synthetic evidence — 2026-10-16
 
-The P013 harness at feature head `415cf3914c0347be53fe02796a6f063f1bbbced0` passed hosted run [38840950368](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38840950368). A genuine v0.19 Hub initialized and reopened the synthetic database. After all writers stopped, a 24-entry complete state archive (including present WAL/SHM, `auxiliary.db`, keys, config, old binaries, service definitions, and installer state) was checksummed and extracted separately. The original v0.19 Hub opened the restored copy with HTTP 200 and preserved synthetic account/system/history/key identity. A distinct clone then migrated through v0.21 and completed a stable second startup.
+The genuine v0.19→v0.21 Hub migration workflow passed on feature source `db82eb3b4d2066182292d1601b5e2e763ed05f68` in [run 38848300763](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38848300763). It created and reopened a synthetic database with the actual supported v0.19 Hub path, stopped writers, captured and restored a 24-entry cold checkpoint, migrated a separate copy with v0.21, verified schema/data/ledger/second-start behavior, rolled back the complete data-plus-binary state, and recovered from five migration/startup/restart interruptions. The v0.19 restored Hub health returned HTTP 200 in the pre-upgrade, full-rollback, and each interrupted-recovery case.
 
-Archive SHA-256: `41877eaabae8bba97e24a8d2dc50aa6c2b41f1a067f99759455360d8a302ee58`; inventory SHA-256: `fc3d1063defbc53ff8eeaa25b28f0b2cf47fbb8a8be61f3f3a17f47db687c821`. Full evidence is in [`ios-hub-backup-restore-evidence.md`](ios-hub-backup-restore-evidence.md) and [`ios-hub-database-validation.json`](ios-hub-database-validation.json).
+The workflow artifact [12023723159](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38848300763) has SHA-256 `01793741b798c851b6ade669be3c3d568928bb04e41d80e618ed56ef57d6a5af`; its manifest SHA-256 is `ce7b307de85eb5d9238227a06ea9d15bc1bdf03a6c77319486a449ace4845a17`. Cold archive SHA-256 is `acd575d1cba0a530d744899c453908bb64d5c8413f7a199459f6303345ee70a9`; content-hashed inventory SHA-256 is `5396858d151cbb090211407717c7d09b5d7428d4d742c686ab0e536993f744d0`. The artifact contains a synthetic manifest and diagnostics only. Full backup details and per-case evidence are in [`ios-hub-backup-restore-evidence.md`](ios-hub-backup-restore-evidence.md) and [`ios-hub-database-validation.json`](ios-hub-database-validation.json).
 
-This is clean pre-upgrade restore evidence. It does not yet satisfy post-migration rollback (`DB-RESTORE-01`) or interrupted migration recovery (`DB-INTERRUPT-01`). Neither case is marked pass until a migrated/partially migrated clone is quarantined and a separately restored full 0.19 data-plus-binary set is verified. No production state was opened or modified.
+This hosted result verifies the synthetic P013 database and recovery acceptance cases. It does not validate migration on the iPad, authorize production upgrade, or authorize release. P018 retains the physical-device obligations.

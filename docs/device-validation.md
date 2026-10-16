@@ -3,6 +3,19 @@
 Evidence-oriented record of validation performed for the Beszel-iOS community
 port. This file is updated as validation runs complete.
 
+## P013 synthetic Hub migration evidence — 2026-10-16
+
+P013 run [38848300763](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38848300763)
+validated a genuine v0.19 Hub fixture, full-state backup, v0.21 migration,
+rollback, and interrupted-start recovery using synthetic disposable Linux
+state at source `db82eb3`. OAuth duplicate-identity and verified-email account
+linking tests pass locally at that source. The final-head native iOS build is
+tracked by [run 38848296639](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38848296639).
+P013 did not access the reference iPad or production `/var/lib/beszel-hub`
+and does not validate on-device migration. The historical 0.19 device record
+below remains separate; P018 owns physical A7/device validation, including the
+native Wi-Fi RSSI follow-up. Native RSSI remains deferred and unmeasured.
+
 ## Status summary
 
 | Area | Result |

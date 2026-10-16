@@ -1,99 +1,181 @@
 {
-  "P012": {
-    "P013": "AUTHORIZED",
-    "P018_physical_validation": "PENDING",
-    "PR": 14,
-    "deferred_risks": [
-      "WIFI-ABI-12",
-      "WIFI-ASSOCIATION-12",
-      "WIFI-AUTH-12",
-      "physical iOS portion of WIFI-BOUND-12"
-    ],
-    "fallback_source_ci": "ACCEPTED FOR INTEGRATION",
-    "final_head_installer": "PASS: https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362750",
-    "final_head_ios_build": "PASS: https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362864",
-    "future_signing_entitlement_helper_owner": "P016",
-    "merge_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
-    "native_rssi_measured": false,
-    "native_wifi_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE",
-    "normal_ios_wifi_rssi": "UNAVAILABLE / NIL",
-    "owner_approved_decision": "https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758",
-    "physical_validation_owner": "P018",
-    "release_authorized": false
-  },
-  "acceptance": {
-    "DB-BACKUP-01": "PASS — hosted synthetic full-state cold backup and separate v0.19 restore; see backup evidence",
-    "DB-INTERRUPT-01": "PENDING_FULL_GATE",
-    "DB-MIG-01": "IN_PROGRESS — real migration/schema/data/idempotence pass; functional monitor/alert API validation pending",
-    "DB-RESTORE-01": "PENDING_FULL_GATE",
-    "IOS-HUB-01": "IN_PROGRESS — migration health, account/config/system/history/SSH identity and schema ledger verified; full acceptance still pending",
-    "IOS-HUB-02": "IN_PROGRESS — migrations and second start verified; monitor/alert CRUD and history pending",
-    "IOS-HUB-03": "PENDING_FULL_GATE"
-  },
-  "api_security_ownership_retention": {
-    "status": "PENDING"
-  },
-  "backup": {
-    "agent_writer_pids": [],
-    "archive_sha256": "41877eaabae8bba97e24a8d2dc50aa6c2b41f1a067f99759455360d8a302ee58",
-    "available_bytes_before": 89190199296,
-    "backup_stored_outside_fixture_staging": true,
-    "entry_count": 24,
-    "inventory_sha256": "fc3d1063defbc53ff8eeaa25b28f0b2cf47fbb8a8be61f3f3a17f47db687c821",
-    "required_free_bytes": 71719054,
-    "restore_inventory_matches": true,
-    "restored_account_ids_preserved": true,
-    "restored_account_roles_preserved": true,
-    "restored_committed_history_id": "u09cya8r9xvoba2",
-    "restored_database_integrity_check": [
-      "ok"
-    ],
-    "restored_hub_health_http": 200,
-    "restored_ssh_public_key_fingerprint_preserved": "SHA256:hdTG7/5F3r/e6lKoc8GQp3PqzDjNuN1lQaLXfiQxucQ",
-    "restored_system_id_preserved": true,
-    "restored_system_membership_preserved": true,
-    "restored_user_settings_ids_preserved": true,
-    "sidecars": {
-      "auxiliary.db": true,
-      "data.db-shm": true,
-      "data.db-wal": true
+  "acceptance_cases": {
+    "DB-BACKUP-01": {
+      "evidence": [
+        "stopped writers, full 24-entry state archive outside fixture staging",
+        "data.db WAL/SHM, auxiliary.db, config, SSH identity, binaries, service and installer state included",
+        "archive/inventory checksums and restore inventory verified"
+      ],
+      "status": "verified"
     },
-    "status": "PASS — synthetic cold full-state archive and separate v0.19 restore; post-migration rollback is still pending",
-    "verified": true
+    "DB-INTERRUPT-01": {
+      "evidence": [
+        "five controlled migration/startup/restart interruption points",
+        "every case restored verified full checkpoint and old binaries",
+        "v0.19 health HTTP 200 and original invariants restored; no partial DB opened with v0.19"
+      ],
+      "status": "verified"
+    },
+    "DB-MIG-01": {
+      "evidence": [
+        "actual supported v0.19 initialization and reopen",
+        "synthetic clone migrated with integrated v0.21 Hub",
+        "record/schema/ledger invariants and second-start idempotence verified"
+      ],
+      "status": "verified"
+    },
+    "DB-RESTORE-01": {
+      "evidence": [
+        "complete original data and v0.19 binaries/configuration restored",
+        "v0.19 health HTTP 200, original ledger/schema/counts/IDs/roles/settings/system/history/config/key identity preserved"
+      ],
+      "status": "verified"
+    },
+    "IOS-HUB-01": {
+      "evidence": [
+        "v0.19 restore health HTTP 200",
+        "v0.21 migrated Hub health HTTP 200",
+        "account, settings, system, configuration, SSH fingerprint, WAL-backed history and record IDs preserved"
+      ],
+      "status": "verified"
+    },
+    "IOS-HUB-02": {
+      "evidence": [
+        "12 to 17 migration ledger entries in required order once",
+        "schema, indexes, relations and legacy collections validated",
+        "monitor/alert create-update-query-delete and history API tested",
+        "restart stability and post-migration rollup/retention probe passed"
+      ],
+      "status": "verified"
+    },
+    "IOS-HUB-03": {
+      "evidence": [
+        "two synthetic users and outsider through Hub API",
+        "bootstrap failure/restart/concurrency, OAuth role, duplicate identity and verified-email account-linking role preservation, trusted proxy, cache headers, monitor and alert ownership tests passed"
+      ],
+      "status": "verified"
+    }
   },
   "evidence": {
-    "artifact_expires": "2026-10-30",
-    "artifact_id": 12020648066,
-    "artifact_zip_sha256": "a18e3974f2fde420ffcb539dd11fa672140792b325c1026cc5cfb03253fa4209",
-    "feature_head": "415cf3914c0347be53fe02796a6f063f1bbbced0",
-    "manifest_bytes": 190159,
-    "manifest_sha256": "f93cf69ab8432ca8ae8f2157ef184ce00a18eed3da86883299ce5ea9bde8a396",
-    "phases": {
-      "A_fixture": "PASS",
-      "B_cold_backup_restore": "PASS",
-      "C_migration_second_start": "PASS",
-      "E_rollback": "PENDING",
-      "F_interruption": "PENDING",
-      "G_security": "PENDING",
-      "H_ownership": "PENDING",
-      "I_retention": "PENDING",
-      "final_native_ci": "PENDING",
-      "full_regressions": "PENDING"
+    "workflow_name": "P013 Hub migration fixture",
+    "workflow_run_id": 38848300763,
+    "workflow_run_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38848300763",
+    "tested_feature_head": "db82eb3b4d2066182292d1601b5e2e763ed05f68",
+    "artifact_id": 12023723159,
+    "artifact_size_bytes": 25403,
+    "artifact_sha256": "01793741b798c851b6ade669be3c3d568928bb04e41d80e618ed56ef57d6a5af",
+    "artifact_contents": "Synthetic fixture manifest and sanitized failure diagnostics only; no database archive or private key material.",
+    "manifest_sha256": "ce7b307de85eb5d9238227a06ea9d15bc1bdf03a6c77319486a449ace4845a17",
+    "cold_archive_sha256": "acd575d1cba0a530d744899c453908bb64d5c8413f7a199459f6303345ee70a9",
+    "inventory_sha256": "5396858d151cbb090211407717c7d09b5d7428d4d742c686ab0e536993f744d0",
+    "native_ci": {
+      "workflow_name": "iOS Build",
+      "workflow_run_id": 38848296639,
+      "workflow_run_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38848296639",
+      "tested_code_head": "db82eb3b4d2066182292d1601b5e2e763ed05f68",
+      "result": "passed",
+      "release_job": "skipped",
+      "environment": {
+        "go": "1.27.1",
+        "bun": "1.4.0",
+        "xcode": "15.4",
+        "iphoneos_sdk": "17.5"
+      },
+      "build_target": {
+        "GOOS": "ios",
+        "GOARCH": "arm64",
+        "CGO_ENABLED": "1",
+        "minimum_ios": "12.0"
+      },
+      "mach_o": {
+        "agent": {
+          "cpu": "arm64",
+          "filetype": "MH_EXECUTE",
+          "platform": 2,
+          "minimum_ios": "12.0",
+          "bytes": 9526472,
+          "sha256": "45fd38e73923b317e7ae3a2585e137763fd47e47622e9e7bd2488cddeb803fcd"
+        },
+        "hub": {
+          "cpu": "arm64",
+          "filetype": "MH_EXECUTE",
+          "platform": 2,
+          "minimum_ios": "12.0",
+          "bytes": 31927840,
+          "sha256": "6fc8fc33865ac9353199d22eb5c68c2c97b428fd1a3777a498c3075d7c4564c4",
+          "embedded_frontend_assets": 95
+        }
+      },
+      "provenance": "Both go build records identify exact vcs.revision db82eb3b4d2066182292d1601b5e2e763ed05f68 and vcs.modified=false.",
+      "runtime_patch": "PASS; inspected Agent and Hub runtime.procyieldAsm.abi0 with no CNTFRQ_EL0/CNTVCT_EL0 reads.",
+      "private_wifi_linkage": "No private MobileWiFi linkage in Agent or Hub artifacts.",
+      "binary_artifact": {
+        "id": 12024229163,
+        "name": "beszel-ios-arm64",
+        "zip_sha256": "77a90315205ee8126237f8736a1408d641465c431a1f37513c9d2794d68ef8ba"
+      },
+      "validation_artifact": {
+        "id": 12024711683,
+        "name": "ios-native-validation",
+        "zip_sha256": "67002c4cc17150607d85682d42f7d8893d5481a53213f4887bdcfb0b64094d28"
+      },
+      "final_docs_head_checks": "Required through PR #15 before merge."
     },
-    "workflow_run": 38840950368,
-    "workflow_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38840950368"
+    "canonical_go_suite": {
+      "command": "env -u NETWORK /workspace/.tools/go1.27.1/bin/go test -tags 'testing no_ui' ./...",
+      "go_version": "go1.27.1 linux/amd64",
+      "tested_source_head": "db82eb3b4d2066182292d1601b5e2e763ed05f68",
+      "result": "passed"
+    },
+    "local_security_tests": {
+      "result": "passed",
+      "tested_feature_head": "db82eb3b4d2066182292d1601b5e2e763ed05f68",
+      "oauth_duplicate_identity": "Actual API route: changed email maps to original account; one account and external-auth relation; original email and role preserved; createData escalation ignored.",
+      "oauth_verified_email_linking": {
+        "test": "TestOAuthAccountLinkingPreservesExistingRole",
+        "normal": "passed",
+        "race": "passed",
+        "assertions": [
+          "verified existing readonly account linked by email returns the existing account ID",
+          "createData role=admin does not elevate readonly role",
+          "exactly one user and one external-auth relation remain"
+        ]
+      },
+      "focused_race_at_current_head": "migrations, users/OAuth, bootstrap, trusted proxy, cache policy, monitor ownership and systems passed",
+      "earlier_focused_race_checkpoint": "alert authorization and records/retention suites passed at earlier P013 source; no later changes to those packages"
+    },
+    "final_regressions": {
+      "matrix_validator": "passed: 178/178 upstream commits, 35/35 historical iOS commits; zero unresolved rows",
+      "readiness_validator": "passed: 178 upstream commits, 13 logical iOS patches, 21 P0 risks, 24 acceptance cases, 33 compatibility scenarios",
+      "audit_unittest": "54 passed",
+      "upstream_sync_shell": "10 passed",
+      "ios_patch_sentinels": "45 passed",
+      "bootstrap_shell": "54 passed",
+      "installer_shell": "814 passed",
+      "linux_frontend_builds": {
+        "tested_checkpoint": "1a0fde78a47a5471f8ec8b00505c81a8e6712d97",
+        "result": "passed; Linux Agent and Hub builds, frozen Bun 1.4.0 install/catalog/frontend tests and production frontend build; current P013 changes did not modify frontend or Linux build inputs."
+      }
+    },
+    "prior_checkpoint_sha256": "39ea81fa6c4621577f1831cb9bdd725d891977b4d60b7c123d1205af75ecaf7e"
   },
-  "feature_branch": "ios/hub-database-migration",
-  "feature_head": "415cf3914c0347be53fe02796a6f063f1bbbced0",
-  "fixture_validation": {
+  "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+  "limitations": [
+    "All accounts, database records, credentials, keys, monitors, alerts and systems are synthetic and disposable.",
+    "No iPad or production database was used; hosted Linux evidence does not prove on-device migration.",
+    "P012 native Wi-Fi RSSI remains DEFERRED — REFERENCE DEVICE UNAVAILABLE; P018 owns physical validation.",
+    "No release, deployment, production migration, or release authorization is claimed.",
+    "Gate D still requires P014 and P015 after P013."
+  ],
+  "manifest": {
     "accounts": [
       {
-        "id": "r0xzibg96w165mp",
+        "id": "njjql7t1tlwfsvg",
         "is_superuser": true,
         "role": "admin"
       },
       {
-        "id": "7y4gakzamxkq1jp",
+        "id": "0jd4nvmoa0r1khs",
         "is_superuser": false,
         "role": "user"
       }
@@ -103,34 +185,228 @@
     "agent_config": {
       "mode": "0o600",
       "path": "data/config.yml",
-      "sha256": "4e9b8b656ce60594ad8efcb653fa48e79ac069f8402554690c273599fae2de9b"
+      "sha256": "d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b"
     },
     "agent_fingerprint_records": [
       {
-        "id": "3k431kquh",
-        "system": "5kau6y31m506sty",
+        "id": "t64sk4akl",
+        "system": "17k5jnedh1tcmv6",
         "token_sha256": "654b52040626963ba0d3b523fd22f51eb9e7ec0186306d1db7c5e73662c9ca78"
       }
     ],
     "application_version": "0.19.0",
-    "captured_at_utc": "2026-10-16T02:34:46.286869+00:00",
+    "captured_at_utc": "2026-10-16T04:01:55.192020+00:00",
     "cold_backup": {
       "agent_writer_pids": [],
-      "archive_sha256": "41877eaabae8bba97e24a8d2dc50aa6c2b41f1a067f99759455360d8a302ee58",
-      "available_bytes_before": 89190199296,
+      "archive_sha256": "acd575d1cba0a530d744899c453908bb64d5c8413f7a199459f6303345ee70a9",
+      "available_bytes_before": 89189040128,
       "backup_stored_outside_fixture_staging": true,
       "entry_count": 24,
-      "inventory_sha256": "fc3d1063defbc53ff8eeaa25b28f0b2cf47fbb8a8be61f3f3a17f47db687c821",
+      "file_metadata": [
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "Library",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "Library/LaunchDaemons",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "Library/LaunchDaemons/dev.beszel.agent.plist",
+          "size": 961,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "Library/LaunchDaemons/dev.beszel.hub.plist",
+          "size": 880,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "usr",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "usr/local",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "usr/local/bin",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0755",
+          "path": "usr/local/bin/beszel-agent",
+          "size": 14830545,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0755",
+          "path": "usr/local/bin/beszel-hub",
+          "size": 44193919,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "var",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "var/lib",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0700",
+          "path": "var/lib/beszel-agent",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "var/lib/beszel-hub",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "var/lib/beszel-hub/.notify",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "var/lib/beszel-hub/auxiliary.db",
+          "size": 24576,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "var/lib/beszel-hub/auxiliary.db-shm",
+          "size": 32768,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "var/lib/beszel-hub/auxiliary.db-wal",
+          "size": 0,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0600",
+          "path": "var/lib/beszel-hub/config.yml",
+          "size": 198,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "var/lib/beszel-hub/data.db",
+          "size": 401408,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "var/lib/beszel-hub/data.db-shm",
+          "size": 32768,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "var/lib/beszel-hub/data.db-wal",
+          "size": 247232,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0600",
+          "path": "var/lib/beszel-hub/id_ed25519",
+          "size": 387,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "directory",
+          "mode": "0o0755",
+          "path": "var/lib/beszel-ios",
+          "size": 4096,
+          "uid": 1001
+        },
+        {
+          "gid": 1001,
+          "kind": "file",
+          "mode": "0o0644",
+          "path": "var/lib/beszel-ios/install-state",
+          "size": 236,
+          "uid": 1001
+        }
+      ],
+      "inventory_sha256": "5396858d151cbb090211407717c7d09b5d7428d4d742c686ab0e536993f744d0",
       "required_free_bytes": 71719054,
       "restore_inventory_matches": true,
       "restored_account_ids_preserved": true,
       "restored_account_roles_preserved": true,
-      "restored_committed_history_id": "u09cya8r9xvoba2",
+      "restored_committed_history_id": "megyurmgq1eaqz7",
       "restored_database_integrity_check": [
         "ok"
       ],
       "restored_hub_health_http": 200,
-      "restored_ssh_public_key_fingerprint_preserved": "SHA256:hdTG7/5F3r/e6lKoc8GQp3PqzDjNuN1lQaLXfiQxucQ",
+      "restored_ssh_public_key_fingerprint_preserved": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
       "restored_system_id_preserved": true,
       "restored_system_membership_preserved": true,
       "restored_user_settings_ids_preserved": true,
@@ -144,7 +420,7 @@
     "collection_schema": {
       "_authOrigins": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.968Z",
+        "created": "2026-10-16 04:01:20.013Z",
         "deleteRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
         "fields": [
           {
@@ -237,12 +513,12 @@
         "system": true,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:38.968Z",
+        "updated": "2026-10-16 04:01:20.013Z",
         "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
       },
       "_externalAuths": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.964Z",
+        "created": "2026-10-16 04:01:20.012Z",
         "deleteRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
         "fields": [
           {
@@ -351,12 +627,12 @@
         "system": true,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:38.964Z",
+        "updated": "2026-10-16 04:01:20.012Z",
         "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
       },
       "_mfas": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.960Z",
+        "created": "2026-10-16 04:01:20.009Z",
         "deleteRule": null,
         "fields": [
           {
@@ -449,12 +725,12 @@
         "system": true,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:38.960Z",
+        "updated": "2026-10-16 04:01:20.009Z",
         "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
       },
       "_otps": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.963Z",
+        "created": "2026-10-16 04:01:20.010Z",
         "deleteRule": null,
         "fields": [
           {
@@ -561,7 +837,7 @@
         "system": true,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:38.963Z",
+        "updated": "2026-10-16 04:01:20.010Z",
         "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
       },
       "_superusers": {
@@ -581,7 +857,7 @@
           "subject": "Confirm your {APP_NAME} new email address"
         },
         "createRule": null,
-        "created": "2026-10-16 02:34:38.969Z",
+        "created": "2026-10-16 04:01:20.014Z",
         "deleteRule": null,
         "emailChangeToken": {
           "duration": 1800
@@ -735,7 +1011,7 @@
         "system": true,
         "type": "auth",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.113Z",
+        "updated": "2026-10-16 04:01:20.100Z",
         "verificationTemplate": {
           "body": "<p>Hello,</p>\n<p>Thank you for joining us at {APP_NAME}.</p>\n<p>Click on the button below to verify your email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-verification/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Verify</a>\n</p>\n<p><i>If you didn't recently register, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
           "subject": "Verify your {APP_NAME} email"
@@ -747,7 +1023,7 @@
       },
       "alerts": {
         "createRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "created": "2026-10-16 02:34:38.989Z",
+        "created": "2026-10-16 04:01:20.024Z",
         "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
         "fields": [
           {
@@ -899,12 +1175,12 @@
         "system": false,
         "type": "base",
         "updateRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "updated": "2026-10-16 02:34:38.989Z",
+        "updated": "2026-10-16 04:01:20.024Z",
         "viewRule": null
       },
       "alerts_history": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.990Z",
+        "created": "2026-10-16 04:01:20.024Z",
         "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
         "fields": [
           {
@@ -1026,12 +1302,12 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:38.990Z",
+        "updated": "2026-10-16 04:01:20.024Z",
         "viewRule": null
       },
       "container_stats": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.991Z",
+        "created": "2026-10-16 04:01:20.025Z",
         "deleteRule": null,
         "fields": [
           {
@@ -1122,12 +1398,12 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.127Z",
+        "updated": "2026-10-16 04:01:20.108Z",
         "viewRule": null
       },
       "containers": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.997Z",
+        "created": "2026-10-16 04:01:20.028Z",
         "deleteRule": null,
         "fields": [
           {
@@ -1305,12 +1581,12 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.123Z",
+        "updated": "2026-10-16 04:01:20.106Z",
         "viewRule": null
       },
       "fingerprints": {
         "createRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "created": "2026-10-16 02:34:38.992Z",
+        "created": "2026-10-16 04:01:20.025Z",
         "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
         "fields": [
           {
@@ -1393,12 +1669,12 @@
         "system": false,
         "type": "base",
         "updateRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "updated": "2026-10-16 02:34:39.141Z",
+        "updated": "2026-10-16 04:01:20.116Z",
         "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\""
       },
       "quiet_hours": {
         "createRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "created": "2026-10-16 02:34:39.000Z",
+        "created": "2026-10-16 04:01:20.029Z",
         "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
         "fields": [
           {
@@ -1494,12 +1770,12 @@
         "system": false,
         "type": "base",
         "updateRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "updated": "2026-10-16 02:34:39.000Z",
+        "updated": "2026-10-16 04:01:20.029Z",
         "viewRule": "@request.auth.id != \"\" && user = @request.auth.id"
       },
       "smart_devices": {
         "createRule": null,
-        "created": "2026-10-16 02:34:39.001Z",
+        "created": "2026-10-16 04:01:20.030Z",
         "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
         "fields": [
           {
@@ -1704,12 +1980,12 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.135Z",
+        "updated": "2026-10-16 04:01:20.113Z",
         "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
       },
       "system_details": {
         "createRule": null,
-        "created": "2026-10-16 02:34:39.002Z",
+        "created": "2026-10-16 04:01:20.031Z",
         "deleteRule": null,
         "fields": [
           {
@@ -1896,12 +2172,12 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.144Z",
+        "updated": "2026-10-16 04:01:20.118Z",
         "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
       },
       "system_stats": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.993Z",
+        "created": "2026-10-16 04:01:20.026Z",
         "deleteRule": null,
         "fields": [
           {
@@ -1992,12 +2268,12 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.129Z",
+        "updated": "2026-10-16 04:01:20.109Z",
         "viewRule": null
       },
       "systemd_services": {
         "createRule": null,
-        "created": "2026-10-16 02:34:38.999Z",
+        "created": "2026-10-16 04:01:20.029Z",
         "deleteRule": null,
         "fields": [
           {
@@ -2146,12 +2422,12 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.132Z",
+        "updated": "2026-10-16 04:01:20.111Z",
         "viewRule": null
       },
       "systems": {
         "createRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "created": "2026-10-16 02:34:38.995Z",
+        "created": "2026-10-16 04:01:20.027Z",
         "deleteRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
         "fields": [
           {
@@ -2286,12 +2562,12 @@
         "system": false,
         "type": "base",
         "updateRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "updated": "2026-10-16 02:34:39.120Z",
+        "updated": "2026-10-16 04:01:20.105Z",
         "viewRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id"
       },
       "universal_tokens": {
         "createRule": null,
-        "created": "2026-10-16 02:34:39.004Z",
+        "created": "2026-10-16 04:01:20.032Z",
         "deleteRule": null,
         "fields": [
           {
@@ -2359,12 +2635,12 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.004Z",
+        "updated": "2026-10-16 04:01:20.032Z",
         "viewRule": null
       },
       "user_settings": {
         "createRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "created": "2026-10-16 02:34:38.994Z",
+        "created": "2026-10-16 04:01:20.026Z",
         "deleteRule": null,
         "fields": [
           {
@@ -2437,7 +2713,7 @@
         "system": false,
         "type": "base",
         "updateRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "updated": "2026-10-16 02:34:38.994Z",
+        "updated": "2026-10-16 04:01:20.026Z",
         "viewRule": null
       },
       "users": {
@@ -2457,7 +2733,7 @@
           "subject": "Confirm your {APP_NAME} new email address"
         },
         "createRule": null,
-        "created": "2026-10-16 02:34:38.971Z",
+        "created": "2026-10-16 04:01:20.015Z",
         "deleteRule": null,
         "emailChangeToken": {
           "duration": 1800
@@ -2679,7 +2955,7 @@
         "system": false,
         "type": "auth",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.116Z",
+        "updated": "2026-10-16 04:01:20.102Z",
         "verificationTemplate": {
           "body": "<p>Hello,</p>\n<p>Thank you for joining us at {APP_NAME}.</p>\n<p>Click on the button below to verify your email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-verification/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Verify</a>\n</p>\n<p><i>If you didn't recently register, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
           "subject": "Verify your {APP_NAME} email"
@@ -2691,7 +2967,7 @@
       },
       "zfs_pools": {
         "createRule": null,
-        "created": "2026-10-16 02:34:39.005Z",
+        "created": "2026-10-16 04:01:20.032Z",
         "deleteRule": null,
         "fields": [
           {
@@ -2882,7 +3158,7 @@
         "system": false,
         "type": "base",
         "updateRule": null,
-        "updated": "2026-10-16 02:34:39.138Z",
+        "updated": "2026-10-16 04:01:20.114Z",
         "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
       }
     },
@@ -2919,51 +3195,51 @@
       "migration_ledger": [
         [
           "1640988000_aux_init.go",
-          1792118078960239
+          1792123280009305
         ],
         [
           "1640988000_init.go",
-          1792118078973929
+          1792123280016309
         ],
         [
           "1717233556_v0.23_migrate.go",
-          1792118078974103
+          1792123280016397
         ],
         [
           "1717233557_v0.23_migrate2.go",
-          1792118078974383
+          1792123280016520
         ],
         [
           "1717233558_v0.23_migrate3.go",
-          1792118078978082
+          1792123280017552
         ],
         [
           "1717233559_v0.23_migrate4.go",
-          1792118078978282
+          1792123280017630
         ],
         [
           "1763020353_update_default_auth_alert_templates.go",
-          1792118078978674
+          1792123280017803
         ],
         [
           "1778828400_normalize_indexes.go",
-          1792118078981438
+          1792123280019709
         ],
         [
           "0_collections_snapshot_0_19_0.go",
-          1792118079028633
+          1792123280044646
         ],
         [
           "1788955200_pool_updates.go",
-          1792118079038673
+          1792123280050019
         ],
         [
           "1789079746_container_update_available.go",
-          1792118079045520
+          1792123280053428
         ],
         [
           "initial-settings.go",
-          1792118079109943
+          1792123280098565
         ]
       ],
       "record_counts": {
@@ -3014,81 +3290,466 @@
         "zfs_pools"
       ]
     },
+    "first_user_bootstrap_021": {
+      "concurrent_first_user_http_by_email": {
+        "p013-bootstrap-one@example.invalid": 403,
+        "p013-bootstrap-two@example.invalid": 200
+      },
+      "final_admin_role": "admin",
+      "final_superuser_count": 1,
+      "final_user_count": 1,
+      "first_run_after_setup": false,
+      "first_run_before_setup": true,
+      "fresh_hub_health_http": 200,
+      "partial_user_creation_failure_body": {
+        "err": "constraint failed: P013 synthetic partial bootstrap failure (1811)"
+      },
+      "partial_user_creation_failure_http": 500,
+      "successful_owner_email": "p013-bootstrap-two@example.invalid",
+      "superusers_after_restart": [
+        "_@b.b"
+      ],
+      "temporary_superuser_after_failure": [
+        "_@b.b"
+      ],
+      "temporary_superuser_removed": true,
+      "users_after_failure": 0,
+      "users_after_restart": 0
+    },
     "fixture": "synthetic",
     "hub_019_binary_sha256": "bdcdf9457e6141575349b8a7967b133be4d866a1c7747b37be3585b0f679ec9b",
     "hub_019_pocketbase_version": "v0.40.2",
     "hub_019_source": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
     "hub_019_version": "beszel version 0.19.0",
-    "hub_021_binary_sha256": "e829c8350a9f04e9dd93576c99f00bb5be01efe561ce11b8af219979fc045ffc",
+    "hub_021_binary_sha256": "f6234090ed54ea6281fd05d41be9e08133249721fe97fbe46a5c166194221217",
     "hub_021_pocketbase_version": "v0.40.4",
-    "hub_021_source": "415cf3914c0347be53fe02796a6f063f1bbbced0",
+    "hub_021_source": "db82eb3b4d2066182292d1601b5e2e763ed05f68",
     "hub_021_version": "beszel version 0.21.0",
     "initialized_by": "genuine Beszel v0.19 Hub binary and supported startup/bootstrap APIs",
+    "interrupted_migration": {
+      "cases": [
+        {
+          "candidate_database_unchanged": true,
+          "candidate_exit_code": 86,
+          "diagnostic_log": "failure-logs/before-migration.log",
+          "diagnostic_log_sha256": "6ad55787c562d4baed244c91dc0a7e8ac688ed4ff79b73a9940db537bab2863e",
+          "failure_point": "before migration starts (candidate launcher exits before binary invocation)",
+          "recovery": {
+            "api_invariants": {
+              "account_roles": {
+                "0jd4nvmoa0r1khs": "user",
+                "njjql7t1tlwfsvg": "admin"
+              },
+              "fingerprint_id": "t64sk4akl",
+              "history_count": 2,
+              "preserved_record_ids": {
+                "alert": "mhmtcc02xtkvjiy",
+                "alert_history": "xbuzjchwoteqh3g",
+                "container": "aba000",
+                "container_stats": "18jh7iyb07xvi7k",
+                "smart_device": "dowuk3co1e",
+                "system_details": "co9x9zh87a09gq8",
+                "system_stats": "zm9l48v11gy41ym",
+                "system_stats_wal": "megyurmgq1eaqz7",
+                "systemd_service": "s086h6otfa",
+                "zfs_pool": "njsktmkzlo20j0u"
+              },
+              "ssh_public_key_fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
+              "system_id": "17k5jnedh1tcmv6",
+              "system_users": [
+                "0jd4nvmoa0r1khs",
+                "njjql7t1tlwfsvg"
+              ],
+              "user_settings_ids": [
+                "12jfbe30pcpewdk",
+                "dszr7tpir8yzhs4"
+              ]
+            },
+            "config_sha256_preserved": "d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b",
+            "diagnostic_log": "failure-logs/recovery-before-migration-v019-recovered.log",
+            "diagnostic_log_sha256": "4c1986063700aceaad87b8088383e032967f340c18a789a346bec45a886839a8",
+            "failure_case": "recovery-before-migration",
+            "health_http": 200,
+            "migration_ledger_exactly_pre_upgrade": true,
+            "old_agent_binary_sha256": "454f82b7cbe74b891c183a0c6a4fa3561f272db6b83d27c606fbde73186162be",
+            "old_hub_binary_sha256": "bdcdf9457e6141575349b8a7967b133be4d866a1c7747b37be3585b0f679ec9b",
+            "record_counts_pre_upgrade_preserved": true,
+            "restore_inventory_matches": true,
+            "schema_hash_pre_upgrade_preserved": true,
+            "sqlite_integrity_check": [
+              "ok"
+            ]
+          }
+        },
+        {
+          "candidate_exit_code": 1,
+          "candidate_integrity_check": [
+            "ok"
+          ],
+          "diagnostic_log": "failure-logs/during-migration.log",
+          "diagnostic_log_sha256": "d871a4ad23329470787bd64b2e909b5c2f50c2f05250f00443ca8eabfb6faedf",
+          "failing_migration_absent_from_ledger": true,
+          "failure_point": "during schema sequence at 1790273174_network_monitor_server.go",
+          "migration_ledger_after_failure": [
+            "1640988000_aux_init.go",
+            "1640988000_init.go",
+            "1717233556_v0.23_migrate.go",
+            "1717233557_v0.23_migrate2.go",
+            "1717233558_v0.23_migrate3.go",
+            "1717233559_v0.23_migrate4.go",
+            "1763020353_update_default_auth_alert_templates.go",
+            "1778828400_normalize_indexes.go",
+            "0_collections_snapshot_0_19_0.go",
+            "1788955200_pool_updates.go",
+            "1789079746_container_update_available.go",
+            "initial-settings.go"
+          ],
+          "partial_candidate_database_sha256": "5ccd02a161f39a96c269475eb13650b59fb203a0bb6d117e0c8fb274c05b8da1",
+          "partial_candidate_opened_by_v019": false,
+          "recovery": {
+            "api_invariants": {
+              "account_roles": {
+                "0jd4nvmoa0r1khs": "user",
+                "njjql7t1tlwfsvg": "admin"
+              },
+              "fingerprint_id": "t64sk4akl",
+              "history_count": 2,
+              "preserved_record_ids": {
+                "alert": "mhmtcc02xtkvjiy",
+                "alert_history": "xbuzjchwoteqh3g",
+                "container": "aba000",
+                "container_stats": "18jh7iyb07xvi7k",
+                "smart_device": "dowuk3co1e",
+                "system_details": "co9x9zh87a09gq8",
+                "system_stats": "zm9l48v11gy41ym",
+                "system_stats_wal": "megyurmgq1eaqz7",
+                "systemd_service": "s086h6otfa",
+                "zfs_pool": "njsktmkzlo20j0u"
+              },
+              "ssh_public_key_fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
+              "system_id": "17k5jnedh1tcmv6",
+              "system_users": [
+                "0jd4nvmoa0r1khs",
+                "njjql7t1tlwfsvg"
+              ],
+              "user_settings_ids": [
+                "12jfbe30pcpewdk",
+                "dszr7tpir8yzhs4"
+              ]
+            },
+            "config_sha256_preserved": "d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b",
+            "diagnostic_log": "failure-logs/recovery-during-migration-v019-recovered.log",
+            "diagnostic_log_sha256": "345583d3b14cad9d1541e220073ee38034f10ac5adaa63acedd8e26d996e317f",
+            "failure_case": "recovery-during-migration",
+            "health_http": 200,
+            "migration_ledger_exactly_pre_upgrade": true,
+            "old_agent_binary_sha256": "454f82b7cbe74b891c183a0c6a4fa3561f272db6b83d27c606fbde73186162be",
+            "old_hub_binary_sha256": "bdcdf9457e6141575349b8a7967b133be4d866a1c7747b37be3585b0f679ec9b",
+            "record_counts_pre_upgrade_preserved": true,
+            "restore_inventory_matches": true,
+            "schema_hash_pre_upgrade_preserved": true,
+            "sqlite_integrity_check": [
+              "ok"
+            ]
+          }
+        },
+        {
+          "all_required_migrations_applied_once": true,
+          "candidate_exit_code": 1,
+          "candidate_integrity_check": [
+            "ok"
+          ],
+          "diagnostic_log": "failure-logs/after-schema-before-health.log",
+          "diagnostic_log_sha256": "0adb5792acbc4d7e18f0ec7641937f474640e1f474061b11ee6f3fd8eb3665a5",
+          "failure_point": "after schema migration sequence, during Hub startup before health",
+          "migration_ledger_after_failure": [
+            "1640988000_aux_init.go",
+            "1640988000_init.go",
+            "1717233556_v0.23_migrate.go",
+            "1717233557_v0.23_migrate2.go",
+            "1717233558_v0.23_migrate3.go",
+            "1717233559_v0.23_migrate4.go",
+            "1763020353_update_default_auth_alert_templates.go",
+            "1778828400_normalize_indexes.go",
+            "0_collections_snapshot_0_19_0.go",
+            "1788955200_pool_updates.go",
+            "1789079746_container_update_available.go",
+            "initial-settings.go",
+            "0_collections_snapshot_0_20_0.go",
+            "1790193183_network_monitor_cert.go",
+            "1790273174_network_monitor_server.go",
+            "1790924727_zfs_pool_status.go",
+            "1790964708_network_monitor_skip_tls_verify.go"
+          ],
+          "partial_candidate_opened_by_v019": false,
+          "recovery": {
+            "api_invariants": {
+              "account_roles": {
+                "0jd4nvmoa0r1khs": "user",
+                "njjql7t1tlwfsvg": "admin"
+              },
+              "fingerprint_id": "t64sk4akl",
+              "history_count": 2,
+              "preserved_record_ids": {
+                "alert": "mhmtcc02xtkvjiy",
+                "alert_history": "xbuzjchwoteqh3g",
+                "container": "aba000",
+                "container_stats": "18jh7iyb07xvi7k",
+                "smart_device": "dowuk3co1e",
+                "system_details": "co9x9zh87a09gq8",
+                "system_stats": "zm9l48v11gy41ym",
+                "system_stats_wal": "megyurmgq1eaqz7",
+                "systemd_service": "s086h6otfa",
+                "zfs_pool": "njsktmkzlo20j0u"
+              },
+              "ssh_public_key_fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
+              "system_id": "17k5jnedh1tcmv6",
+              "system_users": [
+                "0jd4nvmoa0r1khs",
+                "njjql7t1tlwfsvg"
+              ],
+              "user_settings_ids": [
+                "12jfbe30pcpewdk",
+                "dszr7tpir8yzhs4"
+              ]
+            },
+            "config_sha256_preserved": "d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b",
+            "diagnostic_log": "failure-logs/recovery-after-schema-v019-recovered.log",
+            "diagnostic_log_sha256": "fb9de88e700a0ce5e80131cf00c1bc1ee6b4d231406ec8af298b3104483b303c",
+            "failure_case": "recovery-after-schema",
+            "health_http": 200,
+            "migration_ledger_exactly_pre_upgrade": true,
+            "old_agent_binary_sha256": "454f82b7cbe74b891c183a0c6a4fa3561f272db6b83d27c606fbde73186162be",
+            "old_hub_binary_sha256": "bdcdf9457e6141575349b8a7967b133be4d866a1c7747b37be3585b0f679ec9b",
+            "record_counts_pre_upgrade_preserved": true,
+            "restore_inventory_matches": true,
+            "schema_hash_pre_upgrade_preserved": true,
+            "sqlite_integrity_check": [
+              "ok"
+            ]
+          }
+        },
+        {
+          "candidate_exit_code": 1,
+          "candidate_integrity_check": [
+            "ok"
+          ],
+          "diagnostic_log": "failure-logs/failed-health-before-first-pass.log",
+          "diagnostic_log_sha256": "8de151ae2493248d886bf6f217ee5666033321e5e21d093afff49f3b543cf29c",
+          "failure_point": "candidate startup after schema; readiness endpoint returns injected HTTP 503 before any candidate health pass",
+          "health_probe_http": 503,
+          "migration_ledger_after_failure": [
+            "1640988000_aux_init.go",
+            "1640988000_init.go",
+            "1717233556_v0.23_migrate.go",
+            "1717233557_v0.23_migrate2.go",
+            "1717233558_v0.23_migrate3.go",
+            "1717233559_v0.23_migrate4.go",
+            "1763020353_update_default_auth_alert_templates.go",
+            "1778828400_normalize_indexes.go",
+            "0_collections_snapshot_0_19_0.go",
+            "1788955200_pool_updates.go",
+            "1789079746_container_update_available.go",
+            "initial-settings.go",
+            "0_collections_snapshot_0_20_0.go",
+            "1790193183_network_monitor_cert.go",
+            "1790273174_network_monitor_server.go",
+            "1790924727_zfs_pool_status.go",
+            "1790964708_network_monitor_skip_tls_verify.go"
+          ],
+          "partial_candidate_opened_by_v019": false,
+          "recovery": {
+            "api_invariants": {
+              "account_roles": {
+                "0jd4nvmoa0r1khs": "user",
+                "njjql7t1tlwfsvg": "admin"
+              },
+              "fingerprint_id": "t64sk4akl",
+              "history_count": 2,
+              "preserved_record_ids": {
+                "alert": "mhmtcc02xtkvjiy",
+                "alert_history": "xbuzjchwoteqh3g",
+                "container": "aba000",
+                "container_stats": "18jh7iyb07xvi7k",
+                "smart_device": "dowuk3co1e",
+                "system_details": "co9x9zh87a09gq8",
+                "system_stats": "zm9l48v11gy41ym",
+                "system_stats_wal": "megyurmgq1eaqz7",
+                "systemd_service": "s086h6otfa",
+                "zfs_pool": "njsktmkzlo20j0u"
+              },
+              "ssh_public_key_fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
+              "system_id": "17k5jnedh1tcmv6",
+              "system_users": [
+                "0jd4nvmoa0r1khs",
+                "njjql7t1tlwfsvg"
+              ],
+              "user_settings_ids": [
+                "12jfbe30pcpewdk",
+                "dszr7tpir8yzhs4"
+              ]
+            },
+            "config_sha256_preserved": "d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b",
+            "diagnostic_log": "failure-logs/recovery-after-failed-health-v019-recovered.log",
+            "diagnostic_log_sha256": "d4509cdf7e43917f852eb56b9d93ace3703a8f3ae8a985e7f8e28b07a48c5ba5",
+            "failure_case": "recovery-after-failed-health",
+            "health_http": 200,
+            "migration_ledger_exactly_pre_upgrade": true,
+            "old_agent_binary_sha256": "454f82b7cbe74b891c183a0c6a4fa3561f272db6b83d27c606fbde73186162be",
+            "old_hub_binary_sha256": "bdcdf9457e6141575349b8a7967b133be4d866a1c7747b37be3585b0f679ec9b",
+            "record_counts_pre_upgrade_preserved": true,
+            "restore_inventory_matches": true,
+            "schema_hash_pre_upgrade_preserved": true,
+            "sqlite_integrity_check": [
+              "ok"
+            ]
+          }
+        },
+        {
+          "candidate_integrity_check": [
+            "ok"
+          ],
+          "diagnostic_log": "failure-logs/controlled-restart-health-failure.log",
+          "diagnostic_log_sha256": "f3d25edc5b8547641a5b77efa4c0ca514fa12952257b8d028709fa62bf4f9c96",
+          "failure_point": "controlled service restart after a prior healthy v0.21 start",
+          "initial_health_http": 200,
+          "migration_ledger_after_failure": [
+            "1640988000_aux_init.go",
+            "1640988000_init.go",
+            "1717233556_v0.23_migrate.go",
+            "1717233557_v0.23_migrate2.go",
+            "1717233558_v0.23_migrate3.go",
+            "1717233559_v0.23_migrate4.go",
+            "1763020353_update_default_auth_alert_templates.go",
+            "1778828400_normalize_indexes.go",
+            "0_collections_snapshot_0_19_0.go",
+            "1788955200_pool_updates.go",
+            "1789079746_container_update_available.go",
+            "initial-settings.go",
+            "0_collections_snapshot_0_20_0.go",
+            "1790193183_network_monitor_cert.go",
+            "1790273174_network_monitor_server.go",
+            "1790924727_zfs_pool_status.go",
+            "1790964708_network_monitor_skip_tls_verify.go"
+          ],
+          "partial_candidate_opened_by_v019": false,
+          "recovery": {
+            "api_invariants": {
+              "account_roles": {
+                "0jd4nvmoa0r1khs": "user",
+                "njjql7t1tlwfsvg": "admin"
+              },
+              "fingerprint_id": "t64sk4akl",
+              "history_count": 2,
+              "preserved_record_ids": {
+                "alert": "mhmtcc02xtkvjiy",
+                "alert_history": "xbuzjchwoteqh3g",
+                "container": "aba000",
+                "container_stats": "18jh7iyb07xvi7k",
+                "smart_device": "dowuk3co1e",
+                "system_details": "co9x9zh87a09gq8",
+                "system_stats": "zm9l48v11gy41ym",
+                "system_stats_wal": "megyurmgq1eaqz7",
+                "systemd_service": "s086h6otfa",
+                "zfs_pool": "njsktmkzlo20j0u"
+              },
+              "ssh_public_key_fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
+              "system_id": "17k5jnedh1tcmv6",
+              "system_users": [
+                "0jd4nvmoa0r1khs",
+                "njjql7t1tlwfsvg"
+              ],
+              "user_settings_ids": [
+                "12jfbe30pcpewdk",
+                "dszr7tpir8yzhs4"
+              ]
+            },
+            "config_sha256_preserved": "d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b",
+            "diagnostic_log": "failure-logs/recovery-controlled-restart-v019-recovered.log",
+            "diagnostic_log_sha256": "ca2ca74a113d7b50af950df967ce5971bf11188d7b8a6f87491c2262649da562",
+            "failure_case": "recovery-controlled-restart",
+            "health_http": 200,
+            "migration_ledger_exactly_pre_upgrade": true,
+            "old_agent_binary_sha256": "454f82b7cbe74b891c183a0c6a4fa3561f272db6b83d27c606fbde73186162be",
+            "old_hub_binary_sha256": "bdcdf9457e6141575349b8a7967b133be4d866a1c7747b37be3585b0f679ec9b",
+            "record_counts_pre_upgrade_preserved": true,
+            "restore_inventory_matches": true,
+            "schema_hash_pre_upgrade_preserved": true,
+            "sqlite_integrity_check": [
+              "ok"
+            ]
+          },
+          "restart_candidate_exit_code": 1,
+          "restart_health_probe_http": 503
+        }
+      ],
+      "status": "PASS — all injected disposable failure checkpoints recovered by a verified complete v0.19 restore"
+    },
     "migration_021": {
       "api_invariants_first": {
         "account_roles": {
-          "7y4gakzamxkq1jp": "user",
-          "r0xzibg96w165mp": "admin"
+          "0jd4nvmoa0r1khs": "user",
+          "njjql7t1tlwfsvg": "admin"
         },
-        "fingerprint_id": "3k431kquh",
+        "fingerprint_id": "t64sk4akl",
         "history_count": 2,
         "preserved_record_ids": {
-          "alert": "ismslkbd1yoc2h4",
-          "alert_history": "qwn1kg92fmacoux",
-          "container": "053fea",
-          "container_stats": "lhx2mfupx1b2diz",
-          "smart_device": "c771uxijpn",
-          "system_details": "whzfotv2y6wrnrn",
-          "system_stats": "mdsvvlv7ylx3i1m",
-          "system_stats_wal": "u09cya8r9xvoba2",
-          "systemd_service": "uvtvxj6fzu",
-          "zfs_pool": "x9k2djju5r1x49v"
+          "alert": "mhmtcc02xtkvjiy",
+          "alert_history": "xbuzjchwoteqh3g",
+          "container": "aba000",
+          "container_stats": "18jh7iyb07xvi7k",
+          "smart_device": "dowuk3co1e",
+          "system_details": "co9x9zh87a09gq8",
+          "system_stats": "zm9l48v11gy41ym",
+          "system_stats_wal": "megyurmgq1eaqz7",
+          "systemd_service": "s086h6otfa",
+          "zfs_pool": "njsktmkzlo20j0u"
         },
-        "ssh_public_key_fingerprint": "SHA256:hdTG7/5F3r/e6lKoc8GQp3PqzDjNuN1lQaLXfiQxucQ",
-        "system_id": "5kau6y31m506sty",
+        "ssh_public_key_fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
+        "system_id": "17k5jnedh1tcmv6",
         "system_users": [
-          "7y4gakzamxkq1jp",
-          "r0xzibg96w165mp"
+          "0jd4nvmoa0r1khs",
+          "njjql7t1tlwfsvg"
         ],
         "user_settings_ids": [
-          "cbrqvvq3ka1uor8",
-          "qupxtd5w5h8700p"
+          "12jfbe30pcpewdk",
+          "dszr7tpir8yzhs4"
         ]
       },
       "api_invariants_second": {
         "account_roles": {
-          "7y4gakzamxkq1jp": "user",
-          "r0xzibg96w165mp": "admin"
+          "0jd4nvmoa0r1khs": "user",
+          "njjql7t1tlwfsvg": "admin"
         },
-        "fingerprint_id": "3k431kquh",
+        "fingerprint_id": "t64sk4akl",
         "history_count": 2,
         "preserved_record_ids": {
-          "alert": "ismslkbd1yoc2h4",
-          "alert_history": "qwn1kg92fmacoux",
-          "container": "053fea",
-          "container_stats": "lhx2mfupx1b2diz",
-          "smart_device": "c771uxijpn",
-          "system_details": "whzfotv2y6wrnrn",
-          "system_stats": "mdsvvlv7ylx3i1m",
-          "system_stats_wal": "u09cya8r9xvoba2",
-          "systemd_service": "uvtvxj6fzu",
-          "zfs_pool": "x9k2djju5r1x49v"
+          "alert": "mhmtcc02xtkvjiy",
+          "alert_history": "xbuzjchwoteqh3g",
+          "container": "aba000",
+          "container_stats": "18jh7iyb07xvi7k",
+          "smart_device": "dowuk3co1e",
+          "system_details": "co9x9zh87a09gq8",
+          "system_stats": "zm9l48v11gy41ym",
+          "system_stats_wal": "megyurmgq1eaqz7",
+          "systemd_service": "s086h6otfa",
+          "zfs_pool": "njsktmkzlo20j0u"
         },
-        "ssh_public_key_fingerprint": "SHA256:hdTG7/5F3r/e6lKoc8GQp3PqzDjNuN1lQaLXfiQxucQ",
-        "system_id": "5kau6y31m506sty",
+        "ssh_public_key_fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
+        "system_id": "17k5jnedh1tcmv6",
         "system_users": [
-          "7y4gakzamxkq1jp",
-          "r0xzibg96w165mp"
+          "0jd4nvmoa0r1khs",
+          "njjql7t1tlwfsvg"
         ],
         "user_settings_ids": [
-          "cbrqvvq3ka1uor8",
-          "qupxtd5w5h8700p"
+          "12jfbe30pcpewdk",
+          "dszr7tpir8yzhs4"
         ]
       },
       "collection_schema_after": {
         "_authOrigins": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.968Z",
+          "created": "2026-10-16 04:01:20.013Z",
           "deleteRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
           "fields": [
             {
@@ -3181,12 +3842,12 @@
           "system": true,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:38.968Z",
+          "updated": "2026-10-16 04:01:20.013Z",
           "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
         },
         "_externalAuths": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.964Z",
+          "created": "2026-10-16 04:01:20.012Z",
           "deleteRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
           "fields": [
             {
@@ -3295,12 +3956,12 @@
           "system": true,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:38.964Z",
+          "updated": "2026-10-16 04:01:20.012Z",
           "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
         },
         "_mfas": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.960Z",
+          "created": "2026-10-16 04:01:20.009Z",
           "deleteRule": null,
           "fields": [
             {
@@ -3393,12 +4054,12 @@
           "system": true,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:38.960Z",
+          "updated": "2026-10-16 04:01:20.009Z",
           "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
         },
         "_otps": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.963Z",
+          "created": "2026-10-16 04:01:20.010Z",
           "deleteRule": null,
           "fields": [
             {
@@ -3505,7 +4166,7 @@
           "system": true,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:38.963Z",
+          "updated": "2026-10-16 04:01:20.010Z",
           "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
         },
         "_superusers": {
@@ -3525,7 +4186,7 @@
             "subject": "Confirm your {APP_NAME} new email address"
           },
           "createRule": null,
-          "created": "2026-10-16 02:34:38.969Z",
+          "created": "2026-10-16 04:01:20.014Z",
           "deleteRule": null,
           "emailChangeToken": {
             "duration": 1800
@@ -3679,7 +4340,7 @@
           "system": true,
           "type": "auth",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.334Z",
+          "updated": "2026-10-16 04:01:24.700Z",
           "verificationTemplate": {
             "body": "<p>Hello,</p>\n<p>Thank you for joining us at {APP_NAME}.</p>\n<p>Click on the button below to verify your email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-verification/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Verify</a>\n</p>\n<p><i>If you didn't recently register, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
             "subject": "Verify your {APP_NAME} email"
@@ -3691,7 +4352,7 @@
         },
         "alerts": {
           "createRule": "@request.auth.id != \"\" && user = @request.auth.id && system.users.id ?= @request.auth.id",
-          "created": "2026-10-16 02:34:38.989Z",
+          "created": "2026-10-16 04:01:20.024Z",
           "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
           "fields": [
             {
@@ -3856,12 +4517,12 @@
           "system": false,
           "type": "base",
           "updateRule": "@request.auth.id != \"\" && user = @request.auth.id && @request.body.user:changed = false && @request.body.system:changed = false && system.users.id ?= @request.auth.id",
-          "updated": "2026-10-16 02:34:45.378Z",
+          "updated": "2026-10-16 04:01:24.721Z",
           "viewRule": null
         },
         "alerts_history": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.990Z",
+          "created": "2026-10-16 04:01:20.024Z",
           "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
           "fields": [
             {
@@ -3998,12 +4659,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.255Z",
+          "updated": "2026-10-16 04:01:24.661Z",
           "viewRule": null
         },
         "container_stats": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.991Z",
+          "created": "2026-10-16 04:01:20.025Z",
           "deleteRule": null,
           "fields": [
             {
@@ -4094,12 +4755,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.350Z",
+          "updated": "2026-10-16 04:01:24.708Z",
           "viewRule": null
         },
         "containers": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.997Z",
+          "created": "2026-10-16 04:01:20.028Z",
           "deleteRule": null,
           "fields": [
             {
@@ -4277,12 +4938,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.346Z",
+          "updated": "2026-10-16 04:01:24.706Z",
           "viewRule": null
         },
         "fingerprints": {
           "createRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-          "created": "2026-10-16 02:34:38.992Z",
+          "created": "2026-10-16 04:01:20.025Z",
           "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
           "fields": [
             {
@@ -4365,12 +5026,12 @@
           "system": false,
           "type": "base",
           "updateRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-          "updated": "2026-10-16 02:34:45.370Z",
+          "updated": "2026-10-16 04:01:24.717Z",
           "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\""
         },
         "network_monitor_stats": {
           "createRule": null,
-          "created": "2026-10-16 02:34:45.244Z",
+          "created": "2026-10-16 04:01:24.655Z",
           "deleteRule": null,
           "fields": [
             {
@@ -4524,12 +5185,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.360Z",
+          "updated": "2026-10-16 04:01:24.712Z",
           "viewRule": null
         },
         "network_monitors": {
           "createRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-          "created": "2026-10-16 02:34:45.242Z",
+          "created": "2026-10-16 04:01:24.654Z",
           "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
           "fields": [
             {
@@ -4762,12 +5423,12 @@
           "system": false,
           "type": "base",
           "updateRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-          "updated": "2026-10-16 02:34:45.373Z",
+          "updated": "2026-10-16 04:01:24.719Z",
           "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
         },
         "quiet_hours": {
           "createRule": "@request.auth.id != \"\" && user = @request.auth.id",
-          "created": "2026-10-16 02:34:39.000Z",
+          "created": "2026-10-16 04:01:20.029Z",
           "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
           "fields": [
             {
@@ -4863,12 +5524,12 @@
           "system": false,
           "type": "base",
           "updateRule": "@request.auth.id != \"\" && user = @request.auth.id",
-          "updated": "2026-10-16 02:34:45.276Z",
+          "updated": "2026-10-16 04:01:24.670Z",
           "viewRule": "@request.auth.id != \"\" && user = @request.auth.id"
         },
         "smart_devices": {
           "createRule": null,
-          "created": "2026-10-16 02:34:39.001Z",
+          "created": "2026-10-16 04:01:20.030Z",
           "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
           "fields": [
             {
@@ -5073,12 +5734,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.363Z",
+          "updated": "2026-10-16 04:01:24.714Z",
           "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
         },
         "system_details": {
           "createRule": null,
-          "created": "2026-10-16 02:34:39.002Z",
+          "created": "2026-10-16 04:01:20.031Z",
           "deleteRule": null,
           "fields": [
             {
@@ -5265,12 +5926,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.381Z",
+          "updated": "2026-10-16 04:01:24.723Z",
           "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
         },
         "system_stats": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.993Z",
+          "created": "2026-10-16 04:01:20.026Z",
           "deleteRule": null,
           "fields": [
             {
@@ -5361,12 +6022,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.353Z",
+          "updated": "2026-10-16 04:01:24.709Z",
           "viewRule": null
         },
         "systemd_services": {
           "createRule": null,
-          "created": "2026-10-16 02:34:38.999Z",
+          "created": "2026-10-16 04:01:20.029Z",
           "deleteRule": null,
           "fields": [
             {
@@ -5515,12 +6176,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.356Z",
+          "updated": "2026-10-16 04:01:24.711Z",
           "viewRule": null
         },
         "systems": {
           "createRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-          "created": "2026-10-16 02:34:38.995Z",
+          "created": "2026-10-16 04:01:20.027Z",
           "deleteRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
           "fields": [
             {
@@ -5655,12 +6316,12 @@
           "system": false,
           "type": "base",
           "updateRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-          "updated": "2026-10-16 02:34:45.343Z",
+          "updated": "2026-10-16 04:01:24.705Z",
           "viewRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id"
         },
         "universal_tokens": {
           "createRule": null,
-          "created": "2026-10-16 02:34:39.004Z",
+          "created": "2026-10-16 04:01:20.032Z",
           "deleteRule": null,
           "fields": [
             {
@@ -5728,12 +6389,12 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.281Z",
+          "updated": "2026-10-16 04:01:24.674Z",
           "viewRule": null
         },
         "user_settings": {
           "createRule": "@request.auth.id != \"\" && user = @request.auth.id",
-          "created": "2026-10-16 02:34:38.994Z",
+          "created": "2026-10-16 04:01:20.026Z",
           "deleteRule": null,
           "fields": [
             {
@@ -5806,7 +6467,7 @@
           "system": false,
           "type": "base",
           "updateRule": "@request.auth.id != \"\" && user = @request.auth.id",
-          "updated": "2026-10-16 02:34:45.268Z",
+          "updated": "2026-10-16 04:01:24.667Z",
           "viewRule": null
         },
         "users": {
@@ -5826,7 +6487,7 @@
             "subject": "Confirm your {APP_NAME} new email address"
           },
           "createRule": null,
-          "created": "2026-10-16 02:34:38.971Z",
+          "created": "2026-10-16 04:01:20.015Z",
           "deleteRule": null,
           "emailChangeToken": {
             "duration": 1800
@@ -6048,7 +6709,7 @@
           "system": false,
           "type": "auth",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.338Z",
+          "updated": "2026-10-16 04:01:24.702Z",
           "verificationTemplate": {
             "body": "<p>Hello,</p>\n<p>Thank you for joining us at {APP_NAME}.</p>\n<p>Click on the button below to verify your email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-verification/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Verify</a>\n</p>\n<p><i>If you didn't recently register, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
             "subject": "Verify your {APP_NAME} email"
@@ -6060,7 +6721,7 @@
         },
         "zfs_pools": {
           "createRule": null,
-          "created": "2026-10-16 02:34:39.005Z",
+          "created": "2026-10-16 04:01:20.032Z",
           "deleteRule": null,
           "fields": [
             {
@@ -6266,12 +6927,47 @@
           "system": false,
           "type": "base",
           "updateRule": null,
-          "updated": "2026-10-16 02:34:45.366Z",
+          "updated": "2026-10-16 04:01:24.716Z",
           "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
         }
       },
-      "config_sha256_preserved": "4e9b8b656ce60594ad8efcb653fa48e79ac069f8402554690c273599fae2de9b",
+      "config_sha256_preserved": "d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b",
       "first_health_http": 200,
+      "functional_api": {
+        "alert_id": "dsd9j2kldq88xd1",
+        "cross_user_alert_read_http": 403,
+        "cross_user_alert_update_http": 404,
+        "monitor_id": "2af7cb56",
+        "monitor_stats_id": "3pvk1zs25d",
+        "nonmember_alert_history_query_no_leak": true,
+        "nonmember_alert_query_no_leak": true,
+        "nonmember_alert_update_http": 404,
+        "nonmember_alert_view_http": 403,
+        "nonmember_monitor_history_query_no_leak": true,
+        "nonmember_monitor_query_no_leak": true,
+        "nonmember_monitor_update_http": 404,
+        "nonmember_monitor_view_http": 404,
+        "records_must_survive_restart": true,
+        "regular_user_alert_create_update": true,
+        "regular_user_alert_history_query_http": 200,
+        "regular_user_id": "0jd4nvmoa0r1khs",
+        "regular_user_monitor_create_update_read_list": true,
+        "regular_user_monitor_history_query_http": 200,
+        "regular_user_monitor_history_record_count": 1,
+        "regular_user_monitor_result_preserved_by_history_api": true,
+        "synthetic_nonmember_account_deleted_http": 204,
+        "system_id": "17k5jnedh1tcmv6"
+      },
+      "functional_api_health_http": 200,
+      "functional_api_restart": {
+        "deleted_records_not_found": true,
+        "post_restart_records_preserved": true,
+        "regular_user_delete_http": {
+          "alerts": 204,
+          "network_monitors": 204
+        }
+      },
+      "functional_api_restart_health_http": 200,
       "migration_ledger_after": [
         "1640988000_aux_init.go",
         "1640988000_init.go",
@@ -6305,6 +7001,7 @@
         "1789079746_container_update_available.go",
         "initial-settings.go"
       ],
+      "post_api_cleanup_record_counts_match": true,
       "record_counts_second_start_stable": true,
       "required_migrations_ordered_once": [
         "0_collections_snapshot_0_20_0.go",
@@ -6313,12 +7010,48 @@
         "1790924727_zfs_pool_status.go",
         "1790964708_network_monitor_skip_tls_verify.go"
       ],
+      "rollup_and_retention_after_migration": {
+        "migration_ledger_count_after": 17,
+        "migration_ledger_count_before": 17,
+        "migrations_unchanged": true,
+        "retention_cleanup": {
+          "expired_container_samples_deleted": true,
+          "expired_monitor_samples_deleted": true,
+          "expired_system_samples_deleted": true,
+          "repeated_cleanup_stable": true,
+          "test_rows_removed": true
+        },
+        "rollup_immediately_after_migration": {
+          "container_stats_10m_count": 1,
+          "container_stats_10m_cpu": 5,
+          "container_stats_10m_mem": 500,
+          "monitor_stats_10m_count": 1,
+          "monitor_stats_response_max": 24,
+          "monitor_stats_response_min": 12,
+          "monitor_stats_response_sum": 486,
+          "monitor_stats_success_count": 27,
+          "monitor_stats_total_count": 36,
+          "system_stats_10m_count": 1,
+          "system_stats_10m_cpu": 5
+        }
+      },
       "schema_hash_second_start_stable": true,
       "schema_validation": {
         "added_collections": [
           "network_monitor_stats",
           "network_monitors"
         ],
+        "added_legacy_fields": {
+          "alerts": {
+            "state": "json"
+          },
+          "alerts_history": {
+            "monitor_name": "text"
+          },
+          "zfs_pools": {
+            "status": "text"
+          }
+        },
         "alert_rules": {
           "alerts": {
             "createRule": "@request.auth.id != \"\" && user = @request.auth.id && system.users.id ?= @request.auth.id",
@@ -6333,6 +7066,25 @@
             "listRule": "@request.auth.id != \"\" && user = @request.auth.id",
             "updateRule": null,
             "viewRule": null
+          }
+        },
+        "authorization_rule_changes": {
+          "alerts": {
+            "createRule": "@request.auth.id != \"\" && user = @request.auth.id && system.users.id ?= @request.auth.id",
+            "updateRule": "@request.auth.id != \"\" && user = @request.auth.id && @request.body.user:changed = false && @request.body.system:changed = false && system.users.id ?= @request.auth.id"
+          }
+        },
+        "changed_fields": {
+          "alerts.name.values_added": [
+            "NetworkMonitorLoss"
+          ]
+        },
+        "index_changes": {
+          "alerts": {
+            "added": [
+              "CREATE INDEX idx_alerts_system_name ON alerts (system, name)"
+            ],
+            "removed": []
           }
         },
         "legacy_collections_preserved": [
@@ -6362,34 +7114,65 @@
           "CREATE INDEX IF NOT EXISTS `idx_nms_system_type_created` ON `network_monitor_stats` (`system`, `type`, `created`)",
           "CREATE INDEX IF NOT EXISTS `idx_nms_type_created` ON `network_monitor_stats` (`type`, `created`)"
         ],
-        "relation_targets": {
-          "network_monitor_stats.monitor": "nm_monitors_001",
-          "network_monitor_stats.system": "2hz5ncl8tizk5nx"
+        "network_monitor_rules": {
+          "createRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
+          "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
+          "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
+          "updateRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
+          "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
         },
-        "required_fields": {
-          "containers": {
-            "updatable": "bool"
-          },
+        "network_monitor_stats_rules": {
+          "createRule": null,
+          "deleteRule": null,
+          "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
+          "updateRule": null,
+          "viewRule": null
+        },
+        "new_collection_fields": {
           "network_monitor_stats": {
+            "created": "number",
+            "id": "text",
             "monitor": "relation",
+            "res_max": "number",
+            "res_min": "number",
             "res_sum": "number",
+            "success_count": "number",
             "system": "relation",
-            "total_count": "number"
+            "total_count": "number",
+            "type": "select"
           },
           "network_monitors": {
             "certInfo": "json",
+            "created": "autodate",
+            "enabled": "bool",
+            "id": "text",
+            "interval": "number",
+            "loss1h": "number",
+            "port": "number",
+            "protocol": "select",
+            "res": "number",
+            "resAvg1h": "number",
+            "resMax1h": "number",
+            "resMin1h": "number",
             "server": "text",
-            "skipTlsVerify": "bool"
-          },
-          "zfs_pools": {
-            "display_name": "text",
-            "raw": "bool",
-            "status": "text"
+            "skipTlsVerify": "bool",
+            "system": "relation",
+            "target": "text",
+            "updated": "date"
           }
+        },
+        "preserved_preexisting_fields": {
+          "containers.updatable": "bool",
+          "zfs_pools.display_name": "text",
+          "zfs_pools.raw": "bool"
+        },
+        "relation_targets": {
+          "network_monitor_stats.monitor": "nm_monitors_001",
+          "network_monitor_stats.system": "2hz5ncl8tizk5nx"
         }
       },
       "second_health_http": 200,
-      "source_backup_sha256": "41877eaabae8bba97e24a8d2dc50aa6c2b41f1a067f99759455360d8a302ee58",
+      "source_backup_sha256": "acd575d1cba0a530d744899c453908bb64d5c8413f7a199459f6303345ee70a9",
       "sqlite_integrity_first": [
         "ok"
       ],
@@ -6399,9 +7182,57 @@
       "target_pocketbase_version": "v0.40.4",
       "target_version": "beszel version 0.21.0"
     },
-    "source_head": "415cf3914c0347be53fe02796a6f063f1bbbced0",
+    "rollback_019": {
+      "api_invariants": {
+        "account_roles": {
+          "0jd4nvmoa0r1khs": "user",
+          "njjql7t1tlwfsvg": "admin"
+        },
+        "fingerprint_id": "t64sk4akl",
+        "history_count": 2,
+        "preserved_record_ids": {
+          "alert": "mhmtcc02xtkvjiy",
+          "alert_history": "xbuzjchwoteqh3g",
+          "container": "aba000",
+          "container_stats": "18jh7iyb07xvi7k",
+          "smart_device": "dowuk3co1e",
+          "system_details": "co9x9zh87a09gq8",
+          "system_stats": "zm9l48v11gy41ym",
+          "system_stats_wal": "megyurmgq1eaqz7",
+          "systemd_service": "s086h6otfa",
+          "zfs_pool": "njsktmkzlo20j0u"
+        },
+        "ssh_public_key_fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
+        "system_id": "17k5jnedh1tcmv6",
+        "system_users": [
+          "0jd4nvmoa0r1khs",
+          "njjql7t1tlwfsvg"
+        ],
+        "user_settings_ids": [
+          "12jfbe30pcpewdk",
+          "dszr7tpir8yzhs4"
+        ]
+      },
+      "config_sha256_preserved": "d3606a4014c9d50145ac52b426dc564ee149d1435dbec88d68208e8448062d7b",
+      "diagnostic_log": "failure-logs/post-migration-rollback-v019-recovered.log",
+      "diagnostic_log_sha256": "0fb0487f89eef3d1f2e200ae10f27d047aa8830171c0e144e363d9fe51149c35",
+      "failure_case": "post-migration-rollback",
+      "health_http": 200,
+      "migrated_candidate_database_sha256_before_quarantine": "6d7e3617c8f4d76fd7ff83df5aa12a690bf9c3b3a6dda97b0a0a007c5cfac4d9",
+      "migration_ledger_exactly_pre_upgrade": true,
+      "old_agent_binary_sha256": "454f82b7cbe74b891c183a0c6a4fa3561f272db6b83d27c606fbde73186162be",
+      "old_hub_binary_sha256": "bdcdf9457e6141575349b8a7967b133be4d866a1c7747b37be3585b0f679ec9b",
+      "record_counts_pre_upgrade_preserved": true,
+      "restore_inventory_matches": true,
+      "schema_hash_pre_upgrade_preserved": true,
+      "sqlite_integrity_check": [
+        "ok"
+      ],
+      "verified_backup_archive_sha256": "acd575d1cba0a530d744899c453908bb64d5c8413f7a199459f6303345ee70a9"
+    },
+    "source_head": "db82eb3b4d2066182292d1601b5e2e763ed05f68",
     "ssh_key": {
-      "fingerprint": "SHA256:hdTG7/5F3r/e6lKoc8GQp3PqzDjNuN1lQaLXfiQxucQ",
+      "fingerprint": "SHA256:1hCMtN4vBwY33YpGukPPOERoXqyO+YaElR1Q26giFBE",
       "mode": "0o600",
       "path": "data/id_ed25519"
     },
@@ -6409,60 +7240,60 @@
     "synthetic_records": {
       "alert": {
         "alert_id": "",
-        "created": "2026-10-16 02:34:40.036Z",
+        "created": "2026-10-16 04:01:20.886Z",
         "details_updated": "",
-        "id": "ismslkbd1yoc2h4",
+        "id": "mhmtcc02xtkvjiy",
         "min": 50,
         "name": "CPU",
-        "pending_since": "2026-10-16 02:34:40.000Z",
+        "pending_since": "2026-10-16 04:01:20.000Z",
         "relation_count": 1,
         "stats": null,
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": true,
         "type": "",
-        "updated": "2026-10-16 02:34:40.036Z",
-        "user": "r0xzibg96w165mp",
+        "updated": "2026-10-16 04:01:20.886Z",
+        "user": "njjql7t1tlwfsvg",
         "value": 55
       },
       "alert_history": {
-        "alert_id": "ismslkbd1yoc2h4",
-        "created": "2026-10-16 02:34:40.036Z",
+        "alert_id": "mhmtcc02xtkvjiy",
+        "created": "2026-10-16 04:01:20.886Z",
         "details_updated": "",
-        "id": "qwn1kg92fmacoux",
+        "id": "xbuzjchwoteqh3g",
         "min": null,
         "name": "CPU",
         "pending_since": "",
         "relation_count": 1,
         "stats": null,
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "",
         "updated": "",
-        "user": "r0xzibg96w165mp",
+        "user": "njjql7t1tlwfsvg",
         "value": 55
       },
       "container": {
         "alert_id": "",
         "created": "",
         "details_updated": "",
-        "id": "053fea",
+        "id": "aba000",
         "min": null,
         "name": "p013-synthetic-container",
         "pending_since": "",
         "relation_count": 1,
         "stats": null,
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "",
-        "updated": 1792118080028,
+        "updated": 1792123280881,
         "user": "",
         "value": null
       },
       "container_stats": {
         "alert_id": "",
-        "created": "2026-10-16 02:34:40.032Z",
+        "created": "2026-10-16 04:01:20.883Z",
         "details_updated": "",
-        "id": "lhx2mfupx1b2diz",
+        "id": "18jh7iyb07xvi7k",
         "min": null,
         "name": "",
         "pending_since": "",
@@ -6475,10 +7306,10 @@
             "net": 32
           }
         ],
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "1m",
-        "updated": "2026-10-16 02:34:40.032Z",
+        "updated": "2026-10-16 04:01:20.883Z",
         "user": "",
         "value": null
       },
@@ -6486,16 +7317,16 @@
         "alert_id": "",
         "created": "",
         "details_updated": "",
-        "id": "c771uxijpn",
+        "id": "dowuk3co1e",
         "min": null,
         "name": "p013-synthetic-disk",
         "pending_since": "",
         "relation_count": 1,
         "stats": null,
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "NVMe",
-        "updated": "2026-10-16 02:34:40.034Z",
+        "updated": "2026-10-16 04:01:20.884Z",
         "user": "",
         "value": null
       },
@@ -6503,24 +7334,24 @@
         "alert_id": "",
         "created": "",
         "details_updated": "",
-        "id": "whzfotv2y6wrnrn",
+        "id": "co9x9zh87a09gq8",
         "min": null,
         "name": "",
         "pending_since": "",
         "relation_count": 1,
         "stats": null,
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "",
-        "updated": "2026-10-16 02:34:40.029Z",
+        "updated": "2026-10-16 04:01:20.881Z",
         "user": "",
         "value": null
       },
       "system_stats": {
         "alert_id": "",
-        "created": "2026-10-16 02:34:40.030Z",
+        "created": "2026-10-16 04:01:20.882Z",
         "details_updated": "",
-        "id": "mdsvvlv7ylx3i1m",
+        "id": "zm9l48v11gy41ym",
         "min": null,
         "name": "",
         "pending_since": "",
@@ -6535,18 +7366,18 @@
             "sent": 100
           }
         },
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "1m",
-        "updated": "2026-10-16 02:34:40.030Z",
+        "updated": "2026-10-16 04:01:20.882Z",
         "user": "",
         "value": null
       },
       "system_stats_wal": {
         "alert_id": "",
-        "created": "2026-10-16 02:34:40.374Z",
+        "created": "2026-10-16 04:01:21.206Z",
         "details_updated": "",
-        "id": "u09cya8r9xvoba2",
+        "id": "megyurmgq1eaqz7",
         "min": null,
         "name": "",
         "pending_since": "",
@@ -6561,10 +7392,10 @@
             "sent": 300
           }
         },
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "1m",
-        "updated": "2026-10-16 02:34:40.374Z",
+        "updated": "2026-10-16 04:01:21.206Z",
         "user": "",
         "value": null
       },
@@ -6572,40 +7403,40 @@
         "alert_id": "",
         "created": "",
         "details_updated": "",
-        "id": "uvtvxj6fzu",
+        "id": "s086h6otfa",
         "min": null,
         "name": "p013-synthetic.service",
         "pending_since": "",
         "relation_count": 1,
         "stats": null,
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "",
-        "updated": 1792118080028,
+        "updated": 1792123280881,
         "user": "",
         "value": null
       },
       "zfs_pool": {
         "alert_id": "",
         "created": "",
-        "details_updated": "2026-10-16 02:34:40.000Z",
-        "id": "x9k2djju5r1x49v",
+        "details_updated": "2026-10-16 04:01:20.000Z",
+        "id": "njsktmkzlo20j0u",
         "min": null,
         "name": "p013-synthetic-pool",
         "pending_since": "",
         "relation_count": 1,
         "stats": null,
-        "system": "5kau6y31m506sty",
+        "system": "17k5jnedh1tcmv6",
         "triggered": null,
         "type": "",
-        "updated": "2026-10-16 02:34:40.034Z",
+        "updated": "2026-10-16 04:01:20.885Z",
         "user": "",
         "value": null
       }
     },
     "systems": [
       {
-        "id": "5kau6y31m506sty",
+        "id": "17k5jnedh1tcmv6",
         "info": {
           "agentVersion": "0.19.0",
           "arch": "amd64",
@@ -6613,8 +7444,8 @@
           "os": "P013 Synthetic OS"
         },
         "users": [
-          "r0xzibg96w165mp",
-          "7y4gakzamxkq1jp"
+          "njjql7t1tlwfsvg",
+          "0jd4nvmoa0r1khs"
         ]
       }
     ],
@@ -6626,3408 +7457,72 @@
     "user_settings": [
       {
         "chartTime": "6h",
-        "created": "2026-10-16 02:34:39.618Z",
-        "id": "qupxtd5w5h8700p",
-        "user": "r0xzibg96w165mp"
+        "created": "2026-10-16 04:01:20.526Z",
+        "id": "12jfbe30pcpewdk",
+        "user": "njjql7t1tlwfsvg"
       },
       {
         "chartTime": "24h",
-        "created": "2026-10-16 02:34:39.619Z",
-        "id": "cbrqvvq3ka1uor8",
-        "user": "7y4gakzamxkq1jp"
+        "created": "2026-10-16 04:01:20.526Z",
+        "id": "dszr7tpir8yzhs4",
+        "user": "0jd4nvmoa0r1khs"
       }
     ]
   },
-  "full_regressions_and_final_head_ci": {
-    "status": "PENDING"
-  },
-  "gate_D": "PENDING P013 COMPLETION, P014, AND P015",
-  "interrupted_migration": {
-    "status": "PENDING — deterministic candidate failpoints not yet exercised"
-  },
-  "migration": {
-    "api_invariants_first": {
-      "account_roles": {
-        "7y4gakzamxkq1jp": "user",
-        "r0xzibg96w165mp": "admin"
-      },
-      "fingerprint_id": "3k431kquh",
-      "history_count": 2,
-      "preserved_record_ids": {
-        "alert": "ismslkbd1yoc2h4",
-        "alert_history": "qwn1kg92fmacoux",
-        "container": "053fea",
-        "container_stats": "lhx2mfupx1b2diz",
-        "smart_device": "c771uxijpn",
-        "system_details": "whzfotv2y6wrnrn",
-        "system_stats": "mdsvvlv7ylx3i1m",
-        "system_stats_wal": "u09cya8r9xvoba2",
-        "systemd_service": "uvtvxj6fzu",
-        "zfs_pool": "x9k2djju5r1x49v"
-      },
-      "ssh_public_key_fingerprint": "SHA256:hdTG7/5F3r/e6lKoc8GQp3PqzDjNuN1lQaLXfiQxucQ",
-      "system_id": "5kau6y31m506sty",
-      "system_users": [
-        "7y4gakzamxkq1jp",
-        "r0xzibg96w165mp"
-      ],
-      "user_settings_ids": [
-        "cbrqvvq3ka1uor8",
-        "qupxtd5w5h8700p"
-      ]
-    },
-    "api_invariants_second": {
-      "account_roles": {
-        "7y4gakzamxkq1jp": "user",
-        "r0xzibg96w165mp": "admin"
-      },
-      "fingerprint_id": "3k431kquh",
-      "history_count": 2,
-      "preserved_record_ids": {
-        "alert": "ismslkbd1yoc2h4",
-        "alert_history": "qwn1kg92fmacoux",
-        "container": "053fea",
-        "container_stats": "lhx2mfupx1b2diz",
-        "smart_device": "c771uxijpn",
-        "system_details": "whzfotv2y6wrnrn",
-        "system_stats": "mdsvvlv7ylx3i1m",
-        "system_stats_wal": "u09cya8r9xvoba2",
-        "systemd_service": "uvtvxj6fzu",
-        "zfs_pool": "x9k2djju5r1x49v"
-      },
-      "ssh_public_key_fingerprint": "SHA256:hdTG7/5F3r/e6lKoc8GQp3PqzDjNuN1lQaLXfiQxucQ",
-      "system_id": "5kau6y31m506sty",
-      "system_users": [
-        "7y4gakzamxkq1jp",
-        "r0xzibg96w165mp"
-      ],
-      "user_settings_ids": [
-        "cbrqvvq3ka1uor8",
-        "qupxtd5w5h8700p"
-      ]
-    },
-    "collection_schema_after": {
-      "_authOrigins": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.968Z",
-        "deleteRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text455797646",
-            "max": 0,
-            "min": 0,
-            "name": "collectionRef",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text127846527",
-            "max": 0,
-            "min": 0,
-            "name": "recordRef",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text4228609354",
-            "max": 0,
-            "min": 0,
-            "name": "fingerprint",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          }
-        ],
-        "id": "pbc_4275539003",
-        "indexes": [
-          "CREATE UNIQUE INDEX `idx_authOrigins_unique_pairs` ON `_authOrigins` (collectionRef, recordRef, fingerprint)"
-        ],
-        "listRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
-        "name": "_authOrigins",
-        "system": true,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:38.968Z",
-        "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
-      },
-      "_externalAuths": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.964Z",
-        "deleteRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text455797646",
-            "max": 0,
-            "min": 0,
-            "name": "collectionRef",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text127846527",
-            "max": 0,
-            "min": 0,
-            "name": "recordRef",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text2462348188",
-            "max": 0,
-            "min": 0,
-            "name": "provider",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1044722854",
-            "max": 0,
-            "min": 0,
-            "name": "providerId",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          }
-        ],
-        "id": "pbc_2281828961",
-        "indexes": [
-          "CREATE UNIQUE INDEX `idx_externalAuths_record_provider` ON `_externalAuths` (collectionRef, recordRef, provider)",
-          "CREATE UNIQUE INDEX `idx_externalAuths_collection_provider` ON `_externalAuths` (collectionRef, provider, providerId)"
-        ],
-        "listRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
-        "name": "_externalAuths",
-        "system": true,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:38.964Z",
-        "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
-      },
-      "_mfas": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.960Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text455797646",
-            "max": 0,
-            "min": 0,
-            "name": "collectionRef",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text127846527",
-            "max": 0,
-            "min": 0,
-            "name": "recordRef",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1582905952",
-            "max": 0,
-            "min": 0,
-            "name": "method",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          }
-        ],
-        "id": "pbc_2279338944",
-        "indexes": [
-          "CREATE INDEX `idx_mfas_collectionRef_recordRef` ON `_mfas` (collectionRef,recordRef)"
-        ],
-        "listRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
-        "name": "_mfas",
-        "system": true,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:38.960Z",
-        "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
-      },
-      "_otps": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.963Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text455797646",
-            "max": 0,
-            "min": 0,
-            "name": "collectionRef",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text127846527",
-            "max": 0,
-            "min": 0,
-            "name": "recordRef",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cost": 8,
-            "help": "",
-            "hidden": true,
-            "id": "password901924565",
-            "max": 0,
-            "min": 0,
-            "name": "password",
-            "pattern": "",
-            "presentable": false,
-            "required": true,
-            "system": true,
-            "type": "password"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": true,
-            "id": "text3866985172",
-            "max": 0,
-            "min": 0,
-            "name": "sentTo",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          }
-        ],
-        "id": "pbc_1638494021",
-        "indexes": [
-          "CREATE INDEX `idx_otps_collectionRef_recordRef` ON `_otps` (collectionRef, recordRef)"
-        ],
-        "listRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId",
-        "name": "_otps",
-        "system": true,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:38.963Z",
-        "viewRule": "@request.auth.id != '' && recordRef = @request.auth.id && collectionRef = @request.auth.collectionId"
-      },
-      "_superusers": {
-        "authAlert": {
-          "emailTemplate": {
-            "body": "<p>Hello,</p>\n<p>We noticed a login to your {APP_NAME} account from a new location:</p>\n<p><em>{ALERT_INFO}</em></p>\n<p><strong>If this wasn't you, you should immediately change your {APP_NAME} account password to revoke access from all other locations.</strong></p>\n<p>If this was you, you may disregard this email.</p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-            "subject": "Login from a new location"
-          },
-          "enabled": true
-        },
-        "authRule": "",
-        "authToken": {
-          "duration": 86400
-        },
-        "confirmEmailChangeTemplate": {
-          "body": "<p>Hello,</p>\n<p>Click on the button below to confirm your new email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-email-change/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Confirm new email</a>\n</p>\n<p><i>If you didn't ask to change your email address, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-          "subject": "Confirm your {APP_NAME} new email address"
-        },
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.969Z",
-        "deleteRule": null,
-        "emailChangeToken": {
-          "duration": 1800
-        },
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cost": 0,
-            "help": "",
-            "hidden": true,
-            "id": "password901924565",
-            "max": 0,
-            "min": 8,
-            "name": "password",
-            "pattern": "",
-            "presentable": false,
-            "required": true,
-            "system": true,
-            "type": "password"
-          },
-          {
-            "autogeneratePattern": "[a-zA-Z0-9]{50}",
-            "help": "",
-            "hidden": true,
-            "id": "text2504183744",
-            "max": 60,
-            "min": 30,
-            "name": "tokenKey",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "exceptDomains": [],
-            "help": "",
-            "hidden": false,
-            "id": "email3885137012",
-            "name": "email",
-            "onlyDomains": [],
-            "presentable": false,
-            "required": true,
-            "system": true,
-            "type": "email"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "bool1547992806",
-            "name": "emailVisibility",
-            "presentable": false,
-            "required": false,
-            "system": true,
-            "type": "bool"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "bool256245529",
-            "name": "verified",
-            "presentable": false,
-            "required": false,
-            "system": true,
-            "type": "bool"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": true,
-            "type": "autodate"
-          }
-        ],
-        "fileToken": {
-          "duration": 180
-        },
-        "id": "pbc_3142635823",
-        "indexes": [
-          "CREATE UNIQUE INDEX `idx_tokenKey_pbc_3142635823` ON `_superusers` (`tokenKey`)",
-          "CREATE UNIQUE INDEX `idx_email_pbc_3142635823` ON `_superusers` (`email`) WHERE `email` != ''"
-        ],
-        "listRule": null,
-        "manageRule": null,
-        "mfa": {
-          "duration": 600,
-          "enabled": false,
-          "rule": ""
-        },
-        "name": "_superusers",
-        "oauth2": {
-          "enabled": false,
-          "mappedFields": {
-            "avatarURL": "",
-            "id": "",
-            "name": "",
-            "username": ""
-          },
-          "providers": []
-        },
-        "otp": {
-          "duration": 180,
-          "emailTemplate": {
-            "body": "<p>Hello,</p>\n<p>Your one-time password is: <strong>{OTP}</strong></p>\n<p><i>If you didn't ask for the one-time password, you can ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-            "subject": "OTP for {APP_NAME}"
-          },
-          "enabled": false,
-          "length": 6
-        },
-        "passwordAuth": {
-          "enabled": true,
-          "identityFields": [
-            "email"
-          ]
-        },
-        "passwordResetToken": {
-          "duration": 1800
-        },
-        "resetPasswordTemplate": {
-          "body": "<p>Hello,</p>\n<p>Click on the button below to reset your password.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-password-reset/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Reset password</a>\n</p>\n<p><i>If you didn't ask to reset your password, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-          "subject": "Reset your {APP_NAME} password"
-        },
-        "system": true,
-        "type": "auth",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.334Z",
-        "verificationTemplate": {
-          "body": "<p>Hello,</p>\n<p>Thank you for joining us at {APP_NAME}.</p>\n<p>Click on the button below to verify your email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-verification/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Verify</a>\n</p>\n<p><i>If you didn't recently register, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-          "subject": "Verify your {APP_NAME} email"
-        },
-        "verificationToken": {
-          "duration": 86400
-        },
-        "viewRule": null
-      },
-      "alerts": {
-        "createRule": "@request.auth.id != \"\" && user = @request.auth.id && system.users.id ?= @request.auth.id",
-        "created": "2026-10-16 02:34:38.989Z",
-        "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "_pb_users_auth_",
-            "help": "",
-            "hidden": false,
-            "id": "hn5ly3vi",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "user",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "g5sl3jdg",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "zj3ingrv",
-            "maxSelect": 1,
-            "name": "name",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "select",
-            "values": [
-              "Status",
-              "CPU",
-              "Memory",
-              "Disk",
-              "Temperature",
-              "Bandwidth",
-              "GPU",
-              "LoadAvg1",
-              "LoadAvg5",
-              "LoadAvg15",
-              "Battery",
-              "ContainerHealth",
-              "SystemdFailed",
-              "CPUIOWait",
-              "CPUSteal",
-              "NetworkMonitorLoss"
-            ]
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "o2ablxvn",
-            "max": null,
-            "min": null,
-            "name": "value",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "fstdehcq",
-            "max": 60,
-            "min": null,
-            "name": "min",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "6hgdf6hs",
-            "name": "triggered",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "bool"
-          },
-          {
-            "help": "",
-            "hidden": true,
-            "id": "json4000656575",
-            "maxSize": 0,
-            "name": "state",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "help": "",
-            "hidden": true,
-            "id": "date1302749137",
-            "max": "",
-            "min": "",
-            "name": "pending_since",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "date"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "elngm8x1l60zi2v",
-        "indexes": [
-          "CREATE INDEX idx_alerts_system_name ON alerts (system, name)",
-          "CREATE UNIQUE INDEX `idx_MnhEt21L5r` ON `alerts` (\n  `user`,\n  `system`,\n  `name`\n)"
-        ],
-        "listRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "name": "alerts",
-        "system": false,
-        "type": "base",
-        "updateRule": "@request.auth.id != \"\" && user = @request.auth.id && @request.body.user:changed = false && @request.body.system:changed = false && system.users.id ?= @request.auth.id",
-        "updated": "2026-10-16 02:34:45.378Z",
-        "viewRule": null
-      },
-      "alerts_history": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.990Z",
-        "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "_pb_users_auth_",
-            "help": "",
-            "hidden": false,
-            "id": "relation2375276105",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "user",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "relation3377271179",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text2466471794",
-            "max": 0,
-            "min": 0,
-            "name": "alert_id",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1579384326",
-            "max": 0,
-            "min": 0,
-            "name": "name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text3888135399",
-            "max": 0,
-            "min": 0,
-            "name": "monitor_name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number494360628",
-            "max": null,
-            "min": null,
-            "name": "value",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "date2276568630",
-            "max": "",
-            "min": "",
-            "name": "resolved",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "date"
-          }
-        ],
-        "id": "pbc_1697146157",
-        "indexes": [
-          "CREATE INDEX `idx_YdGnup5aqB` ON `alerts_history` (`user`)",
-          "CREATE INDEX `idx_taLet9VdME` ON `alerts_history` (`created`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "name": "alerts_history",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.255Z",
-        "viewRule": null
-      },
-      "container_stats": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.991Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "hutcu6ps",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "r39hhnil",
-            "maxSize": 2000000,
-            "name": "stats",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "vo7iuj96",
-            "maxSelect": 1,
-            "name": "type",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "select",
-            "values": [
-              "1m",
-              "10m",
-              "20m",
-              "120m",
-              "480m"
-            ]
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "juohu4jipgc13v7",
-        "indexes": [
-          "CREATE INDEX `idx_d87OiXGZD8` ON `container_stats` (\n  `system`,\n  `type`,\n  `created`\n)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "container_stats",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.350Z",
-        "viewRule": null
-      },
-      "containers": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.997Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-f0-9]{6}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 12,
-            "min": 6,
-            "name": "id",
-            "pattern": "^[a-f0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": false,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "relation3377271179",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1579384326",
-            "max": 0,
-            "min": 0,
-            "name": "name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text2063623452",
-            "max": 0,
-            "min": 0,
-            "name": "status",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3470402323",
-            "max": null,
-            "min": null,
-            "name": "health",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3128971310",
-            "max": 100,
-            "min": 0,
-            "name": "cpu",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3933025333",
-            "max": null,
-            "min": 0,
-            "name": "memory",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number4075427327",
-            "max": null,
-            "min": null,
-            "name": "net",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text3309110367",
-            "max": 0,
-            "min": 0,
-            "name": "image",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text2308952269",
-            "max": 0,
-            "min": 0,
-            "name": "ports",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3332085495",
-            "max": null,
-            "min": null,
-            "name": "updated",
-            "onlyInt": true,
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "bool2084032502",
-            "name": "updatable",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "bool"
-          }
-        ],
-        "id": "pbc_1864144027",
-        "indexes": [
-          "CREATE INDEX `idx_JxWirjdhyO` ON `containers` (`updated`)",
-          "CREATE INDEX `idx_r3Ja0rs102` ON `containers` (`system`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "containers",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.346Z",
-        "viewRule": null
-      },
-      "fingerprints": {
-        "createRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "created": "2026-10-16 02:34:38.992Z",
-        "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{9}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 9,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "relation3377271179",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "autogeneratePattern": "[a-zA-Z9-9]{20}",
-            "help": "",
-            "hidden": false,
-            "id": "text1597481275",
-            "max": 255,
-            "min": 9,
-            "name": "token",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text4228609354",
-            "max": 255,
-            "min": 9,
-            "name": "fingerprint",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "pbc_3663931638",
-        "indexes": [
-          "CREATE INDEX `idx_p9qZlu26po` ON `fingerprints` (`token`)",
-          "CREATE UNIQUE INDEX `idx_ngboulGMYw` ON `fingerprints` (`system`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "name": "fingerprints",
-        "system": false,
-        "type": "base",
-        "updateRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "updated": "2026-10-16 02:34:45.370Z",
-        "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\""
-      },
-      "network_monitor_stats": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:45.244Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{10}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 10,
-            "min": 10,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "nms_system",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "nm_monitors_001",
-            "help": "",
-            "hidden": false,
-            "id": "nms_monitor",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "monitor",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "help": "Number of probe attempts",
-            "hidden": false,
-            "id": "nms_total_count",
-            "max": null,
-            "min": 0,
-            "name": "total_count",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "Number of successful probe attempts",
-            "hidden": false,
-            "id": "nms_success_count",
-            "max": null,
-            "min": 0,
-            "name": "success_count",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "Sum of successful response times in microseconds",
-            "hidden": false,
-            "id": "nms_res_sum",
-            "max": null,
-            "min": 0,
-            "name": "res_sum",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "Response time in microseconds",
-            "hidden": false,
-            "id": "nms_res_min",
-            "max": null,
-            "min": 0,
-            "name": "res_min",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "Response time in microseconds",
-            "hidden": false,
-            "id": "nms_res_max",
-            "max": null,
-            "min": 0,
-            "name": "res_max",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "nms_type",
-            "maxSelect": 1,
-            "name": "type",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "select",
-            "values": [
-              "1m",
-              "10m",
-              "20m",
-              "120m",
-              "480m"
-            ]
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number2990389176",
-            "max": null,
-            "min": null,
-            "name": "created",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          }
-        ],
-        "id": "nm_stats_001",
-        "indexes": [
-          "CREATE INDEX IF NOT EXISTS `idx_nms_system_type_created` ON `network_monitor_stats` (`system`, `type`, `created`)",
-          "CREATE INDEX IF NOT EXISTS `idx_nms_monitor_type_created` ON `network_monitor_stats` (`monitor`, `type`, `created`)",
-          "CREATE INDEX IF NOT EXISTS `idx_nms_type_created` ON `network_monitor_stats` (`type`, `created`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "network_monitor_stats",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.360Z",
-        "viewRule": null
-      },
-      "network_monitors": {
-        "createRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "created": "2026-10-16 02:34:45.242Z",
-        "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{10}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 10,
-            "min": 6,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "nm_system",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "nm_target",
-            "max": 500,
-            "min": 1,
-            "name": "target",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "nm_protocol",
-            "maxSelect": 1,
-            "name": "protocol",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "select",
-            "values": [
-              "icmp",
-              "tcp",
-              "http",
-              "dns"
-            ]
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "nm_port",
-            "max": 65535,
-            "min": 0,
-            "name": "port",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "nm_interval",
-            "max": 3600,
-            "min": 1,
-            "name": "interval",
-            "onlyInt": true,
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number926446584",
-            "max": null,
-            "min": null,
-            "name": "res",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number1006954605",
-            "max": null,
-            "min": null,
-            "name": "resAvg1h",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number4267669802",
-            "max": null,
-            "min": null,
-            "name": "resMin1h",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number591433223",
-            "max": null,
-            "min": null,
-            "name": "resMax1h",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3726709001",
-            "max": null,
-            "min": null,
-            "name": "loss1h",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "nm_enabled",
-            "name": "enabled",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "bool"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "date3332085495",
-            "max": "",
-            "min": "",
-            "name": "updated",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "date"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "json3801067715",
-            "maxSize": 0,
-            "name": "certInfo",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "nm_server",
-            "max": 260,
-            "min": 0,
-            "name": "server",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "nm_skip_tls_verify",
-            "name": "skipTlsVerify",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "bool"
-          }
-        ],
-        "id": "nm_monitors_001",
-        "indexes": [
-          "CREATE INDEX `idx_nm_system_enabled` ON `network_monitors` (`system`, `enabled`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "network_monitors",
-        "system": false,
-        "type": "base",
-        "updateRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "updated": "2026-10-16 02:34:45.373Z",
-        "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
-      },
-      "quiet_hours": {
-        "createRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "created": "2026-10-16 02:34:39.000Z",
-        "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{10}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 10,
-            "min": 10,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "_pb_users_auth_",
-            "help": "",
-            "hidden": false,
-            "id": "relation2375276105",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "user",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "relation3377271179",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "select2844932856",
-            "maxSelect": 1,
-            "name": "type",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "select",
-            "values": [
-              "one-time",
-              "daily"
-            ]
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "date2675529103",
-            "max": "",
-            "min": "",
-            "name": "start",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "date"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "date16528305",
-            "max": "",
-            "min": "",
-            "name": "end",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "date"
-          }
-        ],
-        "id": "pbc_451525641",
-        "indexes": [
-          "CREATE INDEX `idx_q0iKnRP9v8` ON `quiet_hours` (\n  `user`,\n  `system`\n)",
-          "CREATE INDEX `idx_6T7ljT7FJd` ON `quiet_hours` (\n  `type`,\n  `end`\n)"
-        ],
-        "listRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "name": "quiet_hours",
-        "system": false,
-        "type": "base",
-        "updateRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "updated": "2026-10-16 02:34:45.276Z",
-        "viewRule": "@request.auth.id != \"\" && user = @request.auth.id"
-      },
-      "smart_devices": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:39.001Z",
-        "deleteRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{10}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 10,
-            "min": 10,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "relation3377271179",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1579384326",
-            "max": 0,
-            "min": 0,
-            "name": "name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text3616895705",
-            "max": 0,
-            "min": 0,
-            "name": "model",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text2744374011",
-            "max": 0,
-            "min": 0,
-            "name": "state",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3051925876",
-            "max": null,
-            "min": null,
-            "name": "capacity",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number190023114",
-            "max": null,
-            "min": null,
-            "name": "temp",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text3589068740",
-            "max": 0,
-            "min": 0,
-            "name": "firmware",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text3547646428",
-            "max": 0,
-            "min": 0,
-            "name": "serial",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text2363381545",
-            "max": 0,
-            "min": 0,
-            "name": "type",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number1234567890",
-            "max": null,
-            "min": null,
-            "name": "hours",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number0987654321",
-            "max": null,
-            "min": null,
-            "name": "cycles",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "json832282224",
-            "maxSize": 0,
-            "name": "attributes",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "pbc_2571630677",
-        "indexes": [
-          "CREATE INDEX `idx_DZ9yhvgl44` ON `smart_devices` (`system`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "smart_devices",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.363Z",
-        "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
-      },
-      "system_details": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:39.002Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "relation3377271179",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text3847340049",
-            "max": 0,
-            "min": 0,
-            "name": "hostname",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number1789936913",
-            "max": null,
-            "min": null,
-            "name": "os",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text2818598173",
-            "max": 0,
-            "min": 0,
-            "name": "os_name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1574083243",
-            "max": 0,
-            "min": 0,
-            "name": "kernel",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text3128971310",
-            "max": 0,
-            "min": 0,
-            "name": "cpu",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text4161937994",
-            "max": 0,
-            "min": 0,
-            "name": "arch",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number4245036687",
-            "max": null,
-            "min": null,
-            "name": "cores",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number1871592925",
-            "max": null,
-            "min": null,
-            "name": "threads",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3933025333",
-            "max": null,
-            "min": null,
-            "name": "memory",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "bool2200265312",
-            "name": "podman",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "bool"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "pbc_3116237454",
-        "indexes": [],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "system_details",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.381Z",
-        "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
-      },
-      "system_stats": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.993Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "h9sg148r",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "azftn0be",
-            "maxSize": 2000000,
-            "name": "stats",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "m1ekhli3",
-            "maxSelect": 1,
-            "name": "type",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "select",
-            "values": [
-              "1m",
-              "10m",
-              "20m",
-              "120m",
-              "480m"
-            ]
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "ej9oowivz8b2mht",
-        "indexes": [
-          "CREATE INDEX `idx_GxIee0j` ON `system_stats` (\n  `system`,\n  `type`,\n  `created`\n)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "system_stats",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.353Z",
-        "viewRule": null
-      },
-      "systemd_services": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.999Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{10}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 10,
-            "min": 6,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1579384326",
-            "max": 0,
-            "min": 0,
-            "name": "name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "relation3377271179",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number2063623452",
-            "max": null,
-            "min": null,
-            "name": "state",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number1476559580",
-            "max": null,
-            "min": null,
-            "name": "sub",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3128971310",
-            "max": null,
-            "min": null,
-            "name": "cpu",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number1052053287",
-            "max": null,
-            "min": null,
-            "name": "cpuPeak",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3933025333",
-            "max": null,
-            "min": null,
-            "name": "memory",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number1828797201",
-            "max": null,
-            "min": null,
-            "name": "memPeak",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number3332085495",
-            "max": null,
-            "min": null,
-            "name": "updated",
-            "onlyInt": false,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          }
-        ],
-        "id": "pbc_3494996990",
-        "indexes": [
-          "CREATE INDEX `idx_4Z7LuLNdQb` ON `systemd_services` (`system`)",
-          "CREATE INDEX `idx_pBp1fF837e` ON `systemd_services` (`updated`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "systemd_services",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.356Z",
-        "viewRule": null
-      },
-      "systems": {
-        "createRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "created": "2026-10-16 02:34:38.995Z",
-        "deleteRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "7xloxkwk",
-            "max": 0,
-            "min": 0,
-            "name": "name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "waj7seaf",
-            "maxSelect": 1,
-            "name": "status",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "select",
-            "values": [
-              "up",
-              "down",
-              "paused",
-              "pending"
-            ]
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "ve781smf",
-            "max": 0,
-            "min": 0,
-            "name": "host",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "pij0k2jk",
-            "max": 0,
-            "min": 0,
-            "name": "port",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "qoq64ntl",
-            "maxSize": 2000000,
-            "name": "info",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "_pb_users_auth_",
-            "help": "",
-            "hidden": false,
-            "id": "jcarjnjj",
-            "maxSelect": 2147483647,
-            "minSelect": 0,
-            "name": "users",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "2hz5ncl8tizk5nx",
-        "indexes": [
-          "CREATE INDEX `idx_systems_status` ON `systems` (`status`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id",
-        "name": "systems",
-        "system": false,
-        "type": "base",
-        "updateRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id && @request.auth.role != \"readonly\"",
-        "updated": "2026-10-16 02:34:45.343Z",
-        "viewRule": "@request.auth.id != \"\" && users.id ?= @request.auth.id"
-      },
-      "universal_tokens": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:39.004Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{10}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 10,
-            "min": 10,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "_pb_users_auth_",
-            "help": "",
-            "hidden": false,
-            "id": "relation2375276105",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "user",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1597481275",
-            "max": 0,
-            "min": 0,
-            "name": "token",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "pbc_3383022248",
-        "indexes": [
-          "CREATE INDEX `idx_iaD9Y2Lgbl` ON `universal_tokens` (`token`)",
-          "CREATE UNIQUE INDEX `idx_wdR0A4PbRG` ON `universal_tokens` (`user`)"
-        ],
-        "listRule": null,
-        "name": "universal_tokens",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.281Z",
-        "viewRule": null
-      },
-      "user_settings": {
-        "createRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "created": "2026-10-16 02:34:38.994Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "_pb_users_auth_",
-            "help": "",
-            "hidden": false,
-            "id": "d5vztyxa",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "user",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "xcx4qgqq",
-            "maxSize": 2000000,
-            "name": "settings",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          }
-        ],
-        "id": "4afacsdnlu8q8r2",
-        "indexes": [
-          "CREATE UNIQUE INDEX `idx_30Lwgf2` ON `user_settings` (`user`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "name": "user_settings",
-        "system": false,
-        "type": "base",
-        "updateRule": "@request.auth.id != \"\" && user = @request.auth.id",
-        "updated": "2026-10-16 02:34:45.268Z",
-        "viewRule": null
-      },
-      "users": {
-        "authAlert": {
-          "emailTemplate": {
-            "body": "<p>Hello,</p>\n<p>We noticed a login to your {APP_NAME} account from a new location:</p>\n<p><em>{ALERT_INFO}</em></p>\n<p><strong>If this wasn't you, you should immediately change your {APP_NAME} account password to revoke access from all other locations.</strong></p>\n<p>If this was you, you may disregard this email.</p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-            "subject": "Login from a new location"
-          },
-          "enabled": true
-        },
-        "authRule": "verified=true",
-        "authToken": {
-          "duration": 432000
-        },
-        "confirmEmailChangeTemplate": {
-          "body": "<p>Hello,</p>\n<p>Click on the button below to confirm your new email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-email-change/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Confirm new email</a>\n</p>\n<p><i>If you didn't ask to change your email address, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-          "subject": "Confirm your {APP_NAME} new email address"
-        },
-        "createRule": null,
-        "created": "2026-10-16 02:34:38.971Z",
-        "deleteRule": null,
-        "emailChangeToken": {
-          "duration": 1800
-        },
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cost": 10,
-            "help": "",
-            "hidden": true,
-            "id": "password901924565",
-            "max": 0,
-            "min": 8,
-            "name": "password",
-            "pattern": "",
-            "presentable": false,
-            "required": true,
-            "system": true,
-            "type": "password"
-          },
-          {
-            "autogeneratePattern": "[a-zA-Z0-9_]{50}",
-            "help": "",
-            "hidden": true,
-            "id": "text2504183744",
-            "max": 60,
-            "min": 30,
-            "name": "tokenKey",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "exceptDomains": [],
-            "help": "",
-            "hidden": false,
-            "id": "email3885137012",
-            "name": "email",
-            "onlyDomains": [],
-            "presentable": false,
-            "required": true,
-            "system": true,
-            "type": "email"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "bool1547992806",
-            "name": "emailVisibility",
-            "presentable": false,
-            "required": false,
-            "system": true,
-            "type": "bool"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "bool256245529",
-            "name": "verified",
-            "presentable": false,
-            "required": false,
-            "system": true,
-            "type": "bool"
-          },
-          {
-            "autogeneratePattern": "users[0-9]{6}",
-            "help": "",
-            "hidden": false,
-            "id": "text4166911607",
-            "max": 150,
-            "min": 3,
-            "name": "username",
-            "pattern": "^[\\w][\\w\\.\\-]*$",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "qkbp58ae",
-            "maxSelect": 1,
-            "name": "role",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "select",
-            "values": [
-              "user",
-              "admin",
-              "readonly"
-            ]
-          },
-          {
-            "hidden": false,
-            "id": "autodate2990389176",
-            "name": "created",
-            "onCreate": true,
-            "onUpdate": false,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text1579384326",
-            "max": 255,
-            "min": 0,
-            "name": "name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "file376926767",
-            "maxSelect": 1,
-            "maxSize": 0,
-            "mimeTypes": [
-              "image/jpeg",
-              "image/png",
-              "image/svg+xml",
-              "image/gif",
-              "image/webp"
-            ],
-            "name": "avatar",
-            "presentable": false,
-            "protected": false,
-            "required": false,
-            "system": false,
-            "thumbs": [],
-            "type": "file"
-          }
-        ],
-        "fileToken": {
-          "duration": 180
-        },
-        "id": "_pb_users_auth_",
-        "indexes": [
-          "CREATE UNIQUE INDEX `__pb_users_auth__username_idx` ON `users` (username COLLATE NOCASE)",
-          "CREATE UNIQUE INDEX `__pb_users_auth__email_idx` ON `users` (`email`) WHERE `email` != ''",
-          "CREATE UNIQUE INDEX `__pb_users_auth__tokenKey_idx` ON `users` (`tokenKey`)"
-        ],
-        "listRule": "id = @request.auth.id",
-        "manageRule": null,
-        "mfa": {
-          "duration": 600,
-          "enabled": false,
-          "rule": ""
-        },
-        "name": "users",
-        "oauth2": {
-          "enabled": false,
-          "mappedFields": {
-            "avatarURL": "avatar",
-            "id": "",
-            "name": "name",
-            "username": ""
-          },
-          "providers": []
-        },
-        "otp": {
-          "duration": 180,
-          "emailTemplate": {
-            "body": "<p>Hello,</p>\n<p>Your one-time password is: <strong>{OTP}</strong></p>\n<p><i>If you didn't ask for the one-time password, you can ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-            "subject": "OTP for {APP_NAME}"
-          },
-          "enabled": false,
-          "length": 6
-        },
-        "passwordAuth": {
-          "enabled": true,
-          "identityFields": [
-            "email"
-          ]
-        },
-        "passwordResetToken": {
-          "duration": 1800
-        },
-        "resetPasswordTemplate": {
-          "body": "<p>Hello,</p>\n<p>Click on the button below to reset your password.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-password-reset/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Reset password</a>\n</p>\n<p><i>If you didn't ask to reset your password, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-          "subject": "Reset your {APP_NAME} password"
-        },
-        "system": false,
-        "type": "auth",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.338Z",
-        "verificationTemplate": {
-          "body": "<p>Hello,</p>\n<p>Thank you for joining us at {APP_NAME}.</p>\n<p>Click on the button below to verify your email address.</p>\n<p>\n  <a class=\"btn\" href=\"{APP_URL}/_/#/auth/confirm-verification/{TOKEN}\" target=\"_blank\" rel=\"noopener\">Verify</a>\n</p>\n<p><i>If you didn't recently register, please ignore this email.</i></p>\n<p>\n  Thanks,<br/>\n  {APP_NAME} team\n</p>",
-          "subject": "Verify your {APP_NAME} email"
-        },
-        "verificationToken": {
-          "duration": 86400
-        },
-        "viewRule": "id = @request.auth.id"
-      },
-      "zfs_pools": {
-        "createRule": null,
-        "created": "2026-10-16 02:34:39.005Z",
-        "deleteRule": null,
-        "fields": [
-          {
-            "autogeneratePattern": "[a-z0-9]{15}",
-            "help": "",
-            "hidden": false,
-            "id": "text3208210256",
-            "max": 15,
-            "min": 15,
-            "name": "id",
-            "pattern": "^[a-z0-9]+$",
-            "presentable": false,
-            "primaryKey": true,
-            "required": true,
-            "system": true,
-            "type": "text"
-          },
-          {
-            "cascadeDelete": true,
-            "collectionId": "2hz5ncl8tizk5nx",
-            "help": "",
-            "hidden": false,
-            "id": "relation1204987316",
-            "maxSelect": 1,
-            "minSelect": 0,
-            "name": "system",
-            "presentable": false,
-            "required": true,
-            "system": false,
-            "type": "relation"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text7739291048",
-            "max": 0,
-            "min": 0,
-            "name": "name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text5528164482",
-            "max": 0,
-            "min": 0,
-            "name": "health",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number8862034195",
-            "max": null,
-            "min": null,
-            "name": "size",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number4418907321",
-            "max": null,
-            "min": null,
-            "name": "alloc",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "number2904183765",
-            "max": null,
-            "min": null,
-            "name": "free",
-            "onlyInt": true,
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "number"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "json4466109723",
-            "maxSize": 0,
-            "name": "scrub",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "json9012873456",
-            "maxSize": 0,
-            "name": "vdevs",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "json7182045639",
-            "maxSize": 0,
-            "name": "datasets",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "json"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "date9274163058",
-            "max": "",
-            "min": "",
-            "name": "details_updated",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "date"
-          },
-          {
-            "hidden": false,
-            "id": "autodate3332085495",
-            "name": "updated",
-            "onCreate": true,
-            "onUpdate": true,
-            "presentable": false,
-            "system": false,
-            "type": "autodate"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "text3578368839",
-            "max": 0,
-            "min": 0,
-            "name": "display_name",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          },
-          {
-            "help": "",
-            "hidden": false,
-            "id": "bool447994709",
-            "name": "raw",
-            "presentable": false,
-            "required": false,
-            "system": false,
-            "type": "bool"
-          },
-          {
-            "autogeneratePattern": "",
-            "help": "",
-            "hidden": false,
-            "id": "zfs_pool_status",
-            "max": 0,
-            "min": 0,
-            "name": "status",
-            "pattern": "",
-            "presentable": false,
-            "primaryKey": false,
-            "required": false,
-            "system": false,
-            "type": "text"
-          }
-        ],
-        "id": "pbc_8441057391",
-        "indexes": [
-          "CREATE INDEX `idx_zfsPoolsSystem` ON `zfs_pools` (`system`)"
-        ],
-        "listRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id",
-        "name": "zfs_pools",
-        "system": false,
-        "type": "base",
-        "updateRule": null,
-        "updated": "2026-10-16 02:34:45.366Z",
-        "viewRule": "@request.auth.id != \"\" && system.users.id ?= @request.auth.id"
-      }
-    },
-    "config_sha256_preserved": "4e9b8b656ce60594ad8efcb653fa48e79ac069f8402554690c273599fae2de9b",
-    "first_health_http": 200,
-    "migration_ledger_after": [
-      "1640988000_aux_init.go",
-      "1640988000_init.go",
-      "1717233556_v0.23_migrate.go",
-      "1717233557_v0.23_migrate2.go",
-      "1717233558_v0.23_migrate3.go",
-      "1717233559_v0.23_migrate4.go",
-      "1763020353_update_default_auth_alert_templates.go",
-      "1778828400_normalize_indexes.go",
-      "0_collections_snapshot_0_19_0.go",
-      "1788955200_pool_updates.go",
-      "1789079746_container_update_available.go",
-      "initial-settings.go",
-      "0_collections_snapshot_0_20_0.go",
-      "1790193183_network_monitor_cert.go",
-      "1790273174_network_monitor_server.go",
-      "1790924727_zfs_pool_status.go",
-      "1790964708_network_monitor_skip_tls_verify.go"
-    ],
-    "migration_ledger_before": [
-      "1640988000_aux_init.go",
-      "1640988000_init.go",
-      "1717233556_v0.23_migrate.go",
-      "1717233557_v0.23_migrate2.go",
-      "1717233558_v0.23_migrate3.go",
-      "1717233559_v0.23_migrate4.go",
-      "1763020353_update_default_auth_alert_templates.go",
-      "1778828400_normalize_indexes.go",
-      "0_collections_snapshot_0_19_0.go",
-      "1788955200_pool_updates.go",
-      "1789079746_container_update_available.go",
-      "initial-settings.go"
-    ],
-    "record_counts_second_start_stable": true,
-    "required_migrations_ordered_once": [
-      "0_collections_snapshot_0_20_0.go",
-      "1790193183_network_monitor_cert.go",
-      "1790273174_network_monitor_server.go",
-      "1790924727_zfs_pool_status.go",
-      "1790964708_network_monitor_skip_tls_verify.go"
-    ],
-    "schema_hash_second_start_stable": true,
-    "schema_validation": {
-      "added_collections": [
-        "network_monitor_stats",
-        "network_monitors"
-      ],
-      "alert_rules": {
-        "alerts": {
-          "createRule": "@request.auth.id != \"\" && user = @request.auth.id && system.users.id ?= @request.auth.id",
-          "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
-          "listRule": "@request.auth.id != \"\" && user = @request.auth.id",
-          "updateRule": "@request.auth.id != \"\" && user = @request.auth.id && @request.body.user:changed = false && @request.body.system:changed = false && system.users.id ?= @request.auth.id",
-          "viewRule": null
-        },
-        "alerts_history": {
-          "createRule": null,
-          "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
-          "listRule": "@request.auth.id != \"\" && user = @request.auth.id",
-          "updateRule": null,
-          "viewRule": null
-        }
-      },
-      "legacy_collections_preserved": [
-        "_authOrigins",
-        "_externalAuths",
-        "_mfas",
-        "_otps",
-        "_superusers",
-        "alerts",
-        "alerts_history",
-        "container_stats",
-        "containers",
-        "fingerprints",
-        "quiet_hours",
-        "smart_devices",
-        "system_details",
-        "system_stats",
-        "systemd_services",
-        "systems",
-        "universal_tokens",
-        "user_settings",
-        "users",
-        "zfs_pools"
-      ],
-      "network_monitor_indexes": [
-        "CREATE INDEX IF NOT EXISTS `idx_nms_monitor_type_created` ON `network_monitor_stats` (`monitor`, `type`, `created`)",
-        "CREATE INDEX IF NOT EXISTS `idx_nms_system_type_created` ON `network_monitor_stats` (`system`, `type`, `created`)",
-        "CREATE INDEX IF NOT EXISTS `idx_nms_type_created` ON `network_monitor_stats` (`type`, `created`)"
-      ],
-      "relation_targets": {
-        "network_monitor_stats.monitor": "nm_monitors_001",
-        "network_monitor_stats.system": "2hz5ncl8tizk5nx"
-      },
-      "required_fields": {
-        "containers": {
-          "updatable": "bool"
-        },
-        "network_monitor_stats": {
-          "monitor": "relation",
-          "res_sum": "number",
-          "system": "relation",
-          "total_count": "number"
-        },
-        "network_monitors": {
-          "certInfo": "json",
-          "server": "text",
-          "skipTlsVerify": "bool"
-        },
-        "zfs_pools": {
-          "display_name": "text",
-          "raw": "bool",
-          "status": "text"
-        }
-      }
-    },
-    "second_health_http": 200,
-    "source_backup_sha256": "41877eaabae8bba97e24a8d2dc50aa6c2b41f1a067f99759455360d8a302ee58",
-    "sqlite_integrity_first": [
-      "ok"
-    ],
-    "sqlite_integrity_second": [
-      "ok"
-    ],
-    "status": "PASS — genuine 0.19 to 0.21 Hub startup, schema/data assertions, and stable second startup; functional API and full acceptance remain pending",
-    "target_pocketbase_version": "v0.40.4",
-    "target_version": "beszel version 0.21.0"
-  },
-  "milestone": "P013",
-  "physical_device_and_native_rssi": "DEFERRED TO P018",
-  "pull_request": 15,
-  "release_authorized": false,
-  "rollback": {
-    "status": "PENDING — restore-before-migration verified; post-migration complete rollback not yet exercised"
-  },
+  "production_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+  "schema": "beszel-ios-p013-hub-database-validation/v1",
   "starting_integration_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
-  "status": "IN_PROGRESS"
+  "status": "P013 synthetic acceptance evidence verified; final-head PR checks and normal merge are tracked in PR #15.",
+  "P012": {
+    "P013": "AUTHORIZED",
+    "P018_physical_validation": "PENDING",
+    "PR": 14,
+    "deferred_risks": [
+      "WIFI-ABI-12",
+      "WIFI-ASSOCIATION-12",
+      "WIFI-AUTH-12",
+      "physical iOS portion of WIFI-BOUND-12"
+    ],
+    "fallback_source_ci": "ACCEPTED FOR INTEGRATION",
+    "final_head_installer": "PASS: https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362750",
+    "final_head_ios_build": "PASS: https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38837362864",
+    "future_signing_entitlement_helper_owner": "P016",
+    "merge_sha": "d6239915e404668c10453ab2ec44f797b2f0178e",
+    "native_rssi_measured": false,
+    "native_wifi_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE",
+    "normal_ios_wifi_rssi": "UNAVAILABLE / NIL",
+    "owner_approved_decision": "https://github.com/nghianguyen150612/Beszel-iOS/pull/14#issuecomment-6206076758",
+    "physical_validation_owner": "P018",
+    "release_authorized": false,
+    "latest_verified_feature_head": "2a16d0f46f6fd1c91f40e295190b89fb8713b8cd",
+    "pre_merge_integration_sha": "33840093bb465f0b164bb7d66aebc8cd85f86a4e",
+    "fallback_status": "ACCEPTED FOR INTEGRATION",
+    "historical_validation_snapshot": {
+      "path": "ios-hub-database-validation-prior-checkpoint.json",
+      "sha256": "39ea81fa6c4621577f1831cb9bdd725d891977b4d60b7c123d1205af75ecaf7e",
+      "preservation": "Exact prior validation JSON retained; its original pending/blocked observations are historical and unchanged."
+    },
+    "gate_C_source_evidence": "PASS for accepted fallback/source/CI integration only; hosted tests and native CI do not measure native RSSI.",
+    "gate_C_physical_evidence": "PENDING — P018 physical validation; RSSI was not measured.",
+    "physical_obligations": [
+      "WIFI-ABI-12",
+      "WIFI-ASSOCIATION-12",
+      "WIFI-AUTH-12",
+      "physical iOS portion of WIFI-BOUND-12"
+    ]
+  },
+  "feature_branch": "ios/hub-database-migration",
+  "feature_head": "db82eb3b4d2066182292d1601b5e2e763ed05f68",
+  "pull_request": {
+    "number": 15,
+    "title": "P013 — Validate Hub migration, rollback and authorization",
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/15",
+    "base": "ios/upstream-v021-integration"
+  },
+  "gate_D": "P013 acceptance evidence verified; P014 and P015 remain required for completion of Gate D.",
+  "historical_checkpoint": {
+    "path": "ios-hub-database-validation-prior-checkpoint.json",
+    "sha256": "39ea81fa6c4621577f1831cb9bdd725d891977b4d60b7c123d1205af75ecaf7e",
+    "note": "Verbatim previous checkpoint retained so earlier P012 disposition and P013 pending/blocked records are not rewritten."
+  }
 }
