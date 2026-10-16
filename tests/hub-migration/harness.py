@@ -442,6 +442,7 @@ def verify_migrated_monitor_alert_api(
             "password": password,
             "passwordConfirm": password,
             "role": "user",
+            "verified": True,
         },
     )
     if outsider_create_status not in (200, 201) or not isinstance(outsider, dict) or not outsider.get("id"):
