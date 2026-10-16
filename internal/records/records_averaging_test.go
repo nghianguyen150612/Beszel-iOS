@@ -657,16 +657,16 @@ func TestAverageSystemStatsSlice_MixedOptionalFields(t *testing.T) {
 	result := records.AverageSystemStatsSlice(input)
 
 	assert.Equal(t, 15.0, result.Cpu)
-	// CpuCoresUsage: only 1 record had it, so sum/2
+	// CpuCoresUsage: only the present observation contributes to the denominator
 	require.NotNil(t, result.CpuCoresUsage)
-	assert.Equal(t, uint8(25), result.CpuCoresUsage[0])
-	assert.Equal(t, uint8(30), result.CpuCoresUsage[1])
-	// CpuBreakdown: only 1 record had it, so sum/2
+	assert.Equal(t, uint8(50), result.CpuCoresUsage[0])
+	assert.Equal(t, uint8(60), result.CpuCoresUsage[1])
+	// CpuBreakdown: only the present observation contributes to the denominator
 	require.NotNil(t, result.CpuBreakdown)
-	assert.Equal(t, 2.5, result.CpuBreakdown[0])
-	// GPUData: only 1 record had it, so sum/2
+	assert.Equal(t, 5.0, result.CpuBreakdown[0])
+	// GPUData: only the present observation contributes to the denominator
 	require.NotNil(t, result.GPUData)
-	assert.Equal(t, 20.0, result.GPUData["gpu0"].Usage)
+	assert.Equal(t, 40.0, result.GPUData["gpu0"].Usage)
 }
 
 func TestAverageSystemStatsSlice_Zfs(t *testing.T) {

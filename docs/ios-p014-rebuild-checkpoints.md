@@ -139,3 +139,18 @@ zero, and the alert suite reached its default 10-minute timeout during active
 fixture setup. This is NOT a pass. The assertion is being corrected and the full
 suite will be rerun with a realistic timeout after the newly reproduced sparse
 alert-window issue is repaired.
+
+## E follow-up — sparse alert windows
+
+A correctly dated historical fixture independently reproduced false temperature
+and extra-filesystem recovery: valid readings 90 and 30 average 60, but an absent
+sample incorrectly diluted them to 40. Per-sensor/filesystem counts now exclude
+missing observations and require sufficient observations for that device. The
+focused alert and record suites PASS, including unchanged incident state at the
+correct mean. The fixture asserts stored timestamps; PocketBase's automatic
+creation field requires explicit SQL dating for these synthetic historical rows.
+The DB restart/rollup fixture was strengthened to date its rows the same way.
+
+The old mixed-optional rollup test now expects the available sample rather than
+half its value. No threshold, retention interval, notification authorization or
+database migration changed.

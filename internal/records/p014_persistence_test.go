@@ -12,6 +12,7 @@ import (
 	"github.com/henrygd/beszel/internal/testutil/telemetry"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,6 +42,8 @@ func TestP014PersistedOptionalRollupAndRestart(t *testing.T) {
 		row := core.NewRecord(collection)
 		row.Load(map[string]any{"system": sys.Id, "type": "1m", "stats": stats, "created": time.Now().UTC().Add(-time.Duration(i+1) * time.Minute)})
 		require.NoError(t, hub.SaveNoValidate(row))
+		_, err = hub.DB().NewQuery("UPDATE system_stats SET created={:created} WHERE id={:id}").Bind(dbx.Params{"created": time.Now().UTC().Add(-time.Duration(i+1) * time.Minute).Format(types.DefaultDateLayout), "id": row.Id}).Execute()
+		require.NoError(t, err)
 	}
 	records.NewRecordManager(hub).CreateLongerRecords()
 	rows, err := hub.FindAllRecords("system_stats", dbx.HashExp{"system": sys.Id, "type": "10m"})

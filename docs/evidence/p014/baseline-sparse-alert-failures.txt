@@ -1,0 +1,17 @@
+Test output; tabs expanded and trailing whitespace removed.
+--- FAIL: TestP014SparseOptionalAlertHistory (1.88s)
+    --- FAIL: TestP014SparseOptionalAlertHistory/Temperature (0.80s)
+        p014_sparse_history_test.go:57:
+                Error Trace:    /workspace/Beszel-iOS/internal/alerts/p014_sparse_history_test.go:57
+                Error:          Should be true
+                Test:           TestP014SparseOptionalAlertHistory/Temperature
+                Messages:       available readings average 60; missing devices must not dilute to 40 and recover
+    --- FAIL: TestP014SparseOptionalAlertHistory/Disk (1.08s)
+        p014_sparse_history_test.go:57:
+                Error Trace:    /workspace/Beszel-iOS/internal/alerts/p014_sparse_history_test.go:57
+                Error:          Should be true
+                Test:           TestP014SparseOptionalAlertHistory/Disk
+                Messages:       available readings average 60; missing devices must not dilute to 40 and recover
+FAIL
+FAIL    github.com/henrygd/beszel/internal/alerts   1.916s
+FAIL
