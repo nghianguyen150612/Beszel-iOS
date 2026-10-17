@@ -40,7 +40,10 @@ test("wifiSignalState thresholds", () => {
 })
 
 test("null Wi-Fi entries remain unavailable", () => {
- const system = { status: "up", info: { wf: { missing: null, valid: { s: "synthetic", r: 0 } } } } as unknown as SystemRecord
- expect(connectedWiFi(system).map(([id]) => id)).toEqual(["valid"])
- expect(strongestWiFiSignal(system)).toBe(0)
+	const system = {
+		status: "up",
+		info: { wf: { missing: null, valid: { s: "synthetic", r: 0 } } },
+	} as unknown as SystemRecord
+	expect(connectedWiFi(system).map(([id]) => id)).toEqual(["valid"])
+	expect(strongestWiFiSignal(system)).toBe(0)
 })

@@ -8,7 +8,15 @@ const record = (stats: unknown) => ({ stats }) as SystemStatsRecord
 test("disk charts keep absent/null/empty optional data as gaps", () => {
 	for (const stats of [undefined, null, {}, { efs: null }, { efs: { missing: null } }]) {
 		const row = record(stats)
-		for (const fn of [diskDataFns.read, diskDataFns.write, diskDataFns.readTime, diskDataFns.weightedIO, diskDataFns.totalRead, diskDataFns.extraRead("missing"), diskDataFns.extraUsage("missing")]) {
+		for (const fn of [
+			diskDataFns.read,
+			diskDataFns.write,
+			diskDataFns.readTime,
+			diskDataFns.weightedIO,
+			diskDataFns.totalRead,
+			diskDataFns.extraRead("missing"),
+			diskDataFns.extraUsage("missing"),
+		]) {
 			expect(fn(row)).toBeNull()
 		}
 	}

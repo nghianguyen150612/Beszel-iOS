@@ -112,10 +112,10 @@ export function ContainerNetworkChart({
 
 	const contentFormatter = useMemo(() => {
 		const getRxTxBytes = (record?: { b?: [number, number]; ns?: number; nr?: number }) =>
-            [byteRate(record?.b?.[0], record?.ns), byteRate(record?.b?.[1], record?.nr)] as const
+			[byteRate(record?.b?.[0], record?.ns), byteRate(record?.b?.[1], record?.nr)] as const
 
 		const formatRxTx = (recv: number | null, sent: number | null) => {
-if (recv === null || sent === null) return null
+			if (recv === null || sent === null) return null
 			const { value: receivedValue, unit: receivedUnit } = formatBytes(recv, true, userSettings.unitNet, false)
 			const { value: sentValue, unit: sentUnit } = formatBytes(sent, true, userSettings.unitNet, false)
 			return (
@@ -134,15 +134,15 @@ if (recv === null || sent === null) return null
 				if (key === "__total__") {
 					let totalSent = 0
 					let totalRecv = 0
-let observed = false
+					let observed = false
 					const payloadData = item?.payload && typeof item.payload === "object" ? item.payload : {}
 					for (const [containerKey, value] of Object.entries(payloadData)) {
 						if (!value || typeof value !== "object") continue
 						if (filteredKeys.has(containerKey)) continue
 						const [sent, recv] = getRxTxBytes(value as { b?: [number, number]; ns?: number; nr?: number })
 						if (sent === null || recv === null) return null
-observed = true
-totalSent += sent
+						observed = true
+						totalSent += sent
 						totalRecv += recv
 					}
 					return observed ? formatRxTx(totalRecv, totalSent) : null

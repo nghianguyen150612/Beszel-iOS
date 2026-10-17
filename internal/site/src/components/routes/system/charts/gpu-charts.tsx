@@ -42,11 +42,13 @@ export function GpuPowerChart({
 	const dataPoints = useMemo((): DataPoint[] => {
 		if (!gpuPowerKey) return []
 		const series = gpuPowerSeries(statsRef.current)
-		return series.map((entry, i): DataPoint => ({
-			...entry,
-			color: `hsl(${226 + (((i * 360) / series.length) % 360)}, 65%, 52%)`,
-			opacity: 1,
-		}))
+		return series.map(
+			(entry, i): DataPoint => ({
+				...entry,
+				color: `hsl(${226 + (((i * 360) / series.length) % 360)}, 65%, 52%)`,
+				opacity: 1,
+			})
+		)
 	}, [gpuPowerKey])
 
 	return (
