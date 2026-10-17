@@ -59,6 +59,14 @@ class ReadinessValidatorTests(unittest.TestCase):
         self.assertEqual(counts["p0_risks"], 21)
         self.assertEqual(counts["logical_ios_patches"], 13)
 
+    def test_verified_risk_status_is_valid(self):
+        rows, fields = self.read_rows("upstream-v021-risk-register.csv")
+        row = next(row for row in rows if row["risk_id"] == "R-REMOTE-OS-TELEMETRY")
+        row["status"] = "verified"
+        self.write_rows("upstream-v021-risk-register.csv", rows, fields)
+        errors, _ = readiness_validator.validate(self.root)
+        self.assertEqual(errors, [])
+
     def test_missing_p0_risk_coverage_fails(self):
         rows, fields = self.read_rows("upstream-v021-risk-register.csv")
         rows = [row for row in rows if row["risk_id"] != "P0-01"]
