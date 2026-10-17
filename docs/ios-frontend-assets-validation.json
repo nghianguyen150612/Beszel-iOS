@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "status": "PARTIAL — CHECKPOINT A PASS; GATE D PENDING",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "feature_branch": "ios/frontend-assets-localization-security",
+  "base_branch": "ios/upstream-v021-integration",
+  "starting_integration_sha": "8cd928e3cbb3e4f22556ad82146e109685ed7261",
+  "p014_merge_sha": "8cd928e3cbb3e4f22556ad82146e109685ed7261",
+  "feature_sha": "RECORDED_AFTER_CHECKPOINT_COMMIT",
+  "preservation": {
+    "frozen_upstream_commits": "178/178 reachable at starting integration SHA",
+    "logical_ios_patches": "13/13 accounted for in P014 evidence",
+    "production_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+    "p014_merge_is_ancestor": true,
+    "p012_native_wifi_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE",
+    "p014_pr_16_abandoned_changes_imported": false
+  },
+  "frontend_build": {
+    "bun": "1.4.0",
+    "go": "1.27.1",
+    "pipeline": "lingui extract --overwrite -> lingui compile -> tsc -b -> vite build",
+    "clean_install_runs": 2,
+    "clean_install_command": "bun install --frozen-lockfile",
+    "clean_build_command": "bun run build",
+    "typescript": "PASS",
+    "lingui_extract_and_compile": "PASS",
+    "vite_production_build": "PASS",
+    "build_output_files": 95,
+    "build_output_bytes": 3356886,
+    "build_manifest_sha256": "c8564be283e378bd64a282acc50e0255c5094f8793bec9ab21731b15863c7708",
+    "two_clean_build_manifests_identical": true,
+    "bun_lock_sha256": "16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa",
+    "bun_lock_unchanged": true,
+    "package_lock_sha256": "6fbd1027efc8368462a78a0ff87dae23b758eee759ba56172eb862f70df1b3d5",
+    "package_lock_role": "Retained npm lock snapshot; the reviewed CI build workflows use Bun and do not run npm ci.",
+    "package_lock_unchanged": true,
+    "generated_catalog_edits": "Restored after review; Lingui extraction added source references and two untranslated Vietnamese entries; no translation text was changed or removed.",
+    "build_warnings": [
+      "Existing Vite dynamic/static import overlap for systemd-table and English catalog.",
+      "Existing minified WASM and vendor chunks exceed the default 500 kB warning threshold."
+    ]
+  },
+  "asset_integrity": {
+    "manifest_file": "docs/ios-frontend-assets-manifest.sha256",
+    "manifest_format": "sorted SHA-256 records over relative dist paths",
+    "validator": "scripts/audit/validate_frontend_assets.py",
+    "python_fixture_tests": "PASS: 12 cases covering valid, missing, empty, incomplete, stale, and non-relative assets",
+    "go_embedded_asset_test": "PASS: internal/site TestEmbeddedFrontendMatchesManifest against generated dist",
+    "generated_dist_directory": "internal/site/dist (ignored build output, not committed)",
+    "comparison_with_actual_hub_serving": "PENDING",
+    "hub_startup_and_browser_smoke": "PENDING"
+  },
+  "frontend_tests": {
+    "bun_test": "PASS: 55 tests, 267 assertions, 9 files",
+    "asset_audit_unittest": "PASS: 12 tests",
+    "affected_go_test": "PASS: go test -tags 'testing no_ui' ./internal/site -count=1"
+  },
+  "pending_gate_d": [
+    "Actual Hub HTTP asset serving, MIME and static-path checks",
+    "Browser route, refresh, authentication, and base-path acceptance against the candidate Hub",
+    "P014 API fixtures rendered in browser and security boundary workflows",
+    "Runtime locale selection, Vietnamese Unicode, fallback, persistence, and RTL interaction checks",
+    "Go/Bun advisory inventory with evidence-based dispositions",
+    "Full Go/race/audit/shell regression suites and Linux Agent/Hub builds",
+    "Final-head hosted native iOS CI and artifact verification",
+    "Final Gate D decision and normal merge if all criteria pass"
+  ],
+  "gate_d": "PENDING"
+}
