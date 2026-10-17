@@ -1,3 +1,5 @@
+//go:debug http2client=0
+
 package main
 
 import (

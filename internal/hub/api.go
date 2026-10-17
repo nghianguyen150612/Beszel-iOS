@@ -34,6 +34,8 @@ type UpdateInfo struct {
 
 var containerIDPattern = regexp.MustCompile(`^[a-fA-F0-9]{12,64}$`)
 
+const maxAcceptedByteRanges = 16
+
 // Middleware to allow only admin role users
 var requireAdminRole = customAuthMiddleware(func(e *core.RequestEvent) bool {
 	return e.Auth.GetString("role") == "admin"
@@ -60,6 +62,13 @@ func customAuthMiddleware(fn func(*core.RequestEvent) bool) func(*core.RequestEv
 
 // registerMiddlewares registers custom middlewares
 func (h *Hub) registerMiddlewares(se *core.ServeEvent) {
+	se.Router.BindFunc(func(e *core.RequestEvent) error {
+		if hasTooManyByteRanges(e.Request.Header.Values("Range")) {
+			return e.BadRequestError("Too many byte ranges.", nil)
+		}
+		return e.Next()
+	})
+
 	// authorizes request with user matching the provided email
 	authorizeRequestWithEmail := func(e *core.RequestEvent, email string) (err error) {
 		if e.Auth != nil || email == "" {
@@ -93,6 +102,21 @@ func (h *Hub) registerMiddlewares(se *core.ServeEvent) {
 			return authorizeRequestWithEmail(e, e.Request.Header.Get(trustedHeader))
 		})
 	}
+}
+
+func hasTooManyByteRanges(values []string) bool {
+	count := 0
+	for _, value := range values {
+		unit, ranges, ok := strings.Cut(strings.TrimSpace(value), "=")
+		if !ok || !strings.EqualFold(strings.TrimSpace(unit), "bytes") {
+			continue
+		}
+		count += strings.Count(ranges, ",") + 1
+		if count > maxAcceptedByteRanges {
+			return true
+		}
+	}
+	return false
 }
 
 // parseTrustedProxies reads TRUSTED_PROXY_IPS (comma-separated IPs or CIDRs).

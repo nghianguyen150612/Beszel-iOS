@@ -94,7 +94,13 @@ export async function updateUserSettings() {
 		dynamicActivate(req.settings.lang || getLocale())
 		return
 	} catch (e) {
-		console.error("get settings", e)
+		const status = e && typeof e === "object" && "status" in e ? e.status : undefined
+		if (status !== 404) {
+			if (status !== 401 && status !== 403) {
+				console.error(`get settings failed (${status ?? "unknown"})`)
+			}
+			return
+		}
 	}
 	// create user settings if error fetching existing
 	try {
@@ -102,7 +108,8 @@ export async function updateUserSettings() {
 		hydrateUserSettings(createdSettings.settings)
 		dynamicActivate(createdSettings.settings.lang || getLocale())
 	} catch (e) {
-		console.error("create settings", e)
+		const status = e && typeof e === "object" && "status" in e ? e.status : undefined
+		console.error(`create settings failed (${status ?? "unknown"})`)
 	}
 }
 

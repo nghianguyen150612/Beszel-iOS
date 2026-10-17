@@ -209,12 +209,23 @@ export function UserAuthForm({
 		}
 
 		// refresh auth if not in above states (required for trusted auth header)
-		pb.collection("users")
-			.authRefresh()
-			.then((res) => {
-				pb.authStore.save(res.token, res.record)
-				$authenticated.set(!!pb.authStore.isValid)
-			})
+		if (pb.authStore.token) {
+			pb.collection("users")
+				.authRefresh()
+				.then((res) => {
+					pb.authStore.save(res.token, res.record)
+					$authenticated.set(!!pb.authStore.isValid)
+				})
+				.catch((error: unknown) => {
+					const status = error && typeof error === "object" && "status" in error ? error.status : undefined
+					if (status === 401 || status === 403) {
+						pb.authStore.clear()
+						$authenticated.set(false)
+					} else {
+						console.error(`auth refresh failed (${status ?? "unknown"})`)
+					}
+				})
+		}
 	}, [])
 
 	if (!authMethods) {
