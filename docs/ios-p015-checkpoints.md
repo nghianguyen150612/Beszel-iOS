@@ -7,16 +7,19 @@
 - Base and starting integration SHA: ios/upstream-v021-integration at 8cd928e3cbb3e4f22556ad82146e109685ed7261.
 - P014 PR #17 is merged normally at that SHA. Abandoned PR #16 is not part of integration.
 - P014 evidence records 178/178 frozen upstream commits and 13/13 logical iOS patches. Production iOS, frozen main, and P012 native RSSI deferral remain unchanged.
+- P015 PR #18 was merged normally at integration commit `50546d7f7468f7b07af347eb157139208b04fcbc`, with feature head `445a403f41bbb679f05b81febc5a023faa28b76a`. This follow-up adds one tested source commit after that merge.
 
 ## Checkpoint A — frontend build and asset manifest
 
 The first pushed checkpoint is a70a1303f0ee80acf8f0f94b71a3944c91e59e09. It established clean Bun install/build and manifest checks. The final manifest was regenerated after focused frontend fixes and semver-compatible security updates.
 
-The implementation checkpoint is d855182a513084fcef67a17da296bc49c38fe333. It is pushed and contains the frontend, Hub, lockfile, and browser/security changes. The remaining evidence commit contains documentation and risk-record updates.
+The original pre-merge implementation checkpoint was d855182a513084fcef67a17da296bc49c38fe333; its evidence update was merged in PR #18. The post-merge source checkpoint below is the current follow-up candidate.
+
+The post-merge source checkpoint is `60df517928b74ac3f0230dbe0d72100bbd952d94` and is pushed to the existing feature branch. It updates x/net to v0.60.0, removes rejected-login error bubbling/logging, commits genuine Lingui extraction output, and repairs the browser fixture/waits. Hosted CI for this follow-up is pending.
 
 - Go 1.27.1; Bun 1.4.0.
 - Two clean bun install --frozen-lockfile and bun run build cycles passed.
-- Final manifest: 95 files, 3,357,427 bytes, SHA-256 4bd19c22f587053da5bbf0275ad602bad0ba00bd243898260a65756c59b421c6.
+- Follow-up manifest: 95 files, 3,357,403 bytes, SHA-256 63dc41212f5029b2cb07cfbda5f3ddaa4ea71b72f32e39f0032f870c06286df4.
 - bun.lock SHA-256 e2d090fa8b5bcffd8e2de003262cfe6c506c297a676279fbb08d1c2db3bc6dbf; frozen installs did not rewrite it.
 - package-lock.json SHA-256 6fbd1027efc8368462a78a0ff87dae23b758eee759ba56172eb862f70df1b3d5 and remained unchanged.
 - Lingui, TypeScript, Vite, embedded asset validation, and 55 Bun tests/267 assertions passed.
@@ -27,8 +30,8 @@ The implementation checkpoint is d855182a513084fcef67a17da296bc49c38fe333. It is
 - Actual Hub served 94 non-index asset hashes matching the final manifest; index.html was dynamically modified for base path and version.
 - Nine supported SPA routes returned 200 at root and /beszel. MIME/cache checks passed; unknown and filesystem-like paths returned 404.
 - Fresh unauthenticated collection requests returned empty lists. Seventeen ranges returned 400; maximum is sixteen.
-- Browser harness passed login/logout, account isolation, expired session, safe failed-request fallback, routes, deep links, history/refresh, monitor details, and synthetic system rendering.
-- All 32 locale modules compiled. Browser checks passed vi-VN detection, invalid locale fallback, Vietnamese Unicode and persistence, Arabic/Persian/Hebrew RTL layout and seven charts, then English restore.
+- Current browser harness passed at the actual Hub root and `/beszel` reverse-proxy prefix. It covers failed login, login/logout, account isolation, expired session, safe failed-request fallback, routes, deep links, history/refresh, monitor details, and synthetic system rendering; both runs had zero uncaught page exceptions.
+- All 32 locale modules compiled. Browser checks passed vi-VN detection, invalid locale fallback, Vietnamese Unicode and persistence, Arabic/Persian/Hebrew RTL layout and seven charts, then English restore. Current extraction output is committed with existing translator text preserved.
 - Existing API/metric tests preserve Linux/Windows/macOS/iOS snapshots, valid zero, null/absent optional data, and chart gaps. Vietnamese is 529/537 translated.
 
 ## Checkpoint D — advisory review and regressions
@@ -41,9 +44,9 @@ The implementation checkpoint is d855182a513084fcef67a17da296bc49c38fe333. It is
 - Source matrix/readiness passed: 178 upstream, 35 historical iOS, 13 logical patches, zero unresolved audit rows; readiness reports 24 acceptance cases and 33 compatibility scenarios.
 - The first P015 workflow run was a P013 fixture pass on the initial checkpoint. Final-head evidence is recorded below.
 
-## Hosted final-head CI and Gate D
+## Previous merged-source hosted CI
 
-Status: **PASS** at tested source SHA `0f649d4cf861439d136845bd101cda9a6569ef69`.
+The following evidence passed for prior merged source SHA `0f649d4cf861439d136845bd101cda9a6569ef69`. It predates follow-up commit `60df5179` and is retained as historical evidence, not current-source CI.
 
 - iOS Build [39011382151](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39011382151) passed all jobs on that exact SHA. The release job was skipped because this was a branch run, not an iOS release tag.
 - Installer lifecycle [39011411689](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39011411689) passed on the same SHA.
@@ -67,6 +70,8 @@ The artifacts were downloaded from GitHub and their archive SHA-256 values match
 
 Both binaries report Go 1.27.1, `GOOS=ios`, `GOARCH=arm64`, `CGO_ENABLED=1`, `vcs.revision=0f649d4cf861439d136845bd101cda9a6569ef69`, and `vcs.modified=false`. Agent and Hub runtime instruction checks pass with no counter-register access; the isolated Go runtime patch uses a zero-guarded YIELD loop and no `CNTFRQ_EL0`/`CNTVCT_EL0` reads. The separate Wi-Fi diagnostic reports `not_in_agent_hub_payload: true`; native linkage found no private MobileWiFi/CoreWLAN/Apple80211 symbols.
 
-Gate D passes: P013 and P014 acceptance remains valid; clean frontend builds, embedded assets, routes, authentication boundaries, localization/RTL, missing-metric handling, security review, regression suites, final-head hosted CI, and artifact provenance are verified. The high dependency residuals remain explicit and are not described as fixed. P012 native RSSI remains `DEFERRED — REFERENCE DEVICE UNAVAILABLE`; P018 physical acceptance is still pending. This decision does not authorize release or deployment.
+## Follow-up Gate D status
 
-The artifact-producing source tree is the tested `0f649d4` tree. This final evidence update changes documentation only; no product source changed after the hosted run. The merged product source must remain identical to the tested source tree.
+Local acceptance passes at follow-up source `60df517928b74ac3f0230dbe0d72100bbd952d94`: frozen frontend build, manifest, Go tests, race tests, Python and shell suites, actual-Hub routes/assets, root/prefix browser flows, localization/RTL, and security scenarios. Current-source iOS Build, installer lifecycle, P013 migration fixture, and artifact verification remain **PENDING**. Gate D is **PENDING** until those hosted checks pass and their results are committed. The documented high dependency residuals remain open. P012 native RSSI remains `DEFERRED — REFERENCE DEVICE UNAVAILABLE`; P018 physical acceptance is still pending. No release or deployment is authorized.
+
+The historical artifact-producing source tree is `0f649d4`. New artifacts must be built from the follow-up source before Gate D can pass for the follow-up.

@@ -1,6 +1,6 @@
 # P015 frontend route matrix
 
-The browser harness tests the compiled frontend served by the candidate Hub, not Vite's development server. It uses a disposable Hub database, two synthetic users, synthetic systems/telemetry, and a loopback reverse proxy for /beszel.
+The browser harness tests the compiled frontend served by the candidate Hub, not Vite's development server. The current harness passed once against the Hub root and once through a loopback reverse proxy at `/beszel`. Both runs use disposable Hub databases, two synthetic users, and synthetic systems/telemetry. They include the failed-login UI case and produced zero uncaught page exceptions.
 
 ## HTTP and SPA routes
 
@@ -10,7 +10,7 @@ The browser harness tests the compiled frontend served by the candidate Hub, not
 | /containers | Synthetic system owner | 200 | Synthetic container is visible |
 | /smart | Synthetic system owner | 200 | Synthetic SMART device is visible |
 | /monitors | Synthetic system owner | 200 | Synthetic network monitor is visible |
-| /system/edosckncujcy9z9 | Synthetic system owner | 200 | System detail and charts load |
+| /system/:synthetic-id | Synthetic system owner | 200 | System detail and charts load |
 | /settings/general | Signed in | 200 | Locale can be selected and persists |
 | /settings/alert-history | Signed in | 200 | Alert history route loads |
 | /forgot-password | Signed out | 200 | Recovery form is visible |
@@ -27,6 +27,7 @@ All listed routes returned 200 in the candidate Hub route probe and browser visi
 | Scenario | Result | Evidence |
 | --- | --- | --- |
 | Synthetic administrator login | PASS | Login reaches authenticated dashboard |
+| Wrong password | PASS | Error toast returns to the login form; no uncaught page exception |
 | Logout | PASS | User Actions returns to login |
 | Second synthetic account | PASS | Outsider sees only its own system |
 | Cross-user system access | PASS | Non-member system is not rendered |
@@ -44,8 +45,8 @@ The synthetic fixture contains a valid zero sample, populated CPU/memory/disk/ne
 
 The browser rendered seven system charts in RTL mode and checked their presence. Existing frontend tests provide broader source-derived contracts: Linux, Windows, macOS, and iOS API snapshots; absent, null, empty, zero, and missing optional metric handling; monitor loss-only data; and chart gaps. See internal/site/src/lib/p014-api-contracts.test.ts and internal/site/src/lib/metrics.test.ts.
 
-There were no page exceptions. Browser output includes the intentionally aborted stats request used for fallback coverage and the expected 401 after session expiry. No screenshots were captured.
+There were no page exceptions. Browser diagnostics include the expected 400 from the rejected password, the intentionally aborted stats request used for fallback coverage, and 401 responses after logout/session expiry. The harness verifies that diagnostics contain no synthetic password. No screenshots were captured.
 
 ## Static Hub checks
 
-The generated frontend had 95 assets. The Hub served 94 non-index assets with exact manifest hashes; index.html is dynamically modified for base path/version injection. MIME checks passed. The 17-range probe returned 400. Supported SPA paths returned 200; missing and filesystem-like paths returned 404.
+The generated frontend had 95 assets. The Hub served 94 non-index assets with exact manifest hashes; `index.html` is dynamically modified for base path/version injection. MIME checks passed. The 17-range probe returned 400. Supported SPA paths returned 200; missing and filesystem-like paths returned 404. Final follow-up local runs passed at both root and `/beszel`; hosted CI for current commit `60df5179` remains pending.

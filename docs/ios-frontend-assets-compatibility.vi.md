@@ -2,18 +2,18 @@
 
 ## Kết quả
 
-Các bước kiểm tra frontend, asset nhúng, Hub ứng viên và CI iOS cuối cùng đều đạt. Nguồn gốc và hash payload được ghi trong `ios-p015-checkpoints.md`.
+P015 đã được merge tại integration commit `50546d7f7468f7b07af347eb157139208b04fcbc`. Follow-up source commit `60df517928b74ac3f0230dbe0d72100bbd952d94` xử lý thêm advisory dependency và hoàn thiện kiểm tra login/catalog/browser. Kiểm tra local cho follow-up đã đạt; hosted CI và artifact verification cho commit này đang chờ. Artifact hosted trước đó chỉ áp dụng cho source đã merge trước follow-up.
 
 Ứng viên dùng Go 1.27.1 và Bun 1.4.0. Hai chu kỳ build sạch đã xóa node_modules và dist bị ignore trước khi cài bằng Bun lock cố định. Cả hai chạy Lingui extract/compile, TypeScript và Vite production build, tạo ra manifest giống hệt nhau.
 
-- 95 tệp không rỗng; tổng cộng 3.357.427 byte.
-- SHA-256 manifest: 4bd19c22f587053da5bbf0275ad602bad0ba00bd243898260a65756c59b421c6.
+- 95 tệp không rỗng; tổng cộng 3.357.403 byte.
+- SHA-256 manifest: 63dc41212f5029b2cb07cfbda5f3ddaa4ea71b72f32e39f0032f870c06286df4.
 - SHA-256 Bun lock: e2d090fa8b5bcffd8e2de003262cfe6c506c297a676279fbb08d1c2db3bc6dbf; cài đặt frozen không sửa lock.
 - SHA-256 npm lock được giữ lại: 6fbd1027efc8368462a78a0ff87dae23b758eee759ba56172eb862f70df1b3d5; không thay đổi. CI dùng Bun, không chạy npm ci.
 - Cả 32 module locale đã đăng ký đều biên dịch và có trong asset được tạo.
 - Lingui báo cáo 537 chuỗi nguồn. Tiếng Việt có 529 chuỗi đã dịch và 8 chuỗi còn thiếu; không sửa nội dung dịch.
 
-Manifest đầy đủ nằm trong ios-frontend-assets-manifest.sha256. Bộ kiểm tra xác thực đầu ra không rỗng, index, tham chiếu JS/CSS, module và chunk locale, đường dẫn tương đối an toàn, cùng manifest cũ hoặc thiếu. Bộ kiểm tra đã đạt với dist cuối. Kiểm tra Go embed cũng đạt với dist và manifest đó.
+Manifest đầy đủ nằm trong `ios-frontend-assets-manifest.sha256`. Bộ kiểm tra xác thực đầu ra không rỗng, index, tham chiếu JS/CSS, module và chunk locale, đường dẫn tương đối an toàn, cùng manifest cũ hoặc thiếu. Bộ kiểm tra đã đạt với dist của follow-up. Kiểm tra Go embed cũng đạt với dist và manifest đó.
 
 ## Hub ứng viên
 
@@ -28,7 +28,7 @@ Một Hub Linux được khởi chạy với cơ sở dữ liệu PocketBase dù
 - Yêu cầu có 17 byte range trả về 400; tối đa 16 được chấp nhận.
 - Static asset trả về cache policy công khai đúng yêu cầu.
 
-Kết quả browser acceptance nằm trong ios-frontend-route-matrix.md. Chỉ dùng tài khoản tổng hợp và dữ liệu dùng một lần. Không dùng iPad vật lý.
+Browser harness hiện tại đạt ở cả Hub root và `/beszel` qua loopback reverse proxy. Chỉ dùng tài khoản tổng hợp và dữ liệu dùng một lần. Không dùng iPad vật lý. Chi tiết route và auth nằm trong `ios-frontend-route-matrix.md`.
 
 ## Sửa đổi tập trung
 
@@ -40,4 +40,4 @@ Các cảnh báo Vite hiện có về dynamic/static import chồng lấn và ch
 
 ## Trạng thái Gate
 
-Gate D đã đạt: CI iOS trên HEAD cuối, vòng đời installer, fixture migration P013, rà soát bảo mật và hash artifact đã được xác minh. Các rủi ro dependency mức cao vẫn được ghi trong `ios-dependency-advisory-review.md`. Kiểm thử vật lý P018 vẫn chờ; chưa cho phép phát hành.
+Trạng thái Gate D của follow-up: **đang chờ hosted CI và xác minh artifact trên source hiện tại**. Source P015 trước follow-up đã qua hosted checks; các kết quả đó không bao gồm commit `60df517`. Rủi ro dependency mức cao vẫn được ghi trong `ios-dependency-advisory-review.md`. Kiểm thử vật lý P018 vẫn chờ; chưa cho phép phát hành.

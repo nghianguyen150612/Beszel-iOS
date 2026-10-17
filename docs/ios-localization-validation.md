@@ -2,7 +2,7 @@
 
 ## Catalog build and registered locales
 
-The final clean build ran Lingui extraction and compilation for all 32 registered locales. Vite emitted locale modules/chunks, and the frontend asset validator confirmed they resolve and have generated assets.
+The frozen production build ran genuine Lingui extraction and compilation for all 32 registered locales. The follow-up commits those generated PO catalog updates: extraction source references and catalog records are current, and the production asset validator confirms every locale module/chunk resolves.
 
 Locales: en, ar, bg, cs, da, de, el, es, fa, fr, he, hr, hu, id, it, ja, ko, nl, no, pl, pt, tr, ru, sl, sr, sv, uk, uz, vi, zh, zh-CN, zh-HK.
 
@@ -35,4 +35,4 @@ Arabic, Persian, and Hebrew switching set the document language and direction. B
 
 ## Translator preservation
 
-Lingui extraction generated updated message references and missing entries during the build. Generated PO changes were inspected and restored after builds, following repository CI practice. No translator text was deliberately edited or removed. Incomplete locale counts remain visible; this is not complete translation coverage.
+The generated catalog diff was reviewed and committed. Existing translated `msgstr` text was preserved; changes update extraction references and missing catalog records. No translator contribution was rewritten or removed. Incomplete locale counts remain visible; this is not complete translation coverage.

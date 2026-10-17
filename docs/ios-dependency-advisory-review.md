@@ -8,7 +8,7 @@ Review date: 2026-10-17 UTC. Target toolchain: Go 1.27.1 and Bun 1.4.0.
 - govulncheck v1.9.0 source scan; vulnerability database last modified 2026-10-08T22:31:09Z.
 - Bun audit v1.4.0 against the frozen Bun graph.
 - npm audit 11.9.0 against retained package-lock.json. CI builds with Bun, not npm ci.
-- No direct dependency, package.json, or package-lock.json changed.
+- Focused Go update: `golang.org/x/net` v0.59.0 → v0.60.0. No frontend direct dependency, `package.json`, or `package-lock.json` changed.
 - Go checksums remain in go.sum; npm package integrity metadata remains in package-lock.json and bun.lock. No package was added. A comprehensive license compatibility scan was not performed.
 
 ## Bun graph and focused remediation
@@ -31,6 +31,10 @@ The tar advisory is GHSA-23hp-3jrh-7fpw (advisory severity critical; CVSS 7.5). 
 One Bun finding remains: GHSA-vfj7-8cjw-p6xm, braces <=3.0.3, high severity, CVSS 7.5. The lock resolves braces 3.0.3 through micromatch/chokidar under @lingui/cli 5.4.1, a development-only dependency. The latest compatible braces remains 3.0.3 and no compatible fix is published. Bun/npm suggest a major Lingui update to 6.10.0; it was not applied. The finding is limited to build-time pattern processing and is not bundled into the Hub frontend.
 
 The retained npm lock audit reports five high package-wrapper records (@lingui/cli, @lingui/vite-plugin, braces, chokidar, micromatch), all for that same GHSA; they collapse to one unique advisory. The npm lock remains unchanged.
+
+## Focused Go module update
+
+The initial Go scan found module-level `golang.org/x/net` findings fixed in v0.60.0 (including GO-2026-6617, GO-2026-6612, GO-2026-6611, GO-2026-6610, and GO-2026-6603). P015's minimal compatible update from v0.59.0 to v0.60.0 removes those module findings in the final govulncheck scan. The standard-library findings with overlapping IDs remain separately listed below; the pinned Go 1.27.1 runtime was not changed. Frozen Go tests, targeted race tests, and Linux Agent/Hub builds passed with x/net v0.60.0.
 
 ## Go findings and disposition
 
@@ -57,4 +61,4 @@ The critical HTTP/2 issue remains in static govulncheck output because source re
 
 ## Gate D disposition
 
-No unmitigated critical advisory remains. Two high findings remain transparently recorded: build-only braces without a compatible fix and reachable Go multipart parsing (GO-2026-6608). The latter requires Go 1.27.2, outside the pinned P015 toolchain, and remains an operational risk. Gate D passes at tested source `0f649d4cf861439d136845bd101cda9a6569ef69`; final iOS Build, installer lifecycle, P013 migration fixture, and artifact provenance are recorded in `ios-p015-checkpoints.md`. The high residuals remain open for later toolchain/dependency work.
+No unmitigated critical advisory remains in the local review. Two high findings remain transparently recorded: build-only braces without a compatible fix and reachable Go multipart parsing (GO-2026-6608). The latter requires Go 1.27.2, outside the pinned P015 toolchain, and remains an operational risk. The previous merged P015 source passed hosted checks; follow-up Gate D remains pending current-source iOS Build, installer lifecycle, P013 migration fixture, and artifact provenance. The high residuals remain open for later toolchain/dependency work.
