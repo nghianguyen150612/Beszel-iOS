@@ -2,54 +2,45 @@
 
 ## Repository state
 
-- Repository: `nghianguyen150612/Beszel-iOS`.
-- Feature branch: `ios/frontend-assets-localization-security`.
-- Base and starting integration SHA: `ios/upstream-v021-integration` at
-  `8cd928e3cbb3e4f22556ad82146e109685ed7261`.
-- P014 PR #17 is merged normally at that SHA. The abandoned PR #16 is not part
-  of the integration branch.
-- P014 evidence records 178/178 frozen upstream commits and 13/13 logical iOS
-  patches. Production `iOS`, frozen `main`, and the P012 native RSSI deferral
-  remain unchanged.
+- Repository: nghianguyen150612/Beszel-iOS.
+- Feature branch: ios/frontend-assets-localization-security.
+- Base and starting integration SHA: ios/upstream-v021-integration at 8cd928e3cbb3e4f22556ad82146e109685ed7261.
+- P014 PR #17 is merged normally at that SHA. Abandoned PR #16 is not part of integration.
+- P014 evidence records 178/178 frozen upstream commits and 13/13 logical iOS patches. Production iOS, frozen main, and P012 native RSSI deferral remain unchanged.
 
-## Checkpoint A — reproducible frontend build and generated asset manifest
+## Checkpoint A — frontend build and asset manifest
 
-**Status: PASS for build reproducibility and static asset integrity. Gate D is
-still pending.**
+The first pushed checkpoint is a70a1303f0ee80acf8f0f94b71a3944c91e59e09. It established clean Bun install/build and manifest checks. The final manifest was regenerated after focused frontend fixes and semver-compatible security updates.
 
-- Cleaned the ignored `internal/site/node_modules` and `internal/site/dist`
-  directories before each of two installs.
-- Used Go 1.27.1 and Bun 1.4.0.
-- Both `bun install --frozen-lockfile` runs and both complete `bun run build`
-  pipelines passed. The pipeline ran Lingui extraction, catalog compilation,
-  TypeScript project build, and Vite production build.
-- Both builds generated 95 non-empty files totaling 3,356,886 bytes. Their
-  sorted path/size/SHA-256 manifests matched exactly with manifest digest
-  `c8564be283e378bd64a282acc50e0255c5094f8793bec9ab21731b15863c7708`.
-- `bun.lock` remained at
-  `16643e3228f9b0fac1e5134d89782c096f49e8071489cc2a4f977f3565f02afa`.
-  `package-lock.json` also remained unchanged. The reviewed CI frontend build
-  workflows invoke Bun, not `npm ci`; the npm lock remains available and was
-  not regenerated or removed.
-- Lingui extraction added current source references and two untranslated
-  Vietnamese entries. These generated `.po` changes were reviewed, then
-  restored following the repository's existing CI practice. Translator text
-  was preserved. Vietnamese translation coverage remains incomplete.
-- The SHA-256 asset validator checks non-empty output, `index.html`, JS/CSS
-  bundles, relative HTML/CSS/JS references, registered locale source modules,
-  locale chunks, and exact manifest contents. Its 12 fixture tests cover valid,
-  missing, empty, incomplete, stale, and unsafe-path cases.
-- `internal/site` Go embed test passed against the real generated directory and
-  committed SHA-256 manifest. No generated `dist` files were committed.
-- Existing Vite warnings remain for overlapping dynamic/static imports and
-  large WASM/vendor chunks; the build exits successfully.
+The implementation checkpoint is d855182a513084fcef67a17da296bc49c38fe333. It is pushed and contains the frontend, Hub, lockfile, and browser/security changes. The remaining evidence commit contains documentation and risk-record updates.
 
-The complete manifest and machine-readable checkpoint are in
-[`ios-frontend-assets-manifest.sha256`](ios-frontend-assets-manifest.sha256)
-and [`ios-frontend-assets-validation.json`](ios-frontend-assets-validation.json).
+- Go 1.27.1; Bun 1.4.0.
+- Two clean bun install --frozen-lockfile and bun run build cycles passed.
+- Final manifest: 95 files, 3,357,427 bytes, SHA-256 4bd19c22f587053da5bbf0275ad602bad0ba00bd243898260a65756c59b421c6.
+- bun.lock SHA-256 e2d090fa8b5bcffd8e2de003262cfe6c506c297a676279fbb08d1c2db3bc6dbf; frozen installs did not rewrite it.
+- package-lock.json SHA-256 6fbd1027efc8368462a78a0ff87dae23b758eee759ba56172eb862f70df1b3d5 and remained unchanged.
+- Lingui, TypeScript, Vite, embedded asset validation, and 55 Bun tests/267 assertions passed.
+- Existing Vite dynamic/static import and large WASM/vendor warnings remain.
 
-## Remaining work
+## Checkpoints B and C — actual Hub, routes, and localization
 
-P015 continues with actual candidate Hub serving and browser route/auth checks,
-locale runtime and RTL checks, dependency advisory triage, full regression and
-race suites, and hosted final-head iOS CI. No Gate D pass is claimed here.
+- Actual Hub served 94 non-index asset hashes matching the final manifest; index.html was dynamically modified for base path and version.
+- Nine supported SPA routes returned 200 at root and /beszel. MIME/cache checks passed; unknown and filesystem-like paths returned 404.
+- Fresh unauthenticated collection requests returned empty lists. Seventeen ranges returned 400; maximum is sixteen.
+- Browser harness passed login/logout, account isolation, expired session, safe failed-request fallback, routes, deep links, history/refresh, monitor details, and synthetic system rendering.
+- All 32 locale modules compiled. Browser checks passed vi-VN detection, invalid locale fallback, Vietnamese Unicode and persistence, Arabic/Persian/Hebrew RTL layout and seven charts, then English restore.
+- Existing API/metric tests preserve Linux/Windows/macOS/iOS snapshots, valid zero, null/absent optional data, and chart gaps. Vietnamese is 529/537 translated.
+
+## Checkpoint D — advisory review and regressions
+
+- Bun audit found 29 records in the original graph. Eight semver-compatible transitive updates resolved 28; one build-only GHSA-vfj7-8cjw-p6xm remains without a compatible fix.
+- govulncheck 1.9.0 reviewed Go 1.27.1 using the 2026-10-08 database snapshot. The critical HTTP/2 server finding is mitigated and tested; Range parsing is capped. High multipart MIME finding GO-2026-6608 remains documented for the pinned toolchain.
+- Python audit suite: 67 passed. P013 backup fixture unit suite: 7 passed.
+- Shell suites: upstream sync 10, patch sentinels 45, bootstrap 54, installer lifecycle 814 passed.
+- Canonical Go tests across ./... passed with Go 1.27.1. Targeted Hub race tests passed. Linux Agent and Hub builds succeeded.
+- Source matrix/readiness passed: 178 upstream, 35 historical iOS, 13 logical patches, zero unresolved audit rows; readiness reports 24 acceptance cases and 33 compatibility scenarios.
+- The first P015 workflow run was a P013 fixture pass on the initial checkpoint. Final-head workflows remain pending.
+
+## Hosted final-head CI and Gate D
+
+Status: PENDING. Keep PR #18 Draft. Run final-head iOS Build, installer lifecycle, P013 migration fixture, relevant security checks, and verify artifact provenance and SHA-256. Then record actual workflow URLs, artifact hashes, exact tested SHA, and Gate D decision here. No physical iPad validation is claimed.

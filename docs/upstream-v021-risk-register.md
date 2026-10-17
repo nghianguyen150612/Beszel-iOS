@@ -46,6 +46,10 @@ score.
 * `untested risk` — no completed test establishes the behavior, and the source
   evidence alone cannot decide whether the risk will occur.
 
+* `verified` — required mitigation and tests have evidence recorded. This does
+  not assert that every advisory is absent; residual conditions remain described
+  in the CSV row.
+
 Every row names a mitigation, required test, owner prompt, blocking gate, and
 rollback/containment action. A critical data-loss or security risk without an
 effective mitigation and blocking gate prevents the relevant gate from passing.
