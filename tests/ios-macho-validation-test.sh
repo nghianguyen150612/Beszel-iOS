@@ -59,8 +59,8 @@ printf 'not a Mach-O executable' > "${TEST_TMP}/invalid"
 if validate_ios_arm64_macho "${TEST_TMP}/invalid"; then fail "invalid Mach-O rejected"; else pass "invalid Mach-O rejected"; fi
 
 if [ "$#" -ge 2 ]; then
-	if validate_ios_arm64_macho "$1"; then pass "genuine P015 Agent iOS ARM64 artifact accepted"; else fail "genuine P015 Agent iOS ARM64 artifact accepted"; fi
-	if validate_ios_arm64_macho "$2"; then pass "genuine P015 Hub iOS ARM64 artifact accepted"; else fail "genuine P015 Hub iOS ARM64 artifact accepted"; fi
+	if validate_ios_arm64_macho "$1"; then pass "supplied Agent iOS ARM64 artifact accepted"; else fail "supplied Agent iOS ARM64 artifact accepted"; fi
+	if validate_ios_arm64_macho "$2"; then pass "supplied Hub iOS ARM64 artifact accepted"; else fail "supplied Hub iOS ARM64 artifact accepted"; fi
 fi
 
 printf '\n%d passed, %d failed\n' "$pass_count" "$fail_count"

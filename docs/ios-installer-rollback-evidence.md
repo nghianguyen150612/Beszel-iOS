@@ -23,3 +23,7 @@ These installer failpoints model a migration mutation; they do not run PocketBas
 ## Scope and limits
 
 All P016 installer tests use temporary path overrides and mocked `launchctl`, download, signing, and executable behavior. They do not access `/var/lib/beszel-hub` on a production device, change a LaunchDaemon, or install a binary. Linux tests do not establish iOS code-signing trust or physical startup behavior. P018 must verify runtime behavior, reboot/reactivation, and service persistence on the reference iPad before `IOS-INSTALL-05` can pass.
+
+## P016 final-head hosted fixture
+
+At P016 source `57dbc0a77af5d366e1ca9519f0119ecd260dc6c6`, hosted P013 run [39026256183](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39026256183) passed the genuine disposable v0.19 → v0.21 PocketBase fixture. Its uploaded manifest and failure logs are artifact `12098566938`; GitHub reports SHA-256 `4d29e4008042ced38a9e083493b9de6e794ce7f87cce2736294a106f385a0046`, matching the downloaded ZIP. The manifest confirms a verified cold backup, v0.21 health and ordered migrations, full restore to v0.19 with SQLite integrity and record/schema invariants intact, and all injected interrupted-migration recovery cases passing. It contains synthetic disposable database data and no production data.

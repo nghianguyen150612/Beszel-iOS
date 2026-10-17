@@ -9,6 +9,7 @@
 - Protected refs at start: production `iOS` = `0c3e4cd22ac24264834c401ad412e44aeda4e4f3`; frozen `main` = `bb23f99b3eeaced9608e11e280e7c986dba650be`.
 - No P016 branch or pull request existed at start.
 - The P015 database fixture, backup/restore, current-source security, and dependency-advisory evidence is present in the integration tree.
+- Draft PR [#20](https://github.com/nghianguyen150612/Beszel-iOS/pull/20) targets `ios/upstream-v021-integration` from `ios/installer-privilege-lifecycle`.
 
 ## Checkpoint A — Lifecycle serialization and path cleanup
 
@@ -49,17 +50,19 @@ Checkpoint B focused validation:
 - Upstream matrix/readiness validators and 67 audit unit tests pass; patch sentinels pass 45 checks; upstream sync passes 10 checks.
 - P015 run `39014286778`, source `b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba`, artifact `12093514420`; manifest SHA-256 validates. Agent SHA-256 `7a0c5c17891fc7298f3f3b326338a7b4f7a1c4df5dcff670662fc41d42386a0e`; Hub SHA-256 `fde89ace4a39c3204c3cc07f30d7f548f59ca4aaa22145a8047a3179fdb9ec2b`.
 - `docs/ios-installer-rollback-evidence.md` distinguishes installer fault injection from the genuine P013 PocketBase fixture and from P018 device validation.
+- Final hosted checks passed at source `57dbc0a77af5d366e1ca9519f0119ecd260dc6c6`: iOS Build run `39026267695`, installer run `39026256211`, and genuine P013 migration fixture run `39026256183`. The iOS Build release job was skipped for the branch dispatch. The P013 artifact `12098566938` SHA-256 matched GitHub's artifact digest and its manifest records migration, full rollback, and interrupted-migration recovery.
+- The verified P016 native payload is artifact `12098552662` (artifact SHA-256 `d3786d9c14358dc68532f02d84dfba606f40f21c9178fe8d84dfe900defdf85b`); validation metadata is artifact `12097904613`. Agent SHA-256 is `1940cd8471b115036370c785391e0db3005f4bff616fb2af20331b6f2052d5b2`; Hub SHA-256 is `014bf3120f21a5491f96f16f6228913b8e6be9d8d83fc2b2a1e91a7b5af34824`. Both are clean-revision Go 1.27.1 `GOOS=ios GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=1` builds, iOS platform 2, minimum iOS 12.0; Hub embeds 95 assets. The uploaded ZIP digest and internal `SHA256SUMS` were checked locally.
 
 ## Remaining checkpoints
 
 | Checkpoint | Scope | Status |
 | --- | --- | --- |
 | A | Lifecycle and filesystem safety | Complete; remote commit `3885cd71027abd9b17380000aa88f941171d371c` |
-| B | Full Hub data backup and transactional rollback | Implemented and pushed at `04747f6cb94faa0160328256f437e4bdf07bae9b`; 873 installer tests pass; final hosted validation pending |
-| C | Bootstrap and native artifact verification | Bootstrap and genuine P015 Mach-O fixtures pass locally; P016 final-head hosted build pending |
-| D | Rootful permissions and path safety | Owner, mode, link, parent, traversal, state-write, and concurrency fixtures pass; final hosted validation pending |
+| B | Full Hub data backup and transactional rollback | Implemented; 873 installer tests pass; final installer and genuine P013 fixture passed at `57dbc0a` |
+| C | Bootstrap and native artifact verification | Bootstrap tests and genuine P015 fixtures pass; P016 hosted Agent/Hub artifacts at `57dbc0a` pass checksum, Mach-O, platform, and minOS checks |
+| D | Rootful permissions and path safety | Owner, mode, link, parent, traversal, state-write, and concurrency fixtures pass at the tested source |
 | E | Privilege and signing review | Audit written in `docs/ios-privilege-and-signing-review.md`; mocked signing only; runtime/trust behavior remains P018 |
-| F | Read-only diagnostics and service ordering | CLI/service evidence written in `docs/ios-service-lifecycle.md`; Agent connection gate uses authenticated transport evidence; final hosted validation pending |
-| G | Release workflow isolation | 18 static event and credential-scope checks pass; final hosted workflow run pending |
+| F | Read-only diagnostics and service ordering | CLI/service fixtures and hosted installer pass; Agent update gate uses authenticated transport evidence; reboot/reactivation remains P018 |
+| G | Release workflow isolation | 18 static event and credential-scope checks pass; the P016 branch build's release job was skipped |
 
-Device validation `IOS-INSTALL-05` remains pending P018. P012 native Wi-Fi RSSI remains deferred. P016 does not authorize release, tagging, deployment, device installation, or production database changes.
+`IOS-INSTALL-01` through `IOS-INSTALL-04` pass their non-device criteria. `IOS-INSTALL-05` remains pending P018. P012 native Wi-Fi RSSI remains deferred. Gate E still requires P017. P016 does not authorize release, tagging, deployment, device installation, or production database changes. PR #20 has no submitted reviews yet and remains Draft.

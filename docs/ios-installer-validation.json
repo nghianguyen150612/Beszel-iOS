@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "milestone": "P016",
   "gate": "E",
-  "status": "implementation-in-progress",
+  "status": "non-device-acceptance-verified",
   "repository": "nghianguyen150612/Beszel-iOS",
   "branch": "ios/installer-privilege-lifecycle",
   "pullRequest": 20,
   "baseBranch": "ios/upstream-v021-integration",
   "startingIntegrationSha": "d69a602045454ff91febd847fd3d49179cb94c7f",
-  "testedSourceSha": "04747f6cb94faa0160328256f437e4bdf07bae9b",
+  "testedSourceSha": "57dbc0a77af5d366e1ca9519f0119ecd260dc6c6",
   "protectedRefs": {
     "iOS": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
     "main": "bb23f99b3eeaced9608e11e280e7c986dba650be"
@@ -72,9 +72,41 @@
       "embeddedAssets": 95,
       "status": "pass"
     },
-    "finalHostedIosBuild": "pending",
-    "finalHostedInstaller": "pending",
-    "finalHostedP013Fixture": "pending"
+    "finalHostedIosBuild": {
+      "runId": 39026267695,
+      "sourceSha": "57dbc0a77af5d366e1ca9519f0119ecd260dc6c6",
+      "conclusion": "success",
+      "releaseJob": "skipped",
+      "go": "go1.27.1",
+      "bun": "1.4.0",
+      "goos": "ios",
+      "goarch": "arm64",
+      "goarm64": "v8.0",
+      "cgoEnabled": true,
+      "platform": 2,
+      "minimumIos": "12.0",
+      "payloadArtifactId": 12098552662,
+      "payloadArtifactSha256": "d3786d9c14358dc68532f02d84dfba606f40f21c9178fe8d84dfe900defdf85b",
+      "validationArtifactId": 12097904613,
+      "validationArtifactSha256": "7ccca0e410ec3ec0676eb7893190b26949065ddf61372d4085fe42f1edb762a9",
+      "agentSha256": "1940cd8471b115036370c785391e0db3005f4bff616fb2af20331b6f2052d5b2",
+      "hubSha256": "014bf3120f21a5491f96f16f6228913b8e6be9d8d83fc2b2a1e91a7b5af34824",
+      "hubEmbeddedAssetCount": 95,
+      "cleanVcsRevision": true
+    },
+    "finalHostedInstaller": {
+      "runId": 39026256211,
+      "sourceSha": "57dbc0a77af5d366e1ca9519f0119ecd260dc6c6",
+      "conclusion": "success"
+    },
+    "finalHostedP013Fixture": {
+      "runId": 39026256183,
+      "sourceSha": "57dbc0a77af5d366e1ca9519f0119ecd260dc6c6",
+      "conclusion": "success",
+      "artifactId": 12098566938,
+      "artifactSha256": "4d29e4008042ced38a9e083493b9de6e794ce7f87cce2736294a106f385a0046",
+      "fixture": "genuine v0.19 PocketBase data upgraded with the P016 v0.21 Hub and fully restored; synthetic disposable data only"
+    }
   },
   "p015NativeArtifact": {
     "workflowRun": 39014286778,
@@ -94,6 +126,28 @@
       "hubEmbeddedAssetCount": 95
     },
     "installerMachOValidation": "pass"
+  },
+  "p016NativeArtifact": {
+    "workflowRun": 39026267695,
+    "sourceSha": "57dbc0a77af5d366e1ca9519f0119ecd260dc6c6",
+    "payloadArtifactId": 12098552662,
+    "validationArtifactId": 12097904613,
+    "agentSha256": "1940cd8471b115036370c785391e0db3005f4bff616fb2af20331b6f2052d5b2",
+    "hubSha256": "014bf3120f21a5491f96f16f6228913b8e6be9d8d83fc2b2a1e91a7b5af34824",
+    "metadata": {
+      "go": "go1.27.1",
+      "goos": "ios",
+      "goarch": "arm64",
+      "goarm64": "v8.0",
+      "cgoEnabled": true,
+      "platform": 2,
+      "minimumIos": "12.0",
+      "agentAndHubRevision": "57dbc0a77af5d366e1ca9519f0119ecd260dc6c6",
+      "hubEmbeddedAssetCount": 95,
+      "agentAndHubBuildOutputChecksumsVerify": true,
+      "agentAndHubMachOValidator": "pass",
+      "privateMobileWiFiLinkage": false
+    }
   },
   "p013DatabaseEvidence": {
     "workflowRun": 38848300763,
