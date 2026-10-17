@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "milestone": "P016",
+  "gate": "E",
+  "status": "implementation-in-progress",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "branch": "ios/installer-privilege-lifecycle",
+  "pullRequest": 20,
+  "baseBranch": "ios/upstream-v021-integration",
+  "startingIntegrationSha": "d69a602045454ff91febd847fd3d49179cb94c7f",
+  "testedSourceSha": "04747f6cb94faa0160328256f437e4bdf07bae9b",
+  "protectedRefs": {
+    "iOS": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "main": "bb23f99b3eeaced9608e11e280e7c986dba650be"
+  },
+  "installer": {
+    "engine": "scripts/ios/install-beszel.sh",
+    "bootstrap": "install.sh",
+    "bootstrapSha256": "3ba6c89f43da5b43666c2a2f3f53c2f7cf67cc63c80ae9e7f7ea363b2fb7a7cb",
+    "ordinaryUninstallPreservesData": true,
+    "purgeRequiresExactPerComponentConfirmation": true,
+    "hubUpdateRollbackIncludesDataAndServiceState": true,
+    "agentConnectivityGate": "beszel-agent connection checks an authenticated WebSocket or SSH Hub transport"
+  },
+  "tests": {
+    "installerShell": {
+      "command": "sh tests/install-sh-test.sh",
+      "passed": 873,
+      "failed": 0,
+      "status": "pass"
+    },
+    "bootstrap": {
+      "command": "sh tests/bootstrap-test.sh",
+      "passed": 54,
+      "failed": 0,
+      "status": "pass"
+    },
+    "machoFixturesIncludingP015Artifacts": {
+      "command": "sh tests/ios-macho-validation-test.sh <P015 Agent> <P015 Hub>",
+      "passed": 11,
+      "failed": 0,
+      "status": "pass"
+    },
+    "workflowIsolation": {
+      "command": "python3 tests/ios-workflow-isolation-test.py",
+      "passed": 18,
+      "failed": 0,
+      "status": "pass"
+    },
+    "goFocused": {
+      "toolchain": "go1.27.1",
+      "packages": ["./agent/health", "./agent", "./internal/cmd/agent"],
+      "status": "pass"
+    },
+    "auditUnitTests": {
+      "command": "python3 -m unittest discover -s tests/audit -p 'test_*.py' -v",
+      "passed": 67,
+      "failed": 0,
+      "status": "pass"
+    },
+    "iosPatchSentinels": {"passed": 45, "failed": 0, "status": "pass"},
+    "upstreamSync": {"passed": 10, "failed": 0, "status": "pass"},
+    "fullGoRegression": {
+      "command": "env -u NETWORK go test -tags 'testing no_ui' ./... -count=1 -timeout=20m",
+      "toolchain": "go1.27.1",
+      "sourceSha": "04747f6cb94faa0160328256f437e4bdf07bae9b",
+      "status": "pass"
+    },
+    "frontendBuild": {
+      "bun": "1.4.0",
+      "commands": ["bun install --frozen-lockfile", "bun run sync", "bun test", "bun run build"],
+      "embeddedAssets": 95,
+      "status": "pass"
+    },
+    "finalHostedIosBuild": "pending",
+    "finalHostedInstaller": "pending",
+    "finalHostedP013Fixture": "pending"
+  },
+  "p015NativeArtifact": {
+    "workflowRun": 39014286778,
+    "sourceSha": "b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba",
+    "artifactId": 12093514420,
+    "validationArtifactId": 12093922927,
+    "agentSha256": "7a0c5c17891fc7298f3f3b326338a7b4f7a1c4df5dcff670662fc41d42386a0e",
+    "hubSha256": "fde89ace4a39c3204c3cc07f30d7f548f59ca4aaa22145a8047a3179fdb9ec2b",
+    "metadata": {
+      "go": "go1.27.1",
+      "goos": "ios",
+      "goarch": "arm64",
+      "cgoEnabled": "1",
+      "platform": 2,
+      "minimumIos": "12.0",
+      "agentAndHubRevision": "b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba",
+      "hubEmbeddedAssetCount": 95
+    },
+    "installerMachOValidation": "pass"
+  },
+  "p013DatabaseEvidence": {
+    "workflowRun": 38848300763,
+    "record": "docs/ios-hub-backup-restore-evidence.md",
+    "scope": "genuine Hub binaries and synthetic disposable PocketBase data; separate from P016 installer fault injection"
+  },
+  "securityResiduals": ["GO-2026-6608", "GHSA-vfj7-8cjw-p6xm"],
+  "deviceValidation": "pending-P018",
+  "nativeWifiRssi": "deferred",
+  "gateE": "P017-release-candidate-validation-required",
+  "releaseTagCreated": false,
+  "releasePublished": false,
+  "productionDeviceChanged": false
+}

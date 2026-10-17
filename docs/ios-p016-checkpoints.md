@@ -29,18 +29,37 @@ Checkpoint A validation:
 - `git diff --check`: passed.
 - ShellCheck is unavailable in this environment.
 
-Checkpoint status: A implementation validated; commit and remote verification are next.
+Checkpoint status: A implementation validated, committed, pushed, and verified on the remote branch.
+
+## Checkpoint B — Complete Hub backup and rollback
+
+The Hub update now uses one transaction for the Hub and any installed Agent writer. It quiesces Agent before Hub, waits for prior processes to exit, verifies a complete snapshot and its extracted inventory, journals the transaction phase and prior service state, then stages and applies the candidate. Hub health and Agent connectivity must both pass before installation state is committed. Recovery restores the verified data, binary, plist, state, manager, logs, and metadata before any prior service is started. Uncertain recovery keeps both services stopped and retains the journal for retry.
+
+The fault-injection suite mutates synthetic database and SSH identity sentinels during candidate Hub launch. Failed migration/health, state commit, journal commit, archive restore, and prior-service health cases verify complete rollback or safe stopped/pending behavior. The installer fault-injection database is a mock and does not claim SQLite execution; genuine PocketBase migration and rollback evidence remains in the P013 hosted fixture record.
+
+Checkpoint B focused validation:
+
+- `sh tests/install-sh-test.sh`: 873 passed, 0 failed.
+- `sh tests/bootstrap-test.sh`: 54 passed, 0 failed; the pin is `3ba6c89f43da5b43666c2a2f3f53c2f7cf67cc63c80ae9e7f7ea363b2fb7a7cb`.
+- `sh tests/ios-macho-validation-test.sh` with genuine P015 Agent/Hub binaries: 11 passed, 0 failed.
+- `python3 tests/ios-workflow-isolation-test.py`: 18 passed, 0 failed; all workflow YAML files parse with PyYAML.
+- Go 1.27.1 focused tests passed for `./agent/health ./agent ./internal/cmd/agent`, including authenticated connection state and disconnect cleanup.
+- Full Go 1.27.1 regression passed at source `04747f6cb94faa0160328256f437e4bdf07bae9b`: `env -u NETWORK go test -tags 'testing no_ui' ./... -count=1 -timeout=20m`. The first attempt used an old ignored `internal/site/dist` from the workspace and correctly failed the embedded asset check; rebuilding with the workflow-pinned Bun 1.4.0 restored the expected 95-asset manifest, after which the complete command passed.
+- The pinned frontend workflow commands also pass locally: Bun 1.4.0 frozen install, catalog sync, UI tests, and production build. Generated locale edits were restored; `dist` is ignored and not committed.
+- Upstream matrix/readiness validators and 67 audit unit tests pass; patch sentinels pass 45 checks; upstream sync passes 10 checks.
+- P015 run `39014286778`, source `b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba`, artifact `12093514420`; manifest SHA-256 validates. Agent SHA-256 `7a0c5c17891fc7298f3f3b326338a7b4f7a1c4df5dcff670662fc41d42386a0e`; Hub SHA-256 `fde89ace4a39c3204c3cc07f30d7f548f59ca4aaa22145a8047a3179fdb9ec2b`.
+- `docs/ios-installer-rollback-evidence.md` distinguishes installer fault injection from the genuine P013 PocketBase fixture and from P018 device validation.
 
 ## Remaining checkpoints
 
 | Checkpoint | Scope | Status |
 | --- | --- | --- |
-| A | Lifecycle and filesystem safety | In progress |
-| B | Full Hub data backup and transactional rollback | Pending |
-| C | Bootstrap and native artifact verification | Pending |
-| D | Rootful permissions and path safety | Pending |
-| E | Privilege and signing review | Pending |
-| F | Read-only diagnostics and service ordering | Pending |
-| G | Release workflow isolation | Pending |
+| A | Lifecycle and filesystem safety | Complete; remote commit `3885cd71027abd9b17380000aa88f941171d371c` |
+| B | Full Hub data backup and transactional rollback | Implemented and pushed at `04747f6cb94faa0160328256f437e4bdf07bae9b`; 873 installer tests pass; final hosted validation pending |
+| C | Bootstrap and native artifact verification | Bootstrap and genuine P015 Mach-O fixtures pass locally; P016 final-head hosted build pending |
+| D | Rootful permissions and path safety | Owner, mode, link, parent, traversal, state-write, and concurrency fixtures pass; final hosted validation pending |
+| E | Privilege and signing review | Audit written in `docs/ios-privilege-and-signing-review.md`; mocked signing only; runtime/trust behavior remains P018 |
+| F | Read-only diagnostics and service ordering | CLI/service evidence written in `docs/ios-service-lifecycle.md`; Agent connection gate uses authenticated transport evidence; final hosted validation pending |
+| G | Release workflow isolation | 18 static event and credential-scope checks pass; final hosted workflow run pending |
 
 Device validation `IOS-INSTALL-05` remains pending P018. P012 native Wi-Fi RSSI remains deferred. P016 does not authorize release, tagging, deployment, device installation, or production database changes.

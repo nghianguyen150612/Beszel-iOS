@@ -13,6 +13,8 @@ on:
       - scripts/ios/install-beszel.sh
       - tests/install-sh-test.sh
       - tests/bootstrap-test.sh
+      - tests/ios-macho-validation-test.sh
+      - tests/ios-workflow-isolation-test.py
       - tests/ios-patch-sentinels.sh
       - tests/upstream-sync-test.sh
       - README.md
@@ -28,10 +30,15 @@ on:
       - docs/ios-wifi-rssi-*
       - docs/ios-wifi-native-blocker-resolution*
       - docs/ios-hub-*
-      - tests/hub-migration/**
+      - docs/ios-installer-*
+      - docs/ios-privilege-and-signing-review.md
+      - docs/ios-service-lifecycle.md
+      - docs/ios-p016-checkpoints.md
+      - docs/ios-installer-validation.json
       - docs/upstream-v021-acceptance.md
       - docs/upstream-v021-acceptance.vi.md
       - docs/upstream-v021-risk-register.csv
+      - tests/hub-migration/**
       - docs/upstream-sync.md
       - docs/upstream-sync.vi.md
       - .github/workflows/ios-installer.yml
@@ -43,6 +50,8 @@ on:
       - scripts/ios/install-beszel.sh
       - tests/install-sh-test.sh
       - tests/bootstrap-test.sh
+      - tests/ios-macho-validation-test.sh
+      - tests/ios-workflow-isolation-test.py
       - tests/ios-patch-sentinels.sh
       - tests/upstream-sync-test.sh
       - README.md
@@ -52,6 +61,14 @@ on:
       - docs/device-validation.md
       - docs/device-validation.vi.md
       - docs/ios-hub-*
+      - docs/ios-installer-*
+      - docs/ios-privilege-and-signing-review.md
+      - docs/ios-service-lifecycle.md
+      - docs/ios-p016-checkpoints.md
+      - docs/ios-installer-validation.json
+      - docs/upstream-v021-acceptance.md
+      - docs/upstream-v021-acceptance.vi.md
+      - docs/upstream-v021-risk-register.csv
       - tests/hub-migration/**
       - docs/ios-build-notes.md
       - docs/ios-build-notes.vi.md
@@ -114,6 +131,7 @@ jobs:
           sh -n install.sh
           sh -n scripts/ios/install-beszel.sh
           sh -n tests/install-sh-test.sh
+          sh -n tests/ios-macho-validation-test.sh
           sh -n tests/bootstrap-test.sh
           sh -n tests/ios-patch-sentinels.sh
           sh -n tests/upstream-sync-test.sh
@@ -131,6 +149,13 @@ jobs:
 
       - name: Bootstrap tests
         run: sh tests/bootstrap-test.sh
+
+      - name: Mach-O and workflow isolation fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh tests/ios-macho-validation-test.sh
+          python3 tests/ios-workflow-isolation-test.py
 
       - name: Lifecycle engine tests
         run: sh tests/install-sh-test.sh
