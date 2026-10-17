@@ -4230,5 +4230,139 @@ else
 	pass "stage_manager_source performs no download"
 fi
 
+printf '== installer mutation lock and work-path safety ==\n'
+LOCK_TEST_ROOT="${SANDBOX}/installer-lock"
+mkdir -p "${LOCK_TEST_ROOT}/lib"
+LIB_DIR="${LOCK_TEST_ROOT}/lib"
+INSTALLER_LOCK_HELD=0
+INSTALLER_LOCK_DIR=""
+_LOCK_PATH=$(installer_lock_path)
+expect_ok "first mutating transaction acquires atomic lock" acquire_installer_lock
+if [ -d "$_LOCK_PATH" ] && [ ! -L "$_LOCK_PATH" ] && [ "$(cat "$_LOCK_PATH/pid")" = "$$" ]; then
+	pass "lock records the owning process in its private directory"
+else
+	fail "lock records the owning process in its private directory"
+fi
+if [ "$(uname -s)" = "Darwin" ]; then
+	_LOCK_DIR_MODE=$(stat -f '%Lp' "$_LOCK_PATH")
+	_LOCK_PID_MODE=$(stat -f '%Lp' "$_LOCK_PATH/pid")
+else
+	_LOCK_DIR_MODE=$(stat -c '%a' "$_LOCK_PATH")
+	_LOCK_PID_MODE=$(stat -c '%a' "$_LOCK_PATH/pid")
+fi
+assert_eq "lock directory is private" "700" "$_LOCK_DIR_MODE"
+assert_eq "lock owner file is private" "600" "$_LOCK_PID_MODE"
+	INSTALLER_LOCK_HELD=0
+	if acquire_installer_lock > "${SANDBOX}/lock-contention.log" 2>&1; then
+		fail "second transaction refuses an active lock"
+	else
+		pass "second transaction refuses an active lock"
+	fi
+	INSTALLER_LOCK_HELD=1
+	INSTALLER_LOCK_DIR="$_LOCK_PATH"
+	expect_ok "lock owner releases only its own lock" release_installer_lock
+if [ ! -e "$_LOCK_PATH" ] && [ ! -L "$_LOCK_PATH" ]; then
+	pass "released lock path is removed"
+else
+	fail "released lock path is removed"
+fi
+
+mkdir "$_LOCK_PATH"
+printf '2147483647\n' > "$_LOCK_PATH/pid"
+expect_ok "dead-owner lock is isolated and recovered" acquire_installer_lock
+if [ -d "$_LOCK_PATH" ] && [ ! -e "${_LOCK_PATH}.stale.$$" ]; then
+	pass "stale lock recovery leaves one owned active lock"
+else
+	fail "stale lock recovery leaves one owned active lock"
+fi
+release_installer_lock
+
+mkdir "$_LOCK_PATH"
+printf 'not-a-pid\n' > "$_LOCK_PATH/pid"
+if acquire_installer_lock > "${SANDBOX}/lock-malformed.log" 2>&1; then
+	fail "malformed lock fails closed"
+else
+	pass "malformed lock fails closed"
+fi
+if [ -f "$_LOCK_PATH/pid" ] && [ "$(cat "$_LOCK_PATH/pid")" = "not-a-pid" ]; then
+	pass "malformed lock is preserved for inspection"
+else
+	fail "malformed lock is preserved for inspection"
+fi
+rm -f "$_LOCK_PATH/pid"
+rmdir "$_LOCK_PATH"
+
+mkdir -p "${LOCK_TEST_ROOT}/target"
+ln -s "${LOCK_TEST_ROOT}/target" "$_LOCK_PATH"
+if acquire_installer_lock > "${SANDBOX}/lock-symlink.log" 2>&1; then
+	fail "symlinked lock path fails closed"
+else
+	pass "symlinked lock path fails closed"
+fi
+if [ -d "${LOCK_TEST_ROOT}/target" ] && [ -L "$_LOCK_PATH" ]; then
+	pass "symlink lock rejection leaves its target untouched"
+else
+	fail "symlink lock rejection leaves its target untouched"
+fi
+rm -f "$_LOCK_PATH"
+
+expect_ok "lock is reacquired for unexpected-content check" acquire_installer_lock
+printf 'preserve\n' > "$_LOCK_PATH/unexpected"
+expect_fail "lock release refuses unexpected contents" release_installer_lock
+if [ -f "$_LOCK_PATH/pid" ] && [ -f "$_LOCK_PATH/unexpected" ]; then
+	pass "unexpected lock contents remain available for inspection"
+else
+	fail "unexpected lock contents remain available for inspection"
+fi
+rm -f "$_LOCK_PATH/pid" "$_LOCK_PATH/unexpected"
+rmdir "$_LOCK_PATH"
+
+LAYOUT_ROOT="${LOCK_TEST_ROOT}/layout"
+mkdir -p "${LAYOUT_ROOT}/bin" "${LAYOUT_ROOT}/lib" "${LAYOUT_ROOT}/launchd-target" "${LAYOUT_ROOT}/log"
+ln -s "${LAYOUT_ROOT}/launchd-target" "${LAYOUT_ROOT}/launchd-link"
+if ( . "$SCRIPT"; BIN_DIR="${LAYOUT_ROOT}/bin"; LIB_DIR="${LAYOUT_ROOT}/lib"; LAUNCHD_DIR="${LAYOUT_ROOT}/launchd-link"; LOG_DIR="${LAYOUT_ROOT}/log"; check_layout ) > "${SANDBOX}/layout-symlink.log" 2>&1; then
+	fail "layout rejects a symlinked managed directory"
+else
+	pass "layout rejects a symlinked managed directory"
+fi
+if [ -L "${LAYOUT_ROOT}/launchd-link" ] && [ -d "${LAYOUT_ROOT}/launchd-target" ]; then
+	pass "layout rejection leaves the symlink target unchanged"
+else
+	fail "layout rejection leaves the symlink target unchanged"
+fi
+
+mkdir -p "${LOCK_TEST_ROOT}/tmp" "${LOCK_TEST_ROOT}/foreign/beszel-ios.lookalike"
+printf 'preserve\n' > "${LOCK_TEST_ROOT}/foreign/beszel-ios.lookalike/marker"
+WORK_DIR="${LOCK_TEST_ROOT}/foreign/beszel-ios.lookalike"
+TMPDIR="${LOCK_TEST_ROOT}/tmp"
+cleanup_work_dir
+if [ -f "${LOCK_TEST_ROOT}/foreign/beszel-ios.lookalike/marker" ]; then
+	pass "cleanup refuses a lookalike path outside the temp root"
+else
+	fail "cleanup refuses a lookalike path outside the temp root"
+fi
+WORK_DIR="${LOCK_TEST_ROOT}/tmp/beszel-ios.unowned"
+WORK_DIR_OWNED=0
+mkdir -p "$WORK_DIR"
+printf 'preserve\n' > "$WORK_DIR/marker"
+cleanup_work_dir
+if [ -f "${LOCK_TEST_ROOT}/tmp/beszel-ios.unowned/marker" ]; then
+	pass "cleanup leaves a temp-looking path it did not create"
+else
+	fail "cleanup leaves a temp-looking path it did not create"
+fi
+WORK_DIR="${LOCK_TEST_ROOT}/tmp/beszel-ios.fixture"
+WORK_DIR_OWNED=1
+mkdir -p "$WORK_DIR"
+printf 'remove\n' > "$WORK_DIR/marker"
+cleanup_work_dir
+if [ ! -e "${LOCK_TEST_ROOT}/tmp/beszel-ios.fixture" ]; then
+	pass "cleanup removes only a private work directory under the temp root"
+else
+	fail "cleanup removes only a private work directory under the temp root"
+fi
+unset TMPDIR
+WORK_DIR=""
+
 printf '\n%d passed, %d failed\n' "$_pass" "$_fail"
 [ "$_fail" = "0" ]

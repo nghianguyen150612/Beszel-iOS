@@ -82,6 +82,7 @@ STATE_FILE_NAME="install-state"
 MANAGER_FILE_NAME="manager.sh"
 COMMAND_NAME="beszel-ios"
 STATE_VERSION="1"
+LOCK_DIR_NAME="installer.lock"
 
 # Pinned immutable release for the current run. Resolved once from the Latest
 # page; every asset for the transaction (SHA256SUMS + binaries) then comes
@@ -100,6 +101,9 @@ DEFAULT_HUB_PORT="8090"
 LAUNCHD_PATH_VALUE="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 WORK_DIR=""
+WORK_DIR_OWNED=0
+INSTALLER_LOCK_DIR=""
+INSTALLER_LOCK_HELD=0
 
 # ---------------------------------------------------------------- logging ---
 
@@ -543,6 +547,173 @@ fix_path_owner() {
 	return 0
 }
 
+# installer_lock_path — one atomic mkdir lock for all mutating CLI actions.
+# Read-only status/diagnostics/doctor commands never acquire this lock.
+installer_lock_path() {
+	printf '%s/%s/%s' "$LIB_DIR" "$STATE_SUBDIR" "$LOCK_DIR_NAME"
+	return 0
+}
+
+release_installer_lock() {
+	[ "${INSTALLER_LOCK_HELD:-0}" = "1" ] || return 0
+	_rl_path=$(installer_lock_path)
+	if [ "$INSTALLER_LOCK_DIR" != "$_rl_path" ] || [ ! -d "$_rl_path" ] || [ -L "$_rl_path" ]; then
+		say_warn "Installer lock path changed; leaving it for manual inspection: ${INSTALLER_LOCK_DIR:-unknown}."
+		INSTALLER_LOCK_HELD=0
+		INSTALLER_LOCK_DIR=""
+		return 1
+	fi
+	if find "$_rl_path" -mindepth 1 -maxdepth 1 ! -name pid -print | grep -q .; then
+		say_warn "Installer lock contains unexpected files; leaving ${_rl_path} for manual inspection."
+		INSTALLER_LOCK_HELD=0
+		INSTALLER_LOCK_DIR=""
+		return 1
+	fi
+	_rl_owner="$_rl_path/pid"
+	if [ ! -f "$_rl_owner" ] || [ -L "$_rl_owner" ] || [ "$(cat "$_rl_owner" 2> /dev/null || true)" != "$$" ]; then
+		say_warn "Installer lock owner changed; leaving it for manual inspection: ${_rl_path}."
+		INSTALLER_LOCK_HELD=0
+		INSTALLER_LOCK_DIR=""
+		return 1
+	fi
+	rm -f "$_rl_owner" || return 1
+	rmdir "$_rl_path" || {
+		say_warn "Installer lock contains unexpected files; leaving ${_rl_path} for manual inspection."
+		INSTALLER_LOCK_HELD=0
+		INSTALLER_LOCK_DIR=""
+		return 1
+	}
+	INSTALLER_LOCK_HELD=0
+	INSTALLER_LOCK_DIR=""
+	return 0
+}
+
+# acquire_installer_lock — serialize install/update/repair/reconfigure,
+# uninstall/purge, and explicit service mutations. A dead PID is recovered
+# by atomically moving its lock aside; malformed locks fail closed.
+acquire_installer_lock() {
+	[ "${INSTALLER_LOCK_HELD:-0}" = "1" ] && return 0
+	[ -d "$LIB_DIR" ] && [ ! -L "$LIB_DIR" ] || {
+		say_err "Refusing installer lock: library directory is missing or unsafe (${LIB_DIR})."
+		return 1
+	}
+	_al_state="${LIB_DIR}/${STATE_SUBDIR}"
+	if [ -L "$_al_state" ] || { [ -e "$_al_state" ] && [ ! -d "$_al_state" ]; }; then
+		say_err "Refusing installer lock: state directory is not a real directory (${_al_state})."
+		return 1
+	fi
+	mkdir -p "$_al_state" || return 1
+	if [ "$(id -u)" = "0" ]; then
+		_al_state_owner=$(path_owner_uid "$_al_state") || return 1
+		[ "$_al_state_owner" = "0" ] || {
+			say_err "Refusing installer lock: state directory is not root-owned (${_al_state})."
+			return 1
+		}
+	fi
+	chmod 755 "$_al_state" || return 1
+	_al_lock=$(installer_lock_path)
+	if [ -L "$_al_lock" ] || { [ -e "$_al_lock" ] && [ ! -d "$_al_lock" ]; }; then
+		say_err "Refusing unsafe installer lock path: ${_al_lock}."
+		return 1
+	fi
+	if [ -d "$_al_lock" ]; then
+		if [ "$(id -u)" = "0" ]; then
+			_al_existing_lock_owner=$(path_owner_uid "$_al_lock") || return 1
+			[ "$_al_existing_lock_owner" = "0" ] || {
+				say_err "Installer lock is not root-owned; inspect ${_al_lock}."
+				return 1
+			}
+		fi
+		_al_owner="$_al_lock/pid"
+		if [ ! -f "$_al_owner" ] || [ -L "$_al_owner" ]; then
+			say_err "Installer lock has no valid owner; inspect ${_al_lock} before removing it."
+			return 1
+		fi
+		if [ "$(id -u)" = "0" ]; then
+			_al_existing_pid_owner=$(path_owner_uid "$_al_owner") || return 1
+			[ "$_al_existing_pid_owner" = "0" ] || {
+				say_err "Installer lock owner file is not root-owned; inspect ${_al_lock}."
+				return 1
+			}
+		fi
+		_al_pid=$(cat "$_al_owner" 2> /dev/null || true)
+		case "$_al_pid" in
+			'' | *[!0-9]*)
+				say_err "Installer lock owner is malformed; inspect ${_al_lock} before removing it."
+				return 1
+				;;
+		esac
+		case "$_al_pid" in
+			*[1-9]*) ;;
+			*) say_err "Installer lock owner is invalid; inspect ${_al_lock} before removing it."; return 1 ;;
+		esac
+		if kill -0 "$_al_pid" 2> /dev/null; then
+			say_err "Another Beszel-iOS installer transaction is active (PID ${_al_pid})."
+			return 1
+		fi
+		_al_stale="${_al_lock}.stale.$$"
+		[ ! -e "$_al_stale" ] && [ ! -L "$_al_stale" ] || {
+			say_err "A stale installer lock quarantine already exists; inspect ${_al_stale}."
+			return 1
+		}
+		mv "$_al_lock" "$_al_stale" || {
+			say_err "Could not isolate stale installer lock ${_al_lock}."
+			return 1
+		}
+		if find "$_al_stale" -mindepth 1 -maxdepth 1 ! -name pid -print | grep -q .; then
+			say_err "Stale installer lock contains unexpected files; inspect ${_al_stale}."
+			return 1
+		fi
+		rm -f "${_al_stale}/pid" || return 1
+		rmdir "$_al_stale" || {
+			say_err "Stale installer lock contains unexpected files; inspect ${_al_stale}."
+			return 1
+		}
+	fi
+	if ! mkdir "$_al_lock" 2> /dev/null; then
+		say_err "Another Beszel-iOS installer transaction acquired the lock first."
+		return 1
+	fi
+	chmod 700 "$_al_lock" || {
+		rmdir "$_al_lock" 2> /dev/null || true
+		return 1
+	}
+	if [ "$(id -u)" = "0" ]; then
+		_al_lock_owner=$(path_owner_uid "$_al_lock") || {
+			rmdir "$_al_lock" 2> /dev/null || true
+			return 1
+		}
+		[ "$_al_lock_owner" = "0" ] || {
+			rmdir "$_al_lock" 2> /dev/null || true
+			return 1
+		}
+	fi
+	printf '%s\n' "$$" > "${_al_lock}/pid" || {
+		rmdir "$_al_lock" 2> /dev/null || true
+		return 1
+	}
+	chmod 600 "${_al_lock}/pid" || {
+		rm -f "${_al_lock}/pid"
+		rmdir "$_al_lock" 2> /dev/null || true
+		return 1
+	}
+	if [ "$(id -u)" = "0" ]; then
+		_al_pid_owner=$(path_owner_uid "${_al_lock}/pid") || {
+			rm -f "${_al_lock}/pid"
+			rmdir "$_al_lock" 2> /dev/null || true
+			return 1
+		}
+		[ "$_al_pid_owner" = "0" ] || {
+			rm -f "${_al_lock}/pid"
+			rmdir "$_al_lock" 2> /dev/null || true
+			return 1
+		}
+	fi
+	INSTALLER_LOCK_DIR="$_al_lock"
+	INSTALLER_LOCK_HELD=1
+	return 0
+}
+
 # component_status <agent|hub> — prints: missing | incomplete | complete.
 component_status() {
 	_cs_comp="$1"
@@ -908,9 +1079,13 @@ check_device() {
 check_layout() {
 	_cl_d=""
 	for _cl_d in "$BIN_DIR" "$LIB_DIR" "$LAUNCHD_DIR" "$LOG_DIR"; do
+		if [ -L "$_cl_d" ]; then
+			die "Refusing unsafe rootful directory symlink: ${_cl_d}."
+		fi
 		if [ ! -d "$_cl_d" ]; then
 			mkdir -p "$_cl_d" || die "Cannot create ${_cl_d}. This installer supports the standard layout (/usr/local/bin, /var/lib, /Library/LaunchDaemons); rootless layouts are not supported yet."
 		fi
+		[ -d "$_cl_d" ] && [ ! -L "$_cl_d" ] || die "Refusing unsafe rootful directory: ${_cl_d}."
 		if [ ! -w "$_cl_d" ]; then
 			die "Directory ${_cl_d} is not writable. Rootless jailbreak layouts are not supported by this installer yet."
 		fi
@@ -966,11 +1141,23 @@ check_deps() {
 # ---------------------------------------------------------- temp workspace ---
 
 cleanup_work_dir() {
-	if [ -n "${WORK_DIR:-}" ] && [ -d "$WORK_DIR" ]; then
+	if [ "${WORK_DIR_OWNED:-0}" = "1" ] && [ -n "${WORK_DIR:-}" ]; then
+		_cwd_tmp="${TMPDIR:-/tmp}"
+		case "$_cwd_tmp" in */) _cwd_tmp=${_cwd_tmp%/} ;; esac
 		case "$WORK_DIR" in
-			*beszel-ios.*) rm -rf "$WORK_DIR" ;;
+			"$_cwd_tmp"/beszel-ios.*)
+				if [ -d "$WORK_DIR" ] && [ ! -L "$WORK_DIR" ]; then
+					rm -rf "$WORK_DIR"
+				else
+					say_warn "Refusing to remove an unexpected installer work path: ${WORK_DIR}."
+				fi
+				;;
+			*) say_warn "Refusing to remove an unexpected installer work path: ${WORK_DIR}." ;;
 		esac
+		WORK_DIR=""
+		WORK_DIR_OWNED=0
 	fi
+	release_installer_lock || true
 }
 
 setup_work_dir() {
@@ -978,9 +1165,10 @@ setup_work_dir() {
 		WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/beszel-ios.XXXXXX") || die "Cannot create a temporary directory; aborting."
 	else
 		WORK_DIR="${TMPDIR:-/tmp}/beszel-ios.$$"
-		mkdir -p "$WORK_DIR" || die "Cannot create a temporary directory; aborting."
+		mkdir "$WORK_DIR" || die "Cannot create a temporary directory; aborting."
 		chmod 700 "$WORK_DIR" || die "Cannot secure the temporary directory; aborting."
 	fi
+	WORK_DIR_OWNED=1
 	trap cleanup_work_dir EXIT INT TERM HUP
 }
 
@@ -4130,6 +4318,8 @@ run_interactive_menu() {
 	check_device
 	check_layout
 	check_launchctl
+	acquire_installer_lock || return 1
+	trap cleanup_work_dir EXIT INT TERM HUP
 	setup_work_dir
 	while :; do
 		print_menu
@@ -4252,6 +4442,8 @@ cli_prepare_mutation() {
 	check_device
 	check_layout
 	check_launchctl
+	acquire_installer_lock || return 1
+	trap cleanup_work_dir EXIT INT TERM HUP
 	if [ "$_cpm_mode" = "full" ]; then
 		setup_work_dir
 		check_deps
@@ -4630,6 +4822,8 @@ cli_service() {
 	fi
 	check_root
 	check_launchctl
+	acquire_installer_lock || return 1
+	trap cleanup_work_dir EXIT INT TERM HUP
 	case "$_cli_service_scope" in
 		agent | hub)
 			cli_service_preflight_component "$_cli_service_scope" "$_cli_service_action" || return 1
