@@ -107,6 +107,14 @@ async function main() {
 			result.routes[route] = response.status()
 		}
 
+		await page.goto(jsonUrl("/"), { waitUntil: "domcontentloaded" })
+		await page.locator("#email").fill(adminEmail)
+		await page.locator("#pass").fill(`${password}-wrong`)
+		await page.getByRole("button", { name: "Sign in" }).click()
+		await page.getByText("Login attempt failed", { exact: true }).waitFor()
+		assert.equal(errors.page.length, 0, "rejected login produced an uncaught browser exception")
+		result.auth = { failed_login_returns_to_form: "PASS", rejected_login_page_exceptions: 0 }
+
 		await signIn(page, adminEmail)
 		assert.match(await page.locator("body").innerText(), new RegExp(systemName))
 
@@ -121,8 +129,11 @@ async function main() {
 		]
 		for (const [route, expected] of routes) {
 			const response = await page.goto(jsonUrl(route), { waitUntil: "domcontentloaded" })
-			await page.waitForTimeout(250)
 			assert.equal(response.status(), 200, `authenticated route ${route}`)
+			await page.waitForFunction(
+				({ source, flags }) => new RegExp(source, flags).test(document.body.innerText),
+				{ source: expected.source, flags: expected.flags },
+			)
 			const content = await page.locator("body").innerText()
 			assert.match(content, expected, `expected route content at ${route}`)
 			result.routes[route] = response.status()
