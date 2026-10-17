@@ -3,6 +3,7 @@
 package hub
 
 import (
+	"crypto/tls"
 	"io/fs"
 	"net/http"
 	"strings"
@@ -16,6 +17,8 @@ import (
 
 // startServer sets up the production server for Beszel
 func (h *Hub) startServer(se *core.ServeEvent) error {
+	disableVulnerableHTTP2Server(se.Server)
+
 	indexFile, _ := fs.ReadFile(site.DistDirFS, "index.html")
 	html := modifyIndexHTML(h, indexFile)
 	basePath := getPublicAppInfo(h).BASE_PATH
@@ -46,4 +49,13 @@ func (h *Hub) startServer(se *core.ServeEvent) error {
 		return e.HTML(status, html)
 	})
 	return nil
+}
+
+// disableVulnerableHTTP2Server avoids GO-2026-6612 in the Go 1.27.1 HTTP/2
+// server while keeping the Hub's HTTP/1.1 HTTPS endpoint available.
+func disableVulnerableHTTP2Server(server *http.Server) {
+	if server == nil {
+		return
+	}
+	server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
 }

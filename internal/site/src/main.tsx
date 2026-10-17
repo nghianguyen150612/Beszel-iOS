@@ -50,6 +50,13 @@ const App = memo(() => {
 			if (data.cu && isAdmin()) {
 				pb.send<UpdateInfo>("/api/beszel/update", {}).then($newVersion.set)
 			}
+		}).catch((error: unknown) => {
+			const status = error && typeof error === "object" && "status" in error ? error.status : "unknown"
+			// Auth expiry is handled by PocketBase's afterSend hook, and expected
+			// authorization failures should not become unhandled browser errors.
+			if (status !== 401 && status !== 403) {
+				console.error(`Hub info request failed (${status})`)
+			}
 		})
 		// get user settings
 		updateUserSettings()
