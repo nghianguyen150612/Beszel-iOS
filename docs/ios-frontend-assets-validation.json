@@ -116,7 +116,11 @@
   "tested_source_sha": "60df517928b74ac3f0230dbe0d72100bbd952d94",
   "p015_initial_merge_sha": "50546d7f7468f7b07af347eb157139208b04fcbc",
   "previous_merged_feature_sha": "445a403f41bbb679f05b81febc5a023faa28b76a",
-  "follow_up_pull_request": "pending draft creation",
+  "follow_up_pull_request": {
+    "number": 19,
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/19",
+    "state": "OPEN_DRAFT"
+  },
   "previous_merged_source_hosted_ci": {
     "source_sha": "0f649d4cf861439d136845bd101cda9a6569ef69",
     "ios_build": {

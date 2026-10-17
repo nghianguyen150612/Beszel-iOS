@@ -15,7 +15,7 @@ The first pushed checkpoint is a70a1303f0ee80acf8f0f94b71a3944c91e59e09. It esta
 
 The original pre-merge implementation checkpoint was d855182a513084fcef67a17da296bc49c38fe333; its evidence update was merged in PR #18. The post-merge source checkpoint below is the current follow-up candidate.
 
-The post-merge source checkpoint is `60df517928b74ac3f0230dbe0d72100bbd952d94` and is pushed to the existing feature branch. It updates x/net to v0.60.0, removes rejected-login error bubbling/logging, commits genuine Lingui extraction output, and repairs the browser fixture/waits. Hosted CI for this follow-up is pending.
+The post-merge source checkpoint is `60df517928b74ac3f0230dbe0d72100bbd952d94` and is pushed to the existing feature branch. It updates x/net to v0.60.0, removes rejected-login error bubbling/logging, commits genuine Lingui extraction output, and repairs the browser fixture/waits. Draft follow-up PR #19 is open at https://github.com/nghianguyen150612/Beszel-iOS/pull/19; hosted CI for this follow-up is pending.
 
 - Go 1.27.1; Bun 1.4.0.
 - Two clean bun install --frozen-lockfile and bun run build cycles passed.
