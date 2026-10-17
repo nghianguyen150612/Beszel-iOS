@@ -121,6 +121,7 @@ jobs:
           set -euo pipefail
           env -u NETWORK go test -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system
           env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system -run 'Test(P008|IOSBattery|CalculateHostMemory|CpuMetrics|GetAllBusy|Disk|SumAndTrack|SkipNetwork|Serialization|Battery|Primary|Normalize)' -count=1
+          env -u NETWORK go test -race -tags 'testing no_ui' ./agent/health ./internal/cmd/agent -count=3
 
       - name: Test disabled native Wi-Fi diagnostic and public CF ownership
         shell: bash
@@ -277,6 +278,7 @@ jobs:
           (cd build/ios && shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS && shasum -a 256 -c SHA256SUMS)
           cat build/ios/SHA256SUMS
           python3 .github/scripts/verify-ios-artifacts.py build/ios --frontend internal/site/dist --expected-commit "$GITHUB_SHA" --output "$RUNNER_TEMP/native-artifacts.json"
+          sh tests/ios-macho-validation-test.sh build/ios/beszel-agent-ios-arm64 build/ios/beszel-hub-ios-arm64
           git diff --exit-code
 
       - name: Upload iOS review payload

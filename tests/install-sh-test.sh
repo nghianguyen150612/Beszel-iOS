@@ -19,6 +19,16 @@ export BESZEL_INSTALL_LIB_ONLY=1
 # shellcheck disable=SC1090,SC1091
 . "$SCRIPT"
 
+# Lifecycle tests use short text executables. Binary-format and release
+# artifact validation is covered by tests/ios-macho-validation-test.sh.
+validate_ios_arm64_macho() { return 0; }
+wait_for_agent_connection() {
+	case "${BESZEL_TEST_AGENT_HEALTH:-ok}" in
+		ok) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
 _pass=0
 _fail=0
 
@@ -249,6 +259,12 @@ export BESZEL_TEST_LIST_FAIL=0
 export BESZEL_TEST_PLIST_VALID=ok
 export BESZEL_TEST_RM_FAIL=0
 export BESZEL_TEST_MV_FAIL=0
+export BESZEL_TEST_MV_FAIL_STATE=0
+export BESZEL_TEST_MV_FAIL_HEALTHY_JOURNAL=0
+export BESZEL_TEST_RM_FAIL_RESTORE=0
+export BESZEL_TEST_AGENT_HEALTH=ok
+export BESZEL_TEST_MIGRATE_ON_HUB_LOAD=0
+export BESZEL_TEST_MIGRATION_TARGET=""
 export BESZEL_TEST_UNLOAD_FAIL_LABEL=""
 
 cat > "${MOCKBIN}/curl" << 'MOCKEOF'
@@ -319,6 +335,11 @@ case "$_mcmd" in
 		;;
 	load)
 		printf 'load %s\n' "$_plist" >> mock.log
+		if [ "$_mlabel" = "hub" ] && [ "${BESZEL_TEST_MIGRATE_ON_HUB_LOAD:-0}" = "1" ] && [ -n "${BESZEL_TEST_MIGRATION_TARGET:-}" ] && [ ! -e migration_done ]; then
+			printf 'schema=21\nledger=migrated\n' > "${BESZEL_TEST_MIGRATION_TARGET}/db.sqlite"
+			printf 'rotated-by-mock-migration\n' > "${BESZEL_TEST_MIGRATION_TARGET}/pb_data/id_ed25519"
+			printf 'migrated\n' > migration_done
+		fi
 		if [ -n "$_mlabel" ] && [ -f "load_fail_remaining_${_mlabel}" ]; then
 			_n=$(cat "load_fail_remaining_${_mlabel}")
 			case "$_n" in '' | *[!0-9]*) _n=0 ;; esac
@@ -347,6 +368,14 @@ case "$_mcmd" in
 			printf '1' > loaded_hub
 			if [ "${BESZEL_TEST_NO_PID:-0}" = "1" ]; then printf '-' > pid_hub; else printf '4322' > pid_hub; fi
 		fi
+		exit 0
+		;;
+	stop)
+		printf 'stop %s\n' "$_plist" >> mock.log
+		case "$_mlabel" in
+			agent) printf '1' > loaded_agent; printf '-' > pid_agent ;;
+			hub) printf '1' > loaded_hub; printf '-' > pid_hub ;;
+		esac
 		exit 0
 		;;
 	list)
@@ -383,11 +412,21 @@ MOCKEOF
 cat > "${MOCKBIN}/rm" << 'MOCKEOF'
 #!/bin/sh
 if [ "${BESZEL_TEST_RM_FAIL:-0}" = "1" ]; then exit 1; fi
+if [ "${BESZEL_TEST_RM_FAIL_RESTORE:-0}" = "1" ] && [ -e "${BESZEL_TEST_MOCKCTL}/migration_done" ]; then
+	for _a in "$@"; do [ "$_a" = "-rf" ] && exit 1; done
+fi
 exec "${BESZEL_TEST_REAL_RM}" "$@"
 MOCKEOF
 cat > "${MOCKBIN}/mv" << 'MOCKEOF'
 #!/bin/sh
 if [ "${BESZEL_TEST_MV_FAIL:-0}" = "1" ]; then exit 1; fi
+_src=""
+_dest=""
+for _a in "$@"; do
+	case "$_a" in -*) ;; *) if [ -z "$_src" ]; then _src="$_a"; else _dest="$_a"; fi ;; esac
+done
+case "$_dest" in */install-state) [ "${BESZEL_TEST_MV_FAIL_STATE:-0}" = "1" ] && exit 1 ;; esac
+if [ "${BESZEL_TEST_MV_FAIL_HEALTHY_JOURNAL:-0}" = "1" ] && [ -f "$_src" ] && grep -q '^PHASE=healthy$' "$_src"; then exit 1; fi
 exec "${BESZEL_TEST_REAL_MV}" "$@"
 MOCKEOF
 chmod +x "${MOCKBIN}/curl" "${MOCKBIN}/launchctl" "${MOCKBIN}/ldid" "${MOCKBIN}/sleep" "${MOCKBIN}/plutil" "${MOCKBIN}/rm" "${MOCKBIN}/mv"
@@ -425,7 +464,7 @@ mock_reset() {
 	printf '-' > "${MOCKCTL}/pid_hub"
 	: > "${MOCKCTL}/mock.log"
 	: > "${MOCKCTL}/health.log"
-	rm -f "${MOCKCTL}/health_fail_remaining" "${MOCKCTL}/load_fail_remaining"
+	rm -f "${MOCKCTL}/health_fail_remaining" "${MOCKCTL}/load_fail_remaining" "${MOCKCTL}/migration_done"
 	rm -f "${MOCKCTL}"/load_fail_remaining_*
 	BESZEL_TEST_HEALTH=ok
 	BESZEL_TEST_RESOLVE_FAIL=0
@@ -438,6 +477,12 @@ mock_reset() {
 	BESZEL_TEST_PLIST_VALID=ok
 	BESZEL_TEST_RM_FAIL=0
 	BESZEL_TEST_MV_FAIL=0
+	BESZEL_TEST_MV_FAIL_STATE=0
+	BESZEL_TEST_MV_FAIL_HEALTHY_JOURNAL=0
+	BESZEL_TEST_RM_FAIL_RESTORE=0
+	BESZEL_TEST_AGENT_HEALTH=ok
+	BESZEL_TEST_MIGRATE_ON_HUB_LOAD=0
+	BESZEL_TEST_MIGRATION_TARGET=""
 	BESZEL_TEST_UNLOAD_FAIL_LABEL=""
 }
 
@@ -463,6 +508,7 @@ t_prep_agent() {
 t_prep_hub() {
 	printf '%s' "$1" > "${BIN_DIR}/${HUB_BIN}"
 	chmod 755 "${BIN_DIR}/${HUB_BIN}"
+	mkdir -p "${LIB_DIR}/beszel-hub"
 	write_hub_plist "${2:-8090}" "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
 }
 
@@ -810,7 +856,7 @@ fi
 printf '<plist><string>no bind here</string></plist>\n' > "${LAUNCHD_DIR}/${HUB_LABEL}.plist"
 if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/portfail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "unparseable hub port aborts" "1" "$_rc"
-if grep -q "aborted without changing the service" "${SANDBOX}/portfail.log"; then
+if grep -q "update aborted before changes" "${SANDBOX}/portfail.log"; then
 	pass "port failure message is explicit"
 else
 	fail "port failure message is explicit"
@@ -819,6 +865,76 @@ if [ ! -e "${BIN_DIR}/${HUB_BIN}.bak" ] && [ ! -e "${BIN_DIR}/${HUB_BIN}.new" ];
 	pass "port failure makes zero changes"
 else
 	fail "port failure makes zero changes"
+fi
+
+printf '== P016: backup preflight, stop and staging failures ==\n'
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+t_prep_hub "hub-v1-content" "8090"
+printf 'schema=19\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+cp "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/preflight-hub-original"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_UNLOAD_FAIL_LABEL=hub
+if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/hub-stop-fail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "Hub stop failure aborts update" "1" "$_rc"
+BESZEL_TEST_UNLOAD_FAIL_LABEL=""
+if cmp -s "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/preflight-hub-original" && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ] && [ ! -e "${BIN_DIR}/${HUB_BIN}.new" ] && [ ! -e "$(hub_transaction_path)" ]; then
+	pass "failed quiesce preserves binary, service state and clears prepared journal"
+else
+	fail "failed quiesce preserves binary, service state and clears prepared journal"
+fi
+
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+t_prep_hub "hub-v1-content" "8090"
+rm -rf "${LIB_DIR}/beszel-hub"
+if ( transact_hub_update "v0.19.0-ios.2" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "missing Hub data aborts before download or service mutation" "1" "$_rc"
+if [ ! -s "${MOCKCTL}/mock.log" ] && [ ! -e "${BIN_DIR}/${HUB_BIN}.new" ]; then pass "missing data preflight is mutation-free"; else fail "missing data preflight is mutation-free"; fi
+
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+t_prep_hub "hub-v1-content" "8090"
+ln -s "${SANDBOX}/symlink-target" "${LIB_DIR}/beszel-hub/unsafe-link"
+if ( transact_hub_update "v0.19.0-ios.2" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "symlinked Hub data entry prevents backup" "1" "$_rc"
+if [ ! -s "${MOCKCTL}/mock.log" ] && [ -L "${LIB_DIR}/beszel-hub/unsafe-link" ]; then pass "symlinked data is preserved and no service change occurs"; else fail "symlinked data is preserved and no service change occurs"; fi
+
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+t_prep_hub "hub-v1-content" "8090"
+printf 'hardlinked database\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+ln "${LIB_DIR}/beszel-hub/db.sqlite" "${LIB_DIR}/beszel-hub/db-copy.sqlite"
+if ( transact_hub_update "v0.19.0-ios.2" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "hardlinked Hub data prevents backup" "1" "$_rc"
+if [ ! -s "${MOCKCTL}/mock.log" ] && [ "$(cat "${LIB_DIR}/beszel-hub/db.sqlite")" = "hardlinked database" ]; then pass "hardlinked data fails closed before service mutation"; else fail "hardlinked data fails closed before service mutation"; fi
+
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+t_prep_hub "hub-v1-content" "8090"
+printf 'schema=19\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+cp "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/ldid-hub-original"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
+BESZEL_TEST_LDID_FAIL=1
+if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/hub-stage-fail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+BESZEL_TEST_LDID_FAIL=0
+assert_eq "Hub signing failure after backup returns non-zero" "1" "$_rc"
+if cmp -s "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/ldid-hub-original" && [ "$(cat "${MOCKCTL}/loaded_hub")" = "1" ] && [ ! -e "${BIN_DIR}/${HUB_BIN}.new" ] && [ ! -e "$(hub_transaction_path)" ]; then
+	pass "Hub signing failure restores prior executable and running service"
+else
+	fail "Hub signing failure restores prior executable and running service"
 fi
 
 printf '== prompt5: rollback paths ==\n'
@@ -877,10 +993,11 @@ t_prep_hub "hub-v1-content" "8090"
 mkdir -p "${LIB_DIR}/beszel-hub"
 printf 'precious-hub-database-bytes' > "${LIB_DIR}/beszel-hub/db.sqlite"
 printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
 printf '30' > "${MOCKCTL}/health_fail_remaining"
 if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/rb3.log" 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "unhealthy hub exits non-zero" "1" "$_rc"
-if grep -q "Rolling back" "${SANDBOX}/rb3.log" && grep -q "Rollback succeeded" "${SANDBOX}/rb3.log"; then
+if grep -q "Restoring the verified pre-upgrade" "${SANDBOX}/rb3.log" && grep -q "Full rollback restored" "${SANDBOX}/rb3.log"; then
 	pass "hub rollback announced and confirmed"
 else
 	fail "hub rollback announced and confirmed"
@@ -901,22 +1018,24 @@ BESZEL_TEST_HEALTH=fail
 if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/rb4.log" 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "unrecoverable hub exits non-zero" "1" "$_rc"
 BESZEL_TEST_HEALTH=ok
-if grep -q "CRITICAL: automatic rollback failed" "${SANDBOX}/rb4.log"; then
+if grep -q "CRITICAL:" "${SANDBOX}/rb4.log"; then
 	pass "hub rollback failure reports CRITICAL"
 else
 	fail "hub rollback failure reports CRITICAL"
 fi
-if cmp -s "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/hub-v1-ref" && [ -s "${BIN_DIR}/${HUB_BIN}.bak" ]; then
-	pass "hub CRITICAL keeps binary and backup"
+if cmp -s "${BIN_DIR}/${HUB_BIN}" "${SANDBOX}/hub-v1-ref" && find "${LIB_DIR}/${STATE_SUBDIR}/${HUB_BACKUP_ROOT_NAME}" -type f -name archive.tar | grep -q .; then
+	pass "hub CRITICAL keeps previous binary and verified recovery archive"
 else
 	fail "hub CRITICAL keeps binary and backup"
 fi
 assert_eq "hub state still old after CRITICAL" "v0.19.0-ios.1" "$(state_hub_release)"
 printf '99' > "${MOCKCTL}/load_fail_remaining"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
 if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/rb5.log" 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "rollback load failure exits non-zero" "1" "$_rc"
 rm -f "${MOCKCTL}/load_fail_remaining"
-if grep -q "CRITICAL: automatic rollback failed" "${SANDBOX}/rb5.log"; then
+if grep -q "CRITICAL:" "${SANDBOX}/rb5.log"; then
 	pass "rollback load failure reports CRITICAL"
 else
 	fail "rollback load failure reports CRITICAL"
@@ -928,9 +1047,9 @@ printf '1' > "${MOCKCTL}/loaded_agent"
 printf '4100' > "${MOCKCTL}/pid_agent"
 if ( transact_agent_update "v0.19.0-ios.2" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
 BESZEL_TEST_UNLOAD_FAIL=0
-assert_eq "unload hiccup still updates" "0" "$_rc"
+assert_eq "Agent update still tolerates unload warning" "0" "$_rc"
 if grep -q "agent-v2-content" "${BIN_DIR}/${AGENT_BIN}"; then
-	pass "update proceeds past unload warning"
+	pass "Agent update proceeds past unload warning"
 else
 	fail "update proceeds past unload warning"
 fi
@@ -943,7 +1062,9 @@ fetch_sums > /dev/null 2>&1
 t_prep_agent "agent-v1-content"
 t_prep_hub "hub-v1-content" "8090"
 printf '1' > "${MOCKCTL}/loaded_agent"
+printf '4321' > "${MOCKCTL}/pid_agent"
 printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
 if ( update_both_flow "v0.19.0-ios.2" > "${SANDBOX}/both.log" 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "both update succeeds" "0" "$_rc"
 _T_HUB_LOAD_LINE=$(grep -n "^load .*dev.beszel.hub.plist" "${MOCKCTL}/mock.log" | head -n 1 | cut -d: -f1)
@@ -968,7 +1089,9 @@ fetch_sums > /dev/null 2>&1
 t_prep_agent "agent-v1-content"
 t_prep_hub "hub-v1-content" "8090"
 printf '1' > "${MOCKCTL}/loaded_agent"
+printf '4321' > "${MOCKCTL}/pid_agent"
 printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
 printf '30' > "${MOCKCTL}/health_fail_remaining"
 if ( update_both_flow "v0.19.0-ios.2" > "${SANDBOX}/bothfail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "both aborts when hub fails" "1" "$_rc"
@@ -987,11 +1110,11 @@ if [ -e "${SB_WORK}/SHA256SUMS" ]; then
 else
 	pass "both all-current downloads nothing"
 fi
-printf '1' > "${MOCKCTL}/load_fail_remaining_agent"
 t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
 fetch_sums > /dev/null 2>&1
-if ( transact_hub_update "v0.19.0-ios.2" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
+if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/hub-after-bothfail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "hub part succeeds" "0" "$_rc"
+printf '1' > "${MOCKCTL}/load_fail_remaining_agent"
 if ( transact_agent_update "v0.19.0-ios.2" > /dev/null 2>&1 ); then _rc=0; else _rc=$?; fi
 assert_eq "agent part fails and rolls back" "1" "$_rc"
 rm -f "${MOCKCTL}/load_fail_remaining_agent"
@@ -1002,6 +1125,179 @@ else
 fi
 assert_eq "hub state new, agent state old" "v0.19.0-ios.2" "$(state_hub_release)"
 assert_eq "agent state still old" "v0.19.0-ios.1" "$(state_agent_release)"
+
+printf '== P016: complete migration rollback and recovery ==\n'
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.1" "agent-v1-content" "hub-v1-content"
+fetch_sums > /dev/null 2>&1
+_T_OLD_AGENT_SHA=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$AGENT_ASSET")
+_T_OLD_HUB_SHA=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$HUB_ASSET")
+state_write_all "v0.19.0-ios.1" "$_T_OLD_AGENT_SHA" "v0.19.0-ios.1" "$_T_OLD_HUB_SHA"
+t_prep_agent "agent-v1-content"
+t_prep_hub "hub-v1-content" "8090"
+mkdir -p "${LIB_DIR}/beszel-hub/pb_data"
+printf 'schema=19\nledger=original\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+printf 'ssh-private-identity-original\n' > "${LIB_DIR}/beszel-hub/pb_data/id_ed25519"
+chmod 600 "${LIB_DIR}/beszel-hub/pb_data/id_ed25519" "${LIB_DIR}/beszel-hub/db.sqlite"
+cp "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/migration-db-original"
+cp "${LIB_DIR}/beszel-hub/pb_data/id_ed25519" "${SANDBOX}/migration-key-original"
+cp "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${SANDBOX}/migration-hub-plist-original"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
+printf '1' > "${MOCKCTL}/loaded_agent"
+printf '4321' > "${MOCKCTL}/pid_agent"
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+BESZEL_TEST_MIGRATE_ON_HUB_LOAD=1
+BESZEL_TEST_MIGRATION_TARGET="${LIB_DIR}/beszel-hub"
+export BESZEL_TEST_MIGRATE_ON_HUB_LOAD BESZEL_TEST_MIGRATION_TARGET
+BESZEL_TEST_HEALTH=fail
+if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/migration-fail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "post-migration health failure returns non-zero" "1" "$_rc"
+if [ -f "${MOCKCTL}/migration_done" ] && cmp -s "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/migration-db-original"; then pass "fault fixture migrated Hub data and rollback restored it"; else fail "fault fixture migrated Hub data and rollback restored it"; fi
+if cmp -s "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/migration-db-original" && cmp -s "${LIB_DIR}/beszel-hub/pb_data/id_ed25519" "${SANDBOX}/migration-key-original"; then
+	pass "rollback restores original database and SSH identity bytes"
+else
+	fail "rollback restores original database and SSH identity bytes"
+fi
+assert_eq "rollback restores private SSH identity mode" "600" "$(t_mode "${LIB_DIR}/beszel-hub/pb_data/id_ed25519")"
+if cmp -s "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${SANDBOX}/migration-hub-plist-original" && grep -q 'hub-v1-content' "${BIN_DIR}/${HUB_BIN}"; then
+	pass "rollback restores previous Hub binary and LaunchDaemon configuration"
+else
+	fail "rollback restores previous Hub binary and LaunchDaemon configuration"
+fi
+assert_eq "rollback restores prior Hub release state" "v0.19.0-ios.1" "$(state_hub_release)"
+assert_eq "uncertain recovery keeps Hub stopped" "0" "$(cat "${MOCKCTL}/loaded_hub")"
+assert_eq "uncertain recovery keeps Agent stopped" "0" "$(cat "${MOCKCTL}/loaded_agent")"
+hub_transaction_status_line > "${SANDBOX}/pending-transaction-status.log"
+if [ -f "$(hub_transaction_path)" ] && grep -q 'Pending Hub transaction: recovery required' "${SANDBOX}/pending-transaction-status.log"; then
+	pass "failed old-service health retains journal and requires recovery"
+else
+	fail "failed old-service health retains journal and requires recovery"
+fi
+BESZEL_TEST_HEALTH=ok
+BESZEL_TEST_MIGRATE_ON_HUB_LOAD=0
+if hub_transaction_recover > "${SANDBOX}/migration-recover.log" 2>&1; then _rc=0; else _rc=$?; fi
+assert_eq "next recovery replays verified snapshot" "0" "$_rc"
+if [ ! -e "$(hub_transaction_path)" ] && cmp -s "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/migration-db-original" && cmp -s "${LIB_DIR}/beszel-hub/pb_data/id_ed25519" "${SANDBOX}/migration-key-original"; then
+	pass "recovery verifies and preserves original schema, ledger and identity"
+else
+	fail "recovery verifies and preserves original schema, ledger and identity"
+fi
+assert_eq "recovery restores prior Hub running state" "1" "$(cat "${MOCKCTL}/loaded_hub")"
+assert_eq "recovery restores prior Agent running state" "1" "$(cat "${MOCKCTL}/loaded_agent")"
+
+printf '== P016: pre-migration and commit failure rollback ==\n'
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.1" "agent-v1-content" "hub-v1-content"
+fetch_sums > /dev/null 2>&1
+_T_OLD_HUB_SHA=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$HUB_ASSET")
+state_write_component hub v0.19.0-ios.1 "$_T_OLD_HUB_SHA"
+t_prep_hub "hub-v1-content" "8090"
+printf 'schema=19\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+printf '1' > "${MOCKCTL}/load_fail_remaining_hub"
+if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/pre-migration-fail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "Hub load failure before migration aborts" "1" "$_rc"
+if grep -q '^schema=19$' "${LIB_DIR}/beszel-hub/db.sqlite" && grep -q 'hub-v1-content' "${BIN_DIR}/${HUB_BIN}" && [ ! -e "$(hub_transaction_path)" ]; then
+	pass "pre-migration failure restores compatible binary and unchanged database"
+else
+	fail "pre-migration failure restores compatible binary and unchanged database"
+fi
+
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.1" "agent-v1-content" "hub-v1-content"
+fetch_sums > /dev/null 2>&1
+_T_OLD_HUB_SHA=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$HUB_ASSET")
+state_write_component hub v0.19.0-ios.1 "$_T_OLD_HUB_SHA"
+t_prep_hub "hub-v1-content" "8090"
+mkdir -p "${LIB_DIR}/beszel-hub/pb_data"
+printf 'schema=19\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+printf 'private-key-original\n' > "${LIB_DIR}/beszel-hub/pb_data/id_ed25519"
+chmod 600 "${LIB_DIR}/beszel-hub/pb_data/id_ed25519"
+cp "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/commit-db-original"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+BESZEL_TEST_MIGRATE_ON_HUB_LOAD=1
+BESZEL_TEST_MIGRATION_TARGET="${LIB_DIR}/beszel-hub"
+BESZEL_TEST_MV_FAIL_STATE=1
+export BESZEL_TEST_MIGRATE_ON_HUB_LOAD BESZEL_TEST_MIGRATION_TARGET BESZEL_TEST_MV_FAIL_STATE
+if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/state-commit-fail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "install-state commit failure rolls back" "1" "$_rc"
+if cmp -s "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/commit-db-original" && grep -q 'private-key-original' "${LIB_DIR}/beszel-hub/pb_data/id_ed25519" && [ "$(state_hub_release)" = "v0.19.0-ios.1" ] && [ ! -e "$(hub_transaction_path)" ]; then
+	pass "state commit failure restores database, SSH identity and prior install state"
+else
+	fail "state commit failure restores database, SSH identity and prior install state"
+fi
+
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.1" "agent-v1-content" "hub-v1-content"
+fetch_sums > /dev/null 2>&1
+_T_OLD_HUB_SHA=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$HUB_ASSET")
+state_write_component hub v0.19.0-ios.1 "$_T_OLD_HUB_SHA"
+t_prep_hub "hub-v1-content" "8090"
+printf 'schema=19\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+cp "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/journal-db-original"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+BESZEL_TEST_MIGRATE_ON_HUB_LOAD=1
+BESZEL_TEST_MIGRATION_TARGET="${LIB_DIR}/beszel-hub"
+BESZEL_TEST_MV_FAIL_HEALTHY_JOURNAL=1
+export BESZEL_TEST_MIGRATE_ON_HUB_LOAD BESZEL_TEST_MIGRATION_TARGET BESZEL_TEST_MV_FAIL_HEALTHY_JOURNAL
+if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/journal-commit-fail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "healthy transaction journal commit failure rolls back" "1" "$_rc"
+if cmp -s "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/journal-db-original" && grep -q 'hub-v1-content' "${BIN_DIR}/${HUB_BIN}" && [ ! -e "$(hub_transaction_path)" ]; then
+	pass "transaction-state commit failure restores database and previous binary"
+else
+	fail "transaction-state commit failure restores database and previous binary"
+fi
+
+printf '== P016: restore failure stays stopped and retries ==\n'
+t_reset_paths
+mock_reset
+t_make_release "v0.19.0-ios.1" "agent-v1-content" "hub-v1-content"
+fetch_sums > /dev/null 2>&1
+_T_OLD_HUB_SHA=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$HUB_ASSET")
+state_write_component hub v0.19.0-ios.1 "$_T_OLD_HUB_SHA"
+t_prep_hub "hub-v1-content" "8090"
+printf 'schema=19\n' > "${LIB_DIR}/beszel-hub/db.sqlite"
+cp "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/restore-db-original"
+printf '1' > "${MOCKCTL}/loaded_hub"
+printf '4322' > "${MOCKCTL}/pid_hub"
+t_make_release "v0.19.0-ios.2" "agent-v2-content" "hub-v2-content"
+fetch_sums > /dev/null 2>&1
+BESZEL_TEST_MIGRATE_ON_HUB_LOAD=1
+BESZEL_TEST_MIGRATION_TARGET="${LIB_DIR}/beszel-hub"
+BESZEL_TEST_HEALTH=fail
+BESZEL_TEST_RM_FAIL_RESTORE=1
+export BESZEL_TEST_MIGRATE_ON_HUB_LOAD BESZEL_TEST_MIGRATION_TARGET BESZEL_TEST_HEALTH BESZEL_TEST_RM_FAIL_RESTORE
+if ( transact_hub_update "v0.19.0-ios.2" > "${SANDBOX}/restore-injected-fail.log" 2>&1 ); then _rc=0; else _rc=$?; fi
+assert_eq "injected restore failure returns non-zero" "1" "$_rc"
+if [ -e "$(hub_transaction_path)" ] && [ "$(cat "${MOCKCTL}/loaded_hub")" = "0" ]; then
+	pass "restore failure keeps journal and leaves Hub stopped"
+else
+	fail "restore failure keeps journal and leaves Hub stopped"
+fi
+BESZEL_TEST_RM_FAIL_RESTORE=0
+BESZEL_TEST_HEALTH=ok
+if hub_transaction_recover > "${SANDBOX}/restore-retry.log" 2>&1; then _rc=0; else _rc=$?; fi
+assert_eq "recovery retries the verified restore" "0" "$_rc"
+if [ ! -e "$(hub_transaction_path)" ] && cmp -s "${LIB_DIR}/beszel-hub/db.sqlite" "${SANDBOX}/restore-db-original"; then
+	pass "retry restores the pre-migration database before starting Hub"
+else
+	fail "retry restores the pre-migration database before starting Hub"
+fi
 
 printf '== prompt5: update safety static checks ==\n'
 t_body() {
@@ -1043,18 +1339,12 @@ if grep -F -q 'compute_sha256 "${BIN_DIR}' "$SCRIPT" || grep -F -q 'verify_file 
 else
 	pass "no installed-binary hash version detection"
 fi
-if grep -F -q "agent health" "$SCRIPT"; then
-	fail "agent health subcommand not used for verification"
+if t_body wait_for_agent_connection | grep -Fq '"$_wfac_bin" connection' && t_body transact_hub_agent_update | grep -q 'wait_for_agent_connection'; then
+	pass "transaction verifies Agent connectivity after Hub health"
 else
-	pass "agent health subcommand not used for verification"
+	fail "transaction verifies Agent connectivity after Hub health"
 fi
-_T_HUB_TX_LINE=$(t_body update_both_flow | grep -n "transact_hub_update" | head -n 1 | cut -d: -f1)
-_T_AGENT_TX_LINE=$(t_body update_both_flow | grep -n "transact_agent_update" | head -n 1 | cut -d: -f1)
-if [ -n "$_T_HUB_TX_LINE" ] && [ -n "$_T_AGENT_TX_LINE" ] && [ "$_T_HUB_TX_LINE" -lt "$_T_AGENT_TX_LINE" ]; then
-	pass "both flow orders hub before agent"
-else
-	fail "both flow orders hub before agent"
-fi
+if t_body update_both_flow | grep -q 'transact_hub_agent_update' && ! t_body update_both_flow | grep -q 'transact_agent_update'; then pass "both update uses one rollback boundary"; else fail "both update uses one rollback boundary"; fi
 _T_CUR_LINE=$(t_body update_agent_flow | grep -n "release_is_current" | head -n 1 | cut -d: -f1)
 _T_CONF_LINE=$(t_body update_agent_flow | grep -n "confirm_update" | head -n 1 | cut -d: -f1)
 if [ -n "$_T_CUR_LINE" ] && [ -n "$_T_CONF_LINE" ] && [ "$_T_CUR_LINE" -lt "$_T_CONF_LINE" ]; then
@@ -1824,7 +2114,7 @@ if t_body restore_missing_binary | grep -q "prompt_agent_key\|prompt_agent_port\
 else
 	pass "binary restore asks for no config"
 fi
-_T_RM_RF_OFFENDERS=$(grep -n "rm -rf" "$SCRIPT" | grep -v "WORK_DIR" | grep -v "SANDBOX" | grep -v '_pg_dir' || true)
+_T_RM_RF_OFFENDERS=$(grep -n "rm -rf" "$SCRIPT" | grep -v "WORK_DIR" | grep -v "SANDBOX" | grep -v '_pg_dir' | grep -v '_hbr_target' || true)
 if [ -z "$_T_RM_RF_OFFENDERS" ]; then
 	pass "rm -rf limited to work/sandbox paths"
 else
@@ -2412,11 +2702,11 @@ else
 	pass "no wildcard beszel deletion"
 fi
 _T_RM_RF_N=$(grep -c "rm -rf" "$SCRIPT")
-_T_RM_RF_OFFENDERS=$(grep -n "rm -rf" "$SCRIPT" | grep -v "WORK_DIR" | grep -v '_pg_dir' || true)
-if [ -z "$_T_RM_RF_OFFENDERS" ] && [ "$_T_RM_RF_N" = "2" ]; then
-	pass "rm -rf limited to work dir and guarded purge"
+_T_RM_RF_OFFENDERS=$(grep -n "rm -rf" "$SCRIPT" | grep -v "WORK_DIR" | grep -v '_pg_dir' | grep -v '_hbr_target' || true)
+if [ -z "$_T_RM_RF_OFFENDERS" ] && [ "$_T_RM_RF_N" = "4" ] && t_body hub_backup_restore | grep -q '_hub_snapshot_relative_allowed'; then
+	pass "recursive removal is limited to work, guarded purge and verified snapshot targets"
 else
-	fail "rm -rf limited to work dir and guarded purge"
+	fail "recursive removal is limited to work, guarded purge and verified snapshot targets"
 fi
 if grep -n "rm -rf" "$SCRIPT" | grep -q '"\$[^"]*\*'; then
 	fail "no rm -rf with glob argument"
@@ -4229,6 +4519,173 @@ if sed -n '/^stage_manager_source() {/,/^}/p' "$SCRIPT" | grep -q 'curl'; then
 else
 	pass "stage_manager_source performs no download"
 fi
+if sed -n '/^wait_for_agent_connection() {/,/^}/p' "$SCRIPT" | grep -Fq '"$_wfac_bin" connection'; then
+	pass "Agent transaction probe requires an authenticated Hub connection"
+else
+	fail "Agent transaction probe requires an authenticated Hub connection"
+fi
+
+printf '== installer mutation lock and work-path safety ==\n'
+LOCK_TEST_ROOT="${SANDBOX}/installer-lock"
+mkdir -p "${LOCK_TEST_ROOT}/lib"
+LIB_DIR="${LOCK_TEST_ROOT}/lib"
+INSTALLER_LOCK_HELD=0
+INSTALLER_LOCK_DIR=""
+_LOCK_PATH=$(installer_lock_path)
+expect_ok "first mutating transaction acquires atomic lock" acquire_installer_lock
+if [ -d "$_LOCK_PATH" ] && [ ! -L "$_LOCK_PATH" ] && [ "$(cat "$_LOCK_PATH/pid")" = "$$" ]; then
+	pass "lock records the owning process in its private directory"
+else
+	fail "lock records the owning process in its private directory"
+fi
+if [ "$(uname -s)" = "Darwin" ]; then
+	_LOCK_DIR_MODE=$(stat -f '%Lp' "$_LOCK_PATH")
+	_LOCK_PID_MODE=$(stat -f '%Lp' "$_LOCK_PATH/pid")
+else
+	_LOCK_DIR_MODE=$(stat -c '%a' "$_LOCK_PATH")
+	_LOCK_PID_MODE=$(stat -c '%a' "$_LOCK_PATH/pid")
+fi
+assert_eq "lock directory is private" "700" "$_LOCK_DIR_MODE"
+assert_eq "lock owner file is private" "600" "$_LOCK_PID_MODE"
+	INSTALLER_LOCK_HELD=0
+	if acquire_installer_lock > "${SANDBOX}/lock-contention.log" 2>&1; then
+		fail "second transaction refuses an active lock"
+	else
+		pass "second transaction refuses an active lock"
+	fi
+	INSTALLER_LOCK_HELD=1
+	INSTALLER_LOCK_DIR="$_LOCK_PATH"
+	expect_ok "lock owner releases only its own lock" release_installer_lock
+if [ ! -e "$_LOCK_PATH" ] && [ ! -L "$_LOCK_PATH" ]; then
+	pass "released lock path is removed"
+else
+	fail "released lock path is removed"
+fi
+
+mkdir "$_LOCK_PATH"
+printf '2147483647\n' > "$_LOCK_PATH/pid"
+expect_ok "dead-owner lock is isolated and recovered" acquire_installer_lock
+if [ -d "$_LOCK_PATH" ] && [ ! -e "${_LOCK_PATH}.stale.$$" ]; then
+	pass "stale lock recovery leaves one owned active lock"
+else
+	fail "stale lock recovery leaves one owned active lock"
+fi
+release_installer_lock
+
+mkdir "$_LOCK_PATH"
+printf 'not-a-pid\n' > "$_LOCK_PATH/pid"
+if acquire_installer_lock > "${SANDBOX}/lock-malformed.log" 2>&1; then
+	fail "malformed lock fails closed"
+else
+	pass "malformed lock fails closed"
+fi
+if [ -f "$_LOCK_PATH/pid" ] && [ "$(cat "$_LOCK_PATH/pid")" = "not-a-pid" ]; then
+	pass "malformed lock is preserved for inspection"
+else
+	fail "malformed lock is preserved for inspection"
+fi
+rm -f "$_LOCK_PATH/pid"
+rmdir "$_LOCK_PATH"
+
+mkdir -p "${LOCK_TEST_ROOT}/target"
+ln -s "${LOCK_TEST_ROOT}/target" "$_LOCK_PATH"
+if acquire_installer_lock > "${SANDBOX}/lock-symlink.log" 2>&1; then
+	fail "symlinked lock path fails closed"
+else
+	pass "symlinked lock path fails closed"
+fi
+if [ -d "${LOCK_TEST_ROOT}/target" ] && [ -L "$_LOCK_PATH" ]; then
+	pass "symlink lock rejection leaves its target untouched"
+else
+	fail "symlink lock rejection leaves its target untouched"
+fi
+rm -f "$_LOCK_PATH"
+
+expect_ok "lock is reacquired for unexpected-content check" acquire_installer_lock
+printf 'preserve\n' > "$_LOCK_PATH/unexpected"
+expect_fail "lock release refuses unexpected contents" release_installer_lock
+if [ -f "$_LOCK_PATH/pid" ] && [ -f "$_LOCK_PATH/unexpected" ]; then
+	pass "unexpected lock contents remain available for inspection"
+else
+	fail "unexpected lock contents remain available for inspection"
+fi
+rm -f "$_LOCK_PATH/pid" "$_LOCK_PATH/unexpected"
+rmdir "$_LOCK_PATH"
+
+LAYOUT_ROOT="${LOCK_TEST_ROOT}/layout"
+mkdir -p "${LAYOUT_ROOT}/bin" "${LAYOUT_ROOT}/lib" "${LAYOUT_ROOT}/launchd-target" "${LAYOUT_ROOT}/log"
+ln -s "${LAYOUT_ROOT}/launchd-target" "${LAYOUT_ROOT}/launchd-link"
+if ( . "$SCRIPT"; BIN_DIR="${LAYOUT_ROOT}/bin"; LIB_DIR="${LAYOUT_ROOT}/lib"; LAUNCHD_DIR="${LAYOUT_ROOT}/launchd-link"; LOG_DIR="${LAYOUT_ROOT}/log"; check_layout ) > "${SANDBOX}/layout-symlink.log" 2>&1; then
+	fail "layout rejects a symlinked managed directory"
+else
+	pass "layout rejects a symlinked managed directory"
+fi
+if [ -L "${LAYOUT_ROOT}/launchd-link" ] && [ -d "${LAYOUT_ROOT}/launchd-target" ]; then
+	pass "layout rejection leaves the symlink target unchanged"
+else
+	fail "layout rejection leaves the symlink target unchanged"
+fi
+
+mkdir -p "${LAYOUT_ROOT}/world-writable-parent/managed" "${LAYOUT_ROOT}/replaceable-parent/managed"
+chmod 777 "${LAYOUT_ROOT}/world-writable-parent"
+if managed_path_parent_chain_safe "${LAYOUT_ROOT}/world-writable-parent/managed"; then
+	fail "world-writable parent path is rejected"
+else
+	pass "world-writable parent path is rejected"
+fi
+chmod 755 "${LAYOUT_ROOT}/world-writable-parent"
+chmod 777 "${LAYOUT_ROOT}/world-writable-parent/managed"
+if managed_directory_safe "${LAYOUT_ROOT}/world-writable-parent/managed"; then
+	fail "world-writable managed directory is rejected"
+else
+	pass "world-writable managed directory is rejected"
+fi
+chmod 755 "${LAYOUT_ROOT}/world-writable-parent/managed"
+mv "${LAYOUT_ROOT}/replaceable-parent" "${LAYOUT_ROOT}/replaceable-parent-real"
+ln -s "${LAYOUT_ROOT}/replaceable-parent-real" "${LAYOUT_ROOT}/replaceable-parent"
+if managed_path_parent_chain_safe "${LAYOUT_ROOT}/replaceable-parent/managed"; then
+	fail "replaced parent symlink is rejected before use"
+else
+	pass "replaced parent symlink is rejected before use"
+fi
+if managed_absolute_path_is_safe "${LAYOUT_ROOT}/replaceable-parent/../escape"; then
+	fail "path traversal in managed path is rejected"
+else
+	pass "path traversal in managed path is rejected"
+fi
+
+mkdir -p "${LOCK_TEST_ROOT}/tmp" "${LOCK_TEST_ROOT}/foreign/beszel-ios.lookalike"
+printf 'preserve\n' > "${LOCK_TEST_ROOT}/foreign/beszel-ios.lookalike/marker"
+WORK_DIR="${LOCK_TEST_ROOT}/foreign/beszel-ios.lookalike"
+TMPDIR="${LOCK_TEST_ROOT}/tmp"
+cleanup_work_dir
+if [ -f "${LOCK_TEST_ROOT}/foreign/beszel-ios.lookalike/marker" ]; then
+	pass "cleanup refuses a lookalike path outside the temp root"
+else
+	fail "cleanup refuses a lookalike path outside the temp root"
+fi
+WORK_DIR="${LOCK_TEST_ROOT}/tmp/beszel-ios.unowned"
+WORK_DIR_OWNED=0
+mkdir -p "$WORK_DIR"
+printf 'preserve\n' > "$WORK_DIR/marker"
+cleanup_work_dir
+if [ -f "${LOCK_TEST_ROOT}/tmp/beszel-ios.unowned/marker" ]; then
+	pass "cleanup leaves a temp-looking path it did not create"
+else
+	fail "cleanup leaves a temp-looking path it did not create"
+fi
+WORK_DIR="${LOCK_TEST_ROOT}/tmp/beszel-ios.fixture"
+WORK_DIR_OWNED=1
+mkdir -p "$WORK_DIR"
+printf 'remove\n' > "$WORK_DIR/marker"
+cleanup_work_dir
+if [ ! -e "${LOCK_TEST_ROOT}/tmp/beszel-ios.fixture" ]; then
+	pass "cleanup removes only a private work directory under the temp root"
+else
+	fail "cleanup removes only a private work directory under the temp root"
+fi
+unset TMPDIR
+WORK_DIR=""
 
 printf '\n%d passed, %d failed\n' "$_pass" "$_fail"
 [ "$_fail" = "0" ]

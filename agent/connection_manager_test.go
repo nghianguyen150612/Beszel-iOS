@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"path/filepath"
 	"testing"
 	"testing/synctest"
 	"time"
 
+	"github.com/henrygd/beszel/agent/health"
 	"github.com/lxzan/gws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -96,6 +98,9 @@ func TestConnectionManager_StateTransitions(t *testing.T) {
 func TestConnectionManager_EventHandling(t *testing.T) {
 	agent := createTestAgent(t)
 	cm := agent.connectionManager
+	tempDir := t.TempDir()
+	restoreHealthPaths := health.SetPathsForTesting(filepath.Join(tempDir, "agent-health"), filepath.Join(tempDir, "agent-connected"))
+	t.Cleanup(restoreHealthPaths)
 	t.Setenv("BESZEL_AGENT_DISABLE_SSH", "true")
 	cm.wsClient = &WebSocketClient{
 		hubURL: &url.URL{
@@ -180,8 +185,18 @@ func TestConnectionManager_EventHandling(t *testing.T) {
 			}
 			cm.wsClient.connMu.Unlock()
 			cm.State = tc.initialState
+			if tc.initialState == Disconnected {
+				require.NoError(t, health.CleanUpConnection())
+			} else {
+				require.NoError(t, health.UpdateConnection())
+			}
 			cm.handleEvent(tc.event)
 			assert.Equal(t, tc.expectedState, cm.State, "State should match expected after event")
+			if tc.expectedState == Disconnected {
+				require.Error(t, health.CheckConnection(), "disconnected state must remove the Hub connection marker")
+			} else {
+				require.NoError(t, health.CheckConnection(), "authenticated transport state must retain the Hub connection marker")
+			}
 		})
 	}
 }
