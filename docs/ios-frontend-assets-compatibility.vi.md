@@ -2,7 +2,7 @@
 
 ## Kết quả
 
-Các bước kiểm tra frontend, asset nhúng và Hub ứng viên trên máy cục bộ đều đạt. CI iOS cuối cùng và xác minh artifact đang chờ chạy trên commit ứng viên đã đẩy lên.
+Các bước kiểm tra frontend, asset nhúng, Hub ứng viên và CI iOS cuối cùng đều đạt. Nguồn gốc và hash payload được ghi trong `ios-p015-checkpoints.md`.
 
 Ứng viên dùng Go 1.27.1 và Bun 1.4.0. Hai chu kỳ build sạch đã xóa node_modules và dist bị ignore trước khi cài bằng Bun lock cố định. Cả hai chạy Lingui extract/compile, TypeScript và Vite production build, tạo ra manifest giống hệt nhau.
 
@@ -40,4 +40,4 @@ Các cảnh báo Vite hiện có về dynamic/static import chồng lấn và ch
 
 ## Trạng thái Gate
 
-Các tiêu chí asset và tương thích cục bộ đã đạt. Gate D chờ CI iOS trên HEAD cuối, vòng đời installer, fixture migration P013, kiểm tra bảo mật liên quan và xác minh hash artifact. Rủi ro dependency được ghi trong ios-dependency-advisory-review.md.
+Gate D đã đạt: CI iOS trên HEAD cuối, vòng đời installer, fixture migration P013, rà soát bảo mật và hash artifact đã được xác minh. Các rủi ro dependency mức cao vẫn được ghi trong `ios-dependency-advisory-review.md`. Kiểm thử vật lý P018 vẫn chờ; chưa cho phép phát hành.

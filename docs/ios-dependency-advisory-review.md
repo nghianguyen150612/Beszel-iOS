@@ -57,4 +57,4 @@ The critical HTTP/2 issue remains in static govulncheck output because source re
 
 ## Gate D disposition
 
-No unmitigated critical advisory remains. Two high findings remain transparently recorded: build-only braces without a compatible fix and reachable Go multipart parsing (GO-2026-6608). The latter requires Go 1.27.2, outside the pinned P015 toolchain, and remains an operational risk. Gate D's explicit critical-advisory criterion can pass with these high residuals documented.
+No unmitigated critical advisory remains. Two high findings remain transparently recorded: build-only braces without a compatible fix and reachable Go multipart parsing (GO-2026-6608). The latter requires Go 1.27.2, outside the pinned P015 toolchain, and remains an operational risk. Gate D passes at tested source `0f649d4cf861439d136845bd101cda9a6569ef69`; final iOS Build, installer lifecycle, P013 migration fixture, and artifact provenance are recorded in `ios-p015-checkpoints.md`. The high residuals remain open for later toolchain/dependency work.

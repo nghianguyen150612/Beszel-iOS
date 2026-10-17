@@ -39,8 +39,34 @@ The implementation checkpoint is d855182a513084fcef67a17da296bc49c38fe333. It is
 - Shell suites: upstream sync 10, patch sentinels 45, bootstrap 54, installer lifecycle 814 passed.
 - Canonical Go tests across ./... passed with Go 1.27.1. Targeted Hub race tests passed. Linux Agent and Hub builds succeeded.
 - Source matrix/readiness passed: 178 upstream, 35 historical iOS, 13 logical patches, zero unresolved audit rows; readiness reports 24 acceptance cases and 33 compatibility scenarios.
-- The first P015 workflow run was a P013 fixture pass on the initial checkpoint. Final-head workflows remain pending.
+- The first P015 workflow run was a P013 fixture pass on the initial checkpoint. Final-head evidence is recorded below.
 
 ## Hosted final-head CI and Gate D
 
-Status: PENDING. Keep PR #18 Draft. Run final-head iOS Build, installer lifecycle, P013 migration fixture, relevant security checks, and verify artifact provenance and SHA-256. Then record actual workflow URLs, artifact hashes, exact tested SHA, and Gate D decision here. No physical iPad validation is claimed.
+Status: **PASS** at tested source SHA `0f649d4cf861439d136845bd101cda9a6569ef69`.
+
+- iOS Build [39011382151](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39011382151) passed all jobs on that exact SHA. The release job was skipped because this was a branch run, not an iOS release tag.
+- Installer lifecycle [39011411689](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39011411689) passed on the same SHA.
+- P013 Hub migration fixture [39011373934](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39011373934) passed on the same SHA.
+- Security review is complete: govulncheck and Bun/npm audit findings have evidence-backed dispositions; focused HTTP/2 ALPN, Range, authorization, and asset-serving regressions pass. The high multipart MIME finding and build-only `braces` advisory remain documented; no unmitigated critical release-blocking finding remains.
+
+### Artifact verification
+
+The artifacts were downloaded from GitHub and their archive SHA-256 values matched the GitHub artifact API digests. The payload `SHA256SUMS` also verified after extraction.
+
+| Artifact | ID | Archive bytes | Archive SHA-256 | Verified contents |
+| --- | ---: | ---: | --- | --- |
+| `beszel-ios-arm64` | 12093266412 | 16,284,834 | `42720d752e99953fc2f1ffd68689eb97c4cec85b58c002ca6d20f32cb0e3e38e` | Agent and Hub payload hashes below |
+| `ios-native-validation` | 12092379338 | 7,838 | `6e8bca17f33a8956505791faeec7c9a2b9c622cb599e77f5781b7dc22711d476` | Native metadata, Go source selection, runtime and Wi-Fi linkage evidence |
+| `ios-wifi-diagnostic-disabled` | 12093505693 | 6,050 | `9e70fa160fa9ac2855114bb2073ea96ea657e3d69f3fe9adc0e692942709c657` | Separate diagnostic artifact; validation says it is not in the Agent/Hub payload |
+
+| Payload | Bytes | SHA-256 | Platform metadata |
+| --- | ---: | --- | --- |
+| `beszel-agent-ios-arm64` | 9,542,984 | `d50998333beeaf2f97f98a6e5ee46fc144077d28028b8637b89fb332ef5602f2` | Mach-O arm64, iOS platform 2, minimum 12.0 |
+| `beszel-hub-ios-arm64` | 31,977,208 | `f0464d716a5fa397214809a115cb46f4bd499c4bb0046616a86bda20b405157f` | Mach-O arm64, iOS platform 2, minimum 12.0; 95 embedded frontend assets |
+
+Both binaries report Go 1.27.1, `GOOS=ios`, `GOARCH=arm64`, `CGO_ENABLED=1`, `vcs.revision=0f649d4cf861439d136845bd101cda9a6569ef69`, and `vcs.modified=false`. Agent and Hub runtime instruction checks pass with no counter-register access; the isolated Go runtime patch uses a zero-guarded YIELD loop and no `CNTFRQ_EL0`/`CNTVCT_EL0` reads. The separate Wi-Fi diagnostic reports `not_in_agent_hub_payload: true`; native linkage found no private MobileWiFi/CoreWLAN/Apple80211 symbols.
+
+Gate D passes: P013 and P014 acceptance remains valid; clean frontend builds, embedded assets, routes, authentication boundaries, localization/RTL, missing-metric handling, security review, regression suites, final-head hosted CI, and artifact provenance are verified. The high dependency residuals remain explicit and are not described as fixed. P012 native RSSI remains `DEFERRED — REFERENCE DEVICE UNAVAILABLE`; P018 physical acceptance is still pending. This decision does not authorize release or deployment.
+
+The artifact-producing source tree is the tested `0f649d4` tree. This final evidence update changes documentation only; no product source changed after the hosted run. The merged product source must remain identical to the tested source tree.

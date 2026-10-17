@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "status": "LOCAL ACCEPTANCE PASS; FINAL HOSTED CI PENDING",
+  "status": "LOCAL ACCEPTANCE AND FINAL HOSTED CI PASS",
   "repository": "nghianguyen150612/Beszel-iOS",
   "feature_branch": "ios/frontend-assets-localization-security",
   "base_branch": "ios/upstream-v021-integration",
   "starting_integration_sha": "8cd928e3cbb3e4f22556ad82146e109685ed7261",
   "p014_merge_sha": "8cd928e3cbb3e4f22556ad82146e109685ed7261",
-  "feature_sha": "d855182a513084fcef67a17da296bc49c38fe333",
+  "feature_sha": "0f649d4cf861439d136845bd101cda9a6569ef69",
   "preservation": {
     "frozen_upstream_commits": "178/178",
     "historical_ios_commits": "35/35",
@@ -17,7 +17,11 @@
     "p012_native_wifi_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE",
     "p014_pr_16_abandoned_changes_imported": false
   },
-  "toolchain": {"go": "1.27.1", "bun": "1.4.0", "npm": "11.9.0"},
+  "toolchain": {
+    "go": "1.27.1",
+    "bun": "1.4.0",
+    "npm": "11.9.0"
+  },
   "frontend_build": {
     "pipeline": "lingui extract --overwrite -> lingui compile -> tsc -b -> vite build",
     "clean_install_runs": 2,
@@ -102,11 +106,62 @@
     "diff_check": "PASS"
   },
   "hosted_ci": {
-    "ios_build": "PENDING",
-    "installer_lifecycle": "PENDING",
-    "p013_migration_fixture": "PENDING",
-    "security_checks": "PENDING",
-    "artifact_hashes": "PENDING"
+    "source_sha": "0f649d4cf861439d136845bd101cda9a6569ef69",
+    "ios_build": {
+      "status": "PASS",
+      "run_id": 39011382151,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39011382151",
+      "event": "workflow_dispatch",
+      "release_job": "SKIPPED: feature branch is not an iOS release tag"
+    },
+    "installer_lifecycle": {
+      "status": "PASS",
+      "run_id": 39011411689,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39011411689"
+    },
+    "p013_migration_fixture": {
+      "status": "PASS",
+      "run_id": 39011373934,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39011373934"
+    },
+    "security_checks": "PASS: govulncheck and Bun/npm advisory triage plus focused HTTP/2 ALPN, Range, authorization and asset-serving regression checks; high residuals documented, no unmitigated critical release blocker",
+    "applicable_pr_checks": "PASS: P013 migration fixture on exact tested source SHA",
+    "artifacts": {
+      "downloaded_and_verified": true,
+      "archive_digests_match_github_api": true,
+      "payload_sha256sums_verified": true,
+      "beszel-ios-arm64": {
+        "artifact_id": 12093266412,
+        "size_bytes": 16284834,
+        "zip_sha256": "42720d752e99953fc2f1ffd68689eb97c4cec85b58c002ca6d20f32cb0e3e38e",
+        "agent_sha256": "d50998333beeaf2f97f98a6e5ee46fc144077d28028b8637b89fb332ef5602f2",
+        "agent_bytes": 9542984,
+        "hub_sha256": "f0464d716a5fa397214809a115cb46f4bd499c4bb0046616a86bda20b405157f",
+        "hub_bytes": 31977208,
+        "architecture": "arm64",
+        "macho_platform": 2,
+        "minimum_ios": "12.0",
+        "go_version": "1.27.1",
+        "embedded_frontend_assets": 95,
+        "vcs_revision": "0f649d4cf861439d136845bd101cda9a6569ef69",
+        "vcs_modified": false,
+        "agent_hub_private_wifi_symbols": "absent"
+      },
+      "ios-native-validation": {
+        "artifact_id": 12092379338,
+        "size_bytes": 7838,
+        "zip_sha256": "6e8bca17f33a8956505791faeec7c9a2b9c622cb599e77f5781b7dc22711d476"
+      },
+      "ios-wifi-diagnostic-disabled": {
+        "artifact_id": 12093505693,
+        "size_bytes": 6050,
+        "zip_sha256": "9e70fa160fa9ac2855114bb2073ea96ea657e3d69f3fe9adc0e692942709c657",
+        "packaged_with_agent_hub": false,
+        "private_calls_executed": false
+      }
+    }
   },
-  "gate_d": "PENDING FINAL-HEAD HOSTED CI AND ARTIFACT VERIFICATION"
+  "gate_d": "PASS: all P015 criteria met; high Go multipart and build-only braces advisories are documented residuals, no unmitigated critical release-blocking advisory remains; P018 physical checks pending, no release authorized",
+  "implementation_commit_sha": "d855182a513084fcef67a17da296bc49c38fe333",
+  "tested_source_sha": "0f649d4cf861439d136845bd101cda9a6569ef69"
 }

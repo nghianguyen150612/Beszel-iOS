@@ -2,7 +2,7 @@
 
 ## Result
 
-Local frontend, embedded asset, and candidate-Hub checks pass. Final hosted iOS CI and artifact verification are pending on the committed candidate head.
+Frontend, embedded asset, candidate-Hub, and final hosted iOS checks pass. Artifact provenance and payload hashes are recorded in `ios-p015-checkpoints.md`.
 
 The candidate uses Go 1.27.1 and Bun 1.4.0. Two clean install/build cycles removed ignored node_modules and dist before frozen Bun installation. Both ran Lingui extraction/compilation, TypeScript, and Vite production build and produced identical sorted manifests.
 
@@ -40,4 +40,4 @@ Existing Vite warnings remain for overlapping dynamic/static imports and oversiz
 
 ## Gate status
 
-Local compatibility and asset criteria pass. Gate D awaits final-head hosted iOS CI, installer lifecycle, P013 migration fixture, relevant security checks, and artifact hashes. The dependency residual is in ios-dependency-advisory-review.md.
+Gate D passes with final-head iOS Build, installer lifecycle, P013 migration fixture, security review, and artifact hashes verified. The high dependency residuals remain documented in `ios-dependency-advisory-review.md`. P018 physical acceptance remains pending, and no release is authorized.
