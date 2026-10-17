@@ -1,6 +1,6 @@
 # P015 frontend route matrix
 
-The browser harness tests the compiled frontend served by the candidate Hub, not Vite's development server. The current harness passed once against the Hub root and once through a loopback reverse proxy at `/beszel`. Both runs use disposable Hub databases, two synthetic users, and synthetic systems/telemetry. They include the failed-login UI case and produced zero uncaught page exceptions.
+The browser harness tests the compiled frontend served by the candidate Hub, not Vite's development server. The current harness passed once against the Hub root and once through a loopback reverse proxy at `/beszel`. Both runs use disposable Hub databases, two synthetic users, and synthetic systems/telemetry. They include the failed-login UI case and produced zero uncaught page exceptions. Local acceptance and current-source hosted iOS Build, installer lifecycle, and P013 migration workflows passed at tested head `b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba`.
 
 ## HTTP and SPA routes
 
@@ -49,4 +49,4 @@ There were no page exceptions. Browser diagnostics include the expected 400 from
 
 ## Static Hub checks
 
-The generated frontend had 95 assets. The Hub served 94 non-index assets with exact manifest hashes; `index.html` is dynamically modified for base path/version injection. MIME checks passed. The 17-range probe returned 400. Supported SPA paths returned 200; missing and filesystem-like paths returned 404. Final follow-up local runs passed at both root and `/beszel`; hosted CI for current commit `60df5179` remains pending.
+The generated frontend had 95 assets. The Hub served 94 non-index assets with exact manifest hashes; `index.html` is dynamically modified for base path/version injection. MIME checks passed. The 17-range probe returned 400. Supported SPA paths returned 200; missing and filesystem-like paths returned 404. Final follow-up local runs passed at both root and `/beszel`. Current-source hosted iOS Build, installer lifecycle, and P013 migration fixture also passed; the built Hub artifact reports 95 embedded assets and the exact tested source revision.

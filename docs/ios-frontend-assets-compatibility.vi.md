@@ -2,7 +2,7 @@
 
 ## Kết quả
 
-P015 đã được merge tại integration commit `50546d7f7468f7b07af347eb157139208b04fcbc`. Follow-up source commit `60df517928b74ac3f0230dbe0d72100bbd952d94` xử lý thêm advisory dependency và hoàn thiện kiểm tra login/catalog/browser. Kiểm tra local cho follow-up đã đạt; hosted CI và artifact verification cho commit này đang chờ. Artifact hosted trước đó chỉ áp dụng cho source đã merge trước follow-up.
+Lần merge P015 đầu tiên được ghi tại integration commit `50546d7f7468f7b07af347eb157139208b04fcbc`. Thay đổi sản phẩm follow-up nằm trong `60df517928b74ac3f0230dbe0d72100bbd952d94`; hosted CI và artifact của source hiện tại được tạo từ head đã kiểm thử sạch `b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba`. Artifact của source đã merge trước đó chỉ là dữ liệu lịch sử, không dùng cho lần nghiệm thu này.
 
 Ứng viên dùng Go 1.27.1 và Bun 1.4.0. Hai chu kỳ build sạch đã xóa node_modules và dist bị ignore trước khi cài bằng Bun lock cố định. Cả hai chạy Lingui extract/compile, TypeScript và Vite production build, tạo ra manifest giống hệt nhau.
 
@@ -30,6 +30,8 @@ Một Hub Linux được khởi chạy với cơ sở dữ liệu PocketBase dù
 
 Browser harness hiện tại đạt ở cả Hub root và `/beszel` qua loopback reverse proxy. Chỉ dùng tài khoản tổng hợp và dữ liệu dùng một lần. Không dùng iPad vật lý. Chi tiết route và auth nằm trong `ios-frontend-route-matrix.md`.
 
+Workflow iOS Build [39014286778](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39014286778), installer lifecycle [39014286727](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39014286727) và P013 migration fixture [39014280816](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39014280816) đều đạt tại đúng head đã kiểm thử. Digest archive tải xuống khớp GitHub artifact API; SHA256SUMS của Agent/Hub, Mach-O platform/minimum version, build revision và 95 embedded asset đã được xác minh. Xem `ios-p015-checkpoints.md` để biết artifact ID và hash.
+
 ## Sửa đổi tập trung
 
 Frontend chỉ làm mới xác thực khi có token, xóa trạng thái đăng nhập hết hạn hoặc bị từ chối và tránh in response body hoặc token vào log. Chỉ tạo user settings sau phản hồi 404 thực sự; phản hồi 401/403 được xử lý mà không ghi dữ liệu nhạy cảm. Lỗi lấy thông tin Hub được bắt và chỉ ghi status.
@@ -40,4 +42,4 @@ Các cảnh báo Vite hiện có về dynamic/static import chồng lấn và ch
 
 ## Trạng thái Gate
 
-Trạng thái Gate D của follow-up: **đang chờ hosted CI và xác minh artifact trên source hiện tại**. Source P015 trước follow-up đã qua hosted checks; các kết quả đó không bao gồm commit `60df517`. Rủi ro dependency mức cao vẫn được ghi trong `ios-dependency-advisory-review.md`. Kiểm thử vật lý P018 vẫn chờ; chưa cho phép phát hành.
+Trạng thái Gate D của follow-up: **ĐẠT** tại head đã kiểm thử `b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba`. Hosted workflow hiện tại, provenance artifact, kiểm tra frontend/browser/localization và security review đều đạt. Rủi ro dependency mức cao còn lại đã được ghi nhận và xử lý trong `ios-dependency-advisory-review.md`. RSSI native P012 tiếp tục hoãn vì không có thiết bị tham chiếu; kiểm thử vật lý P018 vẫn chờ. Không phát hành hoặc triển khai.

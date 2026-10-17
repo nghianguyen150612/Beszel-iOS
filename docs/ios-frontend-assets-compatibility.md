@@ -2,7 +2,7 @@
 
 ## Result
 
-The P015 merge is recorded at integration commit `50546d7f7468f7b07af347eb157139208b04fcbc`. Follow-up source commit `60df517928b74ac3f0230dbe0d72100bbd952d94` closes a dependency advisory and tightens login/catalog/browser acceptance. Local checks pass for that follow-up; hosted CI and artifact verification for it are pending. The earlier hosted artifacts apply to the prior merged source only.
+The initial P015 merge is recorded at integration commit `50546d7f7468f7b07af347eb157139208b04fcbc`. Follow-up product changes are in `60df517928b74ac3f0230dbe0d72100bbd952d94`; current-source hosted CI and artifacts were built from clean tested head `b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba`. The prior merged-source artifacts remain historical and are not used for this acceptance.
 
 The candidate uses Go 1.27.1 and Bun 1.4.0. Two clean install/build cycles removed ignored node_modules and dist before frozen Bun installation. Both ran Lingui extraction/compilation, TypeScript, and Vite production build and produced identical sorted manifests.
 
@@ -30,6 +30,8 @@ A Linux Hub was started with a fresh disposable PocketBase database. A second di
 
 The current browser harness passed at both the Hub root and `/beszel` behind the loopback reverse proxy. It used synthetic accounts and disposable data only. No physical iPad was used. Route and auth details are in `ios-frontend-route-matrix.md`.
 
+The hosted iOS Build workflow [39014286778](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39014286778), installer lifecycle [39014286727](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39014286727), and P013 migration fixture [39014280816](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39014280816) all passed at the exact tested head. Downloaded archive digests match GitHub's artifact API; extracted Agent/Hub SHA256SUMS, Mach-O platform/minimum version, build revision, and 95 embedded assets were verified. See `ios-p015-checkpoints.md` for artifact IDs and hashes.
+
 ## Focused fixes
 
 The frontend refreshes authentication only when a token exists, clears expired or forbidden auth state, and avoids printing response bodies or tokens in browser logs. User settings are created only after a real 404; expected 401 and 403 responses are handled without logging sensitive payloads. Hub-info failures are caught and logged with status only.
@@ -40,4 +42,4 @@ Existing Vite warnings remain for overlapping dynamic/static imports and oversiz
 
 ## Gate status
 
-Follow-up Gate D status: **pending current-source hosted CI and artifact verification**. The previous merged P015 source passed its hosted checks; those results do not cover commit `60df517`. The high dependency residuals remain documented in `ios-dependency-advisory-review.md`. P018 physical acceptance remains pending, and no release is authorized.
+Follow-up Gate D status: **PASS** at tested head `b83e179bd84b2177cd7fc8b5b0f5460d5f2411ba`. The current-source hosted workflows, artifact provenance, local frontend/browser/localization checks, and security review pass. The high dependency residuals remain documented and dispositioned in `ios-dependency-advisory-review.md`. P012 native RSSI remains deferred because the reference device is unavailable; P018 physical acceptance remains pending. No release or deployment is authorized.
