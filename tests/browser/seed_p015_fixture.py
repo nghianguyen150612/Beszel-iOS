@@ -143,6 +143,15 @@ def seed(api: HubAPI, admin_email: str, outsider_email: str, password: str) -> d
             "info": info,
         },
     )
+    # The Hub's before-create hook always replaces client-supplied info with
+    # an empty struct. Seed it after creation so the frontend sees a supported
+    # synthetic Agent version and renders network monitors for this system.
+    api.checked(
+        f"/api/collections/systems/records/{system['id']}",
+        super_token,
+        {"info": info, "status": "down"},
+        "PATCH",
+    )
     outsider_system = api.ensure_record(
         super_token,
         "systems",
@@ -155,6 +164,12 @@ def seed(api: HubAPI, admin_email: str, outsider_email: str, password: str) -> d
             "status": "down",
             "info": {**info, "h": "p015-outsider-host"},
         },
+    )
+    api.checked(
+        f"/api/collections/systems/records/{outsider_system['id']}",
+        super_token,
+        {"info": {**info, "h": "p015-outsider-host"}, "status": "down"},
+        "PATCH",
     )
 
     system_id = system["id"]

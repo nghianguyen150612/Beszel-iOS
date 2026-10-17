@@ -112,14 +112,13 @@ export function UserAuthForm({
 				const mfaId = err?.response?.mfaId
 				if (!mfaId) {
 					showLoginFaliedToast()
-					throw err
+					return
 				}
 				setMfaId(mfaId)
 				try {
 					const { otpId } = await pb.collection("users").requestOTP(email)
 					setOtpId(otpId)
-				} catch (err) {
-					console.log({ err })
+				} catch {
 					showLoginFaliedToast()
 				}
 			} finally {
