@@ -30,7 +30,7 @@ umask 077
 PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export PATH
 
-engine_sha=f740c65ad8e99dd5c58409e98f275a928ec6788daa11e988c6ac1de5d86c0bfb
+engine_sha=3ba6c89f43da5b43666c2a2f3f53c2f7cf67cc63c80ae9e7f7ea363b2fb7a7cb
 engine_url=https://raw.githubusercontent.com/nghianguyen150612/Beszel-iOS/iOS/scripts/ios/install-beszel.sh
 
 fail() {

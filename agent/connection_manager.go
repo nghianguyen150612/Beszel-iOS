@@ -229,10 +229,16 @@ func (c *ConnectionManager) Start(serverOptions ServerOptions) error {
 	sigCtx, stopSignals := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stopSignals()
 
+	// Clear any marker left by an abruptly terminated prior Agent before
+	// launching a new connection attempt.
+	if err := health.CleanUpConnection(); err != nil {
+		slog.Warn("Unable to clear stale Hub connection marker", "err", err)
+	}
 	c.startWsTicker()
 	c.launchConnect()
 
-	// update health status immediately and every 90 seconds
+	// Process health tracks the event loop; connection health is refreshed only
+	// while an authenticated Hub transport is active.
 	_ = health.Update()
 	healthTicker := time.NewTicker(90 * time.Second)
 	defer healthTicker.Stop()
@@ -250,6 +256,13 @@ func (c *ConnectionManager) Start(serverOptions ServerOptions) error {
 			c.launchConnect()
 		case <-healthTicker.C:
 			_ = health.Update()
+			if c.getState() == Disconnected {
+				if err := health.CleanUpConnection(); err != nil {
+					slog.Warn("Unable to clear Hub connection marker", "err", err)
+				}
+			} else if err := health.UpdateConnection(); err != nil {
+				slog.Warn("Unable to refresh Hub connection marker", "err", err)
+			}
 		case err := <-c.fatalErr:
 			_ = c.stop()
 			return err
@@ -285,7 +298,11 @@ func (c *ConnectionManager) stop() error {
 	c.agent.monitorManager.Stop()
 	c.closeWebSocket()
 	c.agent.cleanupSensorShadow()
-	return health.CleanUp()
+	connectionErr := health.CleanUpConnection()
+	if err := health.CleanUp(); err != nil {
+		return err
+	}
+	return connectionErr
 }
 
 // handleEvent processes connection events and updates the connection state accordingly.
@@ -330,6 +347,13 @@ func (c *ConnectionManager) handleStateChange(newState ConnectionState) {
 	}
 	c.State = newState
 	c.mu.Unlock()
+	if newState == Disconnected {
+		if err := health.CleanUpConnection(); err != nil {
+			slog.Warn("Unable to clear Hub connection marker", "err", err)
+		}
+	} else if err := health.UpdateConnection(); err != nil {
+		slog.Warn("Unable to record Hub connection", "err", err)
+	}
 
 	switch newState {
 	case WebSocketConnected:

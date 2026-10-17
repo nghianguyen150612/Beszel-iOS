@@ -1,7 +1,6 @@
-// Package health provides functions to check and update the health of the agent.
-// It uses a file in the temp directory to store the timestamp of the last connection attempt.
-// If the timestamp is older than 90 seconds, the agent is considered unhealthy.
-// NB: The agent must be started with the Start() method to be considered healthy.
+// Package health tracks Agent process liveness separately from authenticated
+// Hub connectivity. The connection marker is removed when every Hub transport
+// disconnects and expires if the connection manager stops refreshing it.
 package health
 
 import (
@@ -15,6 +14,7 @@ import (
 
 // healthFile is the path to the health file
 var healthFile = getHealthFilePath()
+var connectionFile = getConnectionFilePath()
 
 func getHealthFilePath() string {
 	filename := "beszel_health"
@@ -27,6 +27,15 @@ func getHealthFilePath() string {
 	return filepath.Join(os.TempDir(), filename)
 }
 
+func getConnectionFilePath() string {
+	if runtime.GOOS == "ios" || runtime.GOOS == "darwin" {
+		// LaunchDaemons and the root CLI must share the same iOS temp path even
+		// when their inherited TMPDIR environments differ.
+		return filepath.Join("/tmp", "beszel_connected")
+	}
+	return filepath.Join(os.TempDir(), "beszel_connected")
+}
+
 func updateHealthFile(path string) error {
 	file, err := os.Create(path)
 	if err != nil {
@@ -35,15 +44,32 @@ func updateHealthFile(path string) error {
 	return file.Close()
 }
 
-// Check checks if the agent is connected by checking the modification time of the health file
+// Check checks whether the Agent event loop has refreshed its liveness marker recently.
 func Check() error {
-	fileInfo, err := os.Stat(healthFile)
+	return checkFile(healthFile, "unhealthy")
+}
+
+// CheckConnection reports whether the connection manager has a recent
+// authenticated WebSocket or SSH connection to the Hub.
+func CheckConnection() error {
+	info, err := os.Lstat(connectionFile)
+	if err != nil {
+		return err
+	}
+	if !connectionMarkerTrusted(info) {
+		return errors.New("untrusted Hub connection marker")
+	}
+	return checkFile(connectionFile, "not connected to the Hub")
+}
+
+func checkFile(path, staleMessage string) error {
+	fileInfo, err := os.Stat(path)
 	if err != nil {
 		return err
 	}
 	if time.Since(fileInfo.ModTime()) > 91*time.Second {
 		log.Println("over 90 seconds since last connection")
-		return errors.New("unhealthy")
+		return errors.New(staleMessage)
 	}
 	return nil
 }
@@ -53,7 +79,28 @@ func Update() error {
 	return updateHealthFile(healthFile)
 }
 
+// UpdateConnection records a successful authenticated Hub connection.
+func UpdateConnection() error {
+	if err := os.Remove(connectionFile); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	file, err := os.OpenFile(connectionFile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	return file.Close()
+}
+
 // CleanUp removes the health file
 func CleanUp() error {
 	return os.Remove(healthFile)
+}
+
+// CleanUpConnection removes the marker after the Agent loses its Hub connection.
+func CleanUpConnection() error {
+	err := os.Remove(connectionFile)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
 }
