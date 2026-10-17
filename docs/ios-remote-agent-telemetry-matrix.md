@@ -1,8 +1,9 @@
 # P014 remote Agent fixture matrix
 
-All fixtures are synthetic, independently authored for this rebuild, with distinct
-system/owner IDs. JSON v1 and CBOR schema round trips PASS. Each platform is sent
-through the same shared Hub code. No native Windows/macOS execution is claimed.
+All four fixture payloads are synthetic, independently authored from repository
+platform source, and use distinct system/owner IDs. Linux, Windows, macOS and iOS
+fixture schemas pass JSON v1 and CBOR checks. No native Windows/macOS/iOS Agent
+execution is claimed.
 
 | Surface | Linux | Windows | macOS | iOS unavailable fixture |
 | --- | --- | --- | --- | --- |
@@ -16,13 +17,26 @@ through the same shared Hub code. No native Windows/macOS execution is claimed.
 | Package counts | Successful zero | Absent | Absent | Absent (no successful optional collection) |
 | SMART / package inventory / ZFS details | Separate action, existing suites | Separate action where supported | Tool-dependent separate action | Unavailable adapters |
 
-Fixture wire files: `internal/testutil/telemetry/testdata/*.json`. The iOS fixture
-intentionally omits optional battery/package counts too; this describes unavailable
-collection, not removal of P008/P011 capabilities. Fields unsupported by a platform
-are absent. Wi-Fi uses native dBm; no signal-quality conversion is permitted.
+Fixture wire files: `internal/testutil/telemetry/testdata/*.json`. Hub integration
+uses the same synthetic values in fake WebSocket/SSH peers; the shared production
+Hub path performs decoding, polling, PocketBase writes, history retrieval, monitor
+and alert processing, realtime publication, and authorized API reads. These are
+Hub-side executions, not native Agent executions. The iOS fixture intentionally
+omits optional battery/package counts too; this describes unavailable collection,
+not removal of P008/P011 capabilities.
+
+Wi-Fi uses native dBm. Hidden/redacted SSID and missing RSSI remain absent. Local
+iOS RSSI remains unavailable under the approved P012 deferral. No signal-quality
+conversion is permitted.
 
 Required scalar zero defaults in the upstream schema do not establish an optional
 measurement. GPU presence is established by its map; battery presence by the
 representative state/device map; successful zero package count by a present array.
-The unchanged scalar GPU power fields omit zero on the wire; no availability
-claim can be inferred from an omitted power field. The frontend must leave a gap.
+The unchanged scalar GPU power fields omit zero on the wire; decoded legacy explicit
+zero is retained, while omitted power remains unavailable.
+
+The source-derived protocol matrix covers raw legacy CBOR at 0.12 and typed
+responses for 0.19/0.21 where supported. It does not claim every field is available
+on every arbitrary version pair. Protocol and Hub-side evidence is detailed in
+`docs/evidence/p014/final-validation.md` and
+`docs/ios-hub-monitoring-validation.json`.
