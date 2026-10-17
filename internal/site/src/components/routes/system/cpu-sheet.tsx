@@ -1,3 +1,4 @@
+import { coreUsage } from "@/lib/metrics"
 import { t } from "@lingui/core/macro"
 import { MoreHorizontalIcon } from "lucide-react"
 import { memo, useRef, useState } from "react"
@@ -160,7 +161,7 @@ export default memo(function CpuCoresSheet({
 								legend={numCores < 10}
 								dataPoints={Array.from({ length: numCores }).map((_, i) => ({
 									label: `CPU ${i}`,
-									dataKey: ({ stats }: SystemStatsRecord) => stats?.cpus?.[i] ?? 1 / (stats?.cpus?.length ?? 1),
+									dataKey: (record: SystemStatsRecord) => coreUsage(record, i),
 									color: `hsl(${226 + (((i * 360) / Math.max(1, numCores)) % 360)}, var(--chart-saturation), var(--chart-lightness))`,
 									opacity: 0.35,
 									stackId: "a",

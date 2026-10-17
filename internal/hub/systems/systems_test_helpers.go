@@ -116,8 +116,11 @@ func (sm *SystemManager) SetSystemStatusInDB(systemID string, status string) boo
 }
 
 // TESTING ONLY: RemoveAllSystems cancels and joins updaters before database cleanup.
-// Callers must stop producers that can add systems before calling it.
+// It cancels the manager before joining startup producers and their updaters.
 func (sm *SystemManager) RemoveAllSystems() {
+	if sm.cancel != nil {
+		sm.cancel()
+	}
 	for _, system := range sm.systems.GetAll() {
 		sm.RemoveSystem(system.Id)
 	}

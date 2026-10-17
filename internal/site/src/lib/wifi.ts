@@ -4,7 +4,11 @@ import type { SystemRecord, WiFi } from "@/types"
 // Current system info is independent of the selected historical chart window.
 // No fallback to history: missing data, disconnect and offline all hide the panel.
 export function connectedWiFi(system: Pick<SystemRecord, "status" | "info">): [string, WiFi][] {
-	return system.status === "up" ? Object.entries(system.info?.wf ?? {}).sort(([a], [b]) => a.localeCompare(b)) : []
+	return system.status === "up"
+		? Object.entries(system.info?.wf ?? {})
+				.filter(([, wifi]) => wifi != null)
+				.sort(([a], [b]) => a.localeCompare(b))
+		: []
 }
 
 /** Strongest connection by RSSI, falling back to the first when none report a signal. */

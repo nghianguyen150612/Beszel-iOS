@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro"
+import { gpuPowerSeries } from "@/lib/gpu"
 import { Fragment, type ReactNode, useRef, useMemo } from "react"
 import AreaChartDefault, { type DataPoint } from "@/components/charts/area-chart"
 import LineChartDefault from "@/components/charts/line-chart"
@@ -29,6 +30,7 @@ export function GpuPowerChart({
 			const parts: string[] = []
 			for (const id in gpus) {
 				const gpu = gpus[id] as GPUData
+				if (!gpu) continue
 				if (gpu.p !== undefined) parts.push(`${id}:${gpu.n}`)
 				if (gpu.pp !== undefined) parts.push(`${id}:${gpu.n}${packageKey}`)
 			}
@@ -39,39 +41,11 @@ export function GpuPowerChart({
 
 	const dataPoints = useMemo((): DataPoint[] => {
 		if (!gpuPowerKey) return []
-		const totals = new Map<string, { label: string; gpuId: string; isPackage: boolean; total: number }>()
-		for (const record of statsRef.current) {
-			const gpus = record.stats?.g
-			if (!gpus) continue
-			for (const id in gpus) {
-				const gpu = gpus[id] as GPUData
-				const key = gpu.n
-				const existing = totals.get(key)
-				if (existing) {
-					existing.total += gpu.p ?? 0
-				} else {
-					totals.set(key, { label: gpu.n, gpuId: id, isPackage: false, total: gpu.p ?? 0 })
-				}
-				if (gpu.pp !== undefined) {
-					const pkgKey = `${gpu.n}${packageKey}`
-					const existingPkg = totals.get(pkgKey)
-					if (existingPkg) {
-						existingPkg.total += gpu.pp
-					} else {
-						totals.set(pkgKey, { label: pkgKey, gpuId: id, isPackage: true, total: gpu.pp })
-					}
-				}
-			}
-		}
-		const sorted = Array.from(totals.values()).sort((a, b) => b.total - a.total)
-		return sorted.map(
+		const series = gpuPowerSeries(statsRef.current)
+		return series.map(
 			(entry, i): DataPoint => ({
-				label: entry.label,
-				dataKey: (data: SystemStatsRecord) => {
-					const gpu = data.stats?.g?.[entry.gpuId]
-					return entry.isPackage ? (gpu?.pp ?? 0) : (gpu?.p ?? 0)
-				},
-				color: `hsl(${226 + (((i * 360) / sorted.length) % 360)}, 65%, 52%)`,
+				...entry,
+				color: `hsl(${226 + (((i * 360) / series.length) % 360)}, 65%, 52%)`,
 				opacity: 1,
 			})
 		)
@@ -113,7 +87,7 @@ export function GpuCharts({
 	hasGpuEnginesData: boolean
 	children?: ReactNode
 }) {
-	const gpuIds = Object.keys(lastGpus)
+	const gpuIds = Object.keys(lastGpus).filter((id) => lastGpus[id])
 	return (
 		<div className="grid gap-4">
 			{(children || hasGpuEnginesData) && (
@@ -149,7 +123,7 @@ export function GpuCharts({
 										dataPoints={[
 											{
 												label: t`Usage`,
-												dataKey: ({ stats }) => stats?.g?.[id]?.u ?? 0,
+												dataKey: ({ stats }) => stats?.g?.[id]?.u ?? null,
 												color: 1,
 												opacity: 0.35,
 											},
@@ -171,7 +145,7 @@ export function GpuCharts({
 											dataPoints={[
 												{
 													label: t`Usage`,
-													dataKey: ({ stats }) => stats?.g?.[id]?.mu ?? 0,
+													dataKey: ({ stats }) => stats?.g?.[id]?.mu ?? null,
 													color: 2,
 													opacity: 0.25,
 												},
@@ -204,7 +178,7 @@ function GpuEnginesChart({ chartData }: { chartData: ChartData }) {
 		const gpus = chartData.systemStats[i].stats?.g
 		if (!gpus) continue
 		for (const id in gpus) {
-			if (gpus[id].e) {
+			if (gpus[id]?.e) {
 				enginesKey = id + "\0" + Object.keys(gpus[id].e).sort().join("\0")
 				break
 			}
@@ -221,7 +195,7 @@ function GpuEnginesChart({ chartData }: { chartData: ChartData }) {
 			gpuId: gId,
 			dataPoints: engineNames.map((engine, i) => ({
 				label: engine,
-				dataKey: ({ stats }: SystemStatsRecord) => stats?.g?.[gId]?.e?.[engine] ?? 0,
+				dataKey: ({ stats }: SystemStatsRecord) => stats?.g?.[gId]?.e?.[engine] ?? null,
 				color: `hsl(${140 + (((i * 360) / engineNames.length) % 360)}, 65%, 52%)`,
 				opacity: 0.35,
 			})),

@@ -1,3 +1,4 @@
+import { byteRate } from "@/lib/metrics"
 import { useMemo } from "react"
 import { t } from "@lingui/core/macro"
 import AreaChartDefault from "@/components/charts/area-chart"
@@ -52,9 +53,9 @@ export function BandwidthChart({
 						label: t`Sent`,
 						dataKey(data: SystemStatsRecord) {
 							if (showMax) {
-								return data?.stats?.bm?.[0] ?? (data?.stats?.nsm ?? 0) * 1024 * 1024
+								return byteRate(data?.stats?.bm?.[0], data?.stats?.nsm)
 							}
-							return data?.stats?.b?.[0] ?? (data?.stats?.ns ?? 0) * 1024 * 1024
+							return byteRate(data?.stats?.b?.[0], data?.stats?.ns)
 						},
 						color: 5,
 						opacity: 0.2,
@@ -63,9 +64,9 @@ export function BandwidthChart({
 						label: t`Received`,
 						dataKey(data: SystemStatsRecord) {
 							if (showMax) {
-								return data?.stats?.bm?.[1] ?? (data?.stats?.nrm ?? 0) * 1024 * 1024
+								return byteRate(data?.stats?.bm?.[1], data?.stats?.nrm)
 							}
-							return data?.stats?.b?.[1] ?? (data?.stats?.nr ?? 0) * 1024 * 1024
+							return byteRate(data?.stats?.b?.[1], data?.stats?.nr)
 						},
 						color: 2,
 						opacity: 0.2,
@@ -104,19 +105,17 @@ export function ContainerNetworkChart({
 	const { filter, dataPoints, filteredKeys } = useContainerDataPoints(networkConfig, (key, data) => {
 		const payload = data[key]
 		if (!payload) return null
-		const sent = payload?.b?.[0] ?? (payload?.ns ?? 0) * 1024 * 1024
-		const recv = payload?.b?.[1] ?? (payload?.nr ?? 0) * 1024 * 1024
-		return sent + recv
+		const sent = byteRate(payload?.b?.[0], payload?.ns)
+		const recv = byteRate(payload?.b?.[1], payload?.nr)
+		return sent === null || recv === null ? null : sent + recv
 	})
 
 	const contentFormatter = useMemo(() => {
-		const getRxTxBytes = (record?: { b?: [number, number]; ns?: number; nr?: number }) => {
-			if (record?.b?.length && record.b.length >= 2) {
-				return [Number(record.b[0]) || 0, Number(record.b[1]) || 0]
-			}
-			return [(record?.ns ?? 0) * 1024 * 1024, (record?.nr ?? 0) * 1024 * 1024]
-		}
-		const formatRxTx = (recv: number, sent: number) => {
+		const getRxTxBytes = (record?: { b?: [number, number]; ns?: number; nr?: number }) =>
+			[byteRate(record?.b?.[0], record?.ns), byteRate(record?.b?.[1], record?.nr)] as const
+
+		const formatRxTx = (recv: number | null, sent: number | null) => {
+			if (recv === null || sent === null) return null
 			const { value: receivedValue, unit: receivedUnit } = formatBytes(recv, true, userSettings.unitNet, false)
 			const { value: sentValue, unit: sentUnit } = formatBytes(sent, true, userSettings.unitNet, false)
 			return (
@@ -135,15 +134,18 @@ export function ContainerNetworkChart({
 				if (key === "__total__") {
 					let totalSent = 0
 					let totalRecv = 0
+					let observed = false
 					const payloadData = item?.payload && typeof item.payload === "object" ? item.payload : {}
 					for (const [containerKey, value] of Object.entries(payloadData)) {
 						if (!value || typeof value !== "object") continue
 						if (filteredKeys.has(containerKey)) continue
 						const [sent, recv] = getRxTxBytes(value as { b?: [number, number]; ns?: number; nr?: number })
+						if (sent === null || recv === null) return null
+						observed = true
 						totalSent += sent
 						totalRecv += recv
 					}
-					return formatRxTx(totalRecv, totalSent)
+					return observed ? formatRxTx(totalRecv, totalSent) : null
 				}
 				const [sent, recv] = getRxTxBytes(item?.payload?.[key])
 				return formatRxTx(recv, sent)

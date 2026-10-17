@@ -72,6 +72,9 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 		case "Disk":
 			maxUsedPct := data.Info.DiskPct
 			for _, fs := range data.Stats.ExtraFs {
+				if fs == nil || fs.DiskTotal <= 0 {
+					continue
+				}
 				usedPct := fs.DiskUsed / fs.DiskTotal * 100
 				if usedPct > maxUsedPct {
 					maxUsedPct = usedPct
@@ -87,7 +90,7 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 			}
 			val = maxUsedPct
 		case "Temperature":
-			if data.Info.DashboardTemp < 1 {
+			if len(data.Stats.Temperatures) == 0 && data.Info.DashboardTemp < 1 {
 				continue
 			}
 			val = data.Info.DashboardTemp
@@ -102,6 +105,9 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 			val = data.Info.LoadAvg[2]
 			unit = ""
 		case "GPU":
+			if len(data.Stats.GPUData) == 0 && data.Info.GpuPct == 0 {
+				continue
+			}
 			val = data.Info.GpuPct
 		case "Battery":
 			if !hasRepresentativeBattery(data.Stats.Battery, data.Stats.Batteries) {
@@ -239,12 +245,14 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 			case "Disk":
 				if alert.mapSums == nil {
 					alert.mapSums = make(map[string]float32, len(stats.ExtraFs)+1)
+					alert.mapCounts = make(map[string]uint16, len(stats.ExtraFs)+1)
 				}
 				// add root disk
 				if _, ok := alert.mapSums["root"]; !ok {
 					alert.mapSums["root"] = 0.0
 				}
 				alert.mapSums["root"] += float32(stats.Disk)
+				alert.mapCounts["root"]++
 				// add extra disks from historical record
 				for key, fs := range stats.ExtraFs {
 					if fs.DiskTotal > 0 {
@@ -252,6 +260,7 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 							alert.mapSums[key] = 0.0
 						}
 						alert.mapSums[key] += float32(fs.DiskUsed / fs.DiskTotal * 100)
+						alert.mapCounts[key]++
 					}
 				}
 				// add zfs pool usage from historical record
@@ -262,17 +271,23 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 							alert.mapSums[zfsKey] = 0.0
 						}
 						alert.mapSums[zfsKey] += float32(pool.Used / pool.Total * 100)
+						alert.mapCounts[zfsKey]++
 					}
 				}
 			case "Temperature":
+				if len(stats.Temperatures) == 0 {
+					continue
+				}
 				if alert.mapSums == nil {
 					alert.mapSums = make(map[string]float32, len(stats.Temperatures))
+					alert.mapCounts = make(map[string]uint16, len(stats.Temperatures))
 				}
 				for key, temp := range stats.Temperatures {
 					if _, ok := alert.mapSums[key]; !ok {
 						alert.mapSums[key] = float32(0)
 					}
 					alert.mapSums[key] += temp
+					alert.mapCounts[key]++
 				}
 			case "LoadAvg1":
 				alert.val += stats.LoadAvg[0]
@@ -315,7 +330,10 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 		case "Disk":
 			maxPct := float32(0)
 			for key, value := range alert.mapSums {
-				sumPct := float32(value)
+				if float32(alert.mapCounts[key]) < float32(alert.min)/1.2 {
+					continue
+				}
+				sumPct := value / float32(alert.mapCounts[key])
 				if sumPct > maxPct {
 					maxPct = sumPct
 					alert.descriptor = diskAlertDescriptor(key)
@@ -326,15 +344,23 @@ func (am *AlertManager) HandleSystemAlerts(systemRecord *core.Record, data *syst
 					}
 				}
 			}
-			alert.val = float64(maxPct / float32(alert.count))
+			alert.val = float64(maxPct)
 		case "Temperature":
 			maxTemp := float32(0)
+			hasValue := false
 			for key, value := range alert.mapSums {
-				sumTemp := float32(value) / float32(alert.count)
-				if sumTemp > maxTemp {
+				if float32(alert.mapCounts[key]) < float32(alert.min)/1.2 {
+					continue
+				}
+				sumTemp := value / float32(alert.mapCounts[key])
+				if !hasValue || sumTemp > maxTemp {
+					hasValue = true
 					maxTemp = sumTemp
 					alert.descriptor = fmt.Sprintf("Highest sensor %s", key)
 				}
+			}
+			if !hasValue {
+				continue
 			}
 			alert.val = float64(maxTemp)
 		default:

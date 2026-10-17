@@ -114,8 +114,9 @@ func (sm *SystemManager) Initialize() error {
 		return err
 	}
 
-	// Start systems in background with staggered timing
-	go func() {
+	// Track the startup producer before it can register child updaters.
+	// Waiting for shutdown must not race a late WaitGroup.Add.
+	sm.updaters.Go(func() {
 		// Calculate staggered delay between system starts (max 2 seconds per system)
 		delta := interval / max(1, len(systems))
 		delta = min(delta, 2_000)
@@ -127,7 +128,7 @@ func (sm *SystemManager) Initialize() error {
 			}
 			_ = sm.AddSystem(system)
 		}
-	}()
+	})
 	return nil
 }
 
@@ -230,7 +231,7 @@ func (sm *SystemManager) onRecordAfterUpdateSuccess(e *core.RecordEvent) error {
 		_ = deactivateAlerts(e.App, e.Record.Id, true)
 		// Resume monitoring, preferring existing WebSocket connection
 		if ok && system.WsConn != nil {
-			go system.update()
+			sm.updaters.Go(func() { _ = system.update() })
 			return e.Next()
 		}
 		// Start new monitoring session

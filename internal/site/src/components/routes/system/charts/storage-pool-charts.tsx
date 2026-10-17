@@ -1,3 +1,4 @@
+import { poolByteRate } from "@/lib/metrics"
 import { t } from "@lingui/core/macro"
 import AreaChartDefault from "@/components/charts/area-chart"
 import { decimalString, formatBytes, toFixedFloat } from "@/lib/utils"
@@ -16,14 +17,8 @@ const poolUsage =
 		const pool = stats?.z?.[name]
 		return pool && !!pool.raw === raw ? pool.du : null
 	}
-const poolRead =
-	(name: string) =>
-	({ stats }: SystemStatsRecord) =>
-		stats?.z?.[name]?.rb ?? 0
-const poolWrite =
-	(name: string) =>
-	({ stats }: SystemStatsRecord) =>
-		stats?.z?.[name]?.wb ?? 0
+const poolRead = (name: string) => (record: SystemStatsRecord) => poolByteRate(record, name, "rb")
+const poolWrite = (name: string) => (record: SystemStatsRecord) => poolByteRate(record, name, "wb")
 
 export function ZfsPoolUsageChart({ systemData, poolName }: { systemData: SystemData; poolName: string }) {
 	const { chartData, grid, dataEmpty } = systemData
@@ -44,7 +39,13 @@ export function ZfsPoolUsageChart({ systemData, poolName }: { systemData: System
 			empty={dataEmpty}
 			grid={grid}
 			title={`${displayName} ${t`Usage`}`}
-			description={pool.raw ? <RawCapacityLabel label={t`Raw usage of storage pool ${displayName}`} /> : t`Usage of storage pool ${displayName}`}
+			description={
+				pool.raw ? (
+					<RawCapacityLabel label={t`Raw usage of storage pool ${displayName}`} />
+				) : (
+					t`Usage of storage pool ${displayName}`
+				)
+			}
 		>
 			<AreaChartDefault
 				chartData={chartData}
@@ -121,7 +122,9 @@ export function ZfsCharts({ systemData }: { systemData: SystemData }) {
 	const pools = latest?.z ?? {}
 	const visiblePools = Object.keys(pools)
 		.filter((name) => !pools[name].hu || !pools[name].hi)
-		.sort((a, b) => (pools[a].n || a).localeCompare(pools[b].n || b, undefined, { numeric: true }) || a.localeCompare(b))
+		.sort(
+			(a, b) => (pools[a].n || a).localeCompare(pools[b].n || b, undefined, { numeric: true }) || a.localeCompare(b)
+		)
 	if (visiblePools.length === 0) {
 		return null
 	}

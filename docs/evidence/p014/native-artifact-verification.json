@@ -1,0 +1,59 @@
+{
+  "workflow_run": 38941248597,
+  "workflow_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38941248597",
+  "workflow_source_sha": "3f153dca940651ab394663b9d85d14cbde64b957",
+  "artifacts": {
+    "beszel-ios-arm64": {
+      "id": 12063812720,
+      "archive_sha256": "9c3cd14381a8ca31d0cbc88fb4479e60b3590f442b85bd7a2b7aee0fc6ae5bd0",
+      "size_bytes": 16284566
+    },
+    "ios-native-validation": {
+      "id": 12064151258,
+      "archive_sha256": "ca429ae8eab0870deccaa5cb8484b7c7a4a7e397d69d0060575bf0a4d6d38a92",
+      "size_bytes": 7816
+    },
+    "ios-wifi-diagnostic-disabled": {
+      "id": 12064345480,
+      "archive_sha256": "cc6055444127ae13a9309778543d410ae384a193e664623cba53a7d3aff4edb7",
+      "size_bytes": 6051
+    }
+  },
+  "payload_verifier": ".github/scripts/verify-ios-artifacts.py PASS with Go 1.27.1 and current internal/site/dist",
+  "agent": {
+    "sha256": "72b0d235e6b2d682a0613c656139a05f4015d9cb1bc3f83f4c96a94252a1c8fc",
+    "bytes": 9542984,
+    "cpu": "arm64",
+    "macho": "MH_EXECUTE",
+    "platform": 2,
+    "minimum_ios": "12.0",
+    "go": "1.27.1",
+    "target": "ios/arm64",
+    "vcs_revision": "3f153dca940651ab394663b9d85d14cbde64b957",
+    "vcs_modified": false
+  },
+  "hub": {
+    "sha256": "8bd41ef8cefcf91135221dbe696da9525afaf3fe4f42dca6ab66ece2b21ff7a0",
+    "bytes": 31977208,
+    "cpu": "arm64",
+    "macho": "MH_EXECUTE",
+    "platform": 2,
+    "minimum_ios": "12.0",
+    "go": "1.27.1",
+    "target": "ios/arm64",
+    "embedded_asset_count": 95,
+    "embedded_assets_match_current_frontend": true,
+    "vcs_revision": "3f153dca940651ab394663b9d85d14cbde64b957",
+    "vcs_modified": false
+  },
+  "sha256sums": "PASS",
+  "a7_runtime": {
+    "status": "PASS",
+    "go": "1.27.1",
+    "source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+    "patched_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f",
+    "description": "zero-guarded YIELD loop; no CNTFRQ_EL0/CNTVCT_EL0 reads"
+  },
+  "production_mobilewifi_hard_link": "absent",
+  "diagnostic_artifact": "separate from production payload"
+}

@@ -1,0 +1,138 @@
+{
+  "schema": 2,
+  "status": "P014 VALIDATION PASS — MERGE PENDING",
+  "starting_sha": "00c14bbf2756213cc2afef828ef7d5b9af26f1d6",
+  "feature_branch": "ios/hub-monitor-alert-rebuild",
+  "base_branch": "ios/upstream-v021-integration",
+  "pull_request": "https://github.com/nghianguyen150612/Beszel-iOS/pull/17",
+  "abandoned_pull_request": {
+    "number": 16,
+    "state": "closed-unmerged",
+    "implementation_imported": false
+  },
+  "backend_test_source_sha": "3f153dca940651ab394663b9d85d14cbde64b957",
+  "latest_source_candidate_sha": "bf9c4d4b3c8910ab4e2546fbbf5d4e75c93864b6",
+  "post_native_source_change": "ca7108b7 formats touched TypeScript/TSX only; bf9c4d4b6 adds the verified risk disposition to the readiness validator and a regression test. No Go, Agent, Hub, entity, transport, alert, database, schema, or generated frontend behavior changed. Bun tests/build and Python audits were rerun; the current generated frontend was checked against the downloaded native Hub payload.",
+  "preservation": {
+    "frozen_upstream_reachable": 178,
+    "historical_ios_commits": 35,
+    "logical_ios_patches_accounted": 13,
+    "production_ios_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "frozen_main_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+    "P013_migration_backup_authorization_evidence_preserved": true,
+    "P012_native_rssi": "DEFERRED — REFERENCE DEVICE UNAVAILABLE"
+  },
+  "fixture_provenance": {
+    "linux": "source-derived synthetic protocol fixture; no native Agent execution claim",
+    "windows": "source-derived synthetic protocol fixture; no native Agent execution claim",
+    "macos": "source-derived synthetic protocol fixture; no native Agent execution claim",
+    "ios": "synthetic unavailable-optional-fields fixture; no iPad execution claim",
+    "hub_execution": "real Hub transport, decoding, polling, PocketBase persistence, API/history, monitor, alert, realtime and authorization paths with synthetic peers"
+  },
+  "checks": {
+    "matrix": "PASS: 178/178 upstream commits, 35/35 historical iOS commits, 13 logical patches; no unresolved audit rows",
+    "readiness": "PASS: 24 acceptance cases, 33 compatibility scenarios, 21 P0 risks",
+    "python_audits": "PASS: 55 tests",
+    "shell_suites": {
+      "upstream_sync": "PASS: 10",
+      "ios_patch_sentinels": "PASS: 45",
+      "bootstrap": "PASS: 54",
+      "installer": "PASS: 814"
+    },
+    "canonical_go": {
+      "status": "PASS",
+      "go": "1.27.1",
+      "command": "env -u NETWORK go test -tags 'testing no_ui' ./... -count=1 -timeout=20m",
+      "source_sha": "3f153dca940651ab394663b9d85d14cbde64b957",
+      "packages_with_tests": 27,
+      "other_packages": "compiled"
+    },
+    "race_suites": {
+      "full_groups": "PASS: ./agent ./agent/wifi ./internal/entities/system ./internal/hub/transport ./internal/hub/ws; ./internal/hub ./internal/hub/systems; ./internal/records ./internal/alerts",
+      "slowest_package": "internal/alerts PASS 672.772s within 15m",
+      "p014_hub_system_repetitions": "PASS count=3; Hub 40.079s; systems 153.509s",
+      "p014_records_alert_repetitions": "PASS count=3; records 14.440s; alerts 51.844s",
+      "p014_entities_repetitions": "PASS count=3; 1.018s",
+      "p009_websocket_repetitions": "PASS TestAgentWebSocketIntegration count=3; 15.720s"
+    },
+    "p009_race_disposition": "Reproduced on unchanged P013 at unsynchronized test read of ConnectionManager.State; test now uses existing locked reader and cancels/joins fixture Agent; candidate race repeats pass; no production auth/state algorithm change",
+    "frontend": {
+      "bun": "1.4.0",
+      "frozen_install": "PASS; bun.lock unchanged",
+      "catalog_generation_compilation": "PASS",
+      "typescript": "PASS through tsc -b",
+      "tests": "PASS: 55 tests, 267 assertions, 9 files",
+      "production_build": "PASS",
+      "embedded_asset_count": 95,
+      "generated_localization_edits": "restored; no P015 localization work"
+    },
+    "portable_builds": {
+      "linux_agent": {
+        "status": "PASS",
+        "sha256": "cdd763fea2a14e8b02dbeb20db321be08ad9693235f43f339ddc2f5c89ab6869"
+      },
+      "linux_hub": {
+        "status": "PASS",
+        "sha256": "0ff26992154e549cd84dcfe2fdb650cd32c6a78c78f2fa233cb27d7ea1e316df"
+      },
+      "windows_hub_systems_test": "PASS compile-only; no Windows runtime claim",
+      "freebsd_transport_test": "PASS compile-only; no FreeBSD runtime claim",
+      "platform_source_selection": "PASS"
+    },
+    "native_ci": {
+      "status": "PASS",
+      "source_sha": "3f153dca940651ab394663b9d85d14cbde64b957",
+      "ios_build_run": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38941248597",
+      "installer_run": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38941249967",
+      "p013_migration_fixture_run": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/38941249970",
+      "release_job": "SKIPPED",
+      "independent_artifact_verification": "PASS at ca7108b7 frontend output; current generated 95 assets match actual downloaded Hub artifact",
+      "individual_binary_sha256_verified": true
+    }
+  },
+  "native_artifacts": {
+    "go": "1.27.1",
+    "bun": "1.4.0",
+    "target": "GOOS=ios GOARCH=arm64 CGO_ENABLED=1 GOARM64=v8.0; iOS 12.0 minimum; macOS 14/iPhoneOS SDK",
+    "isolated_a7_runtime_patch": "PASS; source SHA256 preserved; zero-guarded YIELD loop and no counter reads",
+    "agent": {
+      "sha256": "72b0d235e6b2d682a0613c656139a05f4015d9cb1bc3f83f4c96a94252a1c8fc",
+      "bytes": 9542984,
+      "cpu": "arm64",
+      "filetype": "MH_EXECUTE",
+      "platform": 2,
+      "minos": "12.0",
+      "vcs_revision": "3f153dca940651ab394663b9d85d14cbde64b957",
+      "vcs_modified": false
+    },
+    "hub": {
+      "sha256": "8bd41ef8cefcf91135221dbe696da9525afaf3fe4f42dca6ab66ece2b21ff7a0",
+      "bytes": 31977208,
+      "cpu": "arm64",
+      "filetype": "MH_EXECUTE",
+      "platform": 2,
+      "minos": "12.0",
+      "embedded_asset_count": 95,
+      "vcs_revision": "3f153dca940651ab394663b9d85d14cbde64b957",
+      "vcs_modified": false
+    },
+    "sha256sums": "PASS: both downloaded payload binaries verified",
+    "mobilewifi_production_linkage": "PASS: no private MobileWiFi hard link",
+    "disabled_wifi_diagnostic": "separate artifact; excluded from production payload",
+    "archive_sha256": {
+      "beszel-ios-arm64": "9c3cd14381a8ca31d0cbc88fb4479e60b3590f442b85bd7a2b7aee0fc6ae5bd0",
+      "ios-native-validation": "ca429ae8eab0870deccaa5cb8484b7c7a4a7e397d69d0060575bf0a4d6d38a92",
+      "ios-wifi-diagnostic-disabled": "cc6055444127ae13a9309778543d410ae384a193e664623cba53a7d3aff4edb7"
+    }
+  },
+  "acceptance": {
+    "IOS-HUB-05": "PASS: four synthetic platform fixtures through actual Hub processing/persistence/API/history/alerts; no native OS Agent execution claim",
+    "R-REMOTE-OS-TELEMETRY": "VERIFIED for supported remote telemetry contract",
+    "R-IOS-FRONTEND-API": "VERIFIED for API/data-model/frontend transforms; route smoke remains P015",
+    "IOS-HUB-04": "PENDING P015 full route/asset/localization validation",
+    "p014_integration_gate": "PASS validation; normal PR merge pending",
+    "gate_D": "PENDING P015",
+    "P018": "physical iPad/A7 runtime validation remains outstanding",
+    "no_production_database_device_release_tag_or_deployment": true
+  }
+}

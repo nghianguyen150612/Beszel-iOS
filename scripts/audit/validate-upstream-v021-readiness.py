@@ -73,6 +73,7 @@ RISK_STATUS_VALUES = {
     "confirmed incompatibility",
     "potential regression",
     "untested risk",
+    "verified",
 }
 COMPAT_RESULT_VALUES = {
     "verified",

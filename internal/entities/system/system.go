@@ -107,15 +107,18 @@ func (b Battery) MarshalJSON() ([]byte, error) {
 }
 
 type GPUData struct {
-	Name        string             `json:"n" cbor:"0,keyasint"`
-	Temperature float64            `json:"-"`
-	MemoryUsed  float64            `json:"mu,omitzero" cbor:"1,keyasint,omitempty,omitzero"`
-	MemoryTotal float64            `json:"mt,omitzero" cbor:"2,keyasint,omitempty,omitzero"`
-	Usage       float64            `json:"u" cbor:"3,keyasint,omitempty"`
-	Power       float64            `json:"p,omitzero" cbor:"4,keyasint,omitempty"`
-	Count       float64            `json:"-"`
-	Engines     map[string]float64 `json:"e,omitempty" cbor:"5,keyasint,omitempty"`
-	PowerPkg    float64            `json:"pp,omitzero" cbor:"6,keyasint,omitempty"`
+	// Explicit legacy zero power readings need presence independent of value.
+	powerZeroPresent        bool
+	packagePowerZeroPresent bool
+	Name                    string             `json:"n" cbor:"0,keyasint"`
+	Temperature             float64            `json:"-"`
+	MemoryUsed              float64            `json:"mu,omitzero" cbor:"1,keyasint,omitempty,omitzero"`
+	MemoryTotal             float64            `json:"mt,omitzero" cbor:"2,keyasint,omitempty,omitzero"`
+	Usage                   float64            `json:"u" cbor:"3,keyasint,omitempty"`
+	Power                   float64            `json:"p,omitzero" cbor:"4,keyasint,omitempty"`
+	Count                   float64            `json:"-"`
+	Engines                 map[string]float64 `json:"e,omitempty" cbor:"5,keyasint,omitempty"`
+	PowerPkg                float64            `json:"pp,omitzero" cbor:"6,keyasint,omitempty"`
 }
 
 type FsStats struct {

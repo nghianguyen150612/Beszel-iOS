@@ -84,6 +84,7 @@ type SystemAlertData struct {
 	count        uint8
 	min          uint8
 	mapSums      map[string]float32
+	mapCounts    map[string]uint16
 	descriptor   string // override descriptor in notification body (for temp sensor, disk partition, etc)
 }
 

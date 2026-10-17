@@ -1,0 +1,9 @@
+Test output; tabs expanded and trailing whitespace removed.
+--- FAIL: TestP014CancelledPollDoesNotPersistLateResponse (0.39s)
+    p014_cancelled_poll_test.go:71:
+            Error Trace:    /workspace/Beszel-iOS/internal/hub/systems/p014_cancelled_poll_test.go:71
+            Error:          Expected error with "context canceled" in chain but got nil.
+            Test:           TestP014CancelledPollDoesNotPersistLateResponse
+FAIL
+FAIL    github.com/henrygd/beszel/internal/hub/systems  0.415s
+FAIL

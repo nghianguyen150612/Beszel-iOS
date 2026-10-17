@@ -748,6 +748,9 @@ func TestHandleAgentConnect(t *testing.T) {
 
 // TestAgentWebSocketIntegration tests WebSocket connection scenarios with an actual agent
 func TestAgentWebSocketIntegration(t *testing.T) {
+	t.Setenv("BESZEL_AGENT_DISABLE_SSH", "true")
+	t.Setenv("BESZEL_HUB_DISABLE_SSH", "true")
+
 	// Create hub and test app
 	hub, testApp, err := createTestHub(t)
 	require.NoError(t, err)
@@ -896,6 +899,14 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 
 			// Start agent in background
 			done := make(chan error, 1)
+			t.Cleanup(func() {
+				testAgent.GetConnectionManager().CancelForTesting()
+				select {
+				case <-done:
+				case <-time.After(5 * time.Second):
+					t.Error("test agent did not stop")
+				}
+			})
 			go func() {
 				serverOptions := agent.ServerOptions{
 					Network: "tcp",
@@ -920,15 +931,15 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 				case <-timeout:
 					// Timeout reached
 					if tc.expectConnection {
-						t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.State)
+						t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.StateForTesting())
 					} else {
-						t.Logf("Connection properly rejected (timeout) - agent state: %d", connectionManager.State)
+						t.Logf("Connection properly rejected (timeout) - agent state: %d", connectionManager.StateForTesting())
 					}
 					connectionResult = false
 				case <-ticker:
-					if connectionManager.State == agent.WebSocketConnected {
+					if connectionManager.StateForTesting() == agent.WebSocketConnected {
 						if tc.expectConnection {
-							t.Logf("WebSocket connection successful - agent state: %d", connectionManager.State)
+							t.Logf("WebSocket connection successful - agent state: %d", connectionManager.StateForTesting())
 							connectionResult = true
 						} else {
 							t.Errorf("Unexpected: Connection succeeded when it should have been rejected")
@@ -952,25 +963,26 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 				}
 			}
 
-			time.Sleep(20 * time.Millisecond)
-
-			// Verify fingerprint state by re-reading the specific record
-			updatedFingerprintRecord, err := testApp.FindRecordById("fingerprints", fingerprintRecord.Id)
-			require.NoError(t, err)
-			finalFingerprint := updatedFingerprintRecord.GetString("fingerprint")
-
-			switch tc.expectFingerprint {
-			case "empty":
-				assert.Empty(t, finalFingerprint, "Fingerprint should be empty")
-			case "unchanged":
-				assert.Equal(t, tc.dbFingerprint, finalFingerprint, "Fingerprint should not change when connection is rejected")
-			case "updated":
-				if tc.dbFingerprint == "" {
-					assert.NotEmpty(t, finalFingerprint, "Fingerprint should be updated after successful connection")
-				} else {
-					assert.NotEqual(t, tc.dbFingerprint, finalFingerprint, "Fingerprint should be updated after successful connection")
+			var finalFingerprint string
+			require.EventuallyWithT(t, func(c *assert.CollectT) {
+				updatedFingerprintRecord, err := testApp.FindRecordById("fingerprints", fingerprintRecord.Id)
+				if !assert.NoError(c, err) {
+					return
 				}
-			}
+				finalFingerprint = updatedFingerprintRecord.GetString("fingerprint")
+				switch tc.expectFingerprint {
+				case "empty":
+					assert.Empty(c, finalFingerprint)
+				case "unchanged":
+					assert.Equal(c, tc.dbFingerprint, finalFingerprint)
+				case "updated":
+					if tc.dbFingerprint == "" {
+						assert.NotEmpty(c, finalFingerprint)
+					} else {
+						assert.NotEqual(c, tc.dbFingerprint, finalFingerprint)
+					}
+				}
+			}, 5*time.Second, 20*time.Millisecond)
 
 			// A connected WebSocket does not mean the hub has finished verifying
 			// the agent and updating the system. Wait for the database state rather
@@ -992,6 +1004,9 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 
 // TestMultipleSystemsWithSameUniversalToken tests that multiple systems can share the same universal token
 func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
+	t.Setenv("BESZEL_AGENT_DISABLE_SSH", "true")
+	t.Setenv("BESZEL_HUB_DISABLE_SSH", "true")
+
 	// Create hub and test app
 	hub, testApp, err := createTestHub(t)
 	require.NoError(t, err)
@@ -1087,6 +1102,14 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 
 			// Start agent in background
 			done := make(chan error, 1)
+			t.Cleanup(func() {
+				testAgent.GetConnectionManager().CancelForTesting()
+				select {
+				case <-done:
+				case <-time.After(5 * time.Second):
+					t.Error("test agent did not stop")
+				}
+			})
 			go func() {
 				serverOptions := agent.ServerOptions{
 					Network: "tcp",
@@ -1110,15 +1133,15 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 				select {
 				case <-timeout:
 					if tc.expectConnection {
-						t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.State)
+						t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.StateForTesting())
 					} else {
-						t.Logf("Connection properly rejected (timeout) - agent state: %d", connectionManager.State)
+						t.Logf("Connection properly rejected (timeout) - agent state: %d", connectionManager.StateForTesting())
 					}
 					connectionResult = false
 				case <-ticker:
-					if connectionManager.State == agent.WebSocketConnected {
+					if connectionManager.StateForTesting() == agent.WebSocketConnected {
 						if tc.expectConnection {
-							t.Logf("WebSocket connection successful - agent state: %d", connectionManager.State)
+							t.Logf("WebSocket connection successful - agent state: %d", connectionManager.StateForTesting())
 							connectionResult = true
 						} else {
 							t.Errorf("Unexpected: Connection succeeded when it should have been rejected")
@@ -1191,10 +1214,12 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 // (universal_tokens collection) is accepted for agent self-registration even if it is not
 // present in the in-memory universalTokenMap.
 func TestPermanentUniversalTokenFromDB(t *testing.T) {
+	t.Setenv("BESZEL_AGENT_DISABLE_SSH", "true")
+	t.Setenv("BESZEL_HUB_DISABLE_SSH", "true")
 	// Create hub and test app
 	hub, testApp, err := createTestHub(t)
 	require.NoError(t, err)
-	defer cleanupTestHub(hub, testApp)
+	t.Cleanup(func() { cleanupTestHub(hub, testApp) })
 
 	// Get the hub's SSH key
 	hubSigner, err := hub.GetSSHKey("")
@@ -1242,6 +1267,14 @@ func TestPermanentUniversalTokenFromDB(t *testing.T) {
 
 	// Start agent in background
 	done := make(chan error, 1)
+	t.Cleanup(func() {
+		testAgent.GetConnectionManager().CancelForTesting()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Error("test agent did not stop")
+		}
+	})
 	go func() {
 		serverOptions := agent.ServerOptions{
 			Network: "tcp",
@@ -1262,9 +1295,9 @@ func TestPermanentUniversalTokenFromDB(t *testing.T) {
 	for {
 		select {
 		case <-timeout:
-			t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.State)
+			t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.StateForTesting())
 		case <-ticker:
-			if connectionManager.State == agent.WebSocketConnected {
+			if connectionManager.StateForTesting() == agent.WebSocketConnected {
 				// Success
 				goto verify
 			}
