@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "milestone": "P017",
+  "status": "PASS_CLOUD_VALIDATION",
+  "gate": "E",
+  "candidateStatus": "CLOUD_VALIDATED",
+  "startingIntegrationSha": "3ed79af25a03381f4c1b8800fd7cb93e3480403d",
+  "sourceBranch": "ios/release-candidate-validation",
+  "baseBranch": "ios/upstream-v021-integration",
+  "releaseTag": null,
+  "releasePublished": false,
+  "productionBranchSha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+  "frozenMainSha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+  "expectedFrozenUpstreamCommits": 178,
+  "expectedLogicalIosPatches": 13,
+  "p016": {
+    "pr": 20,
+    "merged": true,
+    "mergeSha": "3ed79af25a03381f4c1b8800fd7cb93e3480403d",
+    "reviewException": "OWNER_DIRECTED_ONLY; NO INDEPENDENT APPROVAL"
+  },
+  "checks": {
+    "releaseCandidateRegression": "PASS run 39095687534 on 5a7351f",
+    "nativeIosBuild": "PASS run 39095687398 on 5a7351f",
+    "installerLifecycle": "PASS run 39095687704 on 5a7351f",
+    "p013GenuineMigration": "PASS P016 unchanged product source bd0be1e via run 39028505022; not rerun on P017",
+    "artifactDownloadSha256": "PASS independent downloaded GitHub ZIP digest and payload SHA256SUMS",
+    "machoInspection": "PASS independent llvm-objdump LC_BUILD_VERSION iOS minOS12; runtime A7 tests",
+    "goRace": "PASS scoped Go race suites in native iOS Build",
+    "frontendAssetManifest": "PASS 95 assets"
+  },
+  "securityResiduals": [
+    {
+      "id": "GO-2026-6608",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "context": "reachable Go multipart parser in Go 1.27.1"
+    },
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "context": "build-only braces dependency"
+    }
+  ],
+  "deviceValidation": "PENDING_P018",
+  "nativeWifiRssi": "DEFERRED_REFERENCE_DEVICE_UNAVAILABLE",
+  "limits": [
+    "No native iOS artifact has been produced by this P017 branch yet",
+    "No P017 CI PASS claimed before logs",
+    "No physical A7, reboot, SSH or Tailscale validation",
+    "No release, deployment, tag, production DB mutation"
+  ],
+  "binaryTestedSourceSha": "5a7351f752376e206a3e1809b3698bb03cc87b98",
+  "productSourceUnchangedFromP016": true,
+  "productSourceEvidence": "All P017 changed files through final evidence are .github/workflows/* or docs/*; no product or installer input changed.",
+  "artifactEvidence": "docs/ios-release-candidate-artifacts.json",
+  "docs": [
+    "docs/ios-release-candidate.md",
+    "docs/ios-release-candidate.vi.md",
+    "docs/ios-release-security-review.md",
+    "docs/ios-p017-checkpoints.md"
+  ],
+  "reviewDisposition": "OWNER_DIRECTED_EXCEPTION_FOR_PR21_ONLY_NOT_AN_INDEPENDENT_REVIEW",
+  "productionDeploy": false
+}

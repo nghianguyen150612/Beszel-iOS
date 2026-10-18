@@ -1,0 +1,114 @@
+name: P017 Release Candidate Regression
+# Cloud-only candidate validation. No signing, tags, release uploads or deployments.
+on:
+  pull_request:
+    branches: [ios/upstream-v021-integration]
+    paths:
+      - '.github/workflows/p017-release-candidate.yml'
+      - '.github/workflows/ios-build.yml'
+      - 'docs/ios-release-candidate*'
+      - 'docs/ios-p017-*'
+      - 'tests/ios-workflow-isolation-test.py'
+      - 'install.sh'
+      - 'scripts/ios/install-beszel.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p017-rc-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  candidate-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout candidate source, not the PR merge pseudo-commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Go 1.27.1
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Bun 1.4.0
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Verify source provenance and frozen upstream ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(go version | awk '{print $3}')" = go1.27.1
+          test "$(bun --version)" = 1.4.0
+          git merge-base --is-ancestor bb23f99b3eeaced9608e11e280e7c986dba650be HEAD
+          git merge-base --is-ancestor 3ed79af25a03381f4c1b8800fd7cb93e3480403d HEAD
+          git diff --check
+          python3 scripts/audit/validate-upstream-v021-matrix.py
+          python3 scripts/audit/validate-upstream-v021-readiness.py
+      - name: Audit, bootstrap, installer and release isolation regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests/audit -p 'test_*.py' -v
+          python3 -m unittest discover -s tests/hub-migration -p 'test_*.py' -v
+          sh tests/upstream-sync-test.sh
+          sh tests/ios-patch-sentinels.sh
+          sh tests/bootstrap-test.sh
+          sh tests/install-sh-test.sh
+          python3 tests/ios-workflow-isolation-test.py
+          sh -n install.sh
+          sh -n scripts/ios/install-beszel.sh
+          printf '%s  %s\n' "$(sed -n 's/^engine_sha=//p' install.sh)" scripts/ios/install-beszel.sh | sha256sum -c -
+      - name: Build genuine pinned frontend and check lockfile immutability
+        shell: bash
+        working-directory: internal/site
+        run: |
+          set -euo pipefail
+          sha256sum bun.lock > "$RUNNER_TEMP/p017-lock.sha256"
+          bun install --frozen-lockfile
+          bun run sync
+          bun test
+          bun run build
+          sha256sum -c "$RUNNER_TEMP/p017-lock.sha256"
+          git restore -- src/locales
+          git diff --exit-code
+      - name: Full canonical Go regression and portable builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u NETWORK go test -tags 'testing no_ui' ./... -count=1 -timeout=20m
+          env -u NETWORK go build -tags 'no_ui' -o "$RUNNER_TEMP/p017-agent" ./internal/cmd/agent
+          env -u NETWORK go build -tags 'no_ui' -o "$RUNNER_TEMP/p017-hub" ./internal/cmd/hub
+      - name: Record source and frontend manifest (not a native iOS artifact)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root=pathlib.Path('internal/site/dist')
+          files=sorted(p for p in root.rglob('*') if p.is_file())
+          assert files and (root/'index.html').is_file(), 'Missing genuine frontend assets'
+          h=hashlib.sha256()
+          for p in files:
+              rel=p.relative_to(root).as_posix().encode()
+              data=p.read_bytes()
+              h.update(len(rel).to_bytes(4,'big')+rel+len(data).to_bytes(8,'big')+data)
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          result={'schema':1,'kind':'P017 regression evidence; NOT a release candidate native iOS binary','candidate_source_sha':sha,'frontend_asset_count':len(files),'frontend_asset_manifest_sha256':h.hexdigest(),'device_tested':False,'release_published':False,'tag_created':False}
+          pathlib.Path(os.environ['RUNNER_TEMP'],'p017-regression.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result,indent=2))
+          PY
+      - name: Upload candidate regression manifest only
+        uses: actions/upload-artifact@v4
+        with:
+          name: p017-regression-manifest
+          path: ${{ runner.temp }}/p017-regression.json
+          if-no-files-found: error
+          retention-days: 14

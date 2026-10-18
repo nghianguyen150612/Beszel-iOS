@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "milestone": "P017",
+  "candidateStatus": "CLOUD_VALIDATED",
+  "testedSourceCommit": "5a7351f752376e206a3e1809b3698bb03cc87b98",
+  "startingP016IntegrationCommit": "3ed79af25a03381f4c1b8800fd7cb93e3480403d",
+  "testedProductFilesUnchangedFromP016": true,
+  "provenance": "GitHub P017 PR diff: workflow and documentation only",
+  "toolchain": {
+    "go": "go1.27.1",
+    "bun": "1.4.0",
+    "goos": "ios",
+    "goarch": "arm64",
+    "goarm64": "v8.0",
+    "cgoEnabled": true,
+    "machoPlatform": 2,
+    "minimumIos": "12.0",
+    "iosSDK": "17.5",
+    "vcsModified": false
+  },
+  "workflowEvidence": {
+    "regression": {
+      "id": 39095687534,
+      "conclusion": "success",
+      "artifactId": 12124830866,
+      "artifactArchiveSha256": "3f10c86966a501815ede54768b50ef31759c61b8df45f988d89d7663a4b6e852"
+    },
+    "nativeIosBuild": {
+      "id": 39095687398,
+      "conclusion": "success",
+      "releaseJob": "skipped",
+      "payloadArtifactId": 12124073871,
+      "payloadArchiveSha256": "698335f09da4fe8f920b14176fe820f3733bd1a24064a3dede14456a5ce044c6",
+      "validationArtifactId": 12124123883,
+      "validationArchiveSha256": "b184bc87a402c76bfa5391f74db61a255c6a66f3971dbbc23c526b6a94c48b3e"
+    },
+    "installer": {
+      "id": 39095687704,
+      "conclusion": "success"
+    },
+    "genuineP013Migration": {
+      "id": 39028505022,
+      "conclusion": "success",
+      "source": "bd0be1efb1be75227db68f6f6865e8461eba26a5",
+      "note": "P016 source; P017 changes only workflows/docs; not rerun on P017 SHA"
+    }
+  },
+  "artifacts": {
+    "agent": {
+      "file": "beszel-agent-ios-arm64",
+      "sha256": "87dff966e93d324e2b83a5029c749ce4578f906f099c388811a8ad025f73a4df",
+      "sizeBytes": 9559440,
+      "macho": "MH_EXECUTE arm64",
+      "platform": 2,
+      "minIos": "12.0",
+      "vcsRevision": "5a7351f752376e206a3e1809b3698bb03cc87b98",
+      "goRuntimeA7CounterAccess": false
+    },
+    "hub": {
+      "file": "beszel-hub-ios-arm64",
+      "sha256": "54751f8191faddb58e8c933d0dff0929387cfd9cbe68e64b7c37c34a0bc309df",
+      "sizeBytes": 31977208,
+      "macho": "MH_EXECUTE arm64",
+      "platform": 2,
+      "minIos": "12.0",
+      "vcsRevision": "5a7351f752376e206a3e1809b3698bb03cc87b98",
+      "goRuntimeA7CounterAccess": false,
+      "embeddedAssetCount": 95
+    }
+  },
+  "frontend": {
+    "genuineAssetCount": 95,
+    "manifestSha256": "0d5895ddd46250a24a66da9b51025aad89ea85e7bbac4d3f31ec1fe4dc20eb71"
+  },
+  "integrityChecks": {
+    "downloadedPayloadZipDigestMatchesGithub": true,
+    "downloadedNativeValidationZipDigestMatchesGithub": true,
+    "sha256sumsAllFilesPass": true,
+    "independentLlvmObjdumpLcBuildVersionInspectionPass": true,
+    "iosA7RuntimeMetadataPass": true,
+    "noHardLinkedPrivateWifiSymbols": true
+  },
+  "unresolvedSecurity": [
+    {
+      "id": "GO-2026-6608",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "note": "Reachable multipart MIME parser in Go 1.27.1. Document and prioritize fixed toolchain."
+    },
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "note": "Build-only braces; not embedded in Hub frontend."
+    }
+  ],
+  "releasePublished": false,
+  "tagCreated": false,
+  "productionDeploy": false,
+  "deviceAcceptance": "PENDING P018",
+  "nativeWifiRSSI": "DEFERRED P018",
+  "evidenceScope": "Cloud validation only, not native device execution; distinct from P018 acceptance."
+}

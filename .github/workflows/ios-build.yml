@@ -2,6 +2,13 @@ name: iOS Build
 
 on:
   workflow_dispatch:
+  # P017 review-only native verification: this trigger cannot publish releases.
+  pull_request:
+    branches: [ios/upstream-v021-integration]
+    paths:
+      - ".github/workflows/ios-build.yml"
+      - ".github/workflows/p017-release-candidate.yml"
+      - "docs/ios-release-candidate*"
   push:
     branches:
       - iOS
@@ -51,6 +58,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -75,6 +85,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
 
       - name: Run iOS maintenance sentinels
         shell: bash
@@ -127,7 +140,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/audit/ios_wifi/native.py --host --output "$RUNNER_TEMP/wifi-host" --revision "$GITHUB_SHA"
+          python3 scripts/audit/ios_wifi/native.py --host --output "$RUNNER_TEMP/wifi-host" --revision "$(git rev-parse HEAD)"
           cp "$RUNNER_TEMP/wifi-host/validation.json" "$RUNNER_TEMP/wifi-host-validation.json"
           BESZEL_WIFI_PROBE_TEST_PATH="$RUNNER_TEMP/wifi-host/beszel-ios-wifi-probe" \
             env -u NETWORK go test -race -v ./agent/wifi/ioshelper -count=3 -timeout=180s
@@ -216,7 +229,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/audit/ios_wifi/native.py --ios --output "$RUNNER_TEMP/wifi-ios" --revision "$GITHUB_SHA"
+          python3 scripts/audit/ios_wifi/native.py --ios --output "$RUNNER_TEMP/wifi-ios" --revision "$(git rev-parse HEAD)"
           go test -c -o "$RUNNER_TEMP/ios-wifi-client.test" ./agent/wifi/ioshelper
 
       - name: Build Beszel Agent and Hub twice with isolated caches
@@ -277,7 +290,7 @@ jobs:
           set -euo pipefail
           (cd build/ios && shasum -a 256 beszel-agent-ios-arm64 beszel-hub-ios-arm64 > SHA256SUMS && shasum -a 256 -c SHA256SUMS)
           cat build/ios/SHA256SUMS
-          python3 .github/scripts/verify-ios-artifacts.py build/ios --frontend internal/site/dist --expected-commit "$GITHUB_SHA" --output "$RUNNER_TEMP/native-artifacts.json"
+          python3 .github/scripts/verify-ios-artifacts.py build/ios --frontend internal/site/dist --expected-commit "$(git rev-parse HEAD)" --output "$RUNNER_TEMP/native-artifacts.json"
           sh tests/ios-macho-validation-test.sh build/ios/beszel-agent-ios-arm64 build/ios/beszel-hub-ios-arm64
           git diff --exit-code
 
