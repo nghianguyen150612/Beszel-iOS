@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "milestone": "P018",
+  "status": "BLOCKED_REFERENCE_DEVICE_UNAVAILABLE",
+  "gate": "F",
+  "gateF": "PENDING",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "base": "ios/upstream-v021-integration",
+  "startingIntegrationSha": "f9d6500c7a68572dc8e464dd305d79bf6c1e79a9",
+  "device": {
+    "model": "iPad mini 2 A1489/iPad4,4",
+    "soc": "Apple A7",
+    "ios": "12.5.7",
+    "jailbreak": "Amethyst/Procursus rootful",
+    "physicalAccess": false
+  },
+  "candidate": {
+    "release": false,
+    "tag": null,
+    "productBuildSha": "5a7351f752376e206a3e1809b3698bb03cc87b98",
+    "iosBuildRun": 39095687398,
+    "agentSha256": "87dff966e93d324e2b83a5029c749ce4578f906f099c388811a8ad025f73a4df",
+    "hubSha256": "54751f8191faddb58e8c933d0dff0929387cfd9cbe68e64b7c37c34a0bc309df"
+  },
+  "phases": {
+    "readOnlyPreflight": "NOT_RUN_ON_IPAD",
+    "coldBackupAndRecovery": "NOT_STARTED_REQUIRES_OPERATOR",
+    "stagedCandidateSigning": "NOT_STARTED_REQUIRES_OPERATOR",
+    "nativeRuntime": "NOT_RUN",
+    "telemetryAndNetwork": "NOT_RUN",
+    "launchdAndReboot": "NOT_RUN",
+    "dataPreservationAndRollback": "NOT_RUN",
+    "releaseApproval": "NOT_GRANTED"
+  },
+  "acceptance": {
+    "A7-DEVICE-01": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-01": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-02": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-03": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-04": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-05": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-06": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-INSTALL-05": "PENDING_PHYSICAL_EVIDENCE",
+    "DB-DEVICE-01": "PENDING_PHYSICAL_EVIDENCE",
+    "WIFI-ABI-12": "PENDING_PHYSICAL_EVIDENCE",
+    "WIFI-ASSOCIATION-12": "PENDING_PHYSICAL_EVIDENCE",
+    "WIFI-AUTH-12": "PENDING_PHYSICAL_EVIDENCE",
+    "WIFI-BOUND-12": "PENDING_PHYSICAL_EVIDENCE"
+  },
+  "wifiNativeRSSI": "DEFERRED_P012_NO_AUTHORIZED_NATIVE_ACQUISITION",
+  "securityResiduals": [
+    {
+      "id": "GO-2026-6608",
+      "severity": "HIGH",
+      "status": "OPEN"
+    },
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "severity": "HIGH",
+      "status": "OPEN"
+    }
+  ],
+  "safety": {
+    "releasePublished": false,
+    "tagCreated": false,
+    "deviceContacted": false,
+    "productionDatabaseChanged": false,
+    "launchDaemonsChanged": false,
+    "automatedInstall": false,
+    "explicitReleaseAuthorization": false
+  },
+  "notes": [
+    "Rootful only; no Chimera-specific tweak instructions",
+    "No v0.21 GitHub Release exists; never test it by calling an installer that resolves Latest",
+    "Historical v0.19 on-device PASS is not v0.21 hardware evidence",
+    "No device testimony or credentials entered; GitHub evidence must remain sanitized"
+  ]
+}
