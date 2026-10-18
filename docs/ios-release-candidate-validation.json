@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "milestone": "P017",
+  "status": "IN_PROGRESS",
+  "gate": "E",
+  "candidateStatus": "UNVERIFIED",
+  "startingIntegrationSha": "3ed79af25a03381f4c1b8800fd7cb93e3480403d",
+  "sourceBranch": "ios/release-candidate-validation",
+  "baseBranch": "ios/upstream-v021-integration",
+  "releaseTag": null,
+  "releasePublished": false,
+  "productionBranchSha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+  "frozenMainSha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+  "expectedFrozenUpstreamCommits": 178,
+  "expectedLogicalIosPatches": 13,
+  "p016": {
+    "pr": 20,
+    "merged": true,
+    "mergeSha": "3ed79af25a03381f4c1b8800fd7cb93e3480403d",
+    "reviewException": "OWNER_DIRECTED_ONLY; NO INDEPENDENT APPROVAL"
+  },
+  "checks": {
+    "releaseCandidateRegression": "PENDING",
+    "nativeIosBuild": "PENDING",
+    "installerLifecycle": "PENDING_P017_SOURCE",
+    "p013GenuineMigration": "PENDING_P017_SOURCE",
+    "artifactDownloadSha256": "PENDING",
+    "MachoInspection": "PENDING",
+    "goRace": "PENDING",
+    "frontendAssetManifest": "PENDING",
+    "branchProtection": "UNVERIFIED"
+  },
+  "securityResiduals": [
+    {
+      "id": "GO-2026-6608",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "context": "reachable Go multipart parser in Go 1.27.1"
+    },
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "severity": "HIGH",
+      "status": "OPEN",
+      "context": "build-only braces dependency"
+    }
+  ],
+  "deviceValidation": "PENDING_P018",
+  "nativeWifiRssi": "DEFERRED_REFERENCE_DEVICE_UNAVAILABLE",
+  "limits": [
+    "No native iOS artifact has been produced by this P017 branch yet",
+    "No P017 CI PASS claimed before logs",
+    "No physical A7, reboot, SSH or Tailscale validation",
+    "No release, deployment, tag, production DB mutation"
+  ]
+}
