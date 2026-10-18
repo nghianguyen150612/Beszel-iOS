@@ -46,8 +46,9 @@ Host check results, all recorded at the result checkpoint above:
 | `P018-CLOUD-07` | `python3 scripts/audit/validate-upstream-v021-matrix.py` | 178/178 upstream commits, 35/35 historical iOS commits, 0 unresolved rows | Accounting only |
 | `P018-CLOUD-08` | `python3 scripts/audit/validate-upstream-v021-readiness.py` | 178 commits, 13 logical iOS patches, 21 P0 risks, 24 acceptance cases, 33 compatibility scenarios | Accounting only |
 | `P018-CLOUD-09` | `git diff --check` | Exit 0 | Local whitespace check |
+| `P018-CLOUD-10` | PR workflow `.github/workflows/ios-installer.yml` on commit `e6e41c3e24654703006b4501251c4ebb2f8b1456` | [Run 39099705082](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39099705082) completed SUCCESS; every step passed | Hosted Linux CI only |
 
-For each check, candidate binary hash is **N/A** because no Agent/Hub executable was run; none of these host results passes a physical acceptance case. GitHub CI for the changed workflow and preflight test must still complete after push. Gate F remains `BLOCKED — REFERENCE DEVICE UNAVAILABLE`.
+For each check, candidate binary hash is **N/A** because no Agent/Hub executable was run; none of these host results passes a physical acceptance case. The changed-file workflow completed successfully on commit `e6e41c3e24654703006b4501251c4ebb2f8b1456` at `2026-10-18T05:12:16Z`; its result is not physical-device evidence. Gate F remains `BLOCKED — REFERENCE DEVICE UNAVAILABLE`.
 
 ## Next required step
 

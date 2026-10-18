@@ -78,7 +78,12 @@
   ],
   "cloudPreparation": {
     "recordedAtUtc": "2026-10-18T05:09:23Z",
+    "lastUpdatedAtUtc": "2026-10-18T05:12:16Z",
     "repositoryHeadUnderTest": "25aa2589182d1460839a300849f71f394472a4fb",
+    "workingTreeChangesAtLocalTest": [
+      ".github/workflows/ios-installer.yml",
+      "tests/ios-p018-device-preflight-test.sh"
+    ],
     "deviceConnection": "BLOCKED_NO_AUTHORIZED_DEVICE_CONNECTION",
     "upstreamAccounting": {
       "frozenUpstreamCommits": "PASS 178/178",
@@ -183,7 +188,20 @@
         "expected": "No whitespace errors or conflict markers in the working diff.",
         "actual": "Exit status 0.",
         "result": "PASS",
-        "limitation": "Local source check; CI still required for the changed workflow and script."
+        "limitation": "Local whitespace check only; hosted CI evidence is recorded separately as P018-CLOUD-10."
+      },
+      {
+        "id": "P018-CLOUD-10",
+        "environment": "GitHub Actions ubuntu-latest, iOS installer lifecycle workflow, pull_request event",
+        "repositoryHead": "e6e41c3e24654703006b4501251c4ebb2f8b1456",
+        "candidateHash": "N/A; workflow ran installer fixtures and did not launch the P017 Agent or Hub",
+        "dateTimeUtc": "2026-10-18T05:11:36Z to 2026-10-18T05:12:16Z",
+        "command": "Automatic workflow .github/workflows/ios-installer.yml for PR #22; run 39099705082",
+        "expected": "Changed-file CI steps complete successfully, including the P018 preflight safety test and existing installer regression checks.",
+        "actual": "Run 39099705082 completed with conclusion SUCCESS; POSIX syntax, P018 preflight safety, bootstrap pin/tests, Mach-O/workflow fixtures, 873 installer assertions, patch sentinels, and upstream-sync steps succeeded.",
+        "result": "PASS",
+        "evidence": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39099705082",
+        "limitation": "Hosted Linux CI only; no physical iPad identity, native runtime, signing, service, data, telemetry, or reboot behavior was tested."
       }
     ]
   }
