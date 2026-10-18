@@ -26,7 +26,7 @@
 # from /dev/tty so the menu works when stdin is a curl pipe.
 #
 # Scope: fresh installs of Agent and/or Hub, safe transactional updates
-# with signed-binary staging, binary backup and automatic rollback,
+# with signed-binary staging, verified Hub data backups and automatic rollback,
 # non-destructive diagnostics, conservative repair, safe reconfiguration,
 # safe application uninstall (data preserved by default) and optional
 # explicit data purge. Nothing else is intentionally missing from the
@@ -82,6 +82,9 @@ STATE_FILE_NAME="install-state"
 MANAGER_FILE_NAME="manager.sh"
 COMMAND_NAME="beszel-ios"
 STATE_VERSION="1"
+LOCK_DIR_NAME="installer.lock"
+HUB_BACKUP_ROOT_NAME="hub-backups"
+HUB_TRANSACTION_FILE_NAME="hub-transaction"
 
 # Pinned immutable release for the current run. Resolved once from the Latest
 # page; every asset for the transaction (SHA256SUMS + binaries) then comes
@@ -100,6 +103,20 @@ DEFAULT_HUB_PORT="8090"
 LAUNCHD_PATH_VALUE="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 WORK_DIR=""
+WORK_DIR_OWNED=0
+INSTALLER_LOCK_DIR=""
+INSTALLER_LOCK_HELD=0
+HUB_TX_ID=""
+HUB_TX_DIR=""
+HUB_TX_PHASE=""
+HUB_TX_SCOPE=""
+HUB_TX_RELEASE=""
+HUB_TX_HUB_WAS_RUNNING=0
+HUB_TX_AGENT_WAS_RUNNING=0
+HUB_TX_HUB_WAS_LOADED=0
+HUB_TX_AGENT_WAS_LOADED=0
+HUB_TX_ARCHIVE_SHA256=""
+HUB_TX_SEQUENCE=0
 
 # ---------------------------------------------------------------- logging ---
 
@@ -543,6 +560,173 @@ fix_path_owner() {
 	return 0
 }
 
+# installer_lock_path — one atomic mkdir lock for all mutating CLI actions.
+# Read-only status/diagnostics/doctor commands never acquire this lock.
+installer_lock_path() {
+	printf '%s/%s/%s' "$LIB_DIR" "$STATE_SUBDIR" "$LOCK_DIR_NAME"
+	return 0
+}
+
+release_installer_lock() {
+	[ "${INSTALLER_LOCK_HELD:-0}" = "1" ] || return 0
+	_rl_path=$(installer_lock_path)
+	if [ "$INSTALLER_LOCK_DIR" != "$_rl_path" ] || [ ! -d "$_rl_path" ] || [ -L "$_rl_path" ]; then
+		say_warn "Installer lock path changed; leaving it for manual inspection: ${INSTALLER_LOCK_DIR:-unknown}."
+		INSTALLER_LOCK_HELD=0
+		INSTALLER_LOCK_DIR=""
+		return 1
+	fi
+	if find "$_rl_path" -mindepth 1 -maxdepth 1 ! -name pid -print | grep -q .; then
+		say_warn "Installer lock contains unexpected files; leaving ${_rl_path} for manual inspection."
+		INSTALLER_LOCK_HELD=0
+		INSTALLER_LOCK_DIR=""
+		return 1
+	fi
+	_rl_owner="$_rl_path/pid"
+	if [ ! -f "$_rl_owner" ] || [ -L "$_rl_owner" ] || [ "$(cat "$_rl_owner" 2> /dev/null || true)" != "$$" ]; then
+		say_warn "Installer lock owner changed; leaving it for manual inspection: ${_rl_path}."
+		INSTALLER_LOCK_HELD=0
+		INSTALLER_LOCK_DIR=""
+		return 1
+	fi
+	rm -f "$_rl_owner" || return 1
+	rmdir "$_rl_path" || {
+		say_warn "Installer lock contains unexpected files; leaving ${_rl_path} for manual inspection."
+		INSTALLER_LOCK_HELD=0
+		INSTALLER_LOCK_DIR=""
+		return 1
+	}
+	INSTALLER_LOCK_HELD=0
+	INSTALLER_LOCK_DIR=""
+	return 0
+}
+
+# acquire_installer_lock — serialize install/update/repair/reconfigure,
+# uninstall/purge, and explicit service mutations. A dead PID is recovered
+# by atomically moving its lock aside; malformed locks fail closed.
+acquire_installer_lock() {
+	[ "${INSTALLER_LOCK_HELD:-0}" = "1" ] && return 0
+	[ -d "$LIB_DIR" ] && [ ! -L "$LIB_DIR" ] || {
+		say_err "Refusing installer lock: library directory is missing or unsafe (${LIB_DIR})."
+		return 1
+	}
+	_al_state="${LIB_DIR}/${STATE_SUBDIR}"
+	if [ -L "$_al_state" ] || { [ -e "$_al_state" ] && [ ! -d "$_al_state" ]; }; then
+		say_err "Refusing installer lock: state directory is not a real directory (${_al_state})."
+		return 1
+	fi
+	mkdir -p "$_al_state" || return 1
+	if [ "$(id -u)" = "0" ]; then
+		_al_state_owner=$(path_owner_uid "$_al_state") || return 1
+		[ "$_al_state_owner" = "0" ] || {
+			say_err "Refusing installer lock: state directory is not root-owned (${_al_state})."
+			return 1
+		}
+	fi
+	chmod 755 "$_al_state" || return 1
+	_al_lock=$(installer_lock_path)
+	if [ -L "$_al_lock" ] || { [ -e "$_al_lock" ] && [ ! -d "$_al_lock" ]; }; then
+		say_err "Refusing unsafe installer lock path: ${_al_lock}."
+		return 1
+	fi
+	if [ -d "$_al_lock" ]; then
+		if [ "$(id -u)" = "0" ]; then
+			_al_existing_lock_owner=$(path_owner_uid "$_al_lock") || return 1
+			[ "$_al_existing_lock_owner" = "0" ] || {
+				say_err "Installer lock is not root-owned; inspect ${_al_lock}."
+				return 1
+			}
+		fi
+		_al_owner="$_al_lock/pid"
+		if [ ! -f "$_al_owner" ] || [ -L "$_al_owner" ]; then
+			say_err "Installer lock has no valid owner; inspect ${_al_lock} before removing it."
+			return 1
+		fi
+		if [ "$(id -u)" = "0" ]; then
+			_al_existing_pid_owner=$(path_owner_uid "$_al_owner") || return 1
+			[ "$_al_existing_pid_owner" = "0" ] || {
+				say_err "Installer lock owner file is not root-owned; inspect ${_al_lock}."
+				return 1
+			}
+		fi
+		_al_pid=$(cat "$_al_owner" 2> /dev/null || true)
+		case "$_al_pid" in
+			'' | *[!0-9]*)
+				say_err "Installer lock owner is malformed; inspect ${_al_lock} before removing it."
+				return 1
+				;;
+		esac
+		case "$_al_pid" in
+			*[1-9]*) ;;
+			*) say_err "Installer lock owner is invalid; inspect ${_al_lock} before removing it."; return 1 ;;
+		esac
+		if kill -0 "$_al_pid" 2> /dev/null; then
+			say_err "Another Beszel-iOS installer transaction is active (PID ${_al_pid})."
+			return 1
+		fi
+		_al_stale="${_al_lock}.stale.$$"
+		[ ! -e "$_al_stale" ] && [ ! -L "$_al_stale" ] || {
+			say_err "A stale installer lock quarantine already exists; inspect ${_al_stale}."
+			return 1
+		}
+		mv "$_al_lock" "$_al_stale" || {
+			say_err "Could not isolate stale installer lock ${_al_lock}."
+			return 1
+		}
+		if find "$_al_stale" -mindepth 1 -maxdepth 1 ! -name pid -print | grep -q .; then
+			say_err "Stale installer lock contains unexpected files; inspect ${_al_stale}."
+			return 1
+		fi
+		rm -f "${_al_stale}/pid" || return 1
+		rmdir "$_al_stale" || {
+			say_err "Stale installer lock contains unexpected files; inspect ${_al_stale}."
+			return 1
+		}
+	fi
+	if ! mkdir "$_al_lock" 2> /dev/null; then
+		say_err "Another Beszel-iOS installer transaction acquired the lock first."
+		return 1
+	fi
+	chmod 700 "$_al_lock" || {
+		rmdir "$_al_lock" 2> /dev/null || true
+		return 1
+	}
+	if [ "$(id -u)" = "0" ]; then
+		_al_lock_owner=$(path_owner_uid "$_al_lock") || {
+			rmdir "$_al_lock" 2> /dev/null || true
+			return 1
+		}
+		[ "$_al_lock_owner" = "0" ] || {
+			rmdir "$_al_lock" 2> /dev/null || true
+			return 1
+		}
+	fi
+	printf '%s\n' "$$" > "${_al_lock}/pid" || {
+		rmdir "$_al_lock" 2> /dev/null || true
+		return 1
+	}
+	chmod 600 "${_al_lock}/pid" || {
+		rm -f "${_al_lock}/pid"
+		rmdir "$_al_lock" 2> /dev/null || true
+		return 1
+	}
+	if [ "$(id -u)" = "0" ]; then
+		_al_pid_owner=$(path_owner_uid "${_al_lock}/pid") || {
+			rm -f "${_al_lock}/pid"
+			rmdir "$_al_lock" 2> /dev/null || true
+			return 1
+		}
+		[ "$_al_pid_owner" = "0" ] || {
+			rm -f "${_al_lock}/pid"
+			rmdir "$_al_lock" 2> /dev/null || true
+			return 1
+		}
+	fi
+	INSTALLER_LOCK_DIR="$_al_lock"
+	INSTALLER_LOCK_HELD=1
+	return 0
+}
+
 # component_status <agent|hub> — prints: missing | incomplete | complete.
 component_status() {
 	_cs_comp="$1"
@@ -908,9 +1092,14 @@ check_device() {
 check_layout() {
 	_cl_d=""
 	for _cl_d in "$BIN_DIR" "$LIB_DIR" "$LAUNCHD_DIR" "$LOG_DIR"; do
+		managed_path_parent_chain_safe "$_cl_d" || die "Refusing unsafe or writable parent path for ${_cl_d}."
+		if [ -L "$_cl_d" ]; then
+			die "Refusing unsafe rootful directory symlink: ${_cl_d}."
+		fi
 		if [ ! -d "$_cl_d" ]; then
 			mkdir -p "$_cl_d" || die "Cannot create ${_cl_d}. This installer supports the standard layout (/usr/local/bin, /var/lib, /Library/LaunchDaemons); rootless layouts are not supported yet."
 		fi
+		managed_directory_safe "$_cl_d" || die "Refusing unsafe, writable, or non-root-owned rootful directory: ${_cl_d}."
 		if [ ! -w "$_cl_d" ]; then
 			die "Directory ${_cl_d} is not writable. Rootless jailbreak layouts are not supported by this installer yet."
 		fi
@@ -966,11 +1155,23 @@ check_deps() {
 # ---------------------------------------------------------- temp workspace ---
 
 cleanup_work_dir() {
-	if [ -n "${WORK_DIR:-}" ] && [ -d "$WORK_DIR" ]; then
+	if [ "${WORK_DIR_OWNED:-0}" = "1" ] && [ -n "${WORK_DIR:-}" ]; then
+		_cwd_tmp="${TMPDIR:-/tmp}"
+		case "$_cwd_tmp" in */) _cwd_tmp=${_cwd_tmp%/} ;; esac
 		case "$WORK_DIR" in
-			*beszel-ios.*) rm -rf "$WORK_DIR" ;;
+			"$_cwd_tmp"/beszel-ios.*)
+				if [ -d "$WORK_DIR" ] && [ ! -L "$WORK_DIR" ]; then
+					rm -rf "$WORK_DIR"
+				else
+					say_warn "Refusing to remove an unexpected installer work path: ${WORK_DIR}."
+				fi
+				;;
+			*) say_warn "Refusing to remove an unexpected installer work path: ${WORK_DIR}." ;;
 		esac
+		WORK_DIR=""
+		WORK_DIR_OWNED=0
 	fi
+	release_installer_lock || true
 }
 
 setup_work_dir() {
@@ -978,9 +1179,10 @@ setup_work_dir() {
 		WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/beszel-ios.XXXXXX") || die "Cannot create a temporary directory; aborting."
 	else
 		WORK_DIR="${TMPDIR:-/tmp}/beszel-ios.$$"
-		mkdir -p "$WORK_DIR" || die "Cannot create a temporary directory; aborting."
+		mkdir "$WORK_DIR" || die "Cannot create a temporary directory; aborting."
 		chmod 700 "$WORK_DIR" || die "Cannot secure the temporary directory; aborting."
 	fi
+	WORK_DIR_OWNED=1
 	trap cleanup_work_dir EXIT INT TERM HUP
 }
 
@@ -1021,6 +1223,76 @@ fetch_and_verify_binary() {
 	return 0
 }
 
+macho_read_u32_le() {
+	_mru_file="$1"
+	_mru_offset="$2"
+	_mru_bytes=$(od -An -v -tu1 -j "$_mru_offset" -N 4 "$_mru_file" 2> /dev/null) || return 1
+	set -- $_mru_bytes
+	[ "$#" = "4" ] || return 1
+	for _mru_byte in "$@"; do case "$_mru_byte" in '' | *[!0-9]*) return 1 ;; esac; done
+	_mru_b0="$1"; _mru_b1="$2"; _mru_b2="$3"; _mru_b3="$4"
+	printf '%s' "$((_mru_b0 + _mru_b1 * 256 + _mru_b2 * 65536 + _mru_b3 * 16777216))"
+}
+
+# validate_ios_arm64_macho <file> proves the staged executable is a thin
+# little-endian ARM64 iOS Mach-O with a deployment target no newer than iOS
+# 12. It deliberately does not claim that ldid produced a trusted signature.
+validate_ios_arm64_macho() {
+	_vim_file="$1"
+	[ -f "$_vim_file" ] && [ ! -L "$_vim_file" ] && [ -s "$_vim_file" ] || return 1
+	command -v od > /dev/null 2>&1 || return 1
+	_vim_size=$(wc -c < "$_vim_file" | tr -d '[:space:]')
+	case "$_vim_size" in '' | *[!0-9]*) return 1 ;; esac
+	[ "$_vim_size" -ge 32 ] || return 1
+	_vim_magic=$(macho_read_u32_le "$_vim_file" 0) || return 1
+	[ "$_vim_magic" = "4277009103" ] || { say_err "Rejected binary: expected a thin 64-bit Mach-O."; return 1; }
+	_vim_cpu=$(macho_read_u32_le "$_vim_file" 4) || return 1
+	[ "$_vim_cpu" = "16777228" ] || { say_err "Rejected binary: expected ARM64 architecture."; return 1; }
+	_vim_subtype=$(macho_read_u32_le "$_vim_file" 8) || return 1
+	[ "$_vim_subtype" = "0" ] || { say_err "Rejected binary: expected baseline ARM64, not an unsupported ARM64 subtype."; return 1; }
+	_vim_type=$(macho_read_u32_le "$_vim_file" 12) || return 1
+	[ "$_vim_type" = "2" ] || { say_err "Rejected binary: expected an executable Mach-O file."; return 1; }
+	_vim_ncmds=$(macho_read_u32_le "$_vim_file" 16) || return 1
+	_vim_cmdbytes=$(macho_read_u32_le "$_vim_file" 20) || return 1
+	case "$_vim_ncmds" in '' | *[!0-9]*) return 1 ;; esac
+	case "$_vim_cmdbytes" in '' | *[!0-9]*) return 1 ;; esac
+	[ "$_vim_ncmds" -gt 0 ] && [ "$_vim_ncmds" -le 10000 ] || return 1
+	[ "$_vim_cmdbytes" -gt 0 ] && [ "$_vim_cmdbytes" -le 4194304 ] || return 1
+	[ $((_vim_cmdbytes + 32)) -le "$_vim_size" ] || return 1
+	_vim_pos=32
+	_vim_end=$((_vim_cmdbytes + 32))
+	_vim_platform_count=0
+	_vim_ios_min=0
+	_vim_index=0
+	while [ "$_vim_index" -lt "$_vim_ncmds" ]; do
+		[ $((_vim_pos + 8)) -le "$_vim_end" ] || return 1
+		_vim_cmd=$(macho_read_u32_le "$_vim_file" "$_vim_pos") || return 1
+		_vim_cmdsize=$(macho_read_u32_le "$_vim_file" "$((_vim_pos + 4))") || return 1
+		[ "$_vim_cmdsize" -ge 8 ] && [ $((_vim_pos + _vim_cmdsize)) -le "$_vim_end" ] || return 1
+		case "$_vim_cmd" in
+			50)
+				[ "$_vim_cmdsize" -ge 24 ] || return 1
+				_vim_platform=$(macho_read_u32_le "$_vim_file" "$((_vim_pos + 8))") || return 1
+				_vim_min=$(macho_read_u32_le "$_vim_file" "$((_vim_pos + 12))") || return 1
+				[ "$_vim_platform" = "2" ] || { say_err "Rejected binary: Mach-O platform is not iOS device."; return 1; }
+				_vim_platform_count=$((_vim_platform_count + 1))
+				_vim_ios_min="$_vim_min"
+				;;
+			37)
+				[ "$_vim_cmdsize" -ge 16 ] || return 1
+				_vim_min=$(macho_read_u32_le "$_vim_file" "$((_vim_pos + 8))") || return 1
+				_vim_platform_count=$((_vim_platform_count + 1))
+				_vim_ios_min="$_vim_min"
+				;;
+		esac
+		_vim_pos=$((_vim_pos + _vim_cmdsize))
+		_vim_index=$((_vim_index + 1))
+	done
+	[ "$_vim_pos" = "$_vim_end" ] && [ "$_vim_platform_count" = "1" ] || return 1
+	[ "$_vim_ios_min" -le 786432 ] || { say_err "Rejected binary: minimum deployment target is newer than iOS 12.0."; return 1; }
+	return 0
+}
+
 # ----------------------------------------------------------------- install ---
 
 # install_binary <verified-source> <final-name>
@@ -1033,6 +1305,10 @@ install_binary() {
 	if [ -e "$_ib_dest" ]; then
 		return 2
 	fi
+	validate_ios_arm64_macho "$_ib_src" || {
+		say_err "Refusing to install ${_ib_name}: binary is not a supported iOS ARM64 executable."
+		return 1
+	}
 	cp "$_ib_src" "${_ib_dest}.new" || return 1
 	if ! chown root:wheel "${_ib_dest}.new"; then
 		rm -f "${_ib_dest}.new"
@@ -1046,6 +1322,10 @@ install_binary() {
 		rm -f "${_ib_dest}.new"
 		return 1
 	fi
+	validate_ios_arm64_macho "${_ib_dest}.new" || {
+		rm -f "${_ib_dest}.new"
+		return 1
+	}
 	mv -f "${_ib_dest}.new" "$_ib_dest" || return 1
 	return 0
 }
@@ -1226,6 +1506,13 @@ svc_load() {
 	launchctl load -w "$_sl_plist"
 }
 
+# svc_stop <label> — stop a loaded but previously idle LaunchDaemon without
+# unloading it. The launchctl stop operation is part of the iOS 12 interface.
+svc_stop() {
+	_ss_label="$1"
+	launchctl stop "$_ss_label"
+}
+
 # svc_running <label> — true only when launchctl lists the label with a live
 # numeric PID (a bare grep would also match a loaded-but-stopped job whose
 # PID column is "-").
@@ -1304,6 +1591,23 @@ agent_post_update_ok() {
 	fi
 	svc_running "$_ap_label" || return 1
 	return 0
+}
+
+wait_for_agent_connection() {
+	_wfac_bin="${BIN_DIR}/${AGENT_BIN}"
+	_wfac_timeout="${BESZEL_AGENT_HEALTH_TIMEOUT_SECS:-90}"
+	case "$_wfac_timeout" in '' | *[!0-9]*) _wfac_timeout=90 ;; esac
+	[ "$_wfac_timeout" -le 300 ] || _wfac_timeout=300
+	_wfac_elapsed=0
+	while [ "$_wfac_elapsed" -le "$_wfac_timeout" ]; do
+		if [ -f "$_wfac_bin" ] && [ ! -L "$_wfac_bin" ] && "$_wfac_bin" connection > /dev/null 2>&1; then
+			return 0
+		fi
+		[ "$_wfac_elapsed" -lt "$_wfac_timeout" ] || break
+		sleep 3 || true
+		_wfac_elapsed=$((_wfac_elapsed + 3))
+	done
+	return 1
 }
 
 # hub_port_from_plist <plist> — conservative parse of the existing generated
@@ -1565,9 +1869,11 @@ managed_component_validate() {
 managed_runtime_paths_validate() {
 	_mrp_comp="$1"
 	managed_component_paths "$_mrp_comp" || return 1
-	[ -d "$LIB_DIR" ] && [ ! -L "$LIB_DIR" ] || return 1
-	[ -d "$LOG_DIR" ] && [ ! -L "$LOG_DIR" ] || return 1
-	[ -d "$MANAGED_COMPONENT_DATA" ] && [ ! -L "$MANAGED_COMPONENT_DATA" ] || return 1
+	managed_directory_safe "$BIN_DIR" || return 1
+	managed_directory_safe "$LIB_DIR" || return 1
+	managed_directory_safe "$LAUNCHD_DIR" || return 1
+	managed_directory_safe "$LOG_DIR" || return 1
+	managed_directory_safe "$MANAGED_COMPONENT_DATA" || return 1
 	_mrp_name="beszel-${_mrp_comp}"
 	for _mrp_log in "${LOG_DIR}/${_mrp_name}.log" "${LOG_DIR}/${_mrp_name}.err.log"; do
 		if [ -L "$_mrp_log" ] || { [ -e "$_mrp_log" ] && [ ! -f "$_mrp_log" ]; }; then return 1; fi
@@ -1754,45 +2060,818 @@ diagnose_hub() {
 	return 0
 }
 
+# -------------------------------------- Hub backup and recovery support ---
+
+hub_backup_root() {
+	printf '%s/%s/%s' "$LIB_DIR" "$STATE_SUBDIR" "$HUB_BACKUP_ROOT_NAME"
+	return 0
+}
+
+hub_transaction_path() {
+	printf '%s/%s/%s' "$LIB_DIR" "$STATE_SUBDIR" "$HUB_TRANSACTION_FILE_NAME"
+	return 0
+}
+
+managed_absolute_path_is_safe() {
+	_mps_path="${1:-}"
+	case "$_mps_path" in /*) ;; *) return 1 ;; esac
+	case "$_mps_path" in
+		*//* | *"/../"* | */.. | *"/./"* | */.) return 1 ;;
+	esac
+	_mps_tab=$(printf '\t')
+	_mps_nl=$(printf '\nX')
+	_mps_nl=${_mps_nl%X}
+	case "$_mps_path" in *"$_mps_tab"* | *"$_mps_nl"*) return 1 ;; esac
+	return 0
+}
+
+managed_mode_not_writable_by_group_or_world() {
+	_mnwg_mode="$1"
+	case "$_mnwg_mode" in *[2367]) return 1 ;; esac
+	_mnwg_parent=${_mnwg_mode%?}
+	case "$_mnwg_parent" in *[2367]) return 1 ;; esac
+	return 0
+}
+
+managed_path_parent_chain_safe() {
+	_mpp_path="$1"
+	managed_absolute_path_is_safe "$_mpp_path" || return 1
+	_mpp_rest=${_mpp_path#/}
+	_mpp_current=""
+	while case "$_mpp_rest" in */*) true ;; *) false ;; esac; do
+		_mpp_part=${_mpp_rest%%/*}
+		_mpp_rest=${_mpp_rest#*/}
+		[ -n "$_mpp_part" ] || return 1
+		_mpp_current="${_mpp_current}/${_mpp_part}"
+		if [ -L "$_mpp_current" ]; then
+			_mpp_link=$(readlink "$_mpp_current" 2> /dev/null || true)
+			case "$_mpp_current:$_mpp_link" in
+				/var:private/var | /var:/private/var) _mpp_current="/private/var" ;;
+				/tmp:private/tmp | /tmp:/private/tmp) _mpp_current="/private/tmp" ;;
+				*) return 1 ;;
+			esac
+		fi
+		if [ -e "$_mpp_current" ]; then
+			[ -d "$_mpp_current" ] && [ ! -L "$_mpp_current" ] || return 1
+			_mpp_mode=$(managed_path_metadata "$_mpp_current") || return 1
+			_mpp_mode=${_mpp_mode##*:}
+			case "$_mpp_current:$_mpp_mode" in /tmp:1777 | /private/tmp:1777) : ;; *) managed_mode_not_writable_by_group_or_world "$_mpp_mode" || return 1 ;; esac
+			if [ "$(id -u)" = "0" ] && [ "$_mpp_current" != "/tmp" ] && [ "$_mpp_current" != "/private/tmp" ]; then
+				_mpp_owner=$(path_owner_uid "$_mpp_current") || return 1
+				[ "$_mpp_owner" = "0" ] || return 1
+			fi
+		fi
+	done
+	return 0
+}
+
+managed_directory_safe() {
+	_mds_path="$1"
+	managed_path_parent_chain_safe "$_mds_path" || return 1
+	[ -d "$_mds_path" ] && [ ! -L "$_mds_path" ] || return 1
+	_mds_mode=$(managed_path_metadata "$_mds_path") || return 1
+	_mds_mode=${_mds_mode##*:}
+	managed_mode_not_writable_by_group_or_world "$_mds_mode" || return 1
+	if [ "$(id -u)" = "0" ]; then
+		_mds_owner=$(path_owner_uid "$_mds_path") || return 1
+		[ "$_mds_owner" = "0" ] || return 1
+	fi
+	return 0
+}
+
+managed_file_link_count() {
+	_mfl_path="$1"
+	case "$(uname -s)" in
+		Darwin) stat -f '%l' "$_mfl_path" 2> /dev/null ;;
+		*) stat -c '%h' "$_mfl_path" 2> /dev/null ;;
+	esac
+}
+
+managed_path_metadata() {
+	_mpm_path="$1"
+	case "$(uname -s)" in
+		Darwin) stat -f '%u:%g:%Lp' "$_mpm_path" 2> /dev/null ;;
+		*) stat -c '%u:%g:%a' "$_mpm_path" 2> /dev/null ;;
+	esac
+}
+
+# hub_snapshot_path_safe refuses symlinks, special files, and hardlinks inside
+# the Hub/Agent data or managed application files. A backup is never claimed
+# complete if an entry cannot be represented safely by the archive.
+hub_snapshot_path_safe() {
+	_hsp_path="$1"
+	managed_absolute_path_is_safe "$_hsp_path" || return 1
+	managed_path_parent_chain_safe "$_hsp_path" || return 1
+	[ ! -L "$_hsp_path" ] || return 1
+	[ -e "$_hsp_path" ] || return 0
+	if [ -d "$_hsp_path" ]; then
+		managed_directory_safe "$_hsp_path" || return 1
+		_hsp_find="${WORK_DIR}/snapshot-find.$$"
+		find "$_hsp_path" -type l -print > "$_hsp_find" 2> /dev/null || return 1
+		[ ! -s "$_hsp_find" ] || return 1
+		find "$_hsp_path" ! -type d ! -type f -print > "$_hsp_find" 2> /dev/null || return 1
+		[ ! -s "$_hsp_find" ] || return 1
+		find "$_hsp_path" -type f -links +1 -print > "$_hsp_find" 2> /dev/null || return 1
+		[ ! -s "$_hsp_find" ] || return 1
+		find "$_hsp_path" -type d -print > "$_hsp_find" 2> /dev/null || return 1
+		while IFS= read -r _hsp_dir; do
+			_hsp_meta=$(managed_path_metadata "$_hsp_dir") || return 1
+			_hsp_mode=${_hsp_meta##*:}
+			managed_mode_not_writable_by_group_or_world "$_hsp_mode" || return 1
+		done < "$_hsp_find"
+		return 0
+	fi
+	[ -f "$_hsp_path" ] || return 1
+	_hsp_meta=$(managed_path_metadata "$_hsp_path") || return 1
+	_hsp_mode=${_hsp_meta##*:}
+	managed_mode_not_writable_by_group_or_world "$_hsp_mode" || return 1
+	_hsp_links=$(managed_file_link_count "$_hsp_path") || return 1
+	[ "$_hsp_links" = "1" ]
+}
+
+# hub_snapshot_collect <present-paths> <absent-paths> — enumerate only the
+# fixed installer-owned roots and record their initial presence. User data is
+# captured whole; the backup tree is outside those persistent data roots.
+hub_snapshot_collect() {
+	_hsc_present="$1"
+	_hsc_absent="$2"
+	_hsc_candidates="${WORK_DIR}/snapshot-candidates.$$"
+	{
+		printf '%s\n' "${LIB_DIR}/beszel-hub" "${LIB_DIR}/beszel-agent"
+		printf '%s\n' "${BIN_DIR}/${HUB_BIN}" "${BIN_DIR}/${HUB_BIN}.bak" "${BIN_DIR}/${AGENT_BIN}" "${BIN_DIR}/${AGENT_BIN}.bak"
+		printf '%s\n' "${LAUNCHD_DIR}/${HUB_LABEL}.plist" "${LAUNCHD_DIR}/${HUB_LABEL}.plist.bak"
+		printf '%s\n' "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.bak"
+		printf '%s\n' "$(state_path)" "${LIB_DIR}/${STATE_SUBDIR}/${MANAGER_FILE_NAME}"
+		printf '%s\n' "${LOG_DIR}/beszel-hub.log" "${LOG_DIR}/beszel-hub.err.log"
+		printf '%s\n' "${LOG_DIR}/beszel-agent.log" "${LOG_DIR}/beszel-agent.err.log"
+	} > "$_hsc_candidates" || return 1
+	: > "$_hsc_present" || return 1
+	: > "$_hsc_absent" || return 1
+	[ -d "${LIB_DIR}/beszel-hub" ] && [ ! -L "${LIB_DIR}/beszel-hub" ] || {
+		say_err "Hub data directory is missing or unsafe; refusing an update without a complete backup."
+		return 1
+	}
+	[ -f "${BIN_DIR}/${HUB_BIN}" ] && [ ! -L "${BIN_DIR}/${HUB_BIN}" ] && [ -s "${BIN_DIR}/${HUB_BIN}" ] || {
+		say_err "Hub binary is missing or unsafe; refusing a transactional update."
+		return 1
+	}
+	[ -f "${LAUNCHD_DIR}/${HUB_LABEL}.plist" ] && [ ! -L "${LAUNCHD_DIR}/${HUB_LABEL}.plist" ] && [ -s "${LAUNCHD_DIR}/${HUB_LABEL}.plist" ] || {
+		say_err "Hub LaunchDaemon is missing or unsafe; refusing a transactional update."
+		return 1
+	}
+	case "$(component_status agent)" in
+		complete | missing) ;;
+		*) say_err "Agent installation is incomplete; repair it before a Hub transaction."; return 1 ;;
+	esac
+	while IFS= read -r _hsc_path; do
+		managed_absolute_path_is_safe "$_hsc_path" || {
+			say_err "Unsafe installer path in Hub backup set: ${_hsc_path}."
+			return 1
+		}
+		if [ -L "$_hsc_path" ]; then
+			say_err "Refusing a symlink in the Hub backup set: ${_hsc_path}."
+			return 1
+		fi
+		if [ -e "$_hsc_path" ]; then
+			hub_snapshot_path_safe "$_hsc_path" || {
+				say_err "Cannot safely archive ${_hsc_path}; refusing before upgrade."
+				return 1
+			}
+			printf '%s\n' "${_hsc_path#/}" >> "$_hsc_present" || return 1
+		else
+			printf '%s\n' "${_hsc_path#/}" >> "$_hsc_absent" || return 1
+		fi
+	done < "$_hsc_candidates"
+	return 0
+}
+
+# hub_snapshot_inventory <root> <present-paths> <inventory> <entries>
+# writes sorted file/directory metadata and content hashes. The same result
+# must be obtained after extraction before an archive is accepted.
+hub_snapshot_inventory() {
+	_hsi_root="$1"
+	_hsi_paths="$2"
+	_hsi_inventory="$3"
+	_hsi_entries="$4"
+	_hsi_unsorted="${_hsi_entries}.unsorted"
+	_hsi_tab=$(printf '\t')
+	_hsi_nl=$(printf '\nX')
+	_hsi_nl=${_hsi_nl%X}
+	: > "$_hsi_unsorted" || return 1
+	while IFS= read -r _hsi_rel; do
+		[ -n "$_hsi_rel" ] || return 1
+		case "$_hsi_rel" in *"$_hsi_tab"* | *"$_hsi_nl"*) return 1 ;; esac
+		case "$_hsi_rel" in /* | *"/../"* | */.. | *"/./"* | */.) return 1 ;; esac
+		(
+			cd "$_hsi_root" || exit 1
+			find "$_hsi_rel" -print
+		) >> "$_hsi_unsorted" 2> /dev/null || return 1
+	done < "$_hsi_paths"
+	LC_ALL=C sort "$_hsi_unsorted" > "$_hsi_entries" || return 1
+	: > "$_hsi_inventory" || return 1
+	while IFS= read -r _hsi_rel; do
+		_hsi_path="${_hsi_root%/}/${_hsi_rel}"
+		[ -e "$_hsi_path" ] && [ ! -L "$_hsi_path" ] || return 1
+		_hsi_meta=$(managed_path_metadata "$_hsi_path") || return 1
+		case "$_hsi_meta" in *:*) ;; *) return 1 ;; esac
+		if [ -d "$_hsi_path" ]; then
+			printf '%s\tD\t%s\t-\t-\n' "$_hsi_rel" "$_hsi_meta" >> "$_hsi_inventory" || return 1
+		elif [ -f "$_hsi_path" ]; then
+			_hsi_size=$(wc -c < "$_hsi_path" | tr -d '[:space:]')
+			_hsi_sha=$(compute_sha256 "$_hsi_path") || return 1
+			printf '%s\tF\t%s\t%s\t%s\n' "$_hsi_rel" "$_hsi_meta" "$_hsi_size" "$_hsi_sha" >> "$_hsi_inventory" || return 1
+		else
+			return 1
+		fi
+	done < "$_hsi_entries"
+	return 0
+}
+
+# check_hub_backup_tools and space before an update can quiesce services.
+check_hub_backup_tools() {
+	_hbt_missing=""
+	for _hbt_dep in tar find df du cmp stat; do
+		command -v "$_hbt_dep" > /dev/null 2>&1 || _hbt_missing="${_hbt_missing} ${_hbt_dep}"
+	done
+	if [ -n "$_hbt_missing" ]; then
+		say_err "Hub upgrade requires backup tools that are missing:${_hbt_missing}. The existing Hub was not changed."
+		return 1
+	fi
+	if ! command -v sha256sum > /dev/null 2>&1 && ! command -v shasum > /dev/null 2>&1 && ! command -v openssl > /dev/null 2>&1; then
+		say_err "Hub upgrade requires a SHA-256 tool; refusing without verified recovery."
+		return 1
+	fi
+	return 0
+}
+
+hub_backup_preflight() {
+	check_hub_backup_tools || return 1
+	_hbp_present="${WORK_DIR}/hub-preflight-present"
+	_hbp_absent="${WORK_DIR}/hub-preflight-absent"
+	hub_snapshot_collect "$_hbp_present" "$_hbp_absent" || return 1
+	_hbp_size_kb=0
+	while IFS= read -r _hbp_rel; do
+		_hbp_du=$(du -sk "/${_hbp_rel}" 2> /dev/null) || return 1
+		set -- $_hbp_du
+		case "${1:-}" in '' | *[!0-9]*) return 1 ;; esac
+		_hbp_size_kb=$((_hbp_size_kb + $1))
+	done < "$_hbp_present"
+	_hbp_df=$(df -Pk "$LIB_DIR" 2> /dev/null | tail -n 1) || return 1
+	set -- $_hbp_df
+	[ "$#" -ge 4 ] || return 1
+	_hbp_free_kb="$4"
+	case "$_hbp_free_kb" in '' | *[!0-9]*) return 1 ;; esac
+	_hbp_need_kb=$((_hbp_size_kb * 2 + 262144))
+	if [ "$_hbp_free_kb" -lt "$_hbp_need_kb" ]; then
+		say_err "Insufficient free space for a verified Hub backup and restore (need at least ${_hbp_need_kb} KiB, have ${_hbp_free_kb} KiB)."
+		return 1
+	fi
+	_hbp_work_df=$(df -Pk "$WORK_DIR" 2> /dev/null | tail -n 1) || return 1
+	set -- $_hbp_work_df
+	[ "$#" -ge 4 ] || return 1
+	_hbp_work_free="$4"
+	case "$_hbp_work_free" in '' | *[!0-9]*) return 1 ;; esac
+	if [ "$_hbp_work_free" -lt 65536 ]; then
+		say_err "Insufficient temporary space for verified release assets; need at least 65536 KiB."
+		return 1
+	fi
+	return 0
+}
+
+hub_backup_manifest_value() {
+	_hmv_file="$1"
+	_hmv_key="$2"
+	[ -f "$_hmv_file" ] && [ ! -L "$_hmv_file" ] || return 1
+	_hmv_count=$(grep -c "^${_hmv_key}=" "$_hmv_file" 2> /dev/null || true)
+	[ "$_hmv_count" = "1" ] || return 1
+	_hmv_line=$(grep "^${_hmv_key}=" "$_hmv_file" | head -n 1)
+	printf '%s' "${_hmv_line#*=}"
+	return 0
+}
+
+hub_backup_dir_for_id() {
+	_hbd_id="${1:-}"
+	case "$_hbd_id" in '' | *[!A-Za-z0-9._-]*) return 1 ;; esac
+	printf '%s/%s' "$(hub_backup_root)" "$_hbd_id"
+	return 0
+}
+
+hub_backup_verify() {
+	_hbv_id="$1"
+	_hbv_dir=$(hub_backup_dir_for_id "$_hbv_id") || return 1
+	_hbv_archive="${_hbv_dir}/archive.tar"
+	_hbv_inventory="${_hbv_dir}/inventory.tsv"
+	_hbv_present="${_hbv_dir}/present.paths"
+	_hbv_absent="${_hbv_dir}/absent.paths"
+	_hbv_manifest="${_hbv_dir}/manifest"
+	_hbv_root=$(hub_backup_root)
+	[ -d "$_hbv_root" ] && [ ! -L "$_hbv_root" ] || return 1
+	[ "$(managed_path_metadata "$_hbv_root" | cut -d: -f3)" = "700" ] || return 1
+	[ "$(managed_path_metadata "$_hbv_dir" | cut -d: -f3)" = "700" ] || return 1
+	if [ "$(id -u)" = "0" ]; then
+		[ "$(path_owner_uid "$_hbv_root")" = "0" ] && [ "$(path_owner_uid "$_hbv_dir")" = "0" ] || return 1
+	fi
+	for _hbv_path in "$_hbv_dir" "$_hbv_archive" "$_hbv_inventory" "$_hbv_present" "$_hbv_absent" "$_hbv_manifest"; do
+		[ ! -L "$_hbv_path" ] || return 1
+	done
+	[ -d "$_hbv_dir" ] && [ -s "$_hbv_archive" ] && [ -s "$_hbv_inventory" ] && [ -s "$_hbv_manifest" ] || return 1
+	[ "$(wc -l < "$_hbv_manifest" | tr -d '[:space:]')" = "7" ] || return 1
+	for _hbv_file in "$_hbv_archive" "$_hbv_inventory" "$_hbv_present" "$_hbv_absent" "$_hbv_manifest"; do
+		[ -f "$_hbv_file" ] || return 1
+		[ "$(managed_path_metadata "$_hbv_file" | cut -d: -f3)" = "600" ] || return 1
+		[ "$(managed_file_link_count "$_hbv_file")" = "1" ] || return 1
+		if [ "$(id -u)" = "0" ]; then [ "$(path_owner_uid "$_hbv_file")" = "0" ] || return 1; fi
+	done
+	_hbv_manifest_id=$(hub_backup_manifest_value "$_hbv_manifest" TRANSACTION_ID) || return 1
+	_hbv_tag=$(hub_backup_manifest_value "$_hbv_manifest" RELEASE_TAG) || return 1
+	_hbv_archive_sha=$(hub_backup_manifest_value "$_hbv_manifest" ARCHIVE_SHA256) || return 1
+	_hbv_inventory_sha=$(hub_backup_manifest_value "$_hbv_manifest" INVENTORY_SHA256) || return 1
+	_hbv_present_sha=$(hub_backup_manifest_value "$_hbv_manifest" PRESENT_PATHS_SHA256) || return 1
+	_hbv_absent_sha=$(hub_backup_manifest_value "$_hbv_manifest" ABSENT_PATHS_SHA256) || return 1
+	[ "$(hub_backup_manifest_value "$_hbv_manifest" MANIFEST_VERSION)" = "1" ] || return 1
+	[ "$_hbv_manifest_id" = "$_hbv_id" ] && valid_release_tag "$_hbv_tag" || return 1
+	for _hbv_sha in "$_hbv_archive_sha" "$_hbv_inventory_sha" "$_hbv_present_sha" "$_hbv_absent_sha"; do
+		printf '%s' "$_hbv_sha" | grep -q -E '^[0-9a-f]{64}$' || return 1
+	done
+	[ "$(compute_sha256 "$_hbv_archive")" = "$_hbv_archive_sha" ] || return 1
+	[ "$(compute_sha256 "$_hbv_inventory")" = "$_hbv_inventory_sha" ] || return 1
+	[ -f "$_hbv_present" ] && [ ! -L "$_hbv_present" ] || return 1
+	[ -f "$_hbv_absent" ] && [ ! -L "$_hbv_absent" ] || return 1
+	[ "$(compute_sha256 "$_hbv_present")" = "$_hbv_present_sha" ] || return 1
+	[ "$(compute_sha256 "$_hbv_absent")" = "$_hbv_absent_sha" ] || return 1
+	_hbv_paths_seen="${WORK_DIR}/hub-paths-seen.$$"
+	: > "$_hbv_paths_seen" || return 1
+	while IFS= read -r _hbv_rel; do
+		_hub_snapshot_relative_allowed "$_hbv_rel" || return 1
+		if grep -Fqx "$_hbv_rel" "$_hbv_paths_seen"; then return 1; fi
+		printf '%s\n' "$_hbv_rel" >> "$_hbv_paths_seen" || return 1
+	done < "$_hbv_present"
+	while IFS= read -r _hbv_rel; do
+		_hub_snapshot_relative_allowed "$_hbv_rel" || return 1
+		if grep -Fqx "$_hbv_rel" "$_hbv_paths_seen"; then return 1; fi
+		printf '%s\n' "$_hbv_rel" >> "$_hbv_paths_seen" || return 1
+	done < "$_hbv_absent"
+	[ -s "$_hbv_present" ] || return 1
+	_hbv_listing="${WORK_DIR}/hub-archive-list.$$"
+	_hbv_listing_sorted="${WORK_DIR}/hub-archive-list-sorted.$$"
+	_hbv_tar_listing="${WORK_DIR}/hub-archive-tar-listing.$$"
+	tar -tf "$_hbv_archive" > "$_hbv_tar_listing" || return 1
+	if grep -E '(^/|(^|/)\.\.(/|$))' "$_hbv_tar_listing" > /dev/null; then return 1; fi
+	# A valid snapshot contains only regular files and directories. Reject
+	# links before extraction so a corrupted archive cannot redirect writes.
+	_hbv_verbose="${WORK_DIR}/hub-archive-verbose.$$"
+	tar -tvf "$_hbv_archive" > "$_hbv_verbose" || return 1
+	if awk 'substr($0, 1, 1) != "-" && substr($0, 1, 1) != "d" { bad = 1 } END { exit !bad }' "$_hbv_verbose"; then return 1; fi
+	sed 's#/$##' "$_hbv_tar_listing" | LC_ALL=C sort > "$_hbv_listing_sorted" || return 1
+	_hbv_stage="${WORK_DIR}/hub-archive-verify.$$"
+	_hbv_n=0
+	while [ -e "$_hbv_stage" ] || [ -L "$_hbv_stage" ]; do
+		_hbv_n=$((_hbv_n + 1))
+		_hbv_stage="${WORK_DIR}/hub-archive-verify.$$.$_hbv_n"
+		[ "$_hbv_n" -lt 100 ] || return 1
+	done
+	mkdir -m 700 "$_hbv_stage" || return 1
+	tar -xpf "$_hbv_archive" -C "$_hbv_stage" || return 1
+	_hbv_extracted_inventory="${WORK_DIR}/hub-archive-extracted-inventory.$$"
+	_hbv_extracted_entries="${WORK_DIR}/hub-archive-extracted-entries.$$"
+	hub_snapshot_inventory "$_hbv_stage" "$_hbv_present" "$_hbv_extracted_inventory" "$_hbv_extracted_entries" || return 1
+	cmp -s "$_hbv_extracted_entries" "$_hbv_listing_sorted" || return 1
+	cmp -s "$_hbv_inventory" "$_hbv_extracted_inventory" || return 1
+	return 0
+}
+
+hub_backup_create() {
+	_hbc_tag="$1"
+	valid_release_tag "$_hbc_tag" || return 1
+	_hbc_root=$(hub_backup_root)
+	managed_path_parent_chain_safe "$_hbc_root" || {
+		say_err "Refusing an unsafe parent path for the Hub backup store."
+		return 1
+	}
+	if [ -L "$_hbc_root" ] || { [ -e "$_hbc_root" ] && [ ! -d "$_hbc_root" ]; }; then
+		say_err "Refusing unsafe Hub backup root: ${_hbc_root}."
+		return 1
+	fi
+	mkdir -p "$_hbc_root" || return 1
+	chmod 700 "$_hbc_root" || return 1
+	if [ "$(id -u)" = "0" ]; then
+		_hbc_owner=$(path_owner_uid "$_hbc_root") || return 1
+		[ "$_hbc_owner" = "0" ] || return 1
+	fi
+	if [ -z "$HUB_TX_ID" ]; then
+		_hbc_now=$(date +%s 2> /dev/null || true)
+		case "$_hbc_now" in '' | *[!0-9]*) _hbc_now=0 ;; esac
+		HUB_TX_ID="${_hbc_tag}.${_hbc_now}.$$"
+	fi
+	case "$HUB_TX_ID" in *[!A-Za-z0-9._-]*) return 1 ;; esac
+	HUB_TX_DIR=$(hub_backup_dir_for_id "$HUB_TX_ID") || return 1
+	[ ! -e "$HUB_TX_DIR" ] && [ ! -L "$HUB_TX_DIR" ] || return 1
+	mkdir -m 700 "$HUB_TX_DIR" || return 1
+	if [ "$(id -u)" = "0" ]; then
+		_hbc_dir_owner=$(path_owner_uid "$HUB_TX_DIR") || return 1
+		[ "$_hbc_dir_owner" = "0" ] || return 1
+	fi
+	_hbc_present="${HUB_TX_DIR}/present.paths"
+	_hbc_absent="${HUB_TX_DIR}/absent.paths"
+	hub_snapshot_collect "$_hbc_present" "$_hbc_absent" || return 1
+	_hbc_inventory="${HUB_TX_DIR}/inventory.tsv"
+	_hbc_entries="${WORK_DIR}/hub-archive-entries.$$"
+	hub_snapshot_inventory / "$_hbc_present" "$_hbc_inventory" "$_hbc_entries" || return 1
+	_hbc_archive_tmp="${HUB_TX_DIR}/archive.tar.new"
+	set --
+	while IFS= read -r _hbc_rel; do set -- "$@" "$_hbc_rel"; done < "$_hbc_present"
+	[ "$#" -gt 0 ] || return 1
+	tar -cpf "$_hbc_archive_tmp" -C / "$@" || {
+		say_err "Could not create the complete Hub rollback archive."
+		return 1
+	}
+	chmod 600 "$_hbc_archive_tmp" "$_hbc_inventory" "$_hbc_present" "$_hbc_absent" || return 1
+	mv -f "$_hbc_archive_tmp" "${HUB_TX_DIR}/archive.tar" || return 1
+	_hbc_manifest_tmp="${HUB_TX_DIR}/manifest.new"
+	_hbc_archive_sha=$(compute_sha256 "${HUB_TX_DIR}/archive.tar") || return 1
+	_hbc_inventory_sha=$(compute_sha256 "$_hbc_inventory") || return 1
+	_hbc_present_sha=$(compute_sha256 "$_hbc_present") || return 1
+	_hbc_absent_sha=$(compute_sha256 "$_hbc_absent") || return 1
+	{
+		printf 'MANIFEST_VERSION=1\n'
+		printf 'TRANSACTION_ID=%s\n' "$HUB_TX_ID"
+		printf 'RELEASE_TAG=%s\n' "$_hbc_tag"
+		printf 'ARCHIVE_SHA256=%s\n' "$_hbc_archive_sha"
+		printf 'INVENTORY_SHA256=%s\n' "$_hbc_inventory_sha"
+		printf 'PRESENT_PATHS_SHA256=%s\n' "$_hbc_present_sha"
+		printf 'ABSENT_PATHS_SHA256=%s\n' "$_hbc_absent_sha"
+	} > "$_hbc_manifest_tmp" || return 1
+	chmod 600 "$_hbc_manifest_tmp" || return 1
+	mv -f "$_hbc_manifest_tmp" "${HUB_TX_DIR}/manifest" || return 1
+	if [ "$(id -u)" = "0" ]; then
+		for _hbc_f in "$_hbc_present" "$_hbc_absent" "$_hbc_inventory" "${HUB_TX_DIR}/archive.tar" "${HUB_TX_DIR}/manifest"; do
+			fix_path_owner "$_hbc_f" || return 1
+		done
+	fi
+	HUB_TX_ARCHIVE_SHA256="$_hbc_archive_sha"
+	hub_backup_verify "$HUB_TX_ID" || {
+		say_err "Hub rollback archive did not pass inventory and hash verification."
+		return 1
+	}
+	say_ok "Verified complete Hub rollback backup: ${HUB_TX_DIR}."
+	return 0
+}
+
+_hub_snapshot_relative_allowed() {
+	_hsra_rel="$1"
+	managed_absolute_path_is_safe "/${_hsra_rel}" || return 1
+	case "/${_hsra_rel}" in
+		"${LIB_DIR}/beszel-hub" | "${LIB_DIR}/beszel-agent" | \
+		"${BIN_DIR}/${HUB_BIN}" | "${BIN_DIR}/${HUB_BIN}.bak" | \
+		"${BIN_DIR}/${AGENT_BIN}" | "${BIN_DIR}/${AGENT_BIN}.bak" | \
+		"${LAUNCHD_DIR}/${HUB_LABEL}.plist" | "${LAUNCHD_DIR}/${HUB_LABEL}.plist.bak" | \
+		"${LAUNCHD_DIR}/${AGENT_LABEL}.plist" | "${LAUNCHD_DIR}/${AGENT_LABEL}.plist.bak" | \
+		"$(state_path)" | "${LIB_DIR}/${STATE_SUBDIR}/${MANAGER_FILE_NAME}" | \
+		"${LOG_DIR}/beszel-hub.log" | "${LOG_DIR}/beszel-hub.err.log" | \
+		"${LOG_DIR}/beszel-agent.log" | "${LOG_DIR}/beszel-agent.err.log") return 0 ;;
+	esac
+	return 1
+}
+
+hub_transaction_generate_id() {
+	_hgi_tag="$1"
+	valid_release_tag "$_hgi_tag" || return 1
+	_hgi_now=$(date +%s 2> /dev/null || true)
+	case "$_hgi_now" in '' | *[!0-9]*) _hgi_now=0 ;; esac
+	while [ "$HUB_TX_SEQUENCE" -lt 100 ]; do
+		HUB_TX_SEQUENCE=$((HUB_TX_SEQUENCE + 1))
+		HUB_TX_ID="${_hgi_tag}.${_hgi_now}.$$.${HUB_TX_SEQUENCE}"
+		HUB_TX_DIR=$(hub_backup_dir_for_id "$HUB_TX_ID") || return 1
+		[ ! -e "$HUB_TX_DIR" ] && [ ! -L "$HUB_TX_DIR" ] && return 0
+	done
+	HUB_TX_ID=""
+	return 1
+}
+
+hub_transaction_write() {
+	_htw_phase="$1"
+	case "$_htw_phase" in prepared | backed_up | applying | healthy) ;; *) return 1 ;; esac
+	valid_release_tag "$HUB_TX_RELEASE" || return 1
+	case "$HUB_TX_SCOPE" in hub | both) ;; *) return 1 ;; esac
+	for _htw_state in "$HUB_TX_HUB_WAS_RUNNING" "$HUB_TX_AGENT_WAS_RUNNING" "$HUB_TX_HUB_WAS_LOADED" "$HUB_TX_AGENT_WAS_LOADED"; do
+		case "$_htw_state" in 0 | 1) ;; *) return 1 ;; esac
+	done
+	_hub_transaction_path=$(hub_transaction_path)
+	_htw_dir="${LIB_DIR}/${STATE_SUBDIR}"
+	[ -d "$LIB_DIR" ] && [ ! -L "$LIB_DIR" ] || return 1
+	[ ! -L "$_htw_dir" ] || return 1
+	mkdir -p "$_htw_dir" || return 1
+	[ -d "$_htw_dir" ] && [ ! -L "$_htw_dir" ] || return 1
+	if [ -e "$_hub_transaction_path" ] || [ -L "$_hub_transaction_path" ]; then
+		[ -f "$_hub_transaction_path" ] && [ ! -L "$_hub_transaction_path" ] || return 1
+	fi
+	_htw_tmp="${_hub_transaction_path}.new.$$"
+	[ ! -e "$_htw_tmp" ] && [ ! -L "$_htw_tmp" ] || return 1
+	{
+		printf 'TRANSACTION_VERSION=1\n'
+		printf 'TRANSACTION_ID=%s\n' "$HUB_TX_ID"
+		printf 'SCOPE=%s\n' "$HUB_TX_SCOPE"
+		printf 'RELEASE_TAG=%s\n' "$HUB_TX_RELEASE"
+		printf 'PHASE=%s\n' "$_htw_phase"
+		printf 'HUB_WAS_RUNNING=%s\n' "$HUB_TX_HUB_WAS_RUNNING"
+		printf 'AGENT_WAS_RUNNING=%s\n' "$HUB_TX_AGENT_WAS_RUNNING"
+		printf 'HUB_WAS_LOADED=%s\n' "$HUB_TX_HUB_WAS_LOADED"
+		printf 'AGENT_WAS_LOADED=%s\n' "$HUB_TX_AGENT_WAS_LOADED"
+	} > "$_htw_tmp" || { rm -f "$_htw_tmp"; return 1; }
+	chmod 600 "$_htw_tmp" || { rm -f "$_htw_tmp"; return 1; }
+	if [ "$(id -u)" = "0" ]; then fix_path_owner "$_htw_tmp" || { rm -f "$_htw_tmp"; return 1; }; fi
+	mv -f "$_htw_tmp" "$_hub_transaction_path" || { rm -f "$_htw_tmp"; return 1; }
+	return 0
+}
+
+hub_transaction_read() {
+	_htr_path=$(hub_transaction_path)
+	[ -f "$_htr_path" ] && [ ! -L "$_htr_path" ] || return 1
+	if [ "$(id -u)" = "0" ]; then
+		_htr_owner=$(path_owner_uid "$_htr_path") || return 1
+		[ "$_htr_owner" = "0" ] || return 1
+	fi
+	[ "$(managed_path_metadata "$_htr_path" | cut -d: -f3)" = "600" ] || return 1
+	[ "$(wc -l < "$_htr_path" | tr -d '[:space:]')" = "9" ] || return 1
+	for _htr_key in TRANSACTION_VERSION TRANSACTION_ID SCOPE RELEASE_TAG PHASE HUB_WAS_RUNNING AGENT_WAS_RUNNING HUB_WAS_LOADED AGENT_WAS_LOADED; do
+		_htr_value=$(hub_backup_manifest_value "$_htr_path" "$_htr_key") || return 1
+		case "$_htr_key" in
+			TRANSACTION_VERSION) [ "$_htr_value" = "1" ] || return 1 ;;
+			TRANSACTION_ID) case "$_htr_value" in *[!A-Za-z0-9._-]* | '') return 1 ;; esac; HUB_TX_ID="$_htr_value" ;;
+			SCOPE) case "$_htr_value" in hub | both) HUB_TX_SCOPE="$_htr_value" ;; *) return 1 ;; esac ;;
+			RELEASE_TAG) valid_release_tag "$_htr_value" || return 1; HUB_TX_RELEASE="$_htr_value" ;;
+			PHASE) case "$_htr_value" in prepared | backed_up | applying | healthy) HUB_TX_PHASE="$_htr_value" ;; *) return 1 ;; esac ;;
+			HUB_WAS_RUNNING) case "$_htr_value" in 0 | 1) HUB_TX_HUB_WAS_RUNNING="$_htr_value" ;; *) return 1 ;; esac ;;
+			AGENT_WAS_RUNNING) case "$_htr_value" in 0 | 1) HUB_TX_AGENT_WAS_RUNNING="$_htr_value" ;; *) return 1 ;; esac ;;
+			HUB_WAS_LOADED) case "$_htr_value" in 0 | 1) HUB_TX_HUB_WAS_LOADED="$_htr_value" ;; *) return 1 ;; esac ;;
+			AGENT_WAS_LOADED) case "$_htr_value" in 0 | 1) HUB_TX_AGENT_WAS_LOADED="$_htr_value" ;; *) return 1 ;; esac ;;
+		esac
+	done
+	_htr_count=$(grep -c '^[A-Z_]*=' "$_htr_path" || true)
+	[ "$_htr_count" = "9" ] || return 1
+	case "$HUB_TX_ID" in "${HUB_TX_RELEASE}".*) ;; *) return 1 ;; esac
+	HUB_TX_DIR=$(hub_backup_dir_for_id "$HUB_TX_ID") || return 1
+	return 0
+}
+
+hub_transaction_remove() {
+	_htrm_path=$(hub_transaction_path)
+	if [ -e "$_htrm_path" ] || [ -L "$_htrm_path" ]; then
+		[ -f "$_htrm_path" ] && [ ! -L "$_htrm_path" ] || return 1
+		[ "$(managed_path_metadata "$_htrm_path" | cut -d: -f3)" = "600" ] || return 1
+		if [ "$(id -u)" = "0" ]; then [ "$(path_owner_uid "$_htrm_path")" = "0" ] || return 1; fi
+		rm -f "$_htrm_path" || return 1
+	fi
+	return 0
+}
+
+hub_stop_transaction_services() {
+	_hsts_hub_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+	_hsts_agent_plist="${LAUNCHD_DIR}/${AGENT_LABEL}.plist"
+	launchctl list > /dev/null 2>&1 || {
+		say_err "Cannot read launchctl state while quiescing; database safety is unproven."
+		return 1
+	}
+	if [ "$(component_state agent)" = "COMPLETE" ]; then
+		_hsts_agent_pid=$(svc_pid "$AGENT_LABEL" 2> /dev/null || true)
+		svc_unload "$_hsts_agent_plist" > /dev/null 2>&1 || true
+		_hsts_wait=0
+		while [ "$_hsts_wait" -lt 10 ] && { svc_running "$AGENT_LABEL" || { [ "$_hsts_agent_pid" != "none" ] && kill -0 "$_hsts_agent_pid" 2> /dev/null; }; }; do
+			sleep 1 || true
+			_hsts_wait=$((_hsts_wait + 1))
+		done
+		if svc_running "$AGENT_LABEL" || { [ "$_hsts_agent_pid" != "none" ] && kill -0 "$_hsts_agent_pid" 2> /dev/null; }; then
+			say_err "Agent could not be quiesced; Hub upgrade aborted with data unchanged."
+			return 1
+		fi
+	fi
+	_hsts_hub_pid=$(svc_pid "$HUB_LABEL" 2> /dev/null || true)
+	svc_unload "$_hsts_hub_plist" > /dev/null 2>&1 || true
+	_hsts_wait=0
+	while [ "$_hsts_wait" -lt 10 ] && { svc_running "$HUB_LABEL" || { [ "$_hsts_hub_pid" != "none" ] && kill -0 "$_hsts_hub_pid" 2> /dev/null; }; }; do
+		sleep 1 || true
+		_hsts_wait=$((_hsts_wait + 1))
+	done
+	if svc_running "$HUB_LABEL" || { [ "$_hsts_hub_pid" != "none" ] && kill -0 "$_hsts_hub_pid" 2> /dev/null; }; then
+		say_err "Hub could not be quiesced; upgrade aborted before backup or database migration."
+		return 1
+	fi
+	return 0
+}
+
+hub_set_one_service_state() {
+	_hsos_comp="$1"
+	_hsos_was_running="$2"
+	_hsos_was_loaded="$3"
+	case "$_hsos_comp" in
+		hub) _hsos_label="$HUB_LABEL"; _hsos_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist" ;;
+		agent) _hsos_label="$AGENT_LABEL"; _hsos_plist="${LAUNCHD_DIR}/${AGENT_LABEL}.plist" ;;
+		*) return 1 ;;
+	esac
+	if [ "$_hsos_was_running" = "1" ]; then
+		if ! svc_running "$_hsos_label"; then svc_load "$_hsos_plist" || return 1; fi
+		return 0
+	fi
+	if svc_running "$_hsos_label"; then
+		svc_unload "$_hsos_plist" || return 1
+	elif svc_loaded "$_hsos_label" && [ "$_hsos_was_loaded" = "0" ]; then
+		svc_unload "$_hsos_plist" || return 1
+	fi
+	if [ "$_hsos_was_loaded" = "1" ] && ! svc_loaded "$_hsos_label"; then
+		svc_load "$_hsos_plist" || return 1
+		svc_stop "$_hsos_label" || return 1
+	fi
+	svc_running "$_hsos_label" && return 1
+	return 0
+}
+
+hub_restore_service_state() {
+	# Recovery never starts either service until the complete pre-upgrade tree
+	# has been restored and verified. The same helper restores the prior state
+	# after a successful health check.
+	hub_set_one_service_state hub "$HUB_TX_HUB_WAS_RUNNING" "$HUB_TX_HUB_WAS_LOADED" || return 1
+	if [ "$HUB_TX_HUB_WAS_RUNNING" = "1" ]; then
+		_hrr_port=$(hub_port_from_plist "${LAUNCHD_DIR}/${HUB_LABEL}.plist") || return 1
+		wait_for_hub "$_hrr_port" || return 1
+	fi
+	if [ "$(component_state agent)" = "COMPLETE" ]; then
+		hub_set_one_service_state agent "$HUB_TX_AGENT_WAS_RUNNING" "$HUB_TX_AGENT_WAS_LOADED" || return 1
+		if [ "$HUB_TX_AGENT_WAS_RUNNING" = "1" ]; then
+			agent_post_update_ok "$AGENT_LABEL" || return 1
+			wait_for_agent_connection || return 1
+		fi
+	fi
+	return 0
+}
+
+hub_backup_restore() {
+	_hbr_id="$1"
+	_hbr_dir=$(hub_backup_dir_for_id "$_hbr_id") || return 1
+	hub_backup_verify "$_hbr_id" || {
+		say_err "CRITICAL: the Hub recovery archive failed verification; services remain stopped."
+		return 1
+	}
+	_hbr_present="${_hbr_dir}/present.paths"
+	_hbr_absent="${_hbr_dir}/absent.paths"
+	_hbr_archive="${_hbr_dir}/archive.tar"
+	_hbr_inventory="${_hbr_dir}/inventory.tsv"
+	_hbr_tag=$(hub_backup_manifest_value "${_hbr_dir}/manifest" RELEASE_TAG) || return 1
+	[ "$_hbr_tag" = "$HUB_TX_RELEASE" ] || { say_err "CRITICAL: recovery release does not match the verified archive; services remain stopped."; return 1; }
+	_hbr_stage="${WORK_DIR}/hub-recovery-stage.${_hbr_id}.$$"
+	_hbr_stage_n=0
+	while [ -e "$_hbr_stage" ] || [ -L "$_hbr_stage" ]; do
+		_hbr_stage_n=$((_hbr_stage_n + 1))
+		_hbr_stage="${WORK_DIR}/hub-recovery-stage.${_hbr_id}.$$.${_hbr_stage_n}"
+		[ "$_hbr_stage_n" -lt 100 ] || { say_err "Could not allocate a private recovery staging path."; return 1; }
+	done
+	mkdir -m 700 "$_hbr_stage" || { say_err "Cannot create private recovery staging directory."; return 1; }
+	tar -xpf "$_hbr_archive" -C "$_hbr_stage" || { say_err "Cannot extract verified archive into private recovery staging."; return 1; }
+	# The archive has already been verified as regular files/directories. Every
+	# destructive target is revalidated against the fixed installer path set.
+	while IFS= read -r _hbr_rel; do
+		_hub_snapshot_relative_allowed "$_hbr_rel" || { say_err "Recovery archive contains an unexpected present path: ${_hbr_rel}."; return 1; }
+		_hbr_target="/${_hbr_rel}"
+		[ ! -L "$_hbr_target" ] || {
+			say_err "CRITICAL: unsafe symlink blocks recovery at ${_hbr_target}; services remain stopped."
+			return 1
+		}
+		if [ -e "$_hbr_target" ]; then rm -rf "$_hbr_target" || { say_err "Could not clear the verified recovery target ${_hbr_target}."; return 1; }; fi
+	done < "$_hbr_present"
+	while IFS= read -r _hbr_rel; do
+		_hub_snapshot_relative_allowed "$_hbr_rel" || { say_err "Recovery archive contains an unexpected absent path: ${_hbr_rel}."; return 1; }
+		_hbr_target="/${_hbr_rel}"
+		[ ! -L "$_hbr_target" ] || return 1
+		if [ -e "$_hbr_target" ]; then rm -rf "$_hbr_target" || { say_err "Could not clear a path recorded absent from the snapshot: ${_hbr_target}."; return 1; }; fi
+	done < "$_hbr_absent"
+	tar -xpf "$_hbr_archive" -C / || {
+		say_err "CRITICAL: Hub data restore was interrupted; keep services stopped and retry recovery."
+		return 1
+	}
+	_hbr_new_inventory="${WORK_DIR}/hub-recovery-inventory.$$"
+	_hbr_new_entries="${WORK_DIR}/hub-recovery-entries.$$"
+	_hbr_new_present="${WORK_DIR}/hub-recovery-present.$$"
+	: > "$_hbr_new_present" || return 1
+	while IFS= read -r _hbr_rel; do printf '%s\n' "$_hbr_rel" >> "$_hbr_new_present" || return 1; done < "$_hbr_present"
+	hub_snapshot_inventory / "$_hbr_new_present" "$_hbr_new_inventory" "$_hbr_new_entries" || { say_err "Could not inventory restored files and metadata."; return 1; }
+	cmp -s "$_hbr_inventory" "$_hbr_new_inventory" || {
+		say_err "CRITICAL: restored Hub data does not match the verified snapshot; services remain stopped."
+		return 1
+	}
+	while IFS= read -r _hbr_rel; do
+		[ ! -e "/${_hbr_rel}" ] && [ ! -L "/${_hbr_rel}" ] || {
+			say_err "CRITICAL: a path recorded absent is present after recovery: /${_hbr_rel}."
+			return 1
+		}
+	done < "$_hbr_absent"
+	return 0
+}
+
+hub_transaction_recover() {
+	_hrec_path=$(hub_transaction_path)
+	if [ ! -e "$_hrec_path" ] && [ ! -L "$_hrec_path" ]; then return 0; fi
+	if ! hub_transaction_read; then
+		say_err "CRITICAL: pending Hub transaction state is malformed or unsafe at ${_hrec_path}. Inspect it manually; no service was started."
+		return 1
+	fi
+	if [ "$HUB_TX_PHASE" = "prepared" ]; then
+		# The candidate binary/data mutation has not started. Restore only the
+		# pre-transaction service state.
+		if ! hub_restore_service_state; then
+			hub_stop_transaction_services || true
+			say_err "CRITICAL: service state could not be restored; inspect the LaunchDaemons and keep this transaction pending."
+			return 1
+		fi
+	else
+		say_warn "Found an interrupted Hub ${HUB_TX_PHASE} transaction; restoring the verified pre-upgrade snapshot."
+		hub_stop_transaction_services || return 1
+		if ! hub_backup_restore "$HUB_TX_ID"; then return 1; fi
+		hub_cleanup_staged_candidates
+		if ! hub_restore_service_state; then
+			hub_stop_transaction_services || true
+			say_err "CRITICAL: the verified data snapshot is restored but the prior service state could not be recovered; transaction remains pending."
+			return 1
+		fi
+	fi
+	hub_transaction_remove || {
+		say_err "CRITICAL: recovery completed but transaction state could not be cleared; inspect ${_hrec_path}."
+		return 1
+	}
+	say_ok "Interrupted Hub transaction recovered from its verified snapshot."
+	return 0
+}
+
+hub_transaction_status_line() {
+	_htsl_path=$(hub_transaction_path)
+	if [ ! -e "$_htsl_path" ] && [ ! -L "$_htsl_path" ]; then return 0; fi
+	if hub_transaction_read; then
+		printf 'Pending Hub transaction: recovery required (phase %s, release %s).\n' "$HUB_TX_PHASE" "$HUB_TX_RELEASE"
+	else
+		printf 'Pending Hub transaction: unsafe or malformed state at %s; manual inspection required.\n' "$_htsl_path"
+	fi
+	return 0
+}
+
 # ------------------------------------------------- update transactions ---
 
-# stage_new_binary <asset> <final-name> — download, checksum-verify, sign and
-# stage the new binary as <final-name>.new. The running service is untouched:
-# any failure here (download, checksum, ldid) aborts before downtime.
-stage_new_binary() {
-	_sn_asset="$1"
-	_sn_name="$2"
-	_sn_dest="${BIN_DIR}/${_sn_name}"
-	_sn_staged="${_sn_dest}.new"
-	rm -f "$_sn_staged"
-	_sn_verified=""
-	_sn_verified=$(fetch_and_verify_binary "$_sn_asset") || return 1
-	cp "$_sn_verified" "$_sn_staged" || {
-		rm -f "$_sn_staged"
+# ------------------------------------------------- update transactions ---
+
+# stage_verified_binary <verified-source> <asset-name> <final-name> — sign
+# and stage an already checksum- and architecture-verified release asset.
+stage_verified_binary() {
+	_svb_verified="$1"
+	_svb_asset="$2"
+	_svb_name="$3"
+	_svb_dest="${BIN_DIR}/${_svb_name}"
+	_svb_staged="${_svb_dest}.new"
+	rm -f "$_svb_staged"
+	validate_ios_arm64_macho "$_svb_verified" || {
+		say_err "Refusing to stage ${_svb_asset}: it is not a supported iOS ARM64 executable."
+		return 1
+	}
+	cp "$_svb_verified" "$_svb_staged" || {
+		rm -f "$_svb_staged"
 		return 1
 	}
 	if [ "$(id -u)" = "0" ]; then
-		fix_path_owner "$_sn_staged" || {
-			rm -f "$_sn_staged"
-			say_err "Cannot set ownership on ${_sn_staged}."
+		fix_path_owner "$_svb_staged" || {
+			rm -f "$_svb_staged"
+			say_err "Cannot set ownership on ${_svb_staged}."
 			return 1
 		}
 	fi
-	chmod 755 "$_sn_staged" || {
-		rm -f "$_sn_staged"
+	chmod 755 "$_svb_staged" || {
+		rm -f "$_svb_staged"
 		return 1
 	}
-	if ! ldid -S "$_sn_staged"; then
-		rm -f "$_sn_staged"
-		say_err "ldid signing failed for ${_sn_staged}; leaving the running service untouched."
+	if ! ldid -S "$_svb_staged"; then
+		rm -f "$_svb_staged"
+		say_err "ldid signing failed for ${_svb_staged}."
 		return 1
 	fi
-	[ -s "$_sn_staged" ] || {
-		rm -f "$_sn_staged"
+	validate_ios_arm64_macho "$_svb_staged" || {
+		rm -f "$_svb_staged"
+		say_err "The signed ${_svb_asset} staging file failed its iOS ARM64 validation."
 		return 1
 	}
-	printf '%s' "$_sn_staged"
+	[ -s "$_svb_staged" ] || {
+		rm -f "$_svb_staged"
+		return 1
+	}
+	printf '%s' "$_svb_staged"
 	return 0
+}
+
+# stage_new_binary <asset> <final-name> — download, verify and sign the asset.
+stage_new_binary() {
+	_sn_asset="$1"
+	_sn_name="$2"
+	_sn_verified=""
+	_sn_verified=$(fetch_and_verify_binary "$_sn_asset") || return 1
+	validate_ios_arm64_macho "$_sn_verified" || {
+		say_err "Refusing to stage ${_sn_asset}: it is not a supported iOS ARM64 executable."
+		return 1
+	}
+	stage_verified_binary "$_sn_verified" "$_sn_asset" "$_sn_name"
 }
 
 # backup_current_binary <final-name> — transactional copy of the working
@@ -2208,77 +3287,212 @@ transact_agent_update() {
 	return 1
 }
 
-# transact_hub_update <tag> — full safe Hub update. The plist and the Hub
-# database directory are never rewritten, migrated or re-owned here.
-transact_hub_update() {
-	_th_tag="$1"
-	_th_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
-	_th_final="${BIN_DIR}/${HUB_BIN}"
-	if [ ! -f "$_th_final" ] || [ ! -f "$_th_plist" ]; then
-		say_err "Hub installation is incomplete."
-		say_err "Repair support will be added separately."
-		return 1
-	fi
-	if [ -L "$_th_final" ]; then
-		say_err "Refusing to update ${_th_final}: it is a symlink."
-		return 1
-	fi
-	_th_port=""
-	_th_port=$(hub_port_from_plist "$_th_plist") || {
-		say_err "Cannot determine the existing Hub health port safely."
-		say_err "Hub update aborted without changing the service."
+hub_transaction_capture_service_state() {
+	launchctl list > /dev/null 2>&1 || {
+		say_err "Cannot read launchctl state; refusing to begin a database-sensitive update."
 		return 1
 	}
-	_th_staged=""
-	_th_staged=$(stage_new_binary "$HUB_ASSET" "$HUB_BIN") || return 1
-	backup_current_binary "$HUB_BIN" || {
-		rm -f "${_th_final}.new"
-		return 1
-	}
-	update_begin "hub"
-	_UPDATE_NEED_ROLLBACK=1
-	if ! svc_unload "$_th_plist" > /dev/null 2>&1; then
-		say_warn "launchctl unload reported an issue; continuing with replacement."
+	HUB_TX_HUB_WAS_RUNNING=0
+	HUB_TX_AGENT_WAS_RUNNING=0
+	HUB_TX_HUB_WAS_LOADED=0
+	HUB_TX_AGENT_WAS_LOADED=0
+	svc_running "$HUB_LABEL" && HUB_TX_HUB_WAS_RUNNING=1
+	svc_loaded "$HUB_LABEL" && HUB_TX_HUB_WAS_LOADED=1
+	if [ "$(component_state agent)" = "COMPLETE" ]; then
+		svc_running "$AGENT_LABEL" && HUB_TX_AGENT_WAS_RUNNING=1
+		svc_loaded "$AGENT_LABEL" && HUB_TX_AGENT_WAS_LOADED=1
 	fi
-	_th_ok=1
-	if ! mv -f "$_th_staged" "$_th_final"; then
-		say_err "Failed to replace ${_th_final}."
-		_th_ok=0
-	fi
-	if [ "$_th_ok" = "1" ]; then
-		if ! svc_load "$_th_plist"; then
-			say_err "New Hub failed to load."
-			_th_ok=0
-		fi
-	fi
-	if [ "$_th_ok" = "1" ]; then
-		if ! wait_for_hub "$_th_port"; then
-			say_err "New Hub failed health check."
-			_th_ok=0
-		fi
-	fi
-	if [ "$_th_ok" = "1" ]; then
-		_UPDATE_NEED_ROLLBACK=0
-		_th_sha=""
-		_th_sha=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$HUB_ASSET" 2> /dev/null || true)
-		if [ -n "$_th_sha" ]; then
-			state_write_component "hub" "$_th_tag" "$_th_sha" || say_warn "Hub updated but state recording failed."
-		else
-			say_warn "Hub updated but state recording failed (checksum entry missing)."
-		fi
-		update_end
-		rm -f "${_th_final}.rollback"
-		say_ok "Hub updated to ${_th_tag}."
+	return 0
+}
+
+hub_transaction_abort_prepared() {
+	if hub_restore_service_state; then
+		hub_transaction_remove || return 1
 		return 0
 	fi
-	rm -f "$_th_staged"
-	_UPDATE_NEED_ROLLBACK=0
-	if rollback_component "hub"; then
-		update_end
+	hub_stop_transaction_services || true
+	say_err "CRITICAL: update stopped before migration, but prior service state could not be restored. The journal remains for recovery."
+	return 1
+}
+
+hub_cleanup_staged_candidates() {
+	for _hcsc_name in "$HUB_BIN" "$AGENT_BIN"; do
+		_hcsc_path="${BIN_DIR}/${_hcsc_name}.new"
+		if [ -L "$_hcsc_path" ]; then
+			say_warn "Leaving an unexpected staged symlink for inspection: ${_hcsc_path}."
+		elif [ -f "$_hcsc_path" ]; then
+			rm -f "$_hcsc_path" || say_warn "Could not remove staged candidate ${_hcsc_path}."
+		elif [ -e "$_hcsc_path" ]; then
+			say_warn "Leaving an unexpected staged path for inspection: ${_hcsc_path}."
+		fi
+	done
+}
+
+hub_transaction_rollback() {
+	say_info "Restoring the verified pre-upgrade Hub, Agent and data snapshot..."
+	if ! hub_stop_transaction_services; then
+		say_err "CRITICAL: services could not be quiesced for rollback. Keep both services stopped and retry recovery; the verified backup is ${HUB_TX_DIR}."
 		return 1
 	fi
-	update_end
-	return 1
+	if ! hub_backup_restore "$HUB_TX_ID"; then
+		say_err "CRITICAL: full rollback is incomplete. Do not start the old Hub against uncertain data. Keep services stopped and inspect ${HUB_TX_DIR}."
+		return 1
+	fi
+	hub_cleanup_staged_candidates
+	if ! hub_restore_service_state; then
+		hub_stop_transaction_services || true
+		say_err "CRITICAL: data and binaries match the pre-upgrade snapshot, but prior services did not recover. The transaction journal remains; do not start the old Hub manually until recovery is resolved."
+		return 1
+	fi
+	hub_transaction_remove || {
+		say_err "CRITICAL: rollback completed but the transaction journal could not be removed; next mutation will repeat verified recovery."
+		return 1
+	}
+	say_ok "Full rollback restored the verified pre-upgrade binaries, configuration, installation state and data."
+	return 0
+}
+
+transact_hub_agent_update() {
+	_tha_tag="$1"
+	_tha_scope="$2"
+	_tha_update_hub="$3"
+	_tha_update_agent="$4"
+	valid_release_tag "$_tha_tag" || return 1
+	case "$_tha_scope:$_tha_update_hub:$_tha_update_agent" in
+		hub:1:0 | both:1:0 | both:1:1 | both:0:1) ;;
+		*) return 1 ;;
+	esac
+	hub_transaction_recover || return 1
+	_tha_hub_plist="${LAUNCHD_DIR}/${HUB_LABEL}.plist"
+	_tha_hub_final="${BIN_DIR}/${HUB_BIN}"
+	_tha_agent_final="${BIN_DIR}/${AGENT_BIN}"
+	[ "$(component_state hub)" = "COMPLETE" ] || { say_err "Hub installation is incomplete."; return 1; }
+	hub_port_from_plist "$_tha_hub_plist" > /dev/null || {
+		say_err "Cannot determine the existing Hub health port safely; update aborted before changes."
+		return 1
+	}
+	if [ "$_tha_update_agent" = "1" ] && [ "$(component_state agent)" != "COMPLETE" ]; then
+		say_err "Agent installation is incomplete; update aborted before changes."
+		return 1
+	fi
+	# Verify paths, tools and free space before downloading or stopping any
+	# writer. The archive itself is created only after both services quiesce.
+	hub_backup_preflight || return 1
+	_tha_hub_sha=""
+	_tha_agent_sha=""
+	if [ "$_tha_update_hub" = "1" ]; then
+		_tha_hub_sha=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$HUB_ASSET") || return 1
+	fi
+	if [ "$_tha_update_agent" = "1" ]; then
+		_tha_agent_sha=$(sums_hash_for "${WORK_DIR}/${SUMS_ASSET}" "$AGENT_ASSET") || return 1
+	fi
+	_tha_hub_verified=""
+	_tha_agent_verified=""
+	if [ "$_tha_update_hub" = "1" ]; then
+		_tha_hub_verified=$(fetch_and_verify_binary "$HUB_ASSET") || return 1
+		validate_ios_arm64_macho "$_tha_hub_verified" || return 1
+	fi
+	if [ "$_tha_update_agent" = "1" ]; then
+		_tha_agent_verified=$(fetch_and_verify_binary "$AGENT_ASSET") || return 1
+		validate_ios_arm64_macho "$_tha_agent_verified" || return 1
+	fi
+	hub_transaction_capture_service_state || return 1
+	HUB_TX_SCOPE="$_tha_scope"
+	HUB_TX_RELEASE="$_tha_tag"
+	hub_transaction_generate_id "$_tha_tag" || return 1
+	hub_transaction_write prepared || return 1
+	if ! hub_stop_transaction_services; then
+		hub_transaction_abort_prepared || return 1
+		return 1
+	fi
+	if ! hub_backup_create "$_tha_tag"; then
+		if hub_transaction_abort_prepared; then say_err "Verified backup could not be completed; no binary or database migration was attempted."; fi
+		return 1
+	fi
+	if ! hub_transaction_write backed_up; then
+		if hub_transaction_abort_prepared; then say_err "Could not persist the backup checkpoint; no binary or database migration was attempted."; fi
+		return 1
+	fi
+	_tha_hub_staged=""
+	_tha_agent_staged=""
+	if [ "$_tha_update_hub" = "1" ]; then
+		_tha_hub_staged=$(stage_verified_binary "$_tha_hub_verified" "$HUB_ASSET" "$HUB_BIN") || { say_err "Hub staging failed after backup; restoring the prior service state."; hub_transaction_rollback || true; return 1; }
+	fi
+	if [ "$_tha_update_agent" = "1" ]; then
+		_tha_agent_staged=$(stage_verified_binary "$_tha_agent_verified" "$AGENT_ASSET" "$AGENT_BIN") || { say_err "Agent staging failed after backup; restoring the prior service state."; hub_transaction_rollback || true; return 1; }
+	fi
+	if [ "$_tha_update_hub" = "1" ]; then
+		backup_current_binary "$HUB_BIN" || { say_err "Could not preserve the current Hub executable."; hub_transaction_rollback || true; return 1; }
+	fi
+	if [ "$_tha_update_agent" = "1" ]; then
+		backup_current_binary "$AGENT_BIN" || { say_err "Could not preserve the current Agent executable."; hub_transaction_rollback || true; return 1; }
+	fi
+	if ! hub_transaction_write applying; then
+		hub_transaction_rollback || true
+		return 1
+	fi
+	if [ "$_tha_update_hub" = "1" ] && ! mv -f "$_tha_hub_staged" "$_tha_hub_final"; then
+		say_err "Failed to replace the Hub executable."
+		hub_transaction_rollback || true
+		return 1
+	fi
+	if [ "$_tha_update_agent" = "1" ] && ! mv -f "$_tha_agent_staged" "$_tha_agent_final"; then
+		say_err "Failed to replace the Agent executable."
+		hub_transaction_rollback || true
+		return 1
+	fi
+	if ! svc_load "$_tha_hub_plist"; then
+		say_err "New Hub failed to load."
+		hub_transaction_rollback || true
+		return 1
+	fi
+	_tha_port=$(hub_port_from_plist "$_tha_hub_plist") || { hub_transaction_rollback || true; return 1; }
+	if ! wait_for_hub "$_tha_port"; then
+		say_err "New Hub failed its post-migration health check."
+		hub_transaction_rollback || true
+		return 1
+	fi
+	if [ "$(component_state agent)" = "COMPLETE" ]; then
+		if ! svc_load "${LAUNCHD_DIR}/${AGENT_LABEL}.plist" || ! agent_post_update_ok "$AGENT_LABEL" || ! wait_for_agent_connection; then
+			say_err "Agent failed its post-update Hub connectivity check."
+			hub_transaction_rollback || true
+			return 1
+		fi
+	fi
+	if ! hub_transaction_write healthy; then
+		say_err "Could not record the healthy checkpoint; rolling back the complete transaction."
+		hub_transaction_rollback || true
+		return 1
+	fi
+	if ! hub_restore_service_state; then
+		say_err "Prior service state could not be restored after validation; rolling back the complete transaction."
+		hub_transaction_rollback || true
+		return 1
+	fi
+	_tha_old_agent_rel=$(state_agent_release 2> /dev/null || true)
+	_tha_old_agent_sha=$(state_agent_sha 2> /dev/null || true)
+	_tha_old_hub_rel=$(state_hub_release 2> /dev/null || true)
+	_tha_old_hub_sha=$(state_hub_sha 2> /dev/null || true)
+	if [ "$_tha_update_hub" = "1" ]; then _tha_old_hub_rel="$_tha_tag"; _tha_old_hub_sha="$_tha_hub_sha"; fi
+	if [ "$_tha_update_agent" = "1" ]; then _tha_old_agent_rel="$_tha_tag"; _tha_old_agent_sha="$_tha_agent_sha"; fi
+	if ! state_write_all "$_tha_old_agent_rel" "$_tha_old_agent_sha" "$_tha_old_hub_rel" "$_tha_old_hub_sha"; then
+		say_err "Installation state commit failed; rolling back binaries, data and state."
+		hub_transaction_rollback || true
+		return 1
+	fi
+	if ! hub_transaction_remove; then
+		say_err "Update committed but its journal could not be removed; next mutation will verify and recover the saved snapshot."
+		return 1
+	fi
+	[ "$_tha_update_hub" = "0" ] || say_ok "Hub updated to ${_tha_tag}."
+	[ "$_tha_update_agent" = "0" ] || say_ok "Agent updated to ${_tha_tag}."
+	return 0
+}
+
+# transact_hub_update <tag> — a migration-safe transaction covering the Hub,
+# any installed Agent writer, service configuration, state and persistent data.
+transact_hub_update() {
+	transact_hub_agent_update "$1" hub 1 0
 }
 
 # ------------------------------------------------------------- agent setup ---
@@ -2604,9 +3818,8 @@ update_hub_flow() {
 	return 1
 }
 
-# update_both_flow <tag> — Hub first (strong HTTP health check), then Agent.
-# Each component keeps its own transaction: a Hub failure leaves the Agent
-# untouched; an Agent failure keeps the successfully updated Hub.
+# update_both_flow <tag> — updates Hub and Agent as one migration-safe
+# transaction. Any failure restores both binaries and the complete snapshot.
 update_both_flow() {
 	_ub_tag="$1"
 	case "$(component_status agent)" in
@@ -2643,22 +3856,12 @@ update_both_flow() {
 		return 0
 	}
 	fetch_sums || return 1
-	if [ "$_ub_hub_needs" = "1" ]; then
-		transact_hub_update "$_ub_tag" || {
-			say_err "Hub update failed; Agent was left untouched."
-			return 1
-		}
-	else
-		say_info "Hub is already on ${_ub_tag}; skipping Hub."
-	fi
-	if [ "$_ub_agent_needs" = "1" ]; then
-		transact_agent_update "$_ub_tag" || {
-			say_err "Agent update failed and was rolled back; the Hub update (if any) was kept."
-			return 1
-		}
-	else
-		say_info "Agent is already on ${_ub_tag}; skipping Agent."
-	fi
+	if [ "$_ub_hub_needs" = "0" ]; then say_info "Hub is already on ${_ub_tag}; skipping Hub."; fi
+	if [ "$_ub_agent_needs" = "0" ]; then say_info "Agent is already on ${_ub_tag}; skipping Agent."; fi
+	transact_hub_agent_update "$_ub_tag" both "$_ub_hub_needs" "$_ub_agent_needs" || {
+		say_err "Combined update failed; the full transaction attempted to restore the previous binaries, state and Hub data."
+		return 1
+	}
 	persist_manager_after_success
 	print_summary "agent+hub update"
 	return 0
@@ -4130,8 +5333,12 @@ run_interactive_menu() {
 	check_device
 	check_layout
 	check_launchctl
+	acquire_installer_lock || return 1
+	trap cleanup_work_dir EXIT INT TERM HUP
 	setup_work_dir
+	hub_transaction_recover || return 1
 	while :; do
+		hub_transaction_recover || return 1
 		print_menu
 		CHOICE=""
 		ask_tty "Select" CHOICE "" || exit 1
@@ -4252,8 +5459,11 @@ cli_prepare_mutation() {
 	check_device
 	check_layout
 	check_launchctl
+	acquire_installer_lock || return 1
+	trap cleanup_work_dir EXIT INT TERM HUP
+	setup_work_dir
+	hub_transaction_recover || return 1
 	if [ "$_cpm_mode" = "full" ]; then
-		setup_work_dir
 		check_deps
 	fi
 	return 0
@@ -4437,6 +5647,7 @@ cli_status_component() {
 }
 
 cli_status() {
+	hub_transaction_status_line
 	case "$1" in
 		agent) cli_status_component agent ;;
 		hub) cli_status_component hub ;;
@@ -4449,6 +5660,7 @@ cli_status() {
 }
 
 cli_diagnostics() {
+	hub_transaction_status_line
 	case "$1" in
 		agent) diagnose_agent ;;
 		hub) diagnose_hub ;;
@@ -4629,7 +5841,13 @@ cli_service() {
 		return $?
 	fi
 	check_root
+	check_device
+	check_layout
 	check_launchctl
+	acquire_installer_lock || return 1
+	trap cleanup_work_dir EXIT INT TERM HUP
+	setup_work_dir
+	hub_transaction_recover || return 1
 	case "$_cli_service_scope" in
 		agent | hub)
 			cli_service_preflight_component "$_cli_service_scope" "$_cli_service_action" || return 1
@@ -5016,6 +6234,11 @@ cli_doctor() {
 	DOCTOR_WARNED=0
 	DOCTOR_LAUNCHCTL_MISSING=0
 	printf 'Beszel-iOS Doctor\n\n'
+	_doctor_txn_path=$(hub_transaction_path)
+	if [ -e "$_doctor_txn_path" ] || [ -L "$_doctor_txn_path" ]; then
+		hub_transaction_status_line
+		doctor_note_fail 'pending Hub transaction requires recovery before any mutation'
+	fi
 	doctor_platform_report
 	printf '\n'
 	doctor_dependency_report

@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Static checks for separation between iOS validation and publication events."""
+
+from fnmatch import fnmatchcase
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+WORKFLOWS = ROOT / ".github" / "workflows"
+
+passed = 0
+failed = 0
+
+
+def check(description: str, condition: bool) -> None:
+    global passed, failed
+    if condition:
+        print(f"PASS: {description}")
+        passed += 1
+    else:
+        print(f"FAIL: {description}", file=sys.stderr)
+        failed += 1
+
+
+def section(text: str, header: str, indent: int) -> str:
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines) if line == " " * indent + header), None)
+    if start is None:
+        return ""
+    selected = [lines[start]]
+    for line in lines[start + 1 :]:
+        if line.strip() and len(line) - len(line.lstrip()) <= indent:
+            break
+        selected.append(line)
+    return "\n".join(selected)
+
+
+def read(name: str) -> str:
+    return (WORKFLOWS / name).read_text()
+
+
+ios_build = read("ios-build.yml")
+ios_on = section(ios_build, "on:", 0)
+ios_release = section(ios_build, "release-ios:", 2)
+ios_build_job = section(ios_build, "build-ios:", 2)
+ios_push = section(ios_on, "push:", 2)
+ios_tags = section(ios_push, "tags:", 4)
+check("iOS build supports an explicit validation dispatch", "workflow_dispatch:" in ios_on)
+check("iOS release tags use a distinct suffix filter", '"v*-ios.*"' in ios_tags)
+check(
+    "iOS release job requires a version tag and the iOS suffix",
+    "startsWith(github.ref, 'refs/tags/v')" in ios_release
+    and "contains(github.ref_name, '-ios.')" in ios_release,
+)
+check("top-level iOS build permission is read-only", "contents: read" in section(ios_build, "permissions:", 0))
+check("native build job receives no release credentials", "secrets." not in ios_build_job and "GH_TOKEN:" not in ios_build_job)
+check("release credential is confined to the guarded release job", "GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}" in ios_release)
+check(
+    "native build runs installer Mach-O validation on both generated binaries",
+    "sh tests/ios-macho-validation-test.sh build/ios/beszel-agent-ios-arm64 build/ios/beszel-hub-ios-arm64" in ios_build,
+)
+
+for filename in ("release.yml", "docker-images.yml"):
+    workflow = read(filename)
+    events = section(workflow, "on:", 0)
+    push = section(events, "push:", 2)
+    tags = section(push, "tags:", 4)
+    ordered_patterns = [line.strip() for line in tags.splitlines() if line.strip().startswith("- ")]
+    check(f"{filename} has no PR or branch publication trigger", "pull_request:" not in events and "branches:" not in events)
+    check(
+        f"{filename} puts the iOS exclusion after the upstream tag pattern",
+        ordered_patterns == ['- "v*"', '- "!v*-ios.*"'],
+    )
+
+release = read("release.yml")
+check("GoReleaser publication is tag-triggered", "args: release --clean" in release and "pull_request:" not in section(release, "on:", 0))
+
+docker = read("docker-images.yml")
+check("Docker pushes are limited to tag refs", "push: ${{ github.ref_type == 'tag' }}" in docker)
+
+helm = read("helm-charts.yml")
+helm_events = section(helm, "on:", 0)
+check("Helm event filters are limited to chart paths", "supplemental/helm/**" in helm_events)
+check("Helm publication step is restricted to push events", "if: github.event_name == 'push'" in helm)
+
+installer = read("ios-installer.yml")
+check("installer workflow has read-only repository permission", "permissions:\n  contents: read" in installer and "packages: write" not in installer)
+
+ios_tag = "v0.21.0-ios.1"
+upstream_tag = "v0.21.0"
+check(
+    "iOS tag matches the native tag pattern and the explicit upstream exclusion",
+    fnmatchcase(ios_tag, "v*-ios.*") and fnmatchcase(ios_tag, "v*"),
+)
+check(
+    "upstream tag matches upstream workflows and not the iOS pattern",
+    fnmatchcase(upstream_tag, "v*") and not fnmatchcase(upstream_tag, "v*-ios.*"),
+)
+
+print(f"\n{passed} passed, {failed} failed")
+raise SystemExit(1 if failed else 0)

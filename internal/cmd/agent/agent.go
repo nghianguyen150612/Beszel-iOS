@@ -49,6 +49,13 @@ func (opts *cmdOptions) parse() bool {
 		}
 		fmt.Print("ok")
 		return true
+	case "connection":
+		err := health.CheckConnection()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Print("connected")
+		return true
 	case "fingerprint":
 		handleFingerprint()
 		return true
@@ -87,6 +94,7 @@ func (opts *cmdOptions) parse() bool {
 		builder.WriteString("\nCommands:\n")
 		builder.WriteString("  fingerprint  View or reset the agent fingerprint\n")
 		builder.WriteString("  health       Check if the agent is running\n")
+		builder.WriteString("  connection   Check if the agent is connected to the hub\n")
 		builder.WriteString("  update       Update to the latest version\n")
 		builder.WriteString("\nFlags:\n")
 		fmt.Print(builder.String())

@@ -15,11 +15,10 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-	// Override healthFile to use a temporary directory for this test.
-	originalHealthFile := healthFile
+	// Override both marker paths to use temporary files for this test.
 	tmpDir := t.TempDir()
-	healthFile = filepath.Join(tmpDir, "beszel_health_test")
-	defer func() { healthFile = originalHealthFile }()
+	restorePaths := SetPathsForTesting(filepath.Join(tmpDir, "beszel_health_test"), filepath.Join(tmpDir, "beszel_connected_test"))
+	defer restorePaths()
 
 	t.Run("check with no health file", func(t *testing.T) {
 		err := Check()
@@ -33,6 +32,33 @@ func TestHealth(t *testing.T) {
 
 		err = Check()
 		assert.NoError(t, err, "Check() failed immediately after Update()")
+	})
+
+	t.Run("authenticated connection marker lifecycle", func(t *testing.T) {
+		require.Error(t, CheckConnection(), "connection check must fail before authentication")
+		require.NoError(t, UpdateConnection())
+		require.NoError(t, CheckConnection())
+		info, err := os.Stat(connectionFile)
+		require.NoError(t, err)
+		assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
+		stale := time.Now().Add(-92 * time.Second)
+		require.NoError(t, os.Chtimes(connectionFile, stale, stale))
+		require.Error(t, CheckConnection(), "a stale connection marker must fail")
+		require.NoError(t, UpdateConnection())
+		require.NoError(t, CleanUpConnection())
+		require.Error(t, CheckConnection(), "disconnect removes the connection marker")
+	})
+
+	t.Run("connection marker rejects symlinks", func(t *testing.T) {
+		target := filepath.Join(tmpDir, "marker-target")
+		require.NoError(t, os.WriteFile(target, []byte("x"), 0o600))
+		require.NoError(t, os.Symlink(target, connectionFile))
+		require.Error(t, CheckConnection(), "symlink marker must fail closed")
+		require.NoError(t, UpdateConnection(), "update replaces the symlink itself with a new private marker")
+		require.NoError(t, CheckConnection())
+		contents, err := os.ReadFile(target)
+		require.NoError(t, err)
+		assert.Equal(t, []byte("x"), contents, "marker update must not touch the symlink target")
 	})
 
 	// This test uses synctest to simulate time passing.
