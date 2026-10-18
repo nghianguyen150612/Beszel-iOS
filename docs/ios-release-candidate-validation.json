@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "milestone": "P017",
-  "status": "IN_PROGRESS",
+  "status": "PASS_CLOUD_VALIDATION",
   "gate": "E",
-  "candidateStatus": "UNVERIFIED",
+  "candidateStatus": "CLOUD_VALIDATED",
   "startingIntegrationSha": "3ed79af25a03381f4c1b8800fd7cb93e3480403d",
   "sourceBranch": "ios/release-candidate-validation",
   "baseBranch": "ios/upstream-v021-integration",
@@ -20,15 +20,14 @@
     "reviewException": "OWNER_DIRECTED_ONLY; NO INDEPENDENT APPROVAL"
   },
   "checks": {
-    "releaseCandidateRegression": "PENDING",
-    "nativeIosBuild": "PENDING",
-    "installerLifecycle": "PENDING_P017_SOURCE",
-    "p013GenuineMigration": "PENDING_P017_SOURCE",
-    "artifactDownloadSha256": "PENDING",
-    "MachoInspection": "PENDING",
-    "goRace": "PENDING",
-    "frontendAssetManifest": "PENDING",
-    "branchProtection": "UNVERIFIED"
+    "releaseCandidateRegression": "PASS run 39095687534 on 5a7351f",
+    "nativeIosBuild": "PASS run 39095687398 on 5a7351f",
+    "installerLifecycle": "PASS run 39095687704 on 5a7351f",
+    "p013GenuineMigration": "PASS P016 unchanged product source bd0be1e via run 39028505022; not rerun on P017",
+    "artifactDownloadSha256": "PASS independent downloaded GitHub ZIP digest and payload SHA256SUMS",
+    "machoInspection": "PASS independent llvm-objdump LC_BUILD_VERSION iOS minOS12; runtime A7 tests",
+    "goRace": "PASS scoped Go race suites in native iOS Build",
+    "frontendAssetManifest": "PASS 95 assets"
   },
   "securityResiduals": [
     {
@@ -51,5 +50,17 @@
     "No P017 CI PASS claimed before logs",
     "No physical A7, reboot, SSH or Tailscale validation",
     "No release, deployment, tag, production DB mutation"
-  ]
+  ],
+  "binaryTestedSourceSha": "5a7351f752376e206a3e1809b3698bb03cc87b98",
+  "productSourceUnchangedFromP016": true,
+  "productSourceEvidence": "All P017 changed files through final evidence are .github/workflows/* or docs/*; no product or installer input changed.",
+  "artifactEvidence": "docs/ios-release-candidate-artifacts.json",
+  "docs": [
+    "docs/ios-release-candidate.md",
+    "docs/ios-release-candidate.vi.md",
+    "docs/ios-release-security-review.md",
+    "docs/ios-p017-checkpoints.md"
+  ],
+  "reviewDisposition": "OWNER_DIRECTED_EXCEPTION_FOR_PR21_ONLY_NOT_AN_INDEPENDENT_REVIEW",
+  "productionDeploy": false
 }
