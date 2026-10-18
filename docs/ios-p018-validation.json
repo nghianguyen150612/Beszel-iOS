@@ -12,7 +12,8 @@
     "soc": "Apple A7",
     "ios": "12.5.7",
     "jailbreak": "Amethyst/Procursus rootful",
-    "physicalAccess": false
+    "physicalAccess": false,
+    "accessAssessment": "No authorized terminal/SSH session or target endpoint for the reference iPad was available through this ChatGPT Work execution. No network scan or device connection attempt was made."
   },
   "candidate": {
     "release": false,
@@ -74,5 +75,116 @@
     "No v0.21 GitHub Release exists; never test it by calling an installer that resolves Latest",
     "Historical v0.19 on-device PASS is not v0.21 hardware evidence",
     "No device testimony or credentials entered; GitHub evidence must remain sanitized"
-  ]
+  ],
+  "cloudPreparation": {
+    "recordedAtUtc": "2026-10-18T05:09:23Z",
+    "repositoryHeadUnderTest": "25aa2589182d1460839a300849f71f394472a4fb",
+    "deviceConnection": "BLOCKED_NO_AUTHORIZED_DEVICE_CONNECTION",
+    "upstreamAccounting": {
+      "frozenUpstreamCommits": "PASS 178/178",
+      "logicalIosPatches": "PASS 13/13",
+      "source": "scripts/audit/validate-upstream-v021-matrix.py and scripts/audit/validate-upstream-v021-readiness.py"
+    },
+    "tests": [
+      {
+        "id": "P018-CLOUD-01",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; syntax-only check did not execute candidate binaries",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh -n scripts/ios/p018-device-preflight.sh && sh -n tests/ios-p018-device-preflight-test.sh",
+        "expected": "Both POSIX shell scripts parse successfully.",
+        "actual": "Exit status 0.",
+        "result": "PASS",
+        "limitation": "Host syntax validation only; no iPad execution."
+      },
+      {
+        "id": "P018-CLOUD-02",
+        "environment": "ChatGPT Work Linux workspace, isolated host command stubs; branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; test exercised only the preflight script",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/ios-p018-device-preflight-test.sh",
+        "expected": "Only launchctl list is invoked; prohibited service, filesystem, installer, reboot, network, process-stop, and database-writer commands remain unused; unexpected arguments fail before service inspection.",
+        "actual": "P018 read-only device preflight safety checks passed.",
+        "result": "PASS",
+        "limitation": "Deterministic host-side safety test, not physical-device evidence."
+      },
+      {
+        "id": "P018-CLOUD-03",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; installer bootstrap fixtures only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/bootstrap-test.sh",
+        "expected": "All bootstrap integrity and lifecycle-isolation assertions pass.",
+        "actual": "54 passed, 0 failed.",
+        "result": "PASS",
+        "limitation": "Host fixtures only; no production install or device change."
+      },
+      {
+        "id": "P018-CLOUD-04",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; installer lifecycle fixtures only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/install-sh-test.sh",
+        "expected": "Installer lifecycle, read-only CLI, ordering, rollback, and data-preservation assertions pass.",
+        "actual": "873 passed, 0 failed.",
+        "result": "PASS",
+        "limitation": "Sandboxed host fixtures only; does not prove device signing, LaunchDaemon, or reboot behavior."
+      },
+      {
+        "id": "P018-CLOUD-05",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; synchronization parser fixtures only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/upstream-sync-test.sh",
+        "expected": "In-sync, behind, ahead, and malformed cases are classified correctly.",
+        "actual": "10 passed, 0 failed.",
+        "result": "PASS",
+        "limitation": "Fixture validation; not a device test."
+      },
+      {
+        "id": "P018-CLOUD-06",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; source-preservation sentinels only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/ios-patch-sentinels.sh",
+        "expected": "Frozen iOS patch and runtime safety sentinels pass.",
+        "actual": "45 passed, 0 failed.",
+        "result": "PASS",
+        "limitation": "Source assertions; not native A7 execution."
+      },
+      {
+        "id": "P018-CLOUD-07",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; frozen upstream matrix audit",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "python3 scripts/audit/validate-upstream-v021-matrix.py",
+        "expected": "All expected upstream commits and historical iOS commits are accounted for with no unresolved audit rows.",
+        "actual": "178/178 upstream commits, 35/35 historical iOS commits, 0 unresolved audit rows; validation PASS.",
+        "result": "PASS",
+        "limitation": "Repository accounting only."
+      },
+      {
+        "id": "P018-CLOUD-08",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; readiness matrix audit",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "python3 scripts/audit/validate-upstream-v021-readiness.py",
+        "expected": "Readiness coverage includes all upstream commits, logical iOS patches, P0 risks, acceptance cases, and compatibility scenarios.",
+        "actual": "178 commits, 13 logical iOS patches, 21 P0 risks, 24 acceptance cases, 33 compatibility scenarios; validation PASS.",
+        "result": "PASS",
+        "limitation": "Readiness accounting only."
+      },
+      {
+        "id": "P018-CLOUD-09",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation after local P018 tooling changes",
+        "candidateHash": "N/A; whitespace validation only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "git diff --check",
+        "expected": "No whitespace errors or conflict markers in the working diff.",
+        "actual": "Exit status 0.",
+        "result": "PASS",
+        "limitation": "Local source check; CI still required for the changed workflow and script."
+      }
+    ]
+  }
 }

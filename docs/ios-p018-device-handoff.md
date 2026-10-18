@@ -33,6 +33,8 @@ sh /var/tmp/p018-device-preflight.sh
 
 The script prints only OS identity, safe hardware identifiers, utility/path presence, binary checksums, Beszel service labels and free space. It does not contact network services, modify files, run installer commands or restart services. Sanitize its output before sharing.
 
+Host-side safety harness: `sh tests/ios-p018-device-preflight-test.sh`. It checks the script with guarded host command stubs. This is not simulated hardware evidence. In the current ChatGPT Work execution, no authorized iPad terminal/SSH session or target endpoint was available, so Phase 0 remains NOT RUN ON DEVICE; no network scan or connection attempt was made.
+
 Verify device model `iPad4,4`, iOS `12.5.7`, rootful paths `/usr/local/bin` and `/var/lib`, Procursus tooling, `ldid`, current `beszel-ios status both` (run manually as read-only), and expected older installed binaries.
 
 ## Phase 1 — Recovery readiness (human/operator approval)
