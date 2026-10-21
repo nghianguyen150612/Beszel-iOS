@@ -173,16 +173,11 @@ func (a *Agent) getSystemStats(cacheTimeMs uint16) system.Stats {
 	cpuMetrics, err := getCpuMetrics(cacheTimeMs, a.forceUseCgroup)
 	if err == nil {
 		systemStats.Cpu = utils.TwoDecimals(cpuMetrics.Total)
-		systemStats.CpuBreakdown = []float64{
-			utils.TwoDecimals(cpuMetrics.User),
-			utils.TwoDecimals(cpuMetrics.System),
-			utils.TwoDecimals(cpuMetrics.Iowait),
-			utils.TwoDecimals(cpuMetrics.Steal),
-			utils.TwoDecimals(cpuMetrics.Idle),
-			utils.TwoDecimals(cpuMetrics.Irq),
-			utils.TwoDecimals(cpuMetrics.Softirq),
-			utils.TwoDecimals(cpuMetrics.Nice),
+		breakdown := cpuMetrics.breakdown()
+		for i := range breakdown {
+			breakdown[i] = utils.TwoDecimals(breakdown[i])
 		}
+		systemStats.CpuBreakdown = breakdown
 	} else {
 		slog.Error("Error getting cpu metrics", "err", err)
 	}
