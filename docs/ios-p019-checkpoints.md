@@ -28,6 +28,8 @@ patch map still contains 13 logical iOS patch IDs. P019 Draft PR #23 targets
 | `50ae2d8f4bc63fdeb1eeb2bc9f436059e5170846` | Yes | Add the exact upstream `quiet_hours.updateRule` owner-preservation rule |
 | `05d69686fade8ffde24f25ac08f8fee9a1c82bc6` | Yes | Record the following `user_settings.updateRule` comparison failure |
 | `14edfae855610b9bf7aa795f452fe82afe81b427` | Yes | Allow the exact upstream user-settings owner-preservation rule |
+| `cdc19642b87c1c47f938e61f0c3e85ba5b67461f` | Yes | Record the P013 fingerprint system-reassignment guard finding |
+| `7b1a2db386fca2c7985724b3d11d561725a20b0d` | Yes | Allow only the exact upstream fingerprint system-preservation rule |
 
 ## Hosted CI on `cee2fc2518e2abbc58a2d6375dc85d7c996e9a95`
 
@@ -61,8 +63,12 @@ on pushed source `50ae2d8f4bc63fdeb1eeb2bc9f436059e5170846` then reached
 `user_settings.updateRule` and found the same exact owner-preservation clause.
 The harness and migration docs now permit that exact rule for both
 `quiet_hours` and `user_settings`. The Hub migration unit suite passed again
-(7 tests). Fresh hosted checks are running on pushed source
-`14edfae855610b9bf7aa795f452fe82afe81b427`.
+(7 tests). On exact source `cdc19642b87c1c47f938e61f0c3e85ba5b67461f`, the
+fixture then found that upstream also prevents `fingerprints.updateRule` from
+changing the system. The harness and docs now permit only the exact
+system-preservation guard. The Hub migration unit suite passed again (7 tests).
+Fresh hosted checks are running on pushed source
+`7b1a2db386fca2c7985724b3d11d561725a20b0d`.
 
 The exact-head Go report confirms `GO-2026-6608` is absent on Go 1.27.2, but it
 also reports three reachable `GO-2026-6809` traces through
@@ -84,7 +90,7 @@ On the correction tree, Python audit tests passed (74 tests), Hub migration
 harness unit tests passed (7 tests), frozen upstream matrix and readiness
 validation passed (178/178 upstream rows and 13 logical iOS patches), and
 `git diff --check` passed. Bun and Go suites have not been run in this Work
-environment. Commit `14edfae855610b9bf7aa795f452fe82afe81b427` is pushed and its
+environment. Commit `7b1a2db386fca2c7985724b3d11d561725a20b0d` is pushed and its
 exact remote SHA was verified. Its hosted checks are pending; exact-head hosted
 CI remains authoritative. The required Procursus fixture must run in its hosted
 network-disabled, read-only container.
