@@ -1,7 +1,7 @@
 # P019 Pinned Upstream Merge Review
 
-Status: P019 technical and hosted CI qualification passed on code source
-`a1349717`; merge is held pending an acceptable Go 1.27.2 security disposition.
+Status: P019 code, security, and hosted CI gates passed on code source
+`bc6967dc`; final documentation-head checks remain required before merge.
 
 ## Source and ancestry
 
@@ -36,32 +36,34 @@ The Procursus read-only APT fixture does not invoke `bwrap`. Its required Linux 
 
 ## Qualification and merge status
 
-The P019 code source `a13497171883043a9868a11c428c30b7d86d99eb` passed the
-full hosted Go suite and builds, Bun/npm audits, frontend build, installer and
-bootstrap checks, upstream accounting, P013 migration and restore fixture,
-Procursus isolation test, native iOS ARM64 validation, macOS race suites, and
-artifact provenance checks. The earlier native run on `af9e158f` exposed an
-immediate port-rebind assumption after an SSH session; the corrected shutdown
-assertion passed on `a1349717`. See `docs/ios-p019-checkpoints.md` for exact run
-IDs, manifests, binary checksums, and artifact digests.
+The reconstructed P019 code checkpoint
+`bc6967dc3cffe2d46be5b427aa490e87227ab571` passed the full hosted P017 Go
+suite/build, vulnerability and Bun/npm audits, frontend build,
+installer/bootstrap/isolation checks, frozen upstream accounting, genuine
+P013 migration/recovery fixture, installer lifecycle, Helm validation, and
+native iOS ARM64 validation. Exact run IDs, scanner disposition, artifact
+digests, and native binary checksums are recorded in
+`docs/ios-p019-checkpoints.md`.
 
-The Go scan confirms `GO-2026-6608` is absent, but reports three reachable
-`GO-2026-6809` traces in Go 1.27.2; the fixed Go release is 1.27.3. The
-module-level `GO-2026-5932` finding remains recorded without a symbol trace.
-The Bun/npm audits report zero critical findings and keep
-`GHSA-vfj7-8cjw-p6xm` **OPEN**. P019 cannot merge until its Go security
-disposition is acceptable. PR #23 remains Draft and unmerged; no review was
-claimed or impersonated.
+The Go 1.27.2 source scan retains three reachable `GO-2026-6809` traces, fixed
+upstream in Go 1.27.3. P019 backports official Go CL 851047 to the isolated
+toolchains used by P017 and native iOS CI; exact source fingerprints and
+passing `crypto/x509` tests qualify that mitigation. `GO-2026-6608` is absent.
+The module-level `GO-2026-5932` finding remains recorded without a symbol
+trace. Bun/npm report zero critical findings and keep
+`GHSA-vfj7-8cjw-p6xm` **OPEN**.
 
-The exact-source Go scan confirms `GO-2026-6608` is absent, but reports three
-reachable `GO-2026-6809` traces in Go 1.27.2; the authoritative Go vulnerability
-database lists Go 1.27.3 as fixed. `GO-2026-5932` remains module-level without a
-symbol trace. Bun/npm report zero critical findings and retain
-`GHSA-vfj7-8cjw-p6xm` **OPEN**. The cloud qualification cannot disposition the
-reachable Go finding on the owner's behalf; PR #23 remains Draft and unmerged.
+The native artifacts embed VCS revision
+`bc6967dc3cffe2d46be5b427aa490e87227ab571` with `vcs.modified=false`. They are
+ARM64 iOS device Mach-O files with minimum iOS 12.0, Go 1.27.2,
+`CGO_ENABLED=1`, `GOARM64=v8.0`, and 97 embedded frontend assets. The no-private-
+MobileWiFi linkage check passed. The release job was skipped.
 
-The latest native Agent and Hub artifacts embed VCS revision
-`a13497171883043a9868a11c428c30b7d86d99eb` with `vcs.modified=false`. Any
-documentation-only commit after that source remains an immutable-source
-evidence boundary only if the test and artifact source files stay unchanged;
-the PR workflows are still required to pass for the final head.
+All code gates pass on `bc6967dc`. This documentation update triggers the
+required workflows again; merge is held until they pass on the final PR head
+and applicable review requirements are satisfied. PR #23 remains Draft while
+those checks run. No independent review is claimed. The review-policy endpoint
+returned GitHub 403; the PR currently shows no review requests, no submitted
+reviews, and an empty review decision. The repository permissions API reports
+the authenticated account has admin access, but no branch protection exemption
+has been used.

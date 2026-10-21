@@ -32,6 +32,7 @@ patch map still contains 13 logical iOS patch IDs. P019 Draft PR #23 targets
 | `7b1a2db386fca2c7985724b3d11d561725a20b0d` | Yes | Allow only the exact upstream fingerprint system-preservation rule |
 | `af9e158f2830c11f5a145adf380c7723956891af` | Yes | Synchronize the Wi-Fi helper fixture startup marker after a hosted macOS race-test failure |
 | `a13497171883043a9868a11c428c30b7d86d99eb` | Yes | Replace immediate listener port rebinding with a shutdown-state and connection-refusal assertion after hosted macOS reported the port still in use |
+| `bc6967dc3cffe2d46be5b427aa490e87227ab571` | Yes | Backport Go CL 851047 for GO-2026-6809 on the exact Go 1.27.2 source and enforce the patch in P017/native CI |
 
 ## Hosted CI on `cee2fc2518e2abbc58a2d6375dc85d7c996e9a95`
 
@@ -273,3 +274,74 @@ report SHA-256 is
 P019 technical and hosted CI gates pass on code source `a1349717`. The Go
 security disposition remains open, so PR #23 remains Draft and unmerged. No
 P020 or P021 branch has been started. The P018 device gate remains pending.
+
+## GO-2026-6809 backport and exact-head qualification — 2026-10-21
+
+Code checkpoint `bc6967dc3cffe2d46be5b427aa490e87227ab571` is pushed and
+verified on `ios/p019-upstream-main-b5357343`. Go 1.27.2 still resolves the
+required `GO-2026-6608` fix. The later `GO-2026-6809` advisory is fixed upstream
+in Go 1.27.3, so P019 carries the official Go CL 851047 backport (commit
+`7f86f957633ee31a1c17a1eb8452ca7a3d9bc141`) without changing the pinned Go
+version or the A7 runtime patch.
+
+The reviewed patch is stored base64-encoded at
+`patches/go/1.27.2/GO-2026-6809.patch.b64`; its decoded SHA-256 is
+`111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150`. The
+fail-closed patcher checks the exact Go 1.27.2 source hashes before applying it,
+verifies the complete eight-entry intermediate-SPKI denylist and platform
+verification hooks, records all patched source hashes, and runs
+`go test crypto/x509 -count=1`. The baseline and patched source fingerprints
+are embedded in the P017 and native validation manifests. Local Go 1.27.2
+`crypto/x509` tests passed on Linux. Both hosted P017 and native macOS tests
+also passed after applying the patch to an isolated GOROOT.
+
+All hosted checks passed on exact code source `bc6967dc`:
+
+| Workflow | Run | Result | Evidence |
+|---|---:|---|---|
+| P017 release-candidate regression | [39596633842](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39596633842) | PASS | Full Go suite/builds, source and dependency vulnerability scans, Bun/npm audits, frontend build, installer/bootstrap/isolation tests, 41-commit ancestry, and 97-asset frontend manifest. |
+| P013 Hub migration fixture | [39596633574](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39596633574) | PASS | Genuine v0.19 migration, restart, backup/restore, and interruption recovery; artifact digest `4b911148fc76dfa69391aaa42dbf63bf681d7b450fe222d0b2947879e5a5bc50`. |
+| iOS installer lifecycle | [39596633628](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39596633628) | PASS | Transaction and rollback checks. |
+| Helm charts | [39596633614](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39596633614) | PASS | Lint, render and package; no publishing. |
+| Native iOS Build | [39596633673](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39596633673) | PASS | A7 runtime patch, x509 backport, transport/race suites, repeated ARM64 iOS builds, Mach-O, minimum OS, provenance, checksums, assets, and linkage. Release job skipped. |
+
+GitHub artifact metadata for these runs records the P017 regression manifest
+digest `a8b3531e11130634a1e8a8950a3c2a65995c4af86d8178563c43a38c925bf3b4`, Go
+vulnerability evidence digest
+`216f102450e227d4e6d805eef1ad4f7e788e2d12293004db7e19da75b21cdf8a`, and
+JavaScript audit evidence digest
+`0ee40c987cd6b5ebce5c1bda53a26f81033af81495c8668fa55bc6d83cbf73cb`.
+
+The exact-source Go scan used govulncheck v1.9.0 and the database last modified
+`2026-10-21T00:27:29Z`. It records four occurrences: three reachable
+`GO-2026-6809` traces and one module-level `GO-2026-5932` finding;
+`GO-2026-6608` is absent. The machine summary retains all raw findings and gives
+`GO-2026-6809` the `backported official Go fix` disposition only with the
+verified patch manifest and passing standard-library tests. `GO-2026-5932`
+remains module-level without a symbol trace; no OpenPGP imports were found.
+Bun and npm report zero critical findings and retain
+`GHSA-vfj7-8cjw-p6xm` **OPEN** as required.
+
+The native Agent and Hub artifacts embed VCS revision
+`bc6967dc3cffe2d46be5b427aa490e87227ab571` with `vcs.modified=false`. Both are
+Go 1.27.2 ARM64 iOS device Mach-O files with minimum iOS 12.0, `CGO_ENABLED=1`,
+and `GOARM64=v8.0`. Agent SHA-256 is
+`dae2b79ffb4593a3a1bd68d226e2f05dd6879f68ec104227635013ae7cd05cab`
+(9,576,424 bytes); Hub SHA-256 is
+`307d5dce33acb40ed0876ac6ce6aeefd7ad30d6c83aee21a901708e0feaf784d`
+(32,076,160 bytes). The Hub embeds all 97 frontend assets. No private
+MobileWiFi linkage was found. GitHub artifact metadata records payload ZIP
+digest `cf326a4c3a6bb213cf5316b1795a93ed42da9a56c726fd47a3e8c3b34b48e05d`,
+native evidence digest `4f3473313836b29fdbc3a473090d21b32a9227b433933f9f090fdb4c0ffe0303`,
+and separate disabled Wi-Fi diagnostic digest
+`0eefd25b7456bf4dbac411f560c79da87c5a7c02b7bf551c7d5935a0c537d777`.
+The Go 1.27.2 A7 runtime patch changed `runtime/asm_arm64.s` from SHA-256
+`47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db` to
+`c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f`; it
+replaces the counter-register delay with a zero-guarded `YIELD` loop.
+
+P019 code, security, migration, installer, and native build gates now pass on
+`bc6967dc`; documentation changes trigger another final-head CI run before the
+PR is marked Ready or merged. PR #23 remains Draft until that run and applicable
+review requirements are satisfied. P018 Gate F remains pending; no physical
+device, production branch, fork `main`, tag, or release was used.
