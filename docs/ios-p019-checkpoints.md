@@ -106,3 +106,22 @@ open. Do not merge PR #23 until each required gate has passing evidence.
 
 No release, tag, deployment, production branch update, fork `main` update, or
 device action is authorized. P018 physical-device Gate F remains pending.
+
+## P013 final-migration failpoint correction — 2026-10-21
+
+The exact-head P013 run on `5368c60a7794cd3ca931d23544cd01d89c8624fb`
+passed the schema and authorization comparisons, then failed the deterministic
+post-schema assertion because the failpoint was keyed to
+`1790964708_network_monitor_skip_tls_verify.go`. Upstream now applies two later
+migrations, `1791926360_network_monitor_cert_alert.go` and
+`1792309602_system_details_sockets.go`. The harness now requires all seven
+relevant migration ledger entries exactly once and in order, and arms the
+post-schema failpoint only after the final `1792309602` entry.
+
+Focused Hub migration harness unit tests passed (7/7); `git diff --check`
+passed. Correction commit `7b7052d439cb565bb6b5c16c9c547cb167266c70` was
+pushed to `ios/p019-upstream-main-b5357343`, and `git ls-remote` confirmed the
+same SHA. Hosted checks for this source are not yet available. The preceding
+exact-head run remains a genuine failure; it is not counted as a pass. P019
+still cannot merge while mandatory checks and the Go 1.27.2 security
+disposition remain open.
