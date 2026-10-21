@@ -298,6 +298,12 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
         "createRule": '@request.auth.id != "" && user = @request.auth.id && system.users.id ?= @request.auth.id',
         "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false && @request.body.system:changed = false && system.users.id ?= @request.auth.id',
     }
+    expected_rule_changes = {
+        "alerts": expected_alert_rules,
+        "quiet_hours": {
+            "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false',
+        },
+    }
     changed_rules: dict[str, dict[str, str]] = {}
     rule_keys = ("listRule", "viewRule", "createRule", "updateRule", "deleteRule")
     for collection in set(before) & set(after):
@@ -307,7 +313,7 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
             if before[collection].get(key) != after[collection].get(key)
         }
         if changes:
-            if collection != "alerts" or changes != expected_alert_rules:
+            if collection not in expected_rule_changes or changes != expected_rule_changes[collection]:
                 raise HarnessError(f"v0.21 migration changed unexpected {collection} authorization rules: {changes!r}")
             changed_rules[collection] = changes
 
