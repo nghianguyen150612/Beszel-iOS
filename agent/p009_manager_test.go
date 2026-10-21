@@ -30,7 +30,7 @@ func TestP009ManagerShutdownDuringSetup(t *testing.T) {
 	t.Setenv("BESZEL_AGENT_DISABLE_SSH", "true")
 	cm := a.connectionManager
 	done := make(chan error, 1)
-	go func() { done <- cm.Start(ServerOptions{}) }()
+	go func() { done <- cm.Start(t.Context(), ServerOptions{}) }()
 	select {
 	case <-accepted:
 	case <-time.After(2 * time.Second):
@@ -51,7 +51,7 @@ func TestP009ManagerRetriesAsynchronousFailure(t *testing.T) {
 	h := newP009Hub(t)
 	cm := h.a.connectionManager
 	done := make(chan error, 1)
-	go func() { done <- cm.Start(ServerOptions{Keys: h.a.keys}) }()
+	go func() { done <- cm.Start(t.Context(), ServerOptions{Keys: h.a.keys}) }()
 	t.Cleanup(func() {
 		cm.cancel()
 		select {

@@ -8,6 +8,16 @@ on:
     paths:
       - ".github/workflows/ios-build.yml"
       - ".github/workflows/p017-release-candidate.yml"
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - "internal/site/**"
+      - "tests/**"
+      - "install.sh"
+      - "scripts/ios/**"
+      - "docs/ios-p019-*"
+      - "docs/ios-p020-*"
+      - "docs/ios-p021-*"
       - "docs/ios-release-candidate*"
   push:
     branches:

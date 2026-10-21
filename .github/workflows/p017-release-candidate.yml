@@ -6,6 +6,16 @@ on:
     paths:
       - '.github/workflows/p017-release-candidate.yml'
       - '.github/workflows/ios-build.yml'
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'internal/site/**'
+      - 'tests/**'
+      - 'install.sh'
+      - 'scripts/ios/**'
+      - 'docs/ios-p019-*'
+      - 'docs/ios-p020-*'
+      - 'docs/ios-p021-*'
       - 'docs/ios-release-candidate*'
       - 'docs/ios-p017-*'
       - 'tests/ios-workflow-isolation-test.py'
@@ -32,7 +42,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      - name: Go 1.27.1
+      - name: Pinned Go toolchain from go.mod
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -45,7 +55,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(go version | awk '{print $3}')" = go1.27.1
+          test "$(go version | awk '{print $3}')" = "go$(awk '$1 == "go" {print $2}' go.mod)"
           test "$(bun --version)" = 1.4.0
           git merge-base --is-ancestor bb23f99b3eeaced9608e11e280e7c986dba650be HEAD
           git merge-base --is-ancestor 3ed79af25a03381f4c1b8800fd7cb93e3480403d HEAD

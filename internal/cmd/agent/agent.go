@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -226,7 +227,7 @@ func main() {
 		log.Fatal("Failed to create agent: ", err)
 	}
 
-	if err := a.Start(serverConfig); err != nil {
+	if err := a.Start(context.Background(), serverConfig); err != nil {
 		log.Fatal("Failed to start: ", err)
 	}
 }

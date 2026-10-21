@@ -8,7 +8,7 @@ msgstr ""
 "Language: tr\n"
 "Project-Id-Version: beszel\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2026-10-02 14:33\n"
+"PO-Revision-Date: 2026-10-20 17:17\n"
 "Last-Translator: \n"
 "Language-Team: Turkish\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -245,7 +245,7 @@ msgstr "Otomatik kopyalama güvenli bir bağlam gerektirir."
 #. Package version available to install
 #: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
-msgstr "Mevcut"
+msgstr "Kullanılabilir"
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgctxt "Disk space available"
@@ -1370,7 +1370,7 @@ msgstr "Ara"
 #. Device model
 #: src/components/routes/system/smart-table.tsx
 msgid "Model"
-msgstr ""
+msgstr "Model"
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
@@ -1699,7 +1699,7 @@ msgstr "Pool kullanımı"
 #: src/components/add-system.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Port"
-msgstr ""
+msgstr "Port"
 
 #: src/components/containers-table/containers-table-columns.tsx
 msgctxt "Container ports"
