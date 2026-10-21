@@ -86,9 +86,20 @@ func TestAgentCancellationJoinsReconnect(t *testing.T) {
 		t.Fatal("agent did not join its pending reconnect")
 	}
 	require.False(t, cm.isConnectingNow())
-	listener, err := net.Listen("tcp", opts.Addr)
-	require.NoError(t, err)
-	require.NoError(t, listener.Close())
+	require.Eventually(t, func() bool {
+		a.serverMu.Lock()
+		listener := a.serverListener
+		a.serverMu.Unlock()
+		if listener != nil {
+			return false
+		}
+		conn, err := net.DialTimeout("tcp", opts.Addr, 20*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			return false
+		}
+		return true
+	}, time.Second, 10*time.Millisecond, "stopped Agent must clear its SSH listener and refuse new connections")
 }
 
 func TestAgentCancellationDuringHandshake(t *testing.T) {
