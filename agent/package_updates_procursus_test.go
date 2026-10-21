@@ -509,20 +509,22 @@ func TestProcursusAPTQueryReadOnlyAndNetworkIsolatedFixture(t *testing.T) {
 	require.NoError(t, os.WriteFile(configPath, []byte(aptConfig), 0o644))
 
 	before := snapshotPackageFixture(t, root)
-	sandboxPath, sandboxArgs, isolated := usableOfflineSandbox()
+	isolated := os.Getenv("BESZEL_APT_QUERY_ISOLATED") == "1"
 	if !isolated {
-		t.Skip("this host has no network-disabled, read-only filesystem sandbox; the required Linux fixture must run in a capable cloud environment")
+		message := "this host has no network-disabled, read-only filesystem sandbox; the required Linux fixture must run in a capable cloud environment"
+		if os.Getenv("BESZEL_REQUIRE_OFFLINE_APT_SANDBOX") == "1" {
+			t.Fatal(message)
+		}
+		t.Skip(message)
 	}
-	t.Log("APT query ran with network namespace disabled and the filesystem read-only")
+	t.Log("APT query ran in a hosted container with network disabled and a read-only root filesystem")
 	argsSeen := false
 	result, err := checkProcursusAPTWith(context.Background(), procursusAPTLayout{aptGet: aptGet}, func(ctx context.Context, executable string, args ...string) (string, error) {
 		require.Equal(t, aptGet, executable)
 		require.Equal(t, procursusAPTReadOnlyArgs, args)
 		argsSeen = true
 		env := []string{"LC_ALL=C", "APT_CONFIG=" + configPath}
-		command := sandboxPath
-		commandArgs := append(append(append([]string(nil), sandboxArgs...), executable), args...)
-		cmd := exec.CommandContext(ctx, command, commandArgs...)
+		cmd := exec.CommandContext(ctx, executable, args...)
 		cmd.Env = env
 		cmd.WaitDelay = 2 * time.Second
 		var stdout, stderr bytes.Buffer
@@ -544,18 +546,6 @@ func TestProcursusAPTQueryReadOnlyAndNetworkIsolatedFixture(t *testing.T) {
 	t.Logf("fixture entries=%d SHA256 before=%s after=%s", len(before), hashFixtureSnapshot(before), hashFixtureSnapshot(after))
 	closeListener()
 	assert.Zero(t, connections.Load(), "APT simulation attempted network access")
-}
-
-func usableOfflineSandbox() (string, []string, bool) {
-	if bwrap, err := exec.LookPath("bwrap"); err == nil {
-		args := []string{"--unshare-net", "--ro-bind", "/", "/", "--"}
-		cmd := exec.Command(bwrap, append(args, "/bin/true")...)
-		cmd.Env = []string{"LC_ALL=C"}
-		if cmd.Run() == nil {
-			return bwrap, args, true
-		}
-	}
-	return "", nil, false
 }
 
 func snapshotPackageFixture(t *testing.T, root string) map[string]string {

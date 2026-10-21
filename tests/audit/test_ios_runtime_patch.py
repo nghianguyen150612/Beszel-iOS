@@ -1,4 +1,4 @@
-"""Disposable Go 1.27.1 fixtures; never patch the installed toolchain."""
+"""Disposable Go 1.27.2 fixtures; never patch the installed toolchain."""
 
 import importlib.util
 import json
@@ -12,7 +12,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 PATCH = ROOT / ".github/scripts/patch-go-ios-arm64-runtime.py"
-FIXTURE = Path(__file__).with_name("fixtures") / "go1.27.1-procyield-arm64.s"
+FIXTURE = Path(__file__).with_name("fixtures") / "go1.27.2-procyield-arm64.s"
 spec = importlib.util.spec_from_file_location("runtime_patch", PATCH)
 patch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(patch)
@@ -33,7 +33,7 @@ class RuntimePatchTests(unittest.TestCase):
         self.fake = self.root / "go"
         self.fake.write_text('#!/bin/sh\n[ "$*" = "env -json GOROOT GOVERSION" ] || exit 99\nprintf "%s\\n" "$FIXTURE_GO_ENV"\n')
         self.fake.chmod(0o755)
-        self.info = {"GOROOT": str(self.root), "GOVERSION": "go1.27.1"}
+        self.info = {"GOROOT": str(self.root), "GOVERSION": "go1.27.2"}
 
     def run_patch(self, success=False):
         before = self.asm.read_bytes()
@@ -53,13 +53,13 @@ class RuntimePatchTests(unittest.TestCase):
                 before.decode()[before.decode().index(patch.START):before.decode().index(patch.END)],
                 patch.REPLACEMENT).encode()
             self.assertEqual(self.asm.read_bytes(), expected)
-            self.assertEqual(json.loads(result.stdout)["go"], "go1.27.1")
+            self.assertEqual(json.loads(result.stdout)["go"], "go1.27.2")
             self.assertEqual(self.asm.stat().st_mode & 0o777, 0o640)
         else:
             self.assertIn("ERROR:", result.stderr)
         return result
 
-    def test_exact_known_go_1_27_1(self):
+    def test_exact_known_go_1_27_2(self):
         self.run_patch(True)
 
     def test_unknown_shapes_are_byte_identical(self):
@@ -116,8 +116,10 @@ class RuntimePatchTests(unittest.TestCase):
         self.run_patch()
 
     def test_unsupported_version(self):
-        self.info["GOVERSION"] = "go1.28.0"
-        self.assertIn("unsupported Go version", self.run_patch().stderr)
+        for version in ["go1.27.1", "go1.28.0"]:
+            with self.subTest(version=version):
+                self.info["GOVERSION"] = version
+                self.assertIn("unsupported Go version", self.run_patch().stderr)
 
     def test_atomic_replace_failure_preserves_original(self):
         with mock.patch.object(patch.subprocess, "check_output", return_value=json.dumps(self.info)), \

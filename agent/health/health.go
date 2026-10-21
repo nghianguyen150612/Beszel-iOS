@@ -18,6 +18,9 @@ var connectionFile = getConnectionFilePath()
 
 func getHealthFilePath() string {
 	filename := "beszel_health"
+	if dir := os.Getenv("BESZEL_HEALTH_DIR"); dir != "" {
+		return filepath.Join(dir, filename)
+	}
 	if runtime.GOOS == "linux" {
 		fullPath := filepath.Join("/dev/shm", filename)
 		if err := updateHealthFile(fullPath); err == nil {

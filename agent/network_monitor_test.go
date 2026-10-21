@@ -27,7 +27,7 @@ func TestMonitorManagerGetResultsIncludesHourResponseRange(t *testing.T) {
 	task.history.addSampleLocked(monitorSample{responseUs: 30, timestamp: now.Add(-50 * time.Second)})
 	task.history.addSampleLocked(monitorSample{responseUs: -1, timestamp: now.Add(-30 * time.Second)})
 
-	pm := newMonitorManager()
+	pm := newMonitorManager(nil)
 	pm.monitors = map[string]*monitorTask{"icmp:example.com": task}
 
 	results := pm.GetResults(uint16(time.Minute / time.Millisecond))
@@ -49,7 +49,7 @@ func TestMonitorManagerGetResultsIncludesLossOnlyHourData(t *testing.T) {
 	task.history.addSampleLocked(monitorSample{responseUs: -1, timestamp: now.Add(-30 * time.Second)})
 	task.history.addSampleLocked(monitorSample{responseUs: -1, timestamp: now.Add(-10 * time.Second)})
 
-	pm := newMonitorManager()
+	pm := newMonitorManager(nil)
 	pm.monitors = map[string]*monitorTask{"icmp:example.com": task}
 
 	results := pm.GetResults(uint16(time.Minute / time.Millisecond))
@@ -74,7 +74,7 @@ func TestMonitorManagerSyncMonitorsSkipsConfigsWithoutStableID(t *testing.T) {
 	validCfg := monitor.Config{ID: "monitor-1", Target: "ignored", Protocol: "noop", Interval: 10}
 	invalidCfg := monitor.Config{Target: "ignored", Protocol: "noop", Interval: 10}
 
-	pm := newMonitorManager()
+	pm := newMonitorManager(nil)
 	pm.SyncMonitors([]monitor.Config{validCfg, invalidCfg})
 	defer pm.Stop()
 
@@ -90,7 +90,7 @@ func TestMonitorManagerSyncMonitorsStopsRemovedTasksButKeepsExisting(t *testing.
 
 	keptTask := newMonitorTask(keepCfg)
 	removedTask := newMonitorTask(removeCfg)
-	pm := newMonitorManager()
+	pm := newMonitorManager(nil)
 	pm.monitors = map[string]*monitorTask{
 		keepCfg.ID:   keptTask,
 		removeCfg.ID: removedTask,
@@ -119,7 +119,7 @@ func TestMonitorManagerSyncMonitorsRestartsChangedConfig(t *testing.T) {
 	originalCfg := monitor.Config{ID: "monitor-1", Target: "ignored-a", Protocol: "noop", Interval: 10}
 	updatedCfg := monitor.Config{ID: "monitor-1", Target: "ignored-b", Protocol: "noop", Interval: 10}
 	originalTask := newMonitorTask(originalCfg)
-	pm := newMonitorManager()
+	pm := newMonitorManager(nil)
 	pm.monitors = map[string]*monitorTask{
 		originalCfg.ID: originalTask,
 	}
@@ -177,7 +177,7 @@ func TestMonitorManagerUpsertMonitorKeepsHistoryWhenOnlyIntervalChanges(t *testi
 	existingTask.history.addSampleLocked(monitorSample{responseUs: 12, timestamp: now.Add(-50 * time.Minute)})
 	existingTask.history.addSampleLocked(monitorSample{responseUs: 24, timestamp: now.Add(-30 * time.Second)})
 
-	pm := newMonitorManager()
+	pm := newMonitorManager(nil)
 	pm.monitors = map[string]*monitorTask{originalCfg.ID: existingTask}
 
 	result, err := pm.UpsertMonitor(updatedCfg, false)
@@ -212,7 +212,7 @@ func TestMonitorManagerUpsertMonitorKeepsHistoryWhenOnlyIntervalChanges(t *testi
 func TestMonitorManagerApplySyncDeleteRemovesTask(t *testing.T) {
 	config := monitor.Config{ID: "monitor-1", Target: "1.1.1.1", Protocol: "icmp", Interval: 10}
 	task := newMonitorTask(config)
-	pm := newMonitorManager()
+	pm := newMonitorManager(nil)
 	pm.monitors = map[string]*monitorTask{config.ID: task}
 
 	_, err := pm.HandleSyncRequest(monitor.SyncRequest{
@@ -268,7 +268,7 @@ func TestMonitorHTTP(t *testing.T) {
 			w.WriteHeader(http.StatusNoContent)
 		}))
 		defer server.Close()
-		probe := newMonitorManager().probe
+		probe := newMonitorManager(nil).probe
 		config := monitor.Config{Protocol: "http", Target: server.URL}
 
 		responseUs, err := probe(context.Background(), config)
@@ -287,7 +287,7 @@ func TestMonitorTLSOptionIsIsolated(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	t.Cleanup(server.Close)
-	probe := newMonitorManager().probe
+	probe := newMonitorManager(nil).probe
 	// Use the same manager: an opt-out must not mutate a shared/default transport.
 	for _, skip := range []bool{false, true, false} {
 		config := monitor.Config{ID: "isolated", Protocol: "http", Target: server.URL, SkipTLSVerify: skip}
@@ -514,7 +514,7 @@ func TestMonitorManagerCancelsActiveProbe(t *testing.T) {
 			}))
 			defer server.Close()
 			defer close(release)
-			pm := newMonitorManager()
+			pm := newMonitorManager(nil)
 			defer pm.Stop()
 			cfg := monitor.Config{ID: "test", Protocol: "http", Target: server.URL, Interval: 3600}
 			task := newMonitorTask(cfg)
@@ -619,7 +619,7 @@ func TestMonitorProbeTimeoutRecordsLoss(t *testing.T) {
 	}))
 	defer server.Close()
 	defer close(release)
-	pm := newMonitorManager()
+	pm := newMonitorManager(nil)
 	pm.probe = networkMonitorProbe(&http.Client{Timeout: 20 * time.Millisecond}, nil)
 	task := newMonitorTask(monitor.Config{ID: "timeout", Protocol: "http", Target: server.URL})
 	defer task.cancel()

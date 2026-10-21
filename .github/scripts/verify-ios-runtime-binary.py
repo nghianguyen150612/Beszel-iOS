@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import subprocess
 
-# Go 1.27.1 ARM64 assembler output, including branch displacements. This checks
+# Go 1.27.2 ARM64 assembler output, including branch displacements. This checks
 # more than absence of named counter registers: every instruction is known.
 EXPECTED = ['b9400be0', 'b4000080', 'd503203f', '51000400', 'b5ffffc0', 'd65f03c0']
 

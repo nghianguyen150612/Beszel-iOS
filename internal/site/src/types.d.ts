@@ -98,7 +98,7 @@ export interface SystemStats {
 	cpu: number
 	/** peak cpu */
 	cpum?: number
-	/** cpu breakdown [user, system, iowait, steal, idle] (0-100 integers) */
+	/** cpu breakdown [user, system, iowait, steal, idle, irq, softirq, nice] (0-100 integers) */
 	cpub?: number[]
 	/** per-core cpu usage [CPU0..] (0-100 integers) */
 	cpus?: number[]
@@ -126,18 +126,18 @@ export interface SystemStats {
 	du: number
 	/** disk percent */
 	dp: number
-	/** disk read (mb) */
-	dr: number
-	/** disk write (mb) */
-	dw: number
-	/** max disk read (mb) */
-	drm?: number
-	/** max disk write (mb) */
-	dwm?: number
 	/** disk I/O bytes [read, write] */
 	dio?: [number, number]
 	/** max disk I/O bytes [read, write] */
 	diom?: [number, number]
+	/** @deprecated Legacy disk read rate (MiB/sec) retained for older Agent telemetry. */
+	dr?: number
+	/** @deprecated Legacy max disk read rate (MiB/sec) retained for older Agent telemetry. */
+	drm?: number
+	/** @deprecated Legacy disk write rate (MiB/sec) retained for older Agent telemetry. */
+	dw?: number
+	/** @deprecated Legacy max disk write rate (MiB/sec) retained for older Agent telemetry. */
+	dwm?: number
 	/** disk io stats [read time factor, write time factor, io utilization %, r_await ms, w_await ms, weighted io %] */
 	dios?: [number, number, number, number, number, number]
 	/** max disk io stats */
@@ -277,22 +277,22 @@ export interface ExtraFsStats {
 	d: number
 	/** disk used (gb) */
 	du: number
-	/** total read (mb) */
-	r: number
-	/** total write (mb) */
-	w: number
-	/** max read (mb) */
-	rm: number
-	/** max write (mb) */
-	wm: number
 	/** read per second (bytes) */
-	rb: number
+	rb?: number
 	/** write per second (bytes) */
-	wb: number
+	wb?: number
 	/** max read per second (bytes) */
-	rbm: number
+	rbm?: number
 	/** max write per second (mb) */
-	wbm: number
+	wbm?: number
+	/** @deprecated Legacy extra filesystem read rate (MB/sec) retained for older Agent telemetry. */
+	r?: number
+	/** @deprecated Legacy max extra filesystem read rate (MB/sec) retained for older Agent telemetry. */
+	rm?: number
+	/** @deprecated Legacy extra filesystem write rate (MB/sec) retained for older Agent telemetry. */
+	w?: number
+	/** @deprecated Legacy max extra filesystem write rate (MB/sec) retained for older Agent telemetry. */
+	wm?: number
 	/** disk io stats [read time factor, write time factor, io utilization %, r_await ms, w_await ms, weighted io %] */
 	dios?: [number, number, number, number, number, number]
 	/** max disk io stats */
@@ -527,6 +527,8 @@ export interface SystemDetailsRecord extends RecordModel {
 	kernel: string
 	cores: number
 	threads: number
+	/** physical CPU packages, 0 if unknown */
+	sockets?: number
 	cpu: string
 	os: Os
 	os_name: string

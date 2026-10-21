@@ -6,9 +6,22 @@ on:
     paths:
       - '.github/workflows/p017-release-candidate.yml'
       - '.github/workflows/ios-build.yml'
+      - '.github/scripts/**'
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'internal/site/**'
+      - 'tests/**'
+      - 'install.sh'
+      - 'scripts/ios/**'
+      - 'docs/ios-p019-*'
+      - 'docs/ios-p020-*'
+      - 'docs/ios-p021-*'
       - 'docs/ios-release-candidate*'
       - 'docs/ios-p017-*'
       - 'tests/ios-workflow-isolation-test.py'
+      - 'scripts/audit/**'
+      - 'patches/go/**'
       - 'install.sh'
       - 'scripts/ios/install-beszel.sh'
   workflow_dispatch:
@@ -26,32 +39,101 @@ jobs:
     timeout-minutes: 65
     env:
       PYTHONDONTWRITEBYTECODE: '1'
+      BESZEL_HEALTH_DIR: ${{ github.workspace }}/.task/health
     steps:
       - name: Checkout candidate source, not the PR merge pseudo-commit
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      - name: Go 1.27.1
+      - name: Pinned Go toolchain from go.mod
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
+      - name: Apply and test reviewed Go 1.27.2 x509 security backport
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_goroot="$(go env GOROOT)"
+          patched_goroot="$RUNNER_TEMP/go-security-backport"
+          test "$(go env GOVERSION)" = go1.27.2
+          test ! -e "$patched_goroot"
+          mkdir "$patched_goroot"
+          cp -R "$source_goroot/." "$patched_goroot/"
+          chmod -R u+w "$patched_goroot"
+          export GOROOT="$patched_goroot" GOTOOLCHAIN=local
+          export PATH="$GOROOT/bin:$PATH" GOCACHE="$RUNNER_TEMP/p019-go-cache"
+          python3 scripts/audit/patch-go-x509-security.py \
+            --output "$RUNNER_TEMP/p019-go-x509-backport.json"
+          echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
+          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+          echo "GOCACHE=$GOCACHE" >> "$GITHUB_ENV"
+          echo "$GOROOT/bin" >> "$GITHUB_PATH"
+      - name: Go standard-library and dependency vulnerability scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          "$(go env GOPATH)/bin/govulncheck" -version
+          "$(go env GOPATH)/bin/govulncheck" -format=json ./... > "$RUNNER_TEMP/p019-govulncheck.jsonl"
+          python3 scripts/audit/validate-p019-govulncheck.py \
+            --report "$RUNNER_TEMP/p019-govulncheck.jsonl" \
+            --go-version "$(go env GOVERSION)" \
+            --backport-evidence "$RUNNER_TEMP/p019-go-x509-backport.json" \
+            --output "$RUNNER_TEMP/p019-govulncheck-summary.json"
+      - name: Upload P019 Go vulnerability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p019-go-vulnerability-evidence
+          path: |
+            ${{ runner.temp }}/p019-govulncheck.jsonl
+            ${{ runner.temp }}/p019-govulncheck-summary.json
+            ${{ runner.temp }}/p019-go-x509-backport.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Bun 1.4.0
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.0
+      - name: Audit Bun and npm lockfile advisories
+        shell: bash
+        working-directory: internal/site
+        run: |
+          set -uo pipefail
+          bun audit --json --audit-level critical > "$RUNNER_TEMP/p019-bun-audit.json"
+          bun_status=$?
+          npm audit --json --audit-level=critical --package-lock-only > "$RUNNER_TEMP/p019-npm-audit.json"
+          npm_status=$?
+          python3 ../../scripts/audit/summarize-p019-js-audits.py \
+            --bun-report "$RUNNER_TEMP/p019-bun-audit.json" --bun-exit-code "$bun_status" \
+            --npm-report "$RUNNER_TEMP/p019-npm-audit.json" --npm-exit-code "$npm_status" \
+            --output "$RUNNER_TEMP/p019-js-audit-summary.json"
+      - name: Upload P019 JavaScript dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p019-javascript-audit-evidence
+          path: |
+            ${{ runner.temp }}/p019-bun-audit.json
+            ${{ runner.temp }}/p019-npm-audit.json
+            ${{ runner.temp }}/p019-js-audit-summary.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Verify source provenance and frozen upstream ancestry
         shell: bash
         run: |
           set -euo pipefail
-          test "$(go version | awk '{print $3}')" = go1.27.1
+          test "$(go version | awk '{print $3}')" = "go$(awk '$1 == "go" {print $2}' go.mod)"
           test "$(bun --version)" = 1.4.0
           git merge-base --is-ancestor bb23f99b3eeaced9608e11e280e7c986dba650be HEAD
           git merge-base --is-ancestor 3ed79af25a03381f4c1b8800fd7cb93e3480403d HEAD
           git diff --check
           python3 scripts/audit/validate-upstream-v021-matrix.py
           python3 scripts/audit/validate-upstream-v021-readiness.py
+      - name: Prepare workspace-local health marker directory
+        run: mkdir -p "$BESZEL_HEALTH_DIR"
       - name: Audit, bootstrap, installer and release isolation regressions
         shell: bash
         run: |

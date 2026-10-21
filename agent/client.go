@@ -256,7 +256,11 @@ func (client *WebSocketClient) getOptions() *gws.ClientOption {
 			"X-Beszel":   []string{beszel.Version},
 		},
 		NewDialer: func() (gws.Dialer, error) {
-			return proxy.FromEnvironmentUsing(&net.Dialer{Timeout: 5 * time.Second}), nil
+			var managerCtx context.Context
+			if client.agent != nil && client.agent.connectionManager != nil {
+				managerCtx = client.agent.connectionManager.ctx
+			}
+			return agentDialer{managerCtx}, nil
 		},
 	}
 
@@ -270,6 +274,43 @@ func (client *WebSocketClient) getOptions() *gws.ClientOption {
 	}
 
 	return client.options
+}
+
+// agentDialer keeps proxy selection while binding dialing and the resulting
+// connection to the agent lifetime, including a pending WebSocket handshake.
+type agentDialer struct{ ctx context.Context }
+
+func (d agentDialer) Dial(network, addr string) (net.Conn, error) {
+	return d.DialContext(context.Background(), network, addr)
+}
+
+func (d agentDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
+	managerCtx := d.ctx
+	if managerCtx == nil {
+		managerCtx = context.Background()
+	}
+	dialCtx, cancel := context.WithCancel(managerCtx)
+	stopDial := context.AfterFunc(ctx, cancel)
+	conn, err := proxy.Dial(dialCtx, network, addr)
+	stopDial()
+	cancel()
+	if err != nil {
+		return nil, err
+	}
+	return &agentConn{
+		Conn: conn,
+		stop: context.AfterFunc(managerCtx, func() { _ = conn.Close() }),
+	}, nil
+}
+
+type agentConn struct {
+	net.Conn
+	stop func() bool
+}
+
+func (c *agentConn) Close() error {
+	c.stop()
+	return c.Conn.Close()
 }
 
 // Connect establishes a WebSocket connection to the hub.
@@ -383,6 +424,7 @@ func (client *WebSocketClient) OnClose(conn *gws.Conn, err error) {
 		slog.Warn("Connection closed", "err", strings.TrimPrefix(err.Error(), "gws: "))
 	}
 	client.agent.connectionManager.notifyWebSocketChange()
+	client.agent.connectionManager.sendEvent(WebSocketDisconnect)
 }
 
 // OnMessage handles incoming WebSocket messages from the hub.
@@ -463,6 +505,7 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 	}
 	client.hubVerified = true
 	client.connMu.Unlock()
+	client.agent.connectionManager.sendEvent(WebSocketConnect)
 	client.agent.connectionManager.notifyWebSocketChange()
 	return nil
 }

@@ -302,6 +302,7 @@ func (h *p009HubHandler) OnPong(_ *gws.Conn, _ []byte) {
 
 func TestP009AuthenticationWaitsForFingerprintSend(t *testing.T) {
 	h := newP009Hub(t)
+	h.a.connectionManager.eventChan = make(chan ConnectionEvent, 1)
 	// Leave the read loop stopped so the close callback cannot mask the state
 	// transition after a failed fingerprint write.
 	conn, _, err := gws.NewClient(&gws.BuiltinEventHandler{}, h.c.getOptions())
@@ -316,6 +317,7 @@ func TestP009AuthenticationWaitsForFingerprintSend(t *testing.T) {
 	require.NoError(t, err)
 	require.Error(t, h.c.handleAuthChallenge(&common.HubRequest[cbor.RawMessage]{Data: data}, nil, conn))
 	require.False(t, h.c.isVerified(), "a failed fingerprint send must not announce polling readiness")
+	require.Empty(t, h.a.connectionManager.eventChan, "a failed fingerprint send must not announce WebSocket connection")
 }
 
 func TestP009QueuedConnectCancellation(t *testing.T) {

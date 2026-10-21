@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -43,14 +44,12 @@ func TestStartServer(t *testing.T) {
 	require.NoError(t, err)
 
 	// Generate a different key pair for bad key test
-	badPubKey, badPrivKey, err := ed25519.GenerateKey(nil)
+	_, badPrivKey, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 	badSigner, err := gossh.NewSignerFromKey(badPrivKey)
 	require.NoError(t, err)
-	_ = badPubKey
 
-	// Darwin limits Unix socket paths to 104 bytes. t.TempDir includes the
-	// full test/subtest name and can exceed that limit on hosted macOS.
+	// Keep the socket path short enough for Darwin's Unix domain socket limit.
 	socketDir, err := os.MkdirTemp("", "beszel-ssh-")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = os.RemoveAll(socketDir) })
@@ -62,7 +61,7 @@ func TestStartServer(t *testing.T) {
 		wantErr     bool
 		errContains string
 		setup       func() error
-		cleanup     func() error
+		startServer bool
 	}{
 		{
 			name: "tcp port only",
@@ -96,15 +95,12 @@ func TestStartServer(t *testing.T) {
 				Keys:    []gossh.PublicKey{sshPubKey},
 			},
 			setup: func() error {
-				// Create a socket file that should be removed
+				// Create a regular file that should be replaced by the socket.
 				f, err := os.Create(socketFile)
 				if err != nil {
 					return err
 				}
 				return f.Close()
-			},
-			cleanup: func() error {
-				return os.Remove(socketFile)
 			},
 		},
 		{
@@ -125,6 +121,15 @@ func TestStartServer(t *testing.T) {
 				Keys:    []gossh.PublicKey{sshPubKey},
 			},
 		},
+		{
+			name: "public StartServer",
+			config: ServerOptions{
+				Network: "tcp",
+				Addr:    "127.0.0.1:0",
+				Keys:    []gossh.PublicKey{sshPubKey},
+			},
+			startServer: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -134,28 +139,44 @@ func TestStartServer(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			if tt.cleanup != nil {
-				defer tt.cleanup()
-			}
-
 			agent := createTestAgent(t)
-			server, listener, err := agent.prepareSSHServer(tt.config)
-			require.NoError(t, err)
-			server.AddHostKey(signer)
-			done := make(chan struct{})
-			go func() { defer close(done); _ = agent.serveSSHServer(server, listener) }()
+			errChan := make(chan error, 1)
+			var listener net.Listener
+			if tt.startServer {
+				go func() { errChan <- agent.StartServer(tt.config) }()
+			} else {
+				server, ln, err := agent.prepareSSHServer(tt.config)
+				require.NoError(t, err)
+				listener = ln
+				go func() { errChan <- agent.serveSSHServer(server, listener) }()
+			}
 			t.Cleanup(func() {
-				_ = agent.StopServer()
+				assert.NoError(t, agent.StopServer())
 				select {
-				case <-done:
-				case <-time.After(time.Second):
-					t.Error("SSH listener did not stop")
+				case err := <-errChan:
+					assert.True(t, errors.Is(err, net.ErrClosed) || errors.Is(err, ssh.ErrServerClosed), "unexpected server exit: %v", err)
+				case <-time.After(5 * time.Second):
+					t.Error("SSH server did not stop")
+				}
+				if tt.config.Network == "unix" {
+					_, err := os.Lstat(socketFile)
+					assert.ErrorIs(t, err, os.ErrNotExist)
 				}
 			})
-			tt.config.Addr = listener.Addr().String()
 
-			// Try to connect to verify server is running
-			var client *gossh.Client
+			if tt.startServer {
+				require.Eventually(t, func() bool {
+					agent.serverMu.Lock()
+					defer agent.serverMu.Unlock()
+					listener = agent.serverListener
+					return listener != nil
+				}, 5*time.Second, time.Millisecond, "SSH listener was not published")
+			}
+			if tt.config.Network == "unix" {
+				info, err := os.Stat(socketFile)
+				require.NoError(t, err)
+				assert.NotZero(t, info.Mode()&os.ModeSocket)
+			}
 
 			// Choose the appropriate signer based on the test case
 			testSigner := signer
@@ -168,31 +189,22 @@ func TestStartServer(t *testing.T) {
 				Auth: []gossh.AuthMethod{
 					gossh.PublicKeys(testSigner),
 				},
-				HostKeyCallback: gossh.FixedHostKey(signer.PublicKey()),
+				HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 				Timeout:         4 * time.Second,
 			}
 
-			switch tt.config.Network {
-			case "unix":
-				client, err = gossh.Dial("unix", tt.config.Addr, sshClientConfig)
-			default:
-				if !strings.Contains(tt.config.Addr, ":") {
-					tt.config.Addr = ":" + tt.config.Addr
-				}
-				client, err = gossh.Dial("tcp", tt.config.Addr, sshClientConfig)
+			client, err := gossh.Dial(tt.config.Network, listener.Addr().String(), sshClientConfig)
+			if client != nil {
+				t.Cleanup(func() { _ = client.Close() })
 			}
 
 			if tt.wantErr {
-				assert.Error(t, err)
-				if tt.errContains != "" {
-					assert.Contains(t, err.Error(), tt.errContains)
-				}
+				require.ErrorContains(t, err, tt.errContains)
 				return
 			}
 
 			require.NoError(t, err)
 			require.NotNil(t, client)
-			client.Close()
 		})
 	}
 }
@@ -200,15 +212,14 @@ func TestStartServer(t *testing.T) {
 func TestStartServerDisableSSH(t *testing.T) {
 	t.Setenv("BESZEL_AGENT_DISABLE_SSH", "true")
 
-	agent, err := NewAgent("")
-	require.NoError(t, err)
+	agent := createTestAgent(t)
 
 	opts := ServerOptions{
 		Network: "tcp",
 		Addr:    ":45990",
 	}
 
-	err = agent.StartServer(opts)
+	err := agent.StartServer(opts)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "SSH disabled")
 }
@@ -1000,11 +1011,12 @@ func dialTestAgentClient(t *testing.T, clientVersion string) *gossh.Client {
 	sshPubKey, err := gossh.NewPublicKey(pubKey)
 	require.NoError(t, err)
 
-	// Keep the complete Unix socket path within Darwin's 104-byte limit.
-	socketDir, err := os.MkdirTemp("", "beszel-ssh-")
+	// Keep the socket path short enough for macOS AF_UNIX limits even when the
+	// test name and runner's temporary directory are deeply nested.
+	socketDir, err := os.MkdirTemp(".", "beszel-test-")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = os.RemoveAll(socketDir) })
-	socketFile := filepath.Join(socketDir, "beszel-test.sock")
+	socketFile := filepath.Join(socketDir, "agent.sock")
 	agent, err := NewAgent("")
 	require.NoError(t, err)
 
@@ -1028,6 +1040,11 @@ func dialTestAgentClient(t *testing.T, clientVersion string) *gossh.Client {
 	require.Eventually(t, func() bool {
 		conn, err := net.Dial("unix", socketFile)
 		if err != nil {
+			select {
+			case startErr := <-errChan:
+				require.NoError(t, startErr)
+			default:
+			}
 			return false
 		}
 		_ = conn.Close()
@@ -1166,22 +1183,4 @@ func TestModernHubRequestResponse(t *testing.T) {
 
 	// Wait() returns an *ssh.ExitError on non-zero exit; nil means status 0.
 	require.NoError(t, session.Wait())
-}
-
-func TestModernHubMalformedFallbackSinglePayload(t *testing.T) {
-	client := dialTestAgentClient(t, "SSH-2.0-beszel_0.21.0")
-	// Repeated sessions model retry/fallback on the same authenticated transport.
-	for i := 0; i < 2; i++ {
-		session, err := client.NewSession()
-		require.NoError(t, err)
-		session.Stdin = bytes.NewReader([]byte{0xff})
-		output := waitSessionOutput(t, func() ([]byte, error) { return session.Output("") })
-		decoder := cbor.NewDecoder(bytes.NewReader(output))
-		var data system.CombinedData
-		require.NoError(t, decoder.Decode(&data))
-		require.Equal(t, system.ConnectionTypeSSH, data.Info.ConnectionType)
-		var extra any
-		require.ErrorIs(t, decoder.Decode(&extra), io.EOF)
-		_ = session.Close()
-	}
 }

@@ -36,6 +36,28 @@ test("disk and network codecs preserve measured zero and legacy units", () => {
 	for (const value of [undefined, null, Number.NaN, Infinity, "0"]) expect(metricValue(value)).toBeNull()
 })
 
+test("disk throughput falls back to legacy byte rates for older Agent telemetry", () => {
+	const legacy = record({
+		dr: 2,
+		drm: 4,
+		dw: 8,
+		dwm: 16,
+		efs: { old: { d: 100, du: 1, r: 2, rm: 4, w: 8, wm: 16 } },
+	})
+	expect(diskDataFns.read(legacy)).toBe(2 * 1024 * 1024)
+	expect(diskDataFns.readMax(legacy)).toBe(4 * 1024 * 1024)
+	expect(diskDataFns.write(legacy)).toBe(8 * 1024 * 1024)
+	expect(diskDataFns.writeMax(legacy)).toBe(16 * 1024 * 1024)
+	expect(diskDataFns.extraRead("old")(legacy)).toBe(2 * 1024 * 1024)
+	expect(diskDataFns.extraReadMax("old")(legacy)).toBe(4 * 1024 * 1024)
+	expect(diskDataFns.extraWrite("old")(legacy)).toBe(8 * 1024 * 1024)
+	expect(diskDataFns.extraWriteMax("old")(legacy)).toBe(16 * 1024 * 1024)
+
+	const current = record({ dio: [512, 1024], dr: 2, dw: 4 })
+	expect(diskDataFns.read(current)).toBe(512)
+	expect(diskDataFns.write(current)).toBe(1024)
+})
+
 test("missing cores and pools never gain fallback measurements", () => {
 	expect(coreUsage(record({ cpus: [0] }), 0)).toBe(0)
 	expect(coreUsage(record({ cpus: [] }), 0)).toBeNull()

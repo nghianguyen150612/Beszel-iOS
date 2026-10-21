@@ -218,6 +218,7 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
     expected_added_fields = {
         "alerts": {"state": "json"},
         "alerts_history": {"monitor_name": "text"},
+        "system_details": {"sockets": "number"},
         "zfs_pools": {"status": "text"},
     }
     expected_new_collection_fields = {
@@ -258,8 +259,12 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
             old_definition, new_definition = dict(old_fields[field]), dict(new_fields[field])
             old_values = old_definition.pop("values", [])
             new_values = new_definition.pop("values", [])
-            if old_definition != new_definition or new_values != [*old_values, "NetworkMonitorLoss"]:
-                raise HarnessError("v0.21 alerts.name changed beyond adding NetworkMonitorLoss")
+            expected_alert_options = ["NetworkMonitorLoss", "NetworkMonitorCert"]
+            if old_definition != new_definition or new_values != [*old_values, *expected_alert_options]:
+                raise HarnessError(
+                    "v0.21 alerts.name changed beyond adding the network-monitor loss and certificate options: "
+                    f"{new_values!r}"
+                )
     if actual_added_fields != expected_added_fields:
         raise HarnessError(f"v0.21 legacy field additions differ from the accepted migration: {actual_added_fields!r}")
 
@@ -293,6 +298,18 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
         "createRule": '@request.auth.id != "" && user = @request.auth.id && system.users.id ?= @request.auth.id',
         "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false && @request.body.system:changed = false && system.users.id ?= @request.auth.id',
     }
+    expected_rule_changes = {
+        "alerts": expected_alert_rules,
+        "fingerprints": {
+            "updateRule": '@request.auth.id != "" && system.users.id ?= @request.auth.id && @request.auth.role != "readonly" && @request.body.system:changed = false',
+        },
+        "quiet_hours": {
+            "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false',
+        },
+        "user_settings": {
+            "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false',
+        },
+    }
     changed_rules: dict[str, dict[str, str]] = {}
     rule_keys = ("listRule", "viewRule", "createRule", "updateRule", "deleteRule")
     for collection in set(before) & set(after):
@@ -302,7 +319,7 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
             if before[collection].get(key) != after[collection].get(key)
         }
         if changes:
-            if collection != "alerts" or changes != expected_alert_rules:
+            if collection not in expected_rule_changes or changes != expected_rule_changes[collection]:
                 raise HarnessError(f"v0.21 migration changed unexpected {collection} authorization rules: {changes!r}")
             changed_rules[collection] = changes
 
@@ -367,7 +384,7 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
         "legacy_collections_preserved": sorted(before),
         "added_collections": sorted(added_collections),
         "added_legacy_fields": actual_added_fields,
-        "changed_fields": {"alerts.name.values_added": ["NetworkMonitorLoss"]},
+        "changed_fields": {"alerts.name.values_added": ["NetworkMonitorLoss", "NetworkMonitorCert"]},
         "index_changes": index_changes,
         "authorization_rule_changes": changed_rules,
         "preserved_preexisting_fields": {"containers.updatable": "bool", "zfs_pools.display_name": "text", "zfs_pools.raw": "bool"},
@@ -886,7 +903,7 @@ def inject_post_schema_startup_failure(database: pathlib.Path) -> None:
             f'''CREATE TRIGGER p013_fail_after_schema
                 BEFORE UPDATE ON "_collections"
                 WHEN OLD."name" = 'alerts'
-                  AND EXISTS (SELECT 1 FROM "_migrations" WHERE "{file_column}" = '1790964708_network_monitor_skip_tls_verify.go')
+                  AND EXISTS (SELECT 1 FROM "_migrations" WHERE "{file_column}" = '1792309602_system_details_sockets.go')
                 BEGIN SELECT RAISE(ABORT, 'P013 deterministic post-schema startup failpoint'); END'''
         )
         connection.commit()
@@ -1227,8 +1244,12 @@ def main() -> int:
         bun = os.environ.get("BUN", "bun")
         go_version = subprocess.check_output([go, "version"], text=True).strip()
         bun_version = subprocess.check_output([bun, "--version"], text=True).strip()
-        if "go1.27.1" not in go_version or bun_version != "1.4.0":
-            raise HarnessError(f"P013 fixture requires Go 1.27.1 and Bun 1.4.0 (found {go_version!r}, Bun {bun_version!r})")
+        expected_go = "go" + next(
+            line.split()[1] for line in (repo / "go.mod").read_text().splitlines()
+            if line.strip().startswith("go ")
+        )
+        if expected_go not in go_version or bun_version != "1.4.0":
+            raise HarnessError(f"P013 fixture requires {expected_go} and Bun 1.4.0 (found {go_version!r}, Bun {bun_version!r})")
         old_binary = binaries / "beszel-hub-0.19"
         old_agent_binary = binaries / "beszel-agent-0.19"
         new_binary = binaries / "beszel-hub-0.21"
@@ -1602,6 +1623,8 @@ def main() -> int:
             "1790273174_network_monitor_server.go",
             "1790924727_zfs_pool_status.go",
             "1790964708_network_monitor_skip_tls_verify.go",
+            "1791926360_network_monitor_cert_alert.go",
+            "1792309602_system_details_sockets.go",
         ]
         missing_migrations = [name for name in required_migrations if migrated_ledger.count(name) != 1]
         if missing_migrations:

@@ -89,3 +89,9 @@ func TestHealth(t *testing.T) {
 		})
 	})
 }
+
+func TestHealthDirectoryOverride(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("BESZEL_HEALTH_DIR", dir)
+	assert.Equal(t, filepath.Join(dir, "beszel_health"), getHealthFilePath())
+}

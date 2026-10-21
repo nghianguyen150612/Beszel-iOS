@@ -194,6 +194,13 @@ func TestClientSingleAcquisitionAndShutdown(t *testing.T) {
 	first := make(chan error, 1)
 	go func() { _, err := c.Read(context.Background()); first <- err }()
 	pid := waitPID(t, c.path+".pid")
+	// The fixture writes its PID before its start marker. Wait for that marker
+	// before asserting acquisition count so this test does not race the helper's
+	// startup on slower race-instrumented macOS runners.
+	require.Eventually(t, func() bool {
+		starts, err := os.ReadFile(c.path + ".starts")
+		return err == nil && len(strings.Fields(string(starts))) == 1
+	}, time.Second, 5*time.Millisecond, "fixture should record the active acquisition")
 	var wg sync.WaitGroup
 	for range 64 {
 		wg.Go(func() {
