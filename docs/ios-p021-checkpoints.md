@@ -13,8 +13,10 @@ Pinned upstream is `b5357343550c8e2493d0e65472a06c1007396384`.
 P021 performs a final independent cloud review of P001–P020. It does not merge
 another upstream range or add unrelated features. The source review found no
 additional justified code change after P020's token URL correction and CPU
-breakdown contract test. All P021 exact-head hosted qualification is pending
-at this first checkpoint.
+breakdown contract test. P021 adds its documentation paths to the P013
+migration workflow filter so docs-only closeout commits run the genuine
+database fixture. No product code changes are included. All P021 exact-head
+hosted qualification is pending at this first checkpoint.
 
 Branch: `ios/p021-integration-closeout`.
 Target: `ios/upstream-v021-integration`.
@@ -42,13 +44,16 @@ native artifact hashes are in the P020 security and validation records.
 
 ## P021 initial checkpoint
 
-This initial checkpoint contains the independent review, acceptance matrix,
-security disposition, validation record, and this ledger. The P021 source SHA
-and PR number will be recorded after the checkpoint is pushed and its Draft PR
-is created. P017 full regression, genuine P013 database fixture, native iOS,
-Procursus, and explicit installer dispatch must all run against the P021 source.
-No result is inferred from P020 runs. Any final documentation-only P021 head
-must also pass the required checks before merge.
+The first remote checkpoint is
+`56536f8c460be269863a01db251d4ea9509e7e8b`; Draft PR #25 targets integration.
+The P013 workflow path filter initially did not include new P021 documentation,
+so the first PR event did not schedule its genuine database fixture. The
+current checkpoint adds the `docs/ios-p021-*` path to that workflow; this lets
+each P021 documentation-only head run the P013 fixture. P017 full regression,
+P013 genuine database fixture, native iOS, Procursus, and explicit installer
+dispatch must all run against the source after this trigger correction. No
+result is inferred from P020 runs. Any final documentation-only P021 head must
+also pass the required checks before merge.
 
 ## Boundaries
 

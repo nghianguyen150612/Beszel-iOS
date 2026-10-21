@@ -17,7 +17,11 @@ Hub migrations/history, embedded frontend serving, installer transactions,
 native-build provenance, and CI/release boundaries. P020 closed the two
 confirmed qualification gaps: universal-token GET URL mutation/secrets and
 missing deterministic CPU breakdown order coverage. The P021 review found no
-additional code change justified.
+additional product-code change justified. P021 adds `docs/ios-p021-*` to the
+P013 migration workflow's pull-request path filter so every documentation-only
+P021 checkpoint still runs the genuine v0.19 migration and restore fixture.
+This focused CI trigger correction does not change migration or application
+behavior.
 
 ## Historical ancestry and patch accounting
 
