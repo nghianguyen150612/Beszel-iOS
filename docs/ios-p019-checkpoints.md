@@ -125,3 +125,45 @@ same SHA. Hosted checks for this source are not yet available. The preceding
 exact-head run remains a genuine failure; it is not counted as a pass. P019
 still cannot merge while mandatory checks and the Go 1.27.2 security
 disposition remain open.
+
+## P013 full migration qualification — 2026-10-21
+
+P013 workflow run `39578272401` passed on source
+`89e9c2016a2dc02541e64cdf2007ecf986652d94`. The synthetic-only evidence ZIP
+SHA-256 is
+`67213973461129ff41fd7b7e782130468772b1fc73f0c9c9cd8d246e3a04749c`, matching
+GitHub artifact metadata. It records a genuine disposable v0.19 Hub fixture,
+all seven candidate migrations once and in order, two healthy candidate starts
+with stable schema and record counts, preserved roles/settings, WAL-backed
+history, and SSH public-key fingerprint. The complete cold backup restored
+with matching inventory and SQLite integrity. All five injected interruption
+points recovered through the verified v0.19 restore. The artifact contains
+only synthetic records, hashes, public-key fingerprint, and sanitized loopback
+failure diagnostics; it contains no database archive, private key, credentials,
+or production data.
+
+## Connection regression correction — 2026-10-21
+
+The exact-head native iOS Build run `39578272394` on `89e9c201` failed in the
+portable telemetry/macOS test step. `sendEvent` could block WebSocket callbacks
+on a nil or full event queue, and `handleAuthChallenge` announced connection
+before its fingerprint response was written. The callback now enqueues without
+blocking and connect is reported only after the response is sent and verified.
+The failed-send regression asserts no connect event is queued. The local full
+agent test suite also found that `getOptions` dereferenced an absent Agent in a
+TLS-only test; it now falls back to the dialer's background context.
+
+The full agent suite then exposed overly long Unix socket paths in
+`TestLegacyHubGetsSinglePayload` on macOS. The helper now creates a short socket
+directory under the package checkout and reports listener startup errors
+directly. This stays inside the checkout and below macOS's Unix socket path
+limit.
+
+The official Go 1.27.2 archive was checksum-verified against `go.dev` and
+installed only in `.task/cache`. Focused P009 tests passed, the full agent,
+battery, delta-tracker, and system suites passed, and the full `agent` race
+suite passed. `git diff --check` passed. Code checkpoint
+`ebed4cbc1bd4320f06b81b3f9c29c2f089237e58` is pushed and confirmed by
+`git ls-remote`. Hosted P017 and native checks on this corrected source are
+pending; failures and in-progress runs from `89e9c201` are not counted as
+passes. The Go 1.27.2 `GO-2026-6809` security disposition remains open.
