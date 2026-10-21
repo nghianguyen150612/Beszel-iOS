@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/netip"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 	"uuid"
@@ -219,7 +218,7 @@ func (h *Hub) registerApiRoutes(se *core.ServeEvent) error {
 	apiAuth.GET("/config-yaml", config.GetYamlConfig).BindFunc(requireAdminRole)
 	// handle agent websocket connection
 	apiNoAuth.GET("/agent-connect", h.handleAgentConnect)
-	// get, create, or delete universal tokens (POST keeps tokens out of URLs; GET is kept for legacy clients)
+	// get, create, or delete universal tokens (GET is read-only; secrets/options use a POST body)
 	apiAuth.GET("/universal-token", h.handleUniversalToken).BindFunc(excludeReadOnlyRole)
 	apiAuth.POST("/universal-token", h.handleUniversalToken).BindFunc(excludeReadOnlyRole)
 	// update / delete user alerts
@@ -308,14 +307,9 @@ func (h *Hub) handleUniversalToken(e *core.RequestEvent) error {
 			return e.BadRequestError("Invalid universal token request", err)
 		}
 	} else {
-		// legacy GET requests pass options as query params
 		query := e.Request.URL.Query()
-		req.Token = query.Get("token")
-		if v, err := strconv.Atoi(query.Get("enable")); err == nil {
-			req.Enable = v
-		}
-		if v, err := strconv.Atoi(query.Get("permanent")); err == nil {
-			req.Permanent = v
+		if query.Has("token") || query.Has("enable") || query.Has("permanent") {
+			return e.BadRequestError("Universal token changes require POST", nil)
 		}
 	}
 

@@ -47,3 +47,28 @@ created, then all applicable checks must pass against the final P020 source.
 
 No device, production `iOS` branch, fork `main`, release tag, or published
 release is in scope. P018 physical-device Gate F remains pending.
+
+## P020 security correction checkpoint
+
+The post-upstream review found that `GET /api/beszel/universal-token` still
+accepted `token`, `enable`, and `permanent` query parameters. Although the
+current frontend already uses POST, the legacy GET handler and its test
+permitted a universal token to appear in the request URL. P020 now keeps GET
+read-only and rejects each of those query fields with a 400 response. Token
+issuance, mutation and token comparison remain available through the existing
+POST JSON body, with `Cache-Control: no-store` unchanged.
+
+Focused coverage now proves a token query and the two mutation query fields are
+individually rejected; the response omits the supplied token, no permanent
+record is created, and a follow-up GET remains inactive. Existing POST tests
+continue to cover activation, persistence, authorization and ownership.
+
+Local Go 1.27.2 validation on the correction source:
+
+- `go test -tags 'testing no_ui' ./internal/hub -run '^(TestApiRoutesAuthentication|TestUniversalTokenEndpoint)$' -count=1 -timeout=5m`: PASS.
+- `go test -race -tags 'testing no_ui' ./internal/hub -run '^TestUniversalTokenEndpoint$' -count=3 -timeout=5m`: PASS.
+- `git diff --check`: PASS.
+
+The source correction and this evidence are being pushed as the first P020
+implementation checkpoint. Full hosted CI and the remaining post-upstream
+regression review are still required.
