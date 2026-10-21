@@ -1,7 +1,7 @@
 # P019 Pinned Upstream Merge Review
 
-Status: P019 technical qualification passed on source `de40fbe8`; merge is
-held pending an acceptable Go 1.27.2 security disposition.
+Status: P019 technical and hosted CI qualification passed on code source
+`a1349717`; merge is held pending an acceptable Go 1.27.2 security disposition.
 
 ## Source and ancestry
 
@@ -36,12 +36,14 @@ The Procursus read-only APT fixture does not invoke `bwrap`. Its required Linux 
 
 ## Qualification and merge status
 
-The P019 code source `de40fbe8d3b5782d979bfbc2cbd76c5944b46764` passed the
-full Go suite, affected race suites, Bun tests, Lingui, TypeScript, Vite,
-installer/bootstrap checks, upstream accounting, P013 migration and restore
-fixture, Procursus isolation test, and native iOS ARM64 validation. See
-`docs/ios-p019-checkpoints.md` for exact run IDs, manifests, binary checksums,
-and artifact digests.
+The P019 code source `a13497171883043a9868a11c428c30b7d86d99eb` passed the
+full hosted Go suite and builds, Bun/npm audits, frontend build, installer and
+bootstrap checks, upstream accounting, P013 migration and restore fixture,
+Procursus isolation test, native iOS ARM64 validation, macOS race suites, and
+artifact provenance checks. The earlier native run on `af9e158f` exposed an
+immediate port-rebind assumption after an SSH session; the corrected shutdown
+assertion passed on `a1349717`. See `docs/ios-p019-checkpoints.md` for exact run
+IDs, manifests, binary checksums, and artifact digests.
 
 The Go scan confirms `GO-2026-6608` is absent, but reports three reachable
 `GO-2026-6809` traces in Go 1.27.2; the fixed Go release is 1.27.3. The
@@ -51,8 +53,15 @@ The Bun/npm audits report zero critical findings and keep
 disposition is acceptable. PR #23 remains Draft and unmerged; no review was
 claimed or impersonated.
 
-This checkpoint update changes documentation only. The native Agent and Hub
-artifacts embed VCS revision `de40fbe8d3b5782d979bfbc2cbd76c5944b46764` with
-`vcs.modified=false`; the tested source tree is unchanged by this documentation
-update. That is the immutable-source evidence boundary for any documentation-
-only commit that follows.
+The exact-source Go scan confirms `GO-2026-6608` is absent, but reports three
+reachable `GO-2026-6809` traces in Go 1.27.2; the authoritative Go vulnerability
+database lists Go 1.27.3 as fixed. `GO-2026-5932` remains module-level without a
+symbol trace. Bun/npm report zero critical findings and retain
+`GHSA-vfj7-8cjw-p6xm` **OPEN**. The cloud qualification cannot disposition the
+reachable Go finding on the owner's behalf; PR #23 remains Draft and unmerged.
+
+The latest native Agent and Hub artifacts embed VCS revision
+`a13497171883043a9868a11c428c30b7d86d99eb` with `vcs.modified=false`. Any
+documentation-only commit after that source remains an immutable-source
+evidence boundary only if the test and artifact source files stay unchanged;
+the PR workflows are still required to pass for the final head.

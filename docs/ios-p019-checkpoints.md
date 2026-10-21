@@ -30,6 +30,8 @@ patch map still contains 13 logical iOS patch IDs. P019 Draft PR #23 targets
 | `14edfae855610b9bf7aa795f452fe82afe81b427` | Yes | Allow the exact upstream user-settings owner-preservation rule |
 | `cdc19642b87c1c47f938e61f0c3e85ba5b67461f` | Yes | Record the P013 fingerprint system-reassignment guard finding |
 | `7b1a2db386fca2c7985724b3d11d561725a20b0d` | Yes | Allow only the exact upstream fingerprint system-preservation rule |
+| `af9e158f2830c11f5a145adf380c7723956891af` | Yes | Synchronize the Wi-Fi helper fixture startup marker after a hosted macOS race-test failure |
+| `a13497171883043a9868a11c428c30b7d86d99eb` | Yes | Replace immediate listener port rebinding with a shutdown-state and connection-refusal assertion after hosted macOS reported the port still in use |
 
 ## Hosted CI on `cee2fc2518e2abbc58a2d6375dc85d7c996e9a95`
 
@@ -216,3 +218,58 @@ module-level `GO-2026-5932` finding without a symbol trace. The JS audit keeps
 `GHSA-vfj7-8cjw-p6xm` OPEN and reports zero critical findings. PR #23 remains
 Draft and unmerged pending the owner's Go 1.27.2 security disposition. P018
 Gate F remains pending; no device or release was used.
+
+## Latest exact-source cloud qualification — 2026-10-21
+
+The documentation-only PR head `466a5380` exposed a race in the Wi-Fi helper
+test: the fake helper published its PID before writing the `.starts` marker.
+The test now waits for the marker. On the following source `af9e158f`, native
+run [39586153308](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39586153308)
+passed that race test but failed later when a shutdown test immediately tried
+to rebind a recently used SSH port on macOS (`address already in use`). The
+test now checks that the Agent clears its listener and that new TCP connections
+are refused, without relying on immediate TCP port reuse. The focused race
+suite passed locally three times; the reconnect/shutdown test passed locally
+under race detection ten times.
+
+All required hosted checks passed on exact code source
+`a13497171883043a9868a11c428c30b7d86d99eb`:
+
+| Workflow | Run | Result | Evidence |
+|---|---:|---|---|
+| P017 release-candidate regression | [39586589394](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39586589394) | PASS | Full Go suite and portable builds; Go and Bun/npm security scans; installer/bootstrap and isolation checks; frozen upstream ancestry; genuine frontend build. The canonical frontend manifest has 97 assets and digest `3b80dbea2957210afc99b4f4e2322d682015f53eb6034d163f55d3a9fc2a92e1`. |
+| P013 Hub migration fixture | [39586589368](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39586589368) | PASS | Genuine v0.19 migration, restart, backup/restore and interruption recovery; evidence ZIP digest `30aafc741e66d0045b403ba6e7b55360c10e2a26d6954cf2ec0687d4a1fdd617`. |
+| iOS installer lifecycle | [39586589321](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39586589321) | PASS | Installer transaction and rollback checks. |
+| Helm charts | [39586589440](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39586589440) | PASS | PR validation only; no registry publishing. |
+| Native iOS Build | [39586589329](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39586589329) | PASS | Procursus container isolation, macOS portable/race suites, iOS adapter, transport and network-monitor checks, native builds, Mach-O, provenance, checksums and frontend embedding. The release job was skipped. |
+
+The native workflow verified the Go 1.27.2 A7 patch against runtime source
+SHA-256 `47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db`
+and patched source SHA-256
+`c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f`. It
+produced clean ARM64 iOS device binaries with minimum iOS 12.0, `CGO_ENABLED=1`,
+`GOARM64=v8.0`, embedded Go VCS revision `a13497171883043a9868a11c428c30b7d86d99eb`,
+and `vcs.modified=false`. The Agent digest is
+`c9df4951124b3d0d9396ed2c161dd090e6ef21cf7108dd0e8e2266b9ad234ff7`
+(9,576,416 bytes); the Hub digest is
+`59805bc8ba3c26dc0a2149f432e745fbba1c55fe53408ceef98b65d16506bea8`
+(32,076,152 bytes). The Hub embeds all 97 verified frontend assets; no private
+MobileWiFi linkage is present.
+
+GitHub artifact metadata for run `39586589329` records the iOS payload ZIP
+digest `5cc45dc48b7c988c9843a06297a37a45ccbee9e4eae2296fa127dd7e61a8dd5b`,
+native evidence ZIP digest
+`f26abf637532461235f82f2ae875f219b607eede56ed9e4d8bb21d35af7691ca`, and
+separate disabled Wi-Fi diagnostic ZIP digest
+`da7af44eb5ee14292b39d20fe6ed63921aff37dfcaa95a6b9b4519c7ec310f07`. The
+exact-source Go scan at `a1349717` finds no `GO-2026-6608`; it reports three
+reachable `GO-2026-6809` traces (fixed in Go 1.27.3) and one module-level
+`GO-2026-5932` finding without a symbol trace. Bun and npm audits report zero
+critical findings and retain `GHSA-vfj7-8cjw-p6xm` OPEN. Bun report SHA-256 is
+`5a9adf8fbbd2a854066d8ebb81515723fc033927c4bcee0f7ed3ea13b300efba`; npm
+report SHA-256 is
+`d2292fdbf69076e249eb3825fb7d034218f93e656e7348b5788dfbe9d868f047`.
+
+P019 technical and hosted CI gates pass on code source `a1349717`. The Go
+security disposition remains open, so PR #23 remains Draft and unmerged. No
+P020 or P021 branch has been started. The P018 device gate remains pending.
