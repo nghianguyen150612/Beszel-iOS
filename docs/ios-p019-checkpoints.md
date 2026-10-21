@@ -24,6 +24,8 @@ patch map still contains 13 logical iOS patch IDs. P019 Draft PR #23 targets
 | `8b8284961e37dd2264084071b112c1b38e47bfe3` | Yes | Correct the migration schema expectation, legacy disk units, Procursus isolation runner, and govulncheck stream parser |
 | `070c4119fa5ef13d90ea26e3d7b6a9ed84613436` | Yes | Record exact-head security findings and correction run state |
 | `b14759d5856cbd8adf799ca05145c1bc9314841d` | Yes | Accept upstream `system_details.sockets:number`; P013 real fixture rerun is pending |
+| `4bac1ba75872b72027cb11a89da0f8c01b31f7db` | Yes | Record the P013 quiet-hours ownership comparison failure and exact correction |
+| `50ae2d8f4bc63fdeb1eeb2bc9f436059e5170846` | Yes | Add the exact upstream `quiet_hours.updateRule` owner-preservation rule |
 
 ## Hosted CI on `cee2fc2518e2abbc58a2d6375dc85d7c996e9a95`
 
@@ -47,6 +49,14 @@ harness and migration docs now include this required CPU-socket migration; a
 fresh real fixture run is pending. P017 full Go regression and the macOS
 portable telemetry suite were still running when this checkpoint was written.
 
+On exact source `4bac1ba75872b72027cb11a89da0f8c01b31f7db`, the genuine P013
+fixture accepted the `system_details.sockets` field and then reported that
+upstream tightens `quiet_hours.updateRule` to append
+`@request.body.user:changed = false`. The harness and migration docs now accept
+only this exact ownership-preserving rule change. The focused Hub migration
+unit suite passed again (7 tests) on the correction tree. Fresh hosted checks
+are running on pushed source `50ae2d8f4bc63fdeb1eeb2bc9f436059e5170846`.
+
 The exact-head Go report confirms `GO-2026-6608` is absent on Go 1.27.2, but it
 also reports three reachable `GO-2026-6809` traces through
 `internal/ghupdate.FetchLatestRelease` to `crypto/x509.Certificate.Verify`.
@@ -67,7 +77,7 @@ On the correction tree, Python audit tests passed (74 tests), Hub migration
 harness unit tests passed (7 tests), frozen upstream matrix and readiness
 validation passed (178/178 upstream rows and 13 logical iOS patches), and
 `git diff --check` passed. Bun and Go suites have not been run in this Work
-environment. Commit `b14759d5856cbd8adf799ca05145c1bc9314841d` is pushed and its
+environment. Commit `50ae2d8f4bc63fdeb1eeb2bc9f436059e5170846` is pushed and its
 exact remote SHA was verified. Its hosted checks are pending; exact-head hosted
 CI remains authoritative. The required Procursus fixture must run in its hosted
 network-disabled, read-only container.
