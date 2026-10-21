@@ -1,0 +1,241 @@
+{
+  "schema": 1,
+  "milestone": "P021",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "branch": "ios/p021-integration-closeout",
+  "pull_request": 25,
+  "base_branch": "ios/upstream-v021-integration",
+  "base_sha": "42556e62c23f3595a276d2eb4a55125a96f5d31f",
+  "pinned_upstream_sha": "b5357343550c8e2493d0e65472a06c1007396384",
+  "frozen_baseline_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+  "p021_initial_source_sha": "56536f8c460be269863a01db251d4ea9509e7e8b",
+  "p021_first_qualified_source_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6",
+  "p021_corrected_source_sha": "b20ed2b636d95bca26c87161de06d8e1e7f03862",
+  "status": "P021 corrected source b20ed2b is fully qualified. Final evidence-head P013/P017/native/Procursus/installer checks must pass before merge.",
+  "application_implementation_changes_in_p021": false,
+  "test_source_change_in_p021": "Stabilizes TestClientTimeoutCancellationAndRepeatedCleanup; no application behavior changed.",
+  "workflow_changes": [
+    {
+      "path": ".github/workflows/p013-hub-migration.yml",
+      "change": "Adds docs/ios-p021-* to pull-request paths so documentation-only P021 commits run the genuine database fixture.",
+      "included_from_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6"
+    },
+    {
+      "path": ".github/workflows/ios-installer.yml",
+      "change": "Adds docs/ios-p021-* to push and pull-request paths so documentation-only P021 commits run installer lifecycle checks.",
+      "included_from_sha": "9ef6d859923b4fe832a4bcf3f54f2edf6e0f38be"
+    }
+  ],
+  "structural_validation": {
+    "source_sha": "b20ed2b636d95bca26c87161de06d8e1e7f03862",
+    "pinned_upstream_is_ancestor": true,
+    "pinned_upstream_commits_after_baseline": 41,
+    "frozen_upstream_only_commits_accounted": 178,
+    "historical_ios_commits_mapped": 35,
+    "logical_ios_patchsets": 13,
+    "unresolved_audit_rows": 0,
+    "matrix_validator": "PASS",
+    "readiness_validator": "PASS",
+    "readiness_acceptance_cases": 24,
+    "readiness_compatibility_scenarios": 33,
+    "native_patch_sentinels": "PASS",
+    "upstream_sync_sentinels": "PASS"
+  },
+  "integration_merges": {
+    "p019_pr": 23,
+    "p019_normal_merge_sha": "c8bd3dba8656c8195ffacf56ff743dd58b01da25",
+    "p019_feature_sha": "81e6a5e779efd61ac464b9835eb1b1658d4263d8",
+    "p020_pr": 24,
+    "p020_normal_merge_sha": "42556e62c23f3595a276d2eb4a55125a96f5d31f",
+    "p020_feature_head_sha": "c716d3c9ce8de170cade25b3921bccef8c5b97a7"
+  },
+  "p021_history": {
+    "initial_037_runs": {
+      "p013": {
+        "run_id": 39614985429,
+        "status": "success"
+      },
+      "p017": {
+        "run_id": 39614985449,
+        "status": "success"
+      },
+      "native": {
+        "run_id": 39614985052,
+        "status": "success"
+      },
+      "installer": {
+        "run_id": 39614984961,
+        "status": "success"
+      }
+    },
+    "intermediate_failure": {
+      "source_sha": "9ef6d859923b4fe832a4bcf3f54f2edf6e0f38be",
+      "p017_run_id": 39618985621,
+      "status": "failed",
+      "test": "agent/wifi/ioshelper.TestClientTimeoutCancellationAndRepeatedCleanup",
+      "cause": "100ms timeout could fire before helper recorded its PID; repeated loop also depended on a non-unique PID file.",
+      "resolution": "Wait for a distinct appended start marker per acquisition; use a 1s timeout; require actual PID reaping and bounded completion."
+    },
+    "cancelled_superseded_native_run": {
+      "source_sha": "9ef6d859923b4fe832a4bcf3f54f2edf6e0f38be",
+      "run_id": 39618985568,
+      "status": "cancelled_by_branch_update",
+      "counted_as_result": false
+    },
+    "local_corrected_test": {
+      "toolchain": "Go 1.27.2",
+      "non_race": "go test -tags 'testing no_ui' ./agent/wifi/ioshelper -run TestClientTimeoutCancellationAndRepeatedCleanup -count=2: PASS",
+      "race": "go test -race -tags 'testing no_ui' ./agent/wifi/ioshelper -run TestClientTimeoutCancellationAndRepeatedCleanup -count=1: PASS"
+    }
+  },
+  "p021_hosted_validation": {
+    "source_sha": "b20ed2b636d95bca26c87161de06d8e1e7f03862",
+    "source_kind": "feature branch candidate source, not a PR merge pseudo-commit",
+    "p013_genuine_migration": {
+      "run_id": 39620427023,
+      "status": "success",
+      "job_id": 119292095253,
+      "artifact_id": 12354696647,
+      "artifact_name": "p013-hub-recovery-evidence",
+      "artifact_sha256": "2c86217d7436954a0629769f0629708a2ea9d90ae33d4b9d3adc3ce32ef74243",
+      "coverage": [
+        "genuine v0.19 fixture",
+        "migration source matrix",
+        "backup and restore failure cases",
+        "synthetic records only"
+      ]
+    },
+    "p017_regression": {
+      "run_id": 39620427058,
+      "status": "success",
+      "job_id": 119292095730,
+      "artifact_manifest": {
+        "id": 12355115796,
+        "sha256": "9cb52a17b3fc1d5fdc053309f6ce7deb079785be2e1446982fa8f614952d41d4",
+        "candidate_source_sha": "b20ed2b636d95bca26c87161de06d8e1e7f03862",
+        "frontend_asset_count": 97,
+        "frontend_asset_manifest_sha256": "3b80dbea2957210afc99b4f4e2322d682015f53eb6034d163f55d3a9fc2a92e1",
+        "device_tested": false,
+        "release_published": false,
+        "tag_created": false
+      },
+      "javascript_audit": {
+        "id": 12354567142,
+        "sha256": "073556df0c75b6d54f76baf572b94c987c6b9884c753ac9c6db314220b16b686",
+        "critical_findings": 0,
+        "GHSA-vfj7-8cjw-p6xm": "OPEN"
+      },
+      "go_vulnerability_scan": {
+        "id": 12354258581,
+        "sha256": "615e309fb58a59f3b570f857125693f4eb059ea259e9ba7fbe05a2ba51216402",
+        "finding_count": 4,
+        "GO-2026-6608": "absent",
+        "GO-2026-6809": "three raw occurrences; official CL 851047 x509 backport/tests pass",
+        "GO-2026-5932": "one open module-level finding; not claimed fixed"
+      }
+    },
+    "native_ios_build": {
+      "run_id": 39620426859,
+      "status": "success",
+      "head_sha": "b20ed2b636d95bca26c87161de06d8e1e7f03862",
+      "procursus_job_id": 119292445751,
+      "procursus_status": "success",
+      "build_ios_job_id": 119292446130,
+      "build_ios_status": "success",
+      "release_ios_job_id": 119299725940,
+      "release_ios_status": "skipped",
+      "toolchain": {
+        "go": "1.27.2",
+        "GOOS": "ios",
+        "GOARCH": "arm64",
+        "GOARM64": "v8.0",
+        "CGO_ENABLED": "1",
+        "vcs_modified": false,
+        "ios_minimum_deployment": "12.0"
+      },
+      "runtime_patch": {
+        "original_source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+        "patched_source_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f",
+        "guarded_yield": true,
+        "cntfrq_cntvct_reads": 0
+      },
+      "x509_backport_patch_sha256": "111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150",
+      "agent_binary_sha256": "5b4a5a25cd0fe5405d411d71186bd8bca3440deb82c31a11186c71735d9337ed",
+      "hub_binary_sha256": "15e20c2fa549ad887f780b9d681642e84de04f8f8e2a664ece60e9cba07abc30",
+      "embedded_asset_count": 97,
+      "private_MobileWiFi_linkage": false,
+      "artifacts": [
+        {
+          "id": 12355147476,
+          "name": "beszel-ios-arm64",
+          "sha256": "901152c81188f82e19e7136bab130f722688093fe2a0c59e11744a1cd4a57a42"
+        },
+        {
+          "id": 12355132561,
+          "name": "ios-wifi-diagnostic-disabled",
+          "sha256": "b947597f7607ecbaacf08f2285d07ff993e22bb5fdd6383cf3e5bf5d536f7ff6"
+        },
+        {
+          "id": 12355811635,
+          "name": "ios-native-validation",
+          "sha256": "c16a09222916389c1993a33d79c4eb4c9df577675893be1bd80bc279f1e22c09"
+        }
+      ]
+    },
+    "installer_lifecycle": {
+      "run_id": 39620426909,
+      "status": "success",
+      "job_id": 119292024142,
+      "head_sha": "b20ed2b636d95bca26c87161de06d8e1e7f03862",
+      "coverage": [
+        "rootful and Procursus paths",
+        "bootstrap checksum pin",
+        "transaction lifecycle",
+        "rollback",
+        "workflow isolation",
+        "patch sentinels"
+      ]
+    },
+    "final_evidence_head": {
+      "required": true,
+      "policy": "P013, P017, native iOS/Procursus, and installer workflows triggered by this documentation update must all pass on its exact PR head before merge. Exact head and run IDs will be recorded on PR #25.",
+      "source_boundary": "The final evidence update changes documentation only. It reruns the complete matrix on top of the already-qualified implementation/test/workflow source b20ed2b."
+    }
+  },
+  "security_disposition": {
+    "GO-2026-6608": "absent",
+    "GO-2026-6809": "three raw occurrences retained; official CL 851047 x509 backport and tests passed",
+    "GO-2026-5932": "open module-level finding; not claimed fixed",
+    "GHSA-vfj7-8cjw-p6xm": "OPEN",
+    "javascript_critical_findings": 0,
+    "critical_unresolved_regressions": 0
+  },
+  "protected_targets": {
+    "production_iOS_sha_verified": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "fork_main_sha_verified": "e984ee12081f4e112601c3f718c9d81c112fe718",
+    "integration_sha_before_p021": "42556e62c23f3595a276d2eb4a55125a96f5d31f",
+    "tag_created": false,
+    "release_created": false,
+    "deployment_performed": false,
+    "device_touched": false,
+    "p018_gate_f": "PENDING",
+    "native_wifi_rssi": "DEFERRED"
+  },
+  "execution_boundary": {
+    "workspace": "/workspace/Beszel-iOS",
+    "local_health_marker": "/workspace/Beszel-iOS/.task/health",
+    "prior_incidents": [
+      "Earlier Work opened/truncated /dev/shm/beszel_health.",
+      "Earlier Procursus isolation test invoked bwrap."
+    ],
+    "incidents_repeated_in_p021": false,
+    "writes_outside_workspace_in_p021_continuation": false,
+    "privilege_escalation": false
+  },
+  "known_non_test_incident": "P020 GitHub signed artifact download returned HTTP 403; metadata/logs/checksums were retained and no artifact was extracted. P021 used hosted artifact metadata and run logs; no P021 artifact download was attempted.",
+  "test_outcomes": {
+    "pass": "Corrected local focused/race test; P013, P017, native iOS/Procursus, installer on b20ed2b.",
+    "failed_historical": "P017 39618985621 on 9ef6d85 failed only on the now-corrected helper timeout test.",
+    "blocked": []
+  }
+}
