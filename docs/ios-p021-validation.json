@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "milestone": "P021",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "branch": "ios/p021-integration-closeout",
+  "pull_request": null,
+  "base_branch": "ios/upstream-v021-integration",
+  "base_sha": "42556e62c23f3595a276d2eb4a55125a96f5d31f",
+  "pinned_upstream_sha": "b5357343550c8e2493d0e65472a06c1007396384",
+  "frozen_baseline_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
+  "p021_initial_source_sha": null,
+  "p021_final_pr_head_sha": null,
+  "status": "initial checkpoint; exact P021 source qualification pending",
+  "source_changes_in_p021": false,
+  "structural_validation_on_base": {
+    "pinned_upstream_is_ancestor": true,
+    "pinned_upstream_commits_after_baseline": 41,
+    "frozen_upstream_only_commits_accounted": 178,
+    "historical_ios_commits_mapped": 35,
+    "logical_ios_patchsets": 13,
+    "unresolved_audit_rows": 0,
+    "matrix_validator": "PASS",
+    "readiness_validator": "PASS"
+  },
+  "integration_merges": {
+    "p019_normal_merge_sha": "c8bd3dba8656c8195ffacf56ff743dd58b01da25",
+    "p019_feature_sha": "81e6a5e779efd61ac464b9835eb1b1658d4263d8",
+    "p020_normal_merge_sha": "42556e62c23f3595a276d2eb4a55125a96f5d31f",
+    "p020_feature_head_sha": "c716d3c9ce8de170cade25b3921bccef8c5b97a7",
+    "p020_final_head_checks": {
+      "p017_run_id": 39611915082,
+      "p013_run_id": 39611915079,
+      "native_ios_run_id": 39611915076,
+      "installer_run_id": 39611969234,
+      "all_conclusions": "success",
+      "release_job": "skipped"
+    }
+  },
+  "p020_security_state": {
+    "GO-2026-6608": "absent",
+    "GO-2026-6809": "three raw traces retained; official CL 851047 x509 backport and tests passed",
+    "GO-2026-5932": "open module-level finding; not claimed fixed",
+    "GHSA-vfj7-8cjw-p6xm": "OPEN",
+    "javascript_critical_findings": 0
+  },
+  "p021_hosted_validation": {
+    "source_sha": null,
+    "p017_regression": {"run_id": null, "status": "pending"},
+    "p013_genuine_migration": {"run_id": null, "status": "pending"},
+    "native_ios_build": {"run_id": null, "status": "pending"},
+    "procursus_isolation": {"run_id": null, "status": "pending"},
+    "installer_lifecycle": {"run_id": null, "status": "pending"},
+    "final_documentation_head_checks": "required before merge"
+  },
+  "protected_targets": {
+    "production_iOS_changed": false,
+    "fork_main_changed": false,
+    "tag_created": false,
+    "release_created": false,
+    "deployment_performed": false,
+    "device_touched": false,
+    "p018_gate_f": "PENDING",
+    "native_wifi_rssi": "DEFERRED"
+  },
+  "execution_boundary": {
+    "workspace": "/workspace/Beszel-iOS",
+    "local_health_marker": "/workspace/Beszel-iOS/.task/health",
+    "previous_incidents_recorded": [
+      "Earlier Work opened/truncated /dev/shm/beszel_health.",
+      "Earlier Procursus isolation test invoked bwrap."
+    ],
+    "incidents_repeated_in_p021": false
+  }
+}
