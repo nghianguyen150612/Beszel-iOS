@@ -1,10 +1,9 @@
 import { describe, expect, mock, test } from "bun:test"
 import { renderToStaticMarkup } from "react-dom/server"
 
-mock.module("@lingui/core/macro", () => ({ t: (strings: TemplateStringsArray) => strings[0] }))
-mock.module("../src/lib/utils", () => ({
-	cn: (...values: unknown[]) => values.filter(Boolean).join(" "),
-	copyToClipboard: async () => {},
+mock.module("@lingui/core/macro", () => ({
+	t: (strings: TemplateStringsArray) => strings[0],
+	plural: (_count: number, forms: { other?: string }) => forms.other ?? "",
 }))
 
 const { TokenValue } = await import("../src/components/token-value")
