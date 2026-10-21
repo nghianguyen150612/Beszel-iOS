@@ -39,6 +39,8 @@ The Go 1.27.2 scan omits `GO-2026-6608`; three raw `GO-2026-6809` traces remain 
 
 The current evidence update also changes no product behavior. It records the `b20ed2b` test correction and exact run results. Because `docs/ios-p021-*` is routed through P013, P017, native iOS/Procursus, and installer workflows, all four must pass again on the final PR head before merge. Their exact head and run IDs will be recorded in the PR check suite and final closeout comment; the committed evidence remains pinned to `b20ed2b` to avoid a self-referential run-ID commit cycle.
 
+GitHub's branch ref may briefly advance before the PR's internal head ref. Do not merge during that interval: require `refs/pull/25/head` and PR metadata to match the live feature branch, then verify the complete final-head check suite.
+
 ## Review and merge record
 
 No independent review is claimed. If repository policy requires an owner exception, PR #25 records the repository owner's explicit PROMPT021 authorization to merge after all checks pass. No reviewer is impersonated and no check is bypassed. Merge only after the final PR-head checks succeed, then use a normal merge commit and verify the PR and integration ref SHA.
