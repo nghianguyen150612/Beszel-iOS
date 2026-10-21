@@ -345,3 +345,50 @@ P019 code, security, migration, installer, and native build gates now pass on
 PR is marked Ready or merged. PR #23 remains Draft until that run and applicable
 review requirements are satisfied. P018 Gate F remains pending; no physical
 device, production branch, fork `main`, tag, or release was used.
+
+## P019 exact-head qualification on documentation head `e0357ee9` — 2026-10-21
+
+The final-head checks completed successfully on PR source
+`e0357ee9b18960ef21e1bafcec1282206bdd3e56`. GitHub reports the iOS job passed
+all native test and artifact steps, and the PR check rollup is clean. The source
+still contains the P019 code checkpoint `bc6967dc`; the e035 source change only
+updated its qualification and security documentation.
+
+| Workflow | Run | Result | Result details |
+|---|---:|---|---|
+| P017 release-candidate regression | [39599085633](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39599085633) | PASS | Full Go regression and portable builds, Go vulnerability scan, Bun/npm audits, frontend build, installer/bootstrap/isolation checks, and upstream ancestry. |
+| P013 Hub migration fixture | [39599085692](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39599085692) | PASS | Genuine v0.19 fixture migration, restart, backup/restore and interruption-recovery evidence. |
+| iOS installer lifecycle | [39599085613](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39599085613) | PASS | Transaction, rollback, bootstrap, patch sentinel and workflow-isolation checks. |
+| Helm charts | [39599085595](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39599085595) | PASS | Chart lint, render and package; registry login and publishing were skipped. |
+| Native iOS Build | [39599085357](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39599085357) | PASS | Transport/race, network-monitor, macOS, Go 1.27.2 A7 patch, x509 backport, repeated Agent/Hub builds, ARM64 Mach-O, iOS 12 target, provenance, embedded frontend and linkage checks. Procursus container isolation passed; release was skipped. |
+
+The P017 artifact metadata records regression manifest SHA-256
+`23a1c5fa3c8d04517321d2e6ea3c80410f0707e66d6aba7a3f91e52e5fe3b4ed`, Go
+vulnerability evidence digest
+`3e67dca3cd11af78a23c8add9b9e38bec3972ca9d72ef1cde5be7fa09474d8a7`, and
+JavaScript audit evidence digest
+`ae82e7b52a7ec9d5cba8e92ebbd686bb10dad8b3b95cdb6ac489eedd25d2a6b7`. The
+genuine P013 evidence digest is
+`f9ef52018ddb74d148eb41dc3bd990ab59212abfa6f59be24714420dc37e7cb3`.
+
+The native Agent is ARM64 iOS device Mach-O, minimum iOS 12.0, and embeds VCS
+revision `e0357ee9b18960ef21e1bafcec1282206bdd3e56` with
+`vcs.modified=false`. Its SHA-256 is
+`e6f9df978b51c3e2360bb2f93743dcc9873967345e1cbf9992b97a6659205287` (9,576,424
+bytes). The Hub has the same architecture, deployment target and provenance;
+its SHA-256 is
+`8e4318b71d92a98f1e6e4a030923f13b9ed4954b931d0c50e378855b2a83718e` (32,076,160
+bytes) and it embeds all 97 frontend assets. Both builds use Go 1.27.2,
+`CGO_ENABLED=1` and `GOARM64=v8.0`; the A7 runtime source patch and official
+Go CL 851047 x509 backport passed. The private MobileWiFi linkage check passed.
+GitHub artifact ZIP digests are `2572189feb3580d8ee787d0f3d673a09e52b83f4fc59cc43a8c8c4f91c2779d3`
+(review payload), `3706f866295ecb5ad055c76ec29a8317e9ba0d39b72bbf07e35794fc46cc476e`
+(native evidence), and `e3c5f92025e7b6d7621df6ba489f44c23608e8f360ea3c4bc90273df8cfd4dea`
+(disabled Wi-Fi diagnostic).
+
+PR #23 is clean but remains Draft; there are no submitted reviews or review
+requests, and GitHub reports an empty review decision. The repository review
+policy endpoint remains unavailable to this account (HTTP 403), so no
+independent review or policy exemption is claimed. This documentation
+checkpoint will be pushed as a documentation-only commit; its exact PR head
+must complete its own hosted checks before the PR can be marked Ready or merged.

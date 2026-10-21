@@ -1,8 +1,10 @@
 # P019 security review
 
-Status: **PASS on code source `bc6967dc3cffe2d46be5b427aa490e87227ab571`**.
-Documentation changes after this source require the final PR-head checks to
-pass before merge.
+Status: **PASS on code source
+`bc6967dc3cffe2d46be5b427aa490e87227ab571` and exact PR head
+`e0357ee9b18960ef21e1bafcec1282206bdd3e56`**. A documentation-only checkpoint
+is being pushed; its new exact PR head must pass the required checks before
+merge.
 
 ## Go standard library
 
@@ -57,3 +59,13 @@ secrets or data. The hosted native artifacts are unsigned review artifacts;
 they were not installed or run on a physical device. The native job's release
 step was skipped. P018 physical-device Gate F remains pending. No release,
 deployment, tag, or device action was part of this review.
+
+## Final PR-head evidence
+
+The P017 Go vulnerability and Bun/npm audit jobs passed on exact PR source
+`e0357ee9b18960ef21e1bafcec1282206bdd3e56` in run
+[39599085633](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39599085633).
+The Go report retains the raw findings and the validated GO-2026-6809
+backport disposition; GO-2026-6608 is absent, GO-2026-5932 remains recorded
+without a symbol trace, and `GHSA-vfj7-8cjw-p6xm` remains OPEN. The final-head
+audit artifact digests are recorded in `docs/ios-p019-checkpoints.md`.

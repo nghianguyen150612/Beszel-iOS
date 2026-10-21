@@ -1,7 +1,9 @@
 # P019 Pinned Upstream Merge Review
 
-Status: P019 code, security, and hosted CI gates passed on code source
-`bc6967dc`; final documentation-head checks remain required before merge.
+Status: P019 code, security, migration, installer, and hosted CI gates passed on
+PR source `e0357ee9b18960ef21e1bafcec1282206bdd3e56`. The current documentation
+checkpoint will create a new PR head and requires fresh hosted checks before
+merge.
 
 ## Source and ancestry
 
@@ -59,11 +61,16 @@ ARM64 iOS device Mach-O files with minimum iOS 12.0, Go 1.27.2,
 `CGO_ENABLED=1`, `GOARM64=v8.0`, and 97 embedded frontend assets. The no-private-
 MobileWiFi linkage check passed. The release job was skipped.
 
-All code gates pass on `bc6967dc`. This documentation update triggers the
-required workflows again; merge is held until they pass on the final PR head
-and applicable review requirements are satisfied. PR #23 remains Draft while
-those checks run. No independent review is claimed. The review-policy endpoint
-returned GitHub 403; the PR currently shows no review requests, no submitted
-reviews, and an empty review decision. The repository permissions API reports
-the authenticated account has admin access, but no branch protection exemption
-has been used.
+All required checks passed on exact PR head `e0357ee9`, including native iOS
+build, P017 regression/security scan, P013 migration fixture, installer,
+Procursus, and Helm validation. Native checks verified Go 1.27.2 and the A7
+runtime patch, the official x509 backport, ARM64 iOS device binaries with
+minimum iOS 12.0, clean VCS provenance, checksums, 97 embedded frontend assets,
+and absence of private MobileWiFi linkage. The release job was skipped.
+
+This documentation checkpoint triggers a new exact-head run. PR #23 remains
+Draft until those post-checkpoint workflows pass. No independent review is
+claimed. The review-policy endpoint returned GitHub 403; the PR has no review
+requests or submitted reviews and reports an empty review decision. Repository
+permissions report admin access for the authenticated account, but no branch
+protection exemption has been used.
