@@ -44,6 +44,12 @@ type CpuMetrics struct {
 	fromCgroup bool
 }
 
+// breakdown returns the stable telemetry order consumed by system.Stats and
+// the frontend CPU history charts.
+func (m CpuMetrics) breakdown() []float64 {
+	return []float64{m.User, m.System, m.Iowait, m.Steal, m.Idle, m.Irq, m.Softirq, m.Nice}
+}
+
 // getCpuMetrics calculates detailed CPU usage metrics using cached previous measurements.
 // It returns percentages for total, user, system, iowait, and steal time.
 func getCpuMetrics(cacheTimeMs uint16, forceUseCgroup bool) (CpuMetrics, error) {

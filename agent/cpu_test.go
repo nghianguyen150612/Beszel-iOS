@@ -83,3 +83,21 @@ func TestCpuMetricsFromTimesCacheIntervals(t *testing.T) {
 	metrics = cpuMetricsFromTimes(1234, cpu.TimesStat{User: 30, System: 15, Idle: 255})
 	assert.InDelta(t, 15, metrics.Total, 1e-10)
 }
+
+func TestCpuBreakdownContract(t *testing.T) {
+	saved := lastCpuTimes
+	t.Cleanup(func() { lastCpuTimes = saved })
+	lastCpuTimes = map[uint16]cpu.TimesStat{60000: {}}
+
+	metrics, err := cpuMetricsSample(1000, cpu.TimesStat{
+		User: 12, System: 11, Iowait: 2, Steal: 3, Idle: 54,
+		Irq: 5, Softirq: 6, Nice: 7,
+	})
+	assert.NoError(t, err)
+	want := []float64{12, 11, 2, 3, 54, 5, 6, 7}
+	got := metrics.breakdown()
+	assert.Len(t, got, len(want))
+	for i := range want {
+		assert.InDelta(t, want[i], got[i], 1e-10, "breakdown index %d", i)
+	}
+}
