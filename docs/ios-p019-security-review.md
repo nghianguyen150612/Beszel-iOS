@@ -18,6 +18,19 @@ source scan, records all findings and database freshness, and fails if
 Go 1.27.2 and the exact clean candidate source revision. Both pieces of evidence
 are required to close the P019 disposition.
 
+The exact-head scan at P019 source `070c4119fa5ef13d90ea26e3d7b6a9ed84613436`
+used govulncheck v1.9.0 and a vulnerability database last modified
+`2026-10-21T00:27:29Z`. It confirmed `GO-2026-6608` is absent, but surfaced the
+newly published reviewed advisory `GO-2026-6809` three times on the reachable
+path `crypto/x509.Certificate.Verify` → TLS session handling →
+`internal/ghupdate.FetchLatestRelease`. The authoritative Go record says the
+fix is Go 1.27.3, released 2026-10-19. This is an open P019 security gate for
+the requested Go 1.27.2 candidate; it must be fixed or explicitly accepted
+before merge. The scan also reports `GO-2026-5932` against `golang.org/x/crypto`
+without a symbol trace. That reviewed advisory concerns `openpgp`; no OpenPGP
+imports were found in the repository source. Preserve this as a module-level
+finding pending final disposition.
+
 ## JavaScript build dependency
 
 `GHSA-vfj7-8cjw-p6xm` remains **OPEN**. Prior P015 evidence classified the
@@ -28,9 +41,11 @@ by the Go upgrade.
 
 ## Additional findings and boundaries
 
-The current Go and Bun/npm scans have not completed. Additional findings and
-their dispositions will be recorded after exact-head CI. Do not interpret
-historical P015/P017 scans as P019 results. No production secrets or data are
-included in the vulnerability evidence artifact. P018 physical-device Gate F
-remains pending; no release, deployment, tag or device action is part of this
-review.
+The exact-head Bun and npm audits report zero critical findings and retain the
+known high `GHSA-vfj7-8cjw-p6xm` (`braces`) advisory through the build-only
+Lingui dependency chain. This advisory remains **OPEN** as required. The npm
+report has five affected dependency records for that same advisory. Do not
+interpret historical P015/P017 scans as P019 results. The Go and JavaScript
+reports are tied to the exact source SHA above; no production secrets or data
+are included. P018 physical-device Gate F remains pending; no release,
+deployment, tag or device action is part of this review.

@@ -36,6 +36,29 @@ later source revision.
 | iOS Build | [39572887541](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39572887541) | FAIL | The Bun regression expected bytes/sec in legacy fields that are MiB/sec. The test and type comments now use MiB/sec and verify conversion. The Procursus isolation test could not establish a sandbox on the Ubuntu host; the test no longer invokes `bwrap` and is being moved into a hosted container with network disabled and a read-only root. The native build did not complete on this source. |
 | P017 release-candidate regression | [39572887761](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39572887761) | FAIL | The Go vulnerability validator assumed line-delimited JSON, while govulncheck emits indented JSON messages. It now decodes the concatenated JSON stream. No security PASS is inferred from this failed run. |
 
+On the subsequent exact source `070c4119fa5ef13d90ea26e3d7b6a9ed84613436`,
+the Procursus isolation test passed in the hosted `--network none`, read-only
+container; Bun tests, Lingui, TypeScript, Vite, source selection, the Go scanner,
+and Bun/npm audits also passed. P013 built the real database fixture but failed
+schema comparison because upstream adds `system_details.sockets` (number). The
+harness and migration docs now include this required CPU-socket migration; a
+fresh real fixture run is pending. P017 full Go regression and the macOS
+portable telemetry suite were still running when this checkpoint was written.
+
+The exact-head Go report confirms `GO-2026-6608` is absent on Go 1.27.2, but it
+also reports three reachable `GO-2026-6809` traces through
+`internal/ghupdate.FetchLatestRelease` to `crypto/x509.Certificate.Verify`.
+The reviewed Go vulnerability entry says this is fixed in Go 1.27.3. The report
+also contains one module-level `GO-2026-5932` OpenPGP advisory without a call
+trace; the source tree has no OpenPGP imports. Bun and npm report the expected
+open high `GHSA-vfj7-8cjw-p6xm` build dependency advisory (five affected npm
+dependency records, zero critical findings). Go report artifact ZIP digest:
+`76b34bd8b746d04f354ccce7507e8ff80196b7cd086057e597690d0a814a70ab`; JavaScript
+report artifact ZIP digest:
+`6d036a05215056e8494aff69e4ed37ac584cc80beff4bd2688a825ca17db8990`. Both match
+GitHub artifact metadata. The newly disclosed reachable Go advisory remains a
+security gate; Go 1.27.2 cannot yet be marked acceptable for P019.
+
 ## Local correction checks
 
 On the uncommitted correction tree, Python audit tests passed (74 tests), Hub

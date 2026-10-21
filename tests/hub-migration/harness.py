@@ -218,6 +218,7 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
     expected_added_fields = {
         "alerts": {"state": "json"},
         "alerts_history": {"monitor_name": "text"},
+        "system_details": {"sockets": "number"},
         "zfs_pools": {"status": "text"},
     }
     expected_new_collection_fields = {
