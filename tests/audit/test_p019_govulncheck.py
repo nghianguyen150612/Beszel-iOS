@@ -24,6 +24,18 @@ class P019GovulncheckTests(unittest.TestCase):
             findings,
         ]).replace("\n\n", "\n")
 
+    def backport_evidence(self):
+        return {
+            "status": "PASS",
+            "advisory": "GO-2026-6809",
+            "go_version": "go1.27.2",
+            "upstream_commit": module.BACKPORT_COMMIT,
+            "patch_sha256": module.BACKPORT_PATCH_SHA256,
+            "baseline_source_sha256": module.BACKPORT_BASELINE,
+            "patched_source_sha256": module.BACKPORT_PATCHED,
+            "standard_library_test": {"status": "PASS"},
+        }
+
     def test_fixed_target_is_reported_only_as_database_metadata(self):
         result = module.summarize(self.report(message(finding={"osv": "GO-2026-6604", "trace": [{"module": "stdlib", "package": "os", "function": "Example"}]})), "go1.27.2")
         self.assertFalse(result["target_advisory_in_findings"])
@@ -34,6 +46,22 @@ class P019GovulncheckTests(unittest.TestCase):
         report = self.report(message(finding={"osv": "GO-2026-6608"}))
         with self.assertRaisesRegex(ValueError, "GO-2026-6608 remains"):
             module.summarize(report, "go1.27.2")
+
+    def test_reachable_certificate_finding_requires_reviewed_backport(self):
+        report = self.report(message(finding={"osv": "GO-2026-6809", "fixed_version": "1.27.3", "trace": [{"module": "stdlib", "package": "crypto/x509", "function": "Certificate.Verify"}]}))
+        with self.assertRaisesRegex(ValueError, "requires verified backport evidence"):
+            module.summarize(report, "go1.27.2")
+
+        result = module.summarize(report, "go1.27.2", self.backport_evidence())
+        self.assertEqual(result["security_dispositions"][0]["disposition"], "backported official Go fix")
+        self.assertEqual(result["security_dispositions"][0]["upstream_commit"], module.BACKPORT_COMMIT)
+
+    def test_invalid_backport_evidence_fails_closed(self):
+        report = self.report(message(finding={"osv": "GO-2026-6809", "trace": []}))
+        evidence = self.backport_evidence()
+        evidence["patch_sha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "unexpected patch digest"):
+            module.summarize(report, "go1.27.2", evidence)
 
     def test_wrong_toolchain_or_scan_mode_fails(self):
         with self.assertRaisesRegex(ValueError, "expected go1.27.2"):

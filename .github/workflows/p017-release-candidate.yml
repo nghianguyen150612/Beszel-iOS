@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/p017-release-candidate.yml'
       - '.github/workflows/ios-build.yml'
+      - '.github/scripts/**'
       - '**/*.go'
       - 'go.mod'
       - 'go.sum'
@@ -19,6 +20,8 @@ on:
       - 'docs/ios-release-candidate*'
       - 'docs/ios-p017-*'
       - 'tests/ios-workflow-isolation-test.py'
+      - 'scripts/audit/**'
+      - 'patches/go/**'
       - 'install.sh'
       - 'scripts/ios/install-beszel.sh'
   workflow_dispatch:
@@ -48,6 +51,25 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+      - name: Apply and test reviewed Go 1.27.2 x509 security backport
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_goroot="$(go env GOROOT)"
+          patched_goroot="$RUNNER_TEMP/go-security-backport"
+          test "$(go env GOVERSION)" = go1.27.2
+          test ! -e "$patched_goroot"
+          mkdir "$patched_goroot"
+          cp -R "$source_goroot/." "$patched_goroot/"
+          chmod -R u+w "$patched_goroot"
+          export GOROOT="$patched_goroot" GOTOOLCHAIN=local
+          export PATH="$GOROOT/bin:$PATH" GOCACHE="$RUNNER_TEMP/p019-go-cache"
+          python3 scripts/audit/patch-go-x509-security.py \
+            --output "$RUNNER_TEMP/p019-go-x509-backport.json"
+          echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
+          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+          echo "GOCACHE=$GOCACHE" >> "$GITHUB_ENV"
+          echo "$GOROOT/bin" >> "$GITHUB_PATH"
       - name: Go standard-library and dependency vulnerability scan
         shell: bash
         run: |
@@ -58,6 +80,7 @@ jobs:
           python3 scripts/audit/validate-p019-govulncheck.py \
             --report "$RUNNER_TEMP/p019-govulncheck.jsonl" \
             --go-version "$(go env GOVERSION)" \
+            --backport-evidence "$RUNNER_TEMP/p019-go-x509-backport.json" \
             --output "$RUNNER_TEMP/p019-govulncheck-summary.json"
       - name: Upload P019 Go vulnerability evidence
         if: always()
@@ -67,6 +90,7 @@ jobs:
           path: |
             ${{ runner.temp }}/p019-govulncheck.jsonl
             ${{ runner.temp }}/p019-govulncheck-summary.json
+            ${{ runner.temp }}/p019-go-x509-backport.json
           if-no-files-found: ignore
           retention-days: 14
       - name: Bun 1.4.0

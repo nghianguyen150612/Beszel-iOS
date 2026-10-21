@@ -13,6 +13,8 @@ on:
       - "go.sum"
       - "internal/site/**"
       - "tests/**"
+      - "scripts/audit/**"
+      - "patches/go/**"
       - "install.sh"
       - "scripts/ios/**"
       - "docs/ios-p019-*"
@@ -141,7 +143,7 @@ jobs:
           bun-version: 1.4.0
 
       - name: Test native build validators
-        run: python3 -m unittest discover -s tests/audit -p 'test_ios*.py' -v
+        run: python3 -m unittest discover -s tests/audit -p 'test_*.py' -v
 
       - name: Build and test real web UI
         working-directory: internal/site
@@ -258,6 +260,14 @@ jobs:
           echo "CGO_ENABLED=1" >> "$GITHUB_ENV"
           echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh" >> "$GITHUB_ENV"
 
+      - name: Backport and test Go 1.27.2 x509 security fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(go env GOVERSION)" = go1.27.2
+          python3 scripts/audit/patch-go-x509-security.py \
+            --output "$RUNNER_TEMP/go-x509-security-backport.json"
+
       - name: Build separate disabled iOS Wi-Fi diagnostic and client compile fixture
         shell: bash
         run: |
@@ -356,6 +366,7 @@ jobs:
           path: |
             ${{ runner.temp }}/source-selection.json
             ${{ runner.temp }}/runtime-patch.json
+            ${{ runner.temp }}/go-x509-security-backport.json
             ${{ runner.temp }}/runtime-agent.json
             ${{ runner.temp }}/runtime-hub.json
             ${{ runner.temp }}/native-artifacts.json
