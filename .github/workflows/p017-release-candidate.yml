@@ -47,10 +47,55 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+      - name: Go standard-library and dependency vulnerability scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          "$(go env GOPATH)/bin/govulncheck" -version
+          "$(go env GOPATH)/bin/govulncheck" -format=json ./... > "$RUNNER_TEMP/p019-govulncheck.jsonl"
+          python3 scripts/audit/validate-p019-govulncheck.py \
+            --report "$RUNNER_TEMP/p019-govulncheck.jsonl" \
+            --go-version "$(go env GOVERSION)" \
+            --output "$RUNNER_TEMP/p019-govulncheck-summary.json"
+      - name: Upload P019 Go vulnerability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p019-go-vulnerability-evidence
+          path: |
+            ${{ runner.temp }}/p019-govulncheck.jsonl
+            ${{ runner.temp }}/p019-govulncheck-summary.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Bun 1.4.0
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.0
+      - name: Audit Bun and npm lockfile advisories
+        shell: bash
+        working-directory: internal/site
+        run: |
+          set -uo pipefail
+          bun audit --json --audit-level critical > "$RUNNER_TEMP/p019-bun-audit.json"
+          bun_status=$?
+          npm audit --json --audit-level=critical --package-lock-only > "$RUNNER_TEMP/p019-npm-audit.json"
+          npm_status=$?
+          python3 ../../scripts/audit/summarize-p019-js-audits.py \
+            --bun-report "$RUNNER_TEMP/p019-bun-audit.json" --bun-exit-code "$bun_status" \
+            --npm-report "$RUNNER_TEMP/p019-npm-audit.json" --npm-exit-code "$npm_status" \
+            --output "$RUNNER_TEMP/p019-js-audit-summary.json"
+      - name: Upload P019 JavaScript dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p019-javascript-audit-evidence
+          path: |
+            ${{ runner.temp }}/p019-bun-audit.json
+            ${{ runner.temp }}/p019-npm-audit.json
+            ${{ runner.temp }}/p019-js-audit-summary.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Verify source provenance and frozen upstream ancestry
         shell: bash
         run: |
