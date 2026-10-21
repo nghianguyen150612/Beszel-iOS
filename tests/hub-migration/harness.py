@@ -303,6 +303,9 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
         "quiet_hours": {
             "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false',
         },
+        "user_settings": {
+            "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false',
+        },
     }
     changed_rules: dict[str, dict[str, str]] = {}
     rule_keys = ("listRule", "viewRule", "createRule", "updateRule", "deleteRule")
