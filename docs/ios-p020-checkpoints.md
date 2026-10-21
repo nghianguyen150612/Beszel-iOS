@@ -69,6 +69,4 @@ Local Go 1.27.2 validation on the correction source:
 - `go test -race -tags 'testing no_ui' ./internal/hub -run '^TestUniversalTokenEndpoint$' -count=3 -timeout=5m`: PASS.
 - `git diff --check`: PASS.
 
-The source correction and this evidence are being pushed as the first P020
-implementation checkpoint. Full hosted CI and the remaining post-upstream
-regression review are still required.
+The correction checkpoint was pushed as `2ad963066aa918e86158e31c0b60d65bacb2218e` and `git ls-remote` confirmed the same remote SHA. The focused tests above passed. The remaining post-upstream review and exact-head hosted regression, migration, and native iOS checks are still required.

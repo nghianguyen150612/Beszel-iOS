@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "milestone": "P020",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "branch": "ios/p020-post-upstream-qualification",
+  "pull_request": 24,
+  "base_branch": "ios/upstream-v021-integration",
+  "base_sha": "c8bd3dba8656c8195ffacf56ff743dd58b01da25",
+  "qualification_source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
+  "status": "in_progress",
+  "changes": [
+    "Reject universal-token GET URL query fields token, enable, and permanent with HTTP 400.",
+    "Keep universal-token GET read-only and preserve POST JSON mutation behavior.",
+    "Add deterministic endpoint coverage for each rejected query field and side effects."
+  ],
+  "local_validation": {
+    "go_version": "1.27.2",
+    "api_auth_and_universal_token": "PASS",
+    "universal_token_race_count_3": "PASS",
+    "format_and_diff_check": "PASS"
+  },
+  "hosted_validation": {
+    "p017_regression": {
+      "run_id": 39604710829,
+      "source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
+      "status_at_checkpoint": "in_progress",
+      "security_scan_steps": "PASS",
+      "go_advisories": {
+        "GO-2026-6608": "absent",
+        "GO-2026-6809": "official Go CL 851047 backport present; x509 standard-library test PASS; raw traces retained",
+        "GO-2026-5932": "open; module-level finding retained"
+      },
+      "javascript_advisory": {
+        "GHSA-vfj7-8cjw-p6xm": "OPEN",
+        "critical_findings": 0
+      },
+      "go_evidence_artifact": {
+        "id": 12348241118,
+        "sha256": "70b4e6353dcd7623cd9e29e7f4b62351cd8b0436bfad19f3590f12ff89d464f6"
+      },
+      "javascript_evidence_artifact": {
+        "id": 12348022491,
+        "sha256": "9609492918d781f0e3be51c39d3e14379ca5cd4b68ae7c9fc739ae0cf8527665"
+      }
+    },
+    "p013_migration_fixture": {
+      "run_id": 39604711319,
+      "source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
+      "status_at_checkpoint": "in_progress"
+    },
+    "native_ios_build": {
+      "run_id": 39604710976,
+      "source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
+      "status_at_checkpoint": "in_progress",
+      "procursus_network_disabled_read_only_job": "PASS"
+    },
+    "installer_workflow": "No installer paths changed in P020; P019 exact-source installer workflow passed."
+  },
+  "merge_gate": "Do not merge until required checks pass on the final P020 PR head and review requirements are satisfied.",
+  "physical_device_validation": "NOT PERFORMED; P018 Gate F remains PENDING",
+  "protected_targets": {
+    "production_iOS_changed": false,
+    "fork_main_changed": false,
+    "release_created": false,
+    "device_touched": false
+  }
+}
