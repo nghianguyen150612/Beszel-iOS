@@ -1,6 +1,7 @@
 # P019 Pinned Upstream Merge Review
 
-Status: merge checkpoint; qualification is still pending.
+Status: P019 technical qualification passed on source `de40fbe8`; merge is
+held pending an acceptable Go 1.27.2 security disposition.
 
 ## Source and ancestry
 
@@ -33,6 +34,25 @@ The prior-session incidents reported in the task were not reproduced. The cloud 
 
 The Procursus read-only APT fixture does not invoke `bwrap`. Its required Linux case runs in the hosted Ubuntu workflow inside an official Go 1.27.2 container with `--network none`, a read-only root, a read-only checkout/module cache, and a writable container-local `/tmp` for disposable fixture data. The test fails if the workflow does not explicitly confirm that isolation. The hosted health marker is redirected to container `/tmp`; it never uses `/dev/shm/beszel_health`.
 
-## Pending gates
+## Qualification and merge status
 
-Full Go and race suites, Bun/Lingui/TypeScript/Vite checks, installer and bootstrap checks, migration and restore evidence, toolchain/vulnerability review, native ARM64 iOS builds, artifact provenance, and required PR checks remain pending. The draft PR must remain unmerged until these gates pass.
+The P019 code source `de40fbe8d3b5782d979bfbc2cbd76c5944b46764` passed the
+full Go suite, affected race suites, Bun tests, Lingui, TypeScript, Vite,
+installer/bootstrap checks, upstream accounting, P013 migration and restore
+fixture, Procursus isolation test, and native iOS ARM64 validation. See
+`docs/ios-p019-checkpoints.md` for exact run IDs, manifests, binary checksums,
+and artifact digests.
+
+The Go scan confirms `GO-2026-6608` is absent, but reports three reachable
+`GO-2026-6809` traces in Go 1.27.2; the fixed Go release is 1.27.3. The
+module-level `GO-2026-5932` finding remains recorded without a symbol trace.
+The Bun/npm audits report zero critical findings and keep
+`GHSA-vfj7-8cjw-p6xm` **OPEN**. P019 cannot merge until its Go security
+disposition is acceptable. PR #23 remains Draft and unmerged; no review was
+claimed or impersonated.
+
+This checkpoint update changes documentation only. The native Agent and Hub
+artifacts embed VCS revision `de40fbe8d3b5782d979bfbc2cbd76c5944b46764` with
+`vcs.modified=false`; the tested source tree is unchanged by this documentation
+update. That is the immutable-source evidence boundary for any documentation-
+only commit that follows.

@@ -167,3 +167,52 @@ suite passed. `git diff --check` passed. Code checkpoint
 `git ls-remote`. Hosted P017 and native checks on this corrected source are
 pending; failures and in-progress runs from `89e9c201` are not counted as
 passes. The Go 1.27.2 `GO-2026-6809` security disposition remains open.
+
+## P019 full qualification checkpoint — 2026-10-21
+
+Code checkpoint `de40fbe8d3b5782d979bfbc2cbd76c5944b46764` is pushed and was
+confirmed by `git ls-remote`. It fixes the stale Linux P014 golden response
+(upstream removed Btrfs `r`/`w` fields), removes a cross-file Bun module-mock
+collision in the token privacy test, and refreshes the frontend asset manifest
+from the genuine upstream build.
+
+Local checks on this source passed:
+
+- `env -u NETWORK go test -tags 'testing no_ui' ./... -count=1 -timeout=20m`
+- Bun 1.4.0: 60 tests passed, zero failed.
+- Lingui sync, TypeScript build, and Vite production build passed; `bun.lock`
+  stayed unchanged.
+- Frontend validator and Go embed test passed for 97 files (3,402,561 bytes).
+- P014 authenticated remote telemetry API regression passed; `git diff --check`
+  passed.
+
+Hosted checks on exact source `de40fbe8`:
+
+| Workflow | Run | Result | Evidence |
+|---|---:|---|---|
+| P017 release-candidate regression | [39583459164](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39583459164) | PASS | Full Go tests and builds, installer/bootstrap and isolation suites, upstream ancestry, Go and JS audits, frontend build. Source SHA `de40fbe8`; 97 assets; canonical frontend digest `3b80dbea2957210afc99b4f4e2322d682015f53eb6034d163f55d3a9fc2a92e1`. |
+| P013 migration fixture | [39583459141](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39583459141) | PASS | Genuine v0.19-to-candidate migration and recovery fixture; evidence ZIP digest `435a67fc2dd2c898b8967ca1b15ea72a67bce89f1a650986d00e9c5ed392dd44`. |
+| iOS installer lifecycle | [39583459340](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39583459340) | PASS | Installer transaction and rollback workflow. |
+| Helm charts | [39583459150](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39583459150) | PASS | PR validation; no publishing. |
+| Native iOS Build | [39583459159](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39583459159) | PASS | Go 1.27.2 A7 runtime patch, ARM64 Agent and Hub, iOS 12 minimum, provenance, checksums, frontend embedding, and native validation artifacts. |
+
+The native run patched `runtime/asm_arm64.s` from SHA-256
+`47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db` to
+`c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f`. It
+produced byte-identical clean-cache builds. Agent SHA-256 is
+`31da7e71c4f3067261e9468965ef55ef499e0011871efadbc1f5bb108fc5e506`; Hub
+SHA-256 is `6edd4259c87999d1315c41a672fa40204e00babd81fc7948056d37c144be5ed7`.
+Both Mach-O files are ARM64 iOS device binaries with minimum iOS 12.0, Go
+1.27.2, `CGO_ENABLED=1`, `GOARM64=v8.0`, VCS revision `de40fbe8`, and
+`vcs.modified=false`. The Hub contains 97 frontend assets. Review artifact ZIP
+digests: native payload `4cce2006cd6553e50889f25181ea13af7b9e553a2ea2590e2bba04c03542352a`,
+native evidence `e158d234e055a56cc938ae2041032cec653fcae4edb2afc7c4c9df45ceb19161`,
+and the separately disabled Wi-Fi diagnostic `fbe18c074d63e331209c01132a260f64a8fa9cb1fae4418e53aef962302389f6`.
+
+All P019 technical gates are now qualified on this code checkpoint. The Go
+security gate remains open: `GO-2026-6608` is absent, while the exact-source
+scan reports three reachable `GO-2026-6809` traces fixed in Go 1.27.3 and one
+module-level `GO-2026-5932` finding without a symbol trace. The JS audit keeps
+`GHSA-vfj7-8cjw-p6xm` OPEN and reports zero critical findings. PR #23 remains
+Draft and unmerged pending the owner's Go 1.27.2 security disposition. P018
+Gate F remains pending; no device or release was used.

@@ -18,18 +18,19 @@ source scan, records all findings and database freshness, and fails if
 Go 1.27.2 and the exact clean candidate source revision. Both pieces of evidence
 are required to close the P019 disposition.
 
-The exact-head scan at P019 source `070c4119fa5ef13d90ea26e3d7b6a9ed84613436`
-used govulncheck v1.9.0 and a vulnerability database last modified
-`2026-10-21T00:27:29Z`. It confirmed `GO-2026-6608` is absent, but surfaced the
-newly published reviewed advisory `GO-2026-6809` three times on the reachable
-path `crypto/x509.Certificate.Verify` → TLS session handling →
-`internal/ghupdate.FetchLatestRelease`. The authoritative Go record says the
-fix is Go 1.27.3, released 2026-10-19. This is an open P019 security gate for
-the requested Go 1.27.2 candidate; it must be fixed or explicitly accepted
-before merge. The scan also reports `GO-2026-5932` against `golang.org/x/crypto`
-without a symbol trace. That reviewed advisory concerns `openpgp`; no OpenPGP
-imports were found in the repository source. Preserve this as a module-level
-finding pending final disposition.
+The exact-source P017 scan at `de40fbe8d3b5782d979bfbc2cbd76c5944b46764`
+(run [39583459164](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39583459164))
+used Go 1.27.2 and govulncheck v1.9.0. It confirms `GO-2026-6608` is absent,
+but reports three reachable `GO-2026-6809` traces, fixed in Go 1.27.3. The
+trace reaches `crypto/x509.Certificate.Verify`, TLS chain handling, and
+`internal/ghupdate.FetchLatestRelease`. This is an open P019 merge gate for the
+requested Go 1.27.2 candidate. Do not merge until the owner chooses a fixed
+Go 1.27.3 toolchain or explicitly accepts the 1.27.2 advisory disposition.
+
+The same scan reports one module-level `GO-2026-5932` finding against
+`golang.org/x/crypto` v0.58.0, without a symbol trace. That reviewed advisory
+concerns OpenPGP; no OpenPGP imports were found in repository source. Keep it
+recorded as a module-level finding without claiming remediation.
 
 ## JavaScript build dependency
 
@@ -41,11 +42,12 @@ by the Go upgrade.
 
 ## Additional findings and boundaries
 
-The exact-head Bun and npm audits report zero critical findings and retain the
-known high `GHSA-vfj7-8cjw-p6xm` (`braces`) advisory through the build-only
-Lingui dependency chain. This advisory remains **OPEN** as required. The npm
-report has five affected dependency records for that same advisory. Do not
-interpret historical P015/P017 scans as P019 results. The Go and JavaScript
-reports are tied to the exact source SHA above; no production secrets or data
-are included. P018 physical-device Gate F remains pending; no release,
-deployment, tag or device action is part of this review.
+The exact-source Bun and npm audits on `de40fbe8` report zero critical
+findings and retain high `GHSA-vfj7-8cjw-p6xm` (`braces`) through the build-only
+Lingui dependency chain. The advisory remains **OPEN** as required. Bun report
+SHA-256 is `5a9adf8fbbd2a854066d8ebb81515723fc033927c4bcee0f7ed3ea13b300efba`;
+npm report SHA-256 is
+`1e69c0bd69e82835575ee872a1c48032a09b340d2bce52f46bbbd0db9b7e3d3b`.
+The npm report records five affected dependency records for the same advisory.
+No production secrets or data are included. P018 physical-device Gate F remains
+pending; no release, deployment, tag, or device action is part of this review.
