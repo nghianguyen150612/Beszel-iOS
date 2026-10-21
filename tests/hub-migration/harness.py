@@ -903,7 +903,7 @@ def inject_post_schema_startup_failure(database: pathlib.Path) -> None:
             f'''CREATE TRIGGER p013_fail_after_schema
                 BEFORE UPDATE ON "_collections"
                 WHEN OLD."name" = 'alerts'
-                  AND EXISTS (SELECT 1 FROM "_migrations" WHERE "{file_column}" = '1790964708_network_monitor_skip_tls_verify.go')
+                  AND EXISTS (SELECT 1 FROM "_migrations" WHERE "{file_column}" = '1792309602_system_details_sockets.go')
                 BEGIN SELECT RAISE(ABORT, 'P013 deterministic post-schema startup failpoint'); END'''
         )
         connection.commit()
@@ -1623,6 +1623,8 @@ def main() -> int:
             "1790273174_network_monitor_server.go",
             "1790924727_zfs_pool_status.go",
             "1790964708_network_monitor_skip_tls_verify.go",
+            "1791926360_network_monitor_cert_alert.go",
+            "1792309602_system_details_sockets.go",
         ]
         missing_migrations = [name for name in required_migrations if migrated_ledger.count(name) != 1]
         if missing_migrations:
