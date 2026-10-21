@@ -9,11 +9,26 @@
   "pinned_upstream_sha": "b5357343550c8e2493d0e65472a06c1007396384",
   "frozen_baseline_sha": "bb23f99b3eeaced9608e11e280e7c986dba650be",
   "p021_initial_source_sha": "56536f8c460be269863a01db251d4ea9509e7e8b",
-  "p021_final_pr_head_sha": null,
-  "status": "initial checkpoint; exact P021 source qualification pending",
+  "p021_source_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6",
+  "status": "P021 source qualification passed on 037ffa8; final checkpoint adds CI path-filter-only changes, and its exact PR-head checks must pass before merge.",
   "application_source_changes_in_p021": false,
-  "p013_migration_workflow_change": "Adds docs/ios-p021-* to pull-request paths so documentation-only P021 commits run the genuine database fixture.",
-  "structural_validation_on_base": {
+  "workflow_change": {
+    "changes": [
+      {
+        "path": ".github/workflows/p013-hub-migration.yml",
+        "change": "Adds docs/ios-p021-* to pull-request paths so documentation-only P021 commits run the genuine database fixture.",
+        "present_at_source_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6"
+      },
+      {
+        "path": ".github/workflows/ios-installer.yml",
+        "change": "Adds docs/ios-p021-* to push and pull-request paths so documentation-only P021 commits run installer lifecycle checks.",
+        "final_checkpoint_change": true
+      }
+    ],
+    "product_behavior_changed": false
+  },
+  "structural_validation": {
+    "source_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6",
     "pinned_upstream_is_ancestor": true,
     "pinned_upstream_commits_after_baseline": 41,
     "frozen_upstream_only_commits_accounted": 178,
@@ -21,41 +36,157 @@
     "logical_ios_patchsets": 13,
     "unresolved_audit_rows": 0,
     "matrix_validator": "PASS",
-    "readiness_validator": "PASS"
+    "readiness_validator": "PASS",
+    "readiness_acceptance_cases": 24,
+    "readiness_compatibility_scenarios": 33,
+    "native_patch_sentinels": "PASS",
+    "upstream_sync_sentinels": "PASS"
   },
   "integration_merges": {
+    "p019_pr": 23,
     "p019_normal_merge_sha": "c8bd3dba8656c8195ffacf56ff743dd58b01da25",
     "p019_feature_sha": "81e6a5e779efd61ac464b9835eb1b1658d4263d8",
+    "p020_pr": 24,
     "p020_normal_merge_sha": "42556e62c23f3595a276d2eb4a55125a96f5d31f",
-    "p020_feature_head_sha": "c716d3c9ce8de170cade25b3921bccef8c5b97a7",
-    "p020_final_head_checks": {
-      "p017_run_id": 39611915082,
-      "p013_run_id": 39611915079,
-      "native_ios_run_id": 39611915076,
-      "installer_run_id": 39611969234,
-      "all_conclusions": "success",
-      "release_job": "skipped"
-    }
+    "p020_feature_head_sha": "c716d3c9ce8de170cade25b3921bccef8c5b97a7"
   },
-  "p020_security_state": {
-    "GO-2026-6608": "absent",
-    "GO-2026-6809": "three raw traces retained; official CL 851047 x509 backport and tests passed",
-    "GO-2026-5932": "open module-level finding; not claimed fixed",
-    "GHSA-vfj7-8cjw-p6xm": "OPEN",
-    "javascript_critical_findings": 0
+  "p020_final_head_checks": {
+    "source_sha": "c716d3c9ce8de170cade25b3921bccef8c5b97a7",
+    "p017_run_id": 39611915082,
+    "p013_run_id": 39611915079,
+    "native_ios_run_id": 39611915076,
+    "installer_run_id": 39611969234,
+    "all_conclusions": "success",
+    "release_job": "skipped",
+    "p020_artifact_download": "GitHub signed artifact URL returned HTTP 403; metadata and run logs were available; no artifact was extracted"
   },
   "p021_hosted_validation": {
-    "source_sha": null,
-    "p017_regression": {"run_id": null, "status": "pending"},
-    "p013_genuine_migration": {"run_id": null, "status": "pending"},
-    "native_ios_build": {"run_id": null, "status": "pending"},
-    "procursus_isolation": {"run_id": null, "status": "pending"},
-    "installer_lifecycle": {"run_id": null, "status": "pending"},
-    "final_documentation_head_checks": "required before merge"
+    "source_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6",
+    "source_kind": "feature branch PR candidate source, not a PR merge pseudo-commit",
+    "p017_regression": {
+      "run_id": 39614985449,
+      "status": "success",
+      "job_id": 119274187983,
+      "head_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6",
+      "artifact_manifest": {
+        "id": 12352223742,
+        "name": "p017-regression-manifest",
+        "sha256": "01586c39d693dda3ff4c006f0c485400d014edc6eacd191fba60ec9f336582f5",
+        "asset_manifest_sha256": "3b80dbea2957210afc99b4f4e2322d682015f53eb6034d163f55d3a9fc2a92e1",
+        "embedded_asset_count": 97,
+        "device_tested": false,
+        "release_published": false,
+        "tag_created": false
+      },
+      "javascript_audit_artifact": {
+        "id": 12351723962,
+        "sha256": "bdcc7a16f9aa4bfbc212fa92d9855f6af92bf5a31b875ffffea81d873d63c3ce",
+        "critical_findings": 0,
+        "GHSA-vfj7-8cjw-p6xm": "OPEN"
+      },
+      "go_vulnerability_artifact": {
+        "id": 12351029995,
+        "sha256": "0a52e6d75699f87b2aacafc6239686bd005235565825a50b288342ff8c890cfe",
+        "GO-2026-6608": "absent",
+        "GO-2026-6809": "three raw traces retained; official CL 851047 x509 backport and tests passed",
+        "GO-2026-5932": "open module-level finding; not claimed fixed"
+      }
+    },
+    "p013_genuine_migration": {
+      "run_id": 39614985429,
+      "status": "success",
+      "job_id": 119273501548,
+      "head_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6",
+      "artifact_id": 12352203494,
+      "artifact_name": "p013-hub-recovery-evidence",
+      "artifact_sha256": "79654c72e1f2060368a30687bf9d95df2518e628bbe957e174c392763361229b",
+      "coverage": [
+        "genuine v0.19 fixture",
+        "migration source matrix",
+        "backup and restore failure cases",
+        "synthetic data only"
+      ]
+    },
+    "native_ios_build": {
+      "run_id": 39614985052,
+      "status": "success",
+      "head_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6",
+      "procursus_job_id": 119274216881,
+      "procursus_status": "success",
+      "build_ios_job_id": 119274217123,
+      "build_ios_status": "success",
+      "release_ios_job_id": 119280758686,
+      "release_ios_status": "skipped",
+      "toolchain": {
+        "go": "1.27.2",
+        "GOOS": "ios",
+        "GOARCH": "arm64",
+        "GOARM64": "v8.0",
+        "CGO_ENABLED": "1",
+        "vcs_modified": false,
+        "ios_minimum_deployment": "12.0"
+      },
+      "runtime_patch": {
+        "original_source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+        "patched_source_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f",
+        "guarded_yield": true,
+        "cntfrq_cntvct_reads": 0
+      },
+      "x509_backport_patch_sha256": "111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150",
+      "agent_binary_sha256": "aa7541fdac350222dd251b68a6d2f915f7882dcdc11f579988abb54a8975f014",
+      "hub_binary_sha256": "c457ec9522aed488ef13678030b659ada9cad76abd66f8b05a2439257c9facb7",
+      "embedded_asset_count": 97,
+      "private_MobileWiFi_linkage": false,
+      "artifacts": [
+        {
+          "id": 12354165244,
+          "name": "beszel-ios-arm64",
+          "sha256": "7ae4fcde7134341b6dc845ef3a452a2ec87007b3e602428a60dc0fb84374208b"
+        },
+        {
+          "id": 12353595877,
+          "name": "ios-wifi-diagnostic-disabled",
+          "sha256": "3e5b96299bbac01c1da9385b072a2ea3a60ce6d531e3f7058c9b4ee4a6a42573"
+        },
+        {
+          "id": 12353316187,
+          "name": "ios-native-validation",
+          "sha256": "6b6ea3032cec7f973d6c26f1de189aa3910465aef97588a2975a69c6452487a2"
+        }
+      ]
+    },
+    "installer_lifecycle": {
+      "run_id": 39614984961,
+      "status": "success",
+      "job_id": 119273500697,
+      "head_sha": "037ffa8457cbd33b7444a0bc9035232c0b7502c6",
+      "coverage": [
+        "rootful and Procursus",
+        "bootstrap checksum pin",
+        "transaction lifecycle",
+        "rollback",
+        "patch sentinels",
+        "secret redaction"
+      ]
+    },
+    "final_checkpoint_head": {
+      "required": true,
+      "policy": "P013, P017, native iOS/Procursus, and installer workflows triggered by the final checkpoint must all pass before merge; exact final PR head and run IDs are recorded on PR #25.",
+      "source_boundary": "The final checkpoint adds documentation and CI path-filter changes only. No product source behavior changes. Initial implementation and artifact evidence remains pinned to p021_hosted_validation.source_sha; final-head checks validate the complete checkpoint."
+    }
+  },
+  "security_disposition": {
+    "GO-2026-6608": "absent",
+    "GO-2026-6809": "three raw traces retained; official CL 851047 x509 backport and crypto/x509 tests passed",
+    "GO-2026-5932": "open module-level finding; not claimed fixed",
+    "GHSA-vfj7-8cjw-p6xm": "OPEN",
+    "javascript_critical_findings": 0,
+    "critical_unresolved_regressions": 0
   },
   "protected_targets": {
-    "production_iOS_changed": false,
-    "fork_main_changed": false,
+    "production_iOS_sha_verified": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "fork_main_sha_verified": "e984ee12081f4e112601c3f718c9d81c112fe718",
+    "integration_sha_before_p021": "42556e62c23f3595a276d2eb4a55125a96f5d31f",
     "tag_created": false,
     "release_created": false,
     "deployment_performed": false,
@@ -66,10 +197,17 @@
   "execution_boundary": {
     "workspace": "/workspace/Beszel-iOS",
     "local_health_marker": "/workspace/Beszel-iOS/.task/health",
-    "previous_incidents_recorded": [
+    "prior_incidents": [
       "Earlier Work opened/truncated /dev/shm/beszel_health.",
       "Earlier Procursus isolation test invoked bwrap."
     ],
-    "incidents_repeated_in_p021": false
-  }
+    "incidents_repeated_in_p021": false,
+    "writes_outside_workspace_in_p021_continuation": false,
+    "privilege_escalation": false
+  },
+  "known_non_test_incident": "The P020 GitHub signed artifact download returned HTTP 403; metadata, logs, and checksums were retained. No P021 artifact download was required; GitHub run and artifact metadata plus native validation logs were used.",
+  "local_preliminary_failures_corrected": [
+    "An initial local CPU floating-point equality check was corrected to compare the intended contract; the focused deterministic CPU tests and complete hosted P017 suite passed.",
+    "An initial acceptance-matrix CSV shape check was corrected; the final matrix has the required five columns on all 33 rows."
+  ]
 }

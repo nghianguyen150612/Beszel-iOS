@@ -2,48 +2,29 @@
 
 ## Scope
 
-This review covers the unified P001–P020 source at P020 integration merge
-`42556e62c23f3595a276d2eb4a55125a96f5d31f`, pinned upstream
-`b5357343550c8e2493d0e65472a06c1007396384`, and the P021 hosted Go and
-Bun/npm scans that remain pending at the initial checkpoint. No advisory is
-marked fixed without exact-source scan and build evidence.
+This review covers candidate source `037ffa8457cbd33b7444a0bc9035232c0b7502c6`, the pinned upstream `b5357343550c8e2493d0e65472a06c1007396384`, and exact-source P017/native CI. P017 run `39614985449` and native run `39614985052` passed. Security findings below remain open where stated; no advisory is called fixed without exact-source scan and build/test evidence.
 
-## Findings carried forward from exact P020 source
+## Go and JavaScript findings
 
-P020 P017 run `39611915082` passed on final documentation head
-`c716d3c9ce8de170cade25b3921bccef8c5b97a7`. The P020 code-source run
-`39609195215` passed the same source audit on code SHA
-`e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391`.
-
-| Advisory | Disposition |
+| Advisory | P021 disposition and evidence |
 |---|---|
-| `GO-2026-6608` | Absent from the Go 1.27.2 symbol scan; exact-source P017 and native Go evidence passed. |
-| `GO-2026-6809` | Three raw scanner traces remain visible. Official Go CL 851047 x509 backport is applied to the pinned Go 1.27.2 source and `crypto/x509` tests pass. The raw traces are retained, not suppressed. |
-| `GO-2026-5932` | One module-level `golang.org/x/crypto` finding remains open. It has no OpenPGP call trace in the reviewed source; it is not claimed fixed. |
-| `GHSA-vfj7-8cjw-p6xm` | Remains OPEN in Bun/npm audit evidence. The current disposition is a build-toolchain mitigation, not remediation. Zero critical JavaScript findings were reported. |
+| `GO-2026-6608` | Absent from the Go 1.27.2 scan on source `037ffa8`; P017 scan passed. |
+| `GO-2026-6809` | Three raw scanner traces remain visible. Official Go CL 851047 x509 backport is applied to pinned Go 1.27.2; `crypto/x509` tests passed in P017 and native CI. Raw traces are preserved, not suppressed. Patch SHA-256: `111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150`. |
+| `GO-2026-5932` | One module-level `golang.org/x/crypto` finding remains open. The reviewed source has no OpenPGP call trace; it is not claimed fixed. |
+| `GHSA-vfj7-8cjw-p6xm` | Remains OPEN. P017 Bun/npm audit reported zero critical JavaScript findings. This is a build-toolchain mitigation, not remediation. |
 
-P020 exact-source evidence is documented in `docs/ios-p020-security-review.md`
-and `docs/ios-p020-validation.json`. P021's own full Go and JavaScript scans
-must pass before merge and must preserve any new raw finding.
+P017 artifacts: Go vulnerability evidence `12351029995` (SHA-256 `0a52e6d75699f87b2aacafc6239686bd005235565825a50b288342ff8c890cfe`), JavaScript audit evidence `12351723962` (SHA-256 `bdcc7a16f9aa4bfbc212fa92d9855f6af92bf5a31b875ffffea81d873d63c3ce`), and regression manifest `12352223742` (SHA-256 `01586c39d693dda3ff4c006f0c485400d014edc6eacd191fba60ec9f336582f5`). All belong to P017 run `39614985449`, whose candidate head is `037ffa8`.
+
+The native run applied and tested the same CL 851047 x509 backport against Go 1.27.2. Its iOS payload artifact and validation evidence are listed in `ios-p021-validation.json`.
 
 ## Application security review
 
-The universal-token endpoint rejects `token`, `enable`, and `permanent` query
-parameters on GET, returns a generic error without echoing a token, and keeps
-mutation on POST JSON. Existing tests cover OAuth role preservation, record
-ownership, universal-token authorization, token read-only rules, and alert
-access. P020's endpoint correction and focused race tests passed; P021's full
-source tests remain required.
+The universal-token endpoint rejects `token`, `enable`, and `permanent` query parameters on GET, returns a generic error without echoing a token, and keeps mutation on POST JSON. P017's full Go suite passed on the candidate source. Coverage includes OAuth role preservation, protected ownership relationships, universal-token authorization, read-only GET behavior, and alert access. P013 used synthetic disposable database records for migration and restore; no production records or secrets were used.
 
-Hosted evidence uses synthetic database records and source hashes only. No
-production secrets, production data, device credentials, or private signing
-material are part of the review artifacts.
+Hosted evidence contains source hashes and synthetic test data only. No production secrets, production data, device credentials, or private signing material are included.
 
-## Pending exact P021 source
+## Merge disposition
 
-P021 P017 vulnerability scan, Bun/npm audit, native Go x509 backport test, and
-final artifact/source metadata checks are PENDING. Until they pass on the final
-P021 PR head, this document does not claim final P021 qualification.
+P021's required Go, JavaScript, native, migration, Procursus, and installer checks passed on source `037ffa8457cbd33b7444a0bc9035232c0b7502c6`. The open advisories above are retained and documented; zero critical JavaScript findings were reported, and no critical unresolved regression was identified. The final checkpoint includes only P021 documentation and CI path-filter changes, so its exact PR-head checks must pass before merge. See the exact final-head check suite and closeout comment on PR #25.
 
-P018 physical Gate F remains PENDING. No physical device, production branch,
-release tag, GitHub release, or deployment is used by this cloud review.
+P018 physical Gate F remains PENDING. No physical device, production branch, release tag, GitHub release, or deployment is used by this cloud review.

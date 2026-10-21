@@ -2,62 +2,39 @@
 
 ## Base and scope
 
-P021 starts from the verified P020 normal merge commit
-`42556e62c23f3595a276d2eb4a55125a96f5d31f` on
-`ios/upstream-v021-integration`. P020 PR #24 merged its final documentation-only
-head `c716d3c9ce8de170cade25b3921bccef8c5b97a7`; its parents are the P019
-integration `c8bd3dba8656c8195ffacf56ff743dd58b01da25` and that P020 head.
-P019 remains a normal merge at `c8bd3dba8656c8195ffacf56ff743dd58b01da25`.
-Pinned upstream is `b5357343550c8e2493d0e65472a06c1007396384`.
+P021 starts from P020 normal merge `42556e62c23f3595a276d2eb4a55125a96f5d31f` on `ios/upstream-v021-integration`. P019 merged normally as `c8bd3dba8656c8195ffacf56ff743dd58b01da25`; P020's merged feature head was `c716d3c9ce8de170cade25b3921bccef8c5b97a7`. The pinned upstream is `b5357343550c8e2493d0e65472a06c1007396384`.
 
-P021 performs a final independent cloud review of P001–P020. It does not merge
-another upstream range or add unrelated features. The source review found no
-additional justified code change after P020's token URL correction and CPU
-breakdown contract test. P021 adds its documentation paths to the P013
-migration workflow filter so docs-only closeout commits run the genuine
-database fixture. No product code changes are included. All P021 exact-head
-hosted qualification is pending at this first checkpoint.
+The old unpushed P019 commits were unrecoverable and P019 was independently rebuilt; the original identities are not claimed. P021 reviews the unified P001–P020 source without another upstream merge or unrelated features. The review found no further justified product-code change. It adds `docs/ios-p021-*` to the P013 and installer workflow pull-request path filters so documentation-only P021 checkpoints still run the genuine migration fixture and installer lifecycle suite.
 
-Branch: `ios/p021-integration-closeout`.
-Target: `ios/upstream-v021-integration`.
+Branch: `ios/p021-integration-closeout`
+PR: https://github.com/nghianguyen150612/Beszel-iOS/pull/25
+Base: `ios/upstream-v021-integration` at `42556e62c23f3595a276d2eb4a55125a96f5d31f`.
 
-## Upstream and historical accounting at the base
+## Upstream and historical accounting
 
-On base `42556e62`, the pinned upstream is an ancestor and the exact frozen
-baseline range contains 41 upstream commits. The read-only P002 matrix validator
-reports 178/178 upstream commits reviewed, 35/35 historical iOS commits mapped,
-13 logical iOS patches, and zero unresolved audit rows. The P003 readiness
-validator reports the same 178 commits and 13 patches with all 24 acceptance
-cases and 33 compatibility scenarios present. P021's hosted exact-head checks
-must repeat the applicable source and patch sentinels.
+The pinned upstream is an ancestor. The pinned range after frozen baseline `bb23f99b3eeaced9608e11e280e7c986dba650be` contains 41 commits. On the P020 base, the read-only P002 matrix validator reported 178/178 upstream-only commits reviewed, 35/35 historical iOS commits mapped, 13 logical iOS patches, and zero unresolved rows. The P003 readiness validator reported 24 acceptance cases and 33 compatibility scenarios. Both validators were rerun on P021 source `037ffa8457cbd33b7444a0bc9035232c0b7502c6`; they passed with the same counts. Native P021 CI also passed the upstream sync and iOS patch sentinels on that exact source.
 
-## P020 evidence carried into the final review
+## Exact P021 source qualification
 
-P020's code source `e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391` passed P017
-run `39609195215`, P013 run `39609195286`, native iOS/Procursus run
-`39609195413`, and installer dispatch `39609283025`. Final P020 PR head
-`c716d3c9ce8de170cade25b3921bccef8c5b97a7` changed only the five P020 evidence
-files; its P017 `39611915082`, P013 `39611915079`, native iOS/Procursus
-`39611915076`, and installer `39611969234` checks passed. P020 merged as
-`42556e62c23f3595a276d2eb4a55125a96f5d31f`. Exact security dispositions and
-native artifact hashes are in the P020 security and validation records.
+All checks below ran against feature-branch source `037ffa8457cbd33b7444a0bc9035232c0b7502c6`, not a PR merge pseudo-commit:
 
-## P021 initial checkpoint
+| Workflow | Run | Result | Evidence |
+|---|---:|---|---|
+| P013 Hub migration fixture | `39614985429` | PASS | Genuine v0.19 fixture, backup/restore failure cases, source matrix; artifact `12352203494`, SHA-256 `79654c72e1f2060368a30687bf9d95df2518e628bbe957e174c392763361229b` |
+| P017 Release Candidate Regression | `39614985449` | PASS | Full Go regressions, security scans, frontend build, provenance; artifacts listed in `ios-p021-validation.json` |
+| Native iOS Build | `39614985052` | PASS | `procursus-package-updates` and `build-ios` succeeded; `release-ios` skipped |
+| Installer lifecycle | `39614984961` | PASS | Rootful/Procursus, bootstrap, transaction lifecycle, rollback, sentinels |
 
-The first remote checkpoint is
-`56536f8c460be269863a01db251d4ea9509e7e8b`; Draft PR #25 targets integration.
-The P013 workflow path filter initially did not include new P021 documentation,
-so the first PR event did not schedule its genuine database fixture. The
-current checkpoint adds the `docs/ios-p021-*` path to that workflow; this lets
-each P021 documentation-only head run the P013 fixture. P017 full regression,
-P013 genuine database fixture, native iOS, Procursus, and explicit installer
-dispatch must all run against the source after this trigger correction. No
-result is inferred from P020 runs. Any final documentation-only P021 head must
-also pass the required checks before merge.
+The P017 manifest reports source SHA `037ffa8457cbd33b7444a0bc9035232c0b7502c6`, 97 embedded assets, and `device_tested=false`, `release_published=false`, `tag_created=false`. The native build used Go 1.27.2, `GOOS=ios`, `GOARCH=arm64`, `GOARM64=v8.0`, `CGO_ENABLED=1`, clean VCS provenance, and an iOS 12.0 minimum. It produced ARM64 iOS device Mach-O binaries with genuine embedded frontend assets and no private MobileWiFi linkage. Native binary hashes and artifact digests are in the validation JSON.
+
+The Go 1.27.2 scan does not report `GO-2026-6608`. Three raw `GO-2026-6809` traces remain visible; the official CL 851047 x509 backport and tests passed. One module-level `GO-2026-5932` finding remains open and is not claimed fixed. Bun/npm reported zero critical findings; `GHSA-vfj7-8cjw-p6xm` remains OPEN. See `ios-p021-security-disposition.md`.
+
+These results qualify P021 candidate `037ffa8`. The final checkpoint adds P021 documentation and path-filter-only routing in the installer workflow, in addition to the P013 filter already present at `037ffa8`. No product source changes are introduced. The final PR head must pass P013, P017, native iOS/Procursus, and installer checks; exact head and run IDs are recorded on PR #25. Existing artifacts remain pinned to `037ffa8`.
+
+## Review and merge record
+
+No independent review is claimed. If repository policy requires an owner exception, the PR records the repository owner's explicit PROMPT021 authorization to merge after all required checks pass. No reviewer is impersonated and no check is bypassed. P021 is merged only with the exact final PR head, all required checks successful, and a normal merge commit; the resulting integration SHA is verified on PR #25 and the live branch.
 
 ## Boundaries
 
-Cloud results do not constitute device validation. P018 physical Gate F remains
-PENDING; native Wi-Fi RSSI remains DEFERRED. No physical device is accessed.
-Production `iOS`, fork `main`, tags, releases, and deployment remain unchanged
-and out of scope.
+Cloud results do not constitute device validation. P018 physical Gate F remains PENDING; native Wi-Fi RSSI remains DEFERRED. No physical device is accessed. Production `iOS`, fork `main`, release tags, releases, and deployment remain unchanged and out of scope. The earlier Work incidents involving `/dev/shm/beszel_health` and `bwrap` are recorded in the validation JSON; they were not repeated in P021.
