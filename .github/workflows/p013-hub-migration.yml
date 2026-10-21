@@ -29,6 +29,7 @@ jobs:
     timeout-minutes: 45
     env:
       PYTHONDONTWRITEBYTECODE: "1"
+      BESZEL_HEALTH_DIR: ${{ github.workspace }}/.task/health
     steps:
       - name: Checkout exact feature source
         uses: actions/checkout@v4
@@ -41,6 +42,9 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+
+      - name: Prepare workspace-local health marker directory
+        run: mkdir -p "$BESZEL_HEALTH_DIR"
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2

@@ -31,7 +31,7 @@ The merge also expands the review-only PR workflow path filters to run on the P0
 
 The prior-session incidents reported in the task were not reproduced. The cloud test environment uses `.task/` for `HOME`, `TMPDIR`, Go, Python, Bun and npm caches. `BESZEL_HEALTH_DIR` routes Linux health markers into `.task/health` so local Agent tests do not touch `/dev/shm/beszel_health`.
 
-The Procursus read-only APT fixture detects and runs `bwrap` when available. This executor has `bwrap`; that test will therefore run only in the hosted Ubuntu workflow, not in the Work checkout. No test result is marked PASS until the hosted workflow actually completes without a skip.
+The Procursus read-only APT fixture does not invoke `bwrap`. Its required Linux case runs in the hosted Ubuntu workflow inside an official Go 1.27.2 container with `--network none`, a read-only root, a read-only checkout/module cache, and a writable container-local `/tmp` for disposable fixture data. The test fails if the workflow does not explicitly confirm that isolation. The hosted health marker is redirected to container `/tmp`; it never uses `/dev/shm/beszel_health`.
 
 ## Pending gates
 

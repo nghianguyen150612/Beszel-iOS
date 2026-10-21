@@ -11,15 +11,21 @@ SCANNER_VERSION = "v1.9.0"
 
 def summarize(report: str, expected_go: str) -> dict:
     messages = []
-    for number, line in enumerate(report.splitlines(), 1):
-        if not line.strip():
-            continue
+    decoder = json.JSONDecoder()
+    offset = 0
+    number = 0
+    while offset < len(report):
+        while offset < len(report) and report[offset].isspace():
+            offset += 1
+        if offset == len(report):
+            break
+        number += 1
         try:
-            message = json.loads(line)
+            message, offset = decoder.raw_decode(report, offset)
         except json.JSONDecodeError as exc:
-            raise ValueError(f"invalid govulncheck JSON on line {number}: {exc}") from exc
+            raise ValueError(f"invalid govulncheck JSON message {number}: {exc}") from exc
         if not isinstance(message, dict):
-            raise ValueError(f"govulncheck JSON line {number} is not an object")
+            raise ValueError(f"govulncheck JSON message {number} is not an object")
         messages.append(message)
     configs = [m["config"] for m in messages if isinstance(m.get("config"), dict)]
     sboms = [m["SBOM"] for m in messages if isinstance(m.get("SBOM"), dict)]

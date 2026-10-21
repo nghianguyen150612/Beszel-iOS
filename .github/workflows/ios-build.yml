@@ -79,14 +79,36 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Test Procursus detection, parser, and isolated read-only query
+      - name: Download Go modules for offline sandbox test
+        run: go mod download
+
+      - name: Test Procursus detection, parser, and network-disabled read-only query
         shell: bash
         run: |
           set -euo pipefail
-          go version
-          env -u NETWORK go test -race -v -tags 'testing no_ui' ./agent \
-            -run 'Test(DetectProcursusAPT|ParseProcursusAPT|ProcursusAPT|CompareDpkgVersions|CheckProcursusAPT)' \
-            -count=3 -timeout=180s
+          module_cache="$(go env GOMODCACHE)"
+          docker run --rm --network none --read-only \
+            --tmpfs /tmp:rw,exec,nosuid,size=6g \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/workspace,readonly" \
+            --mount "type=bind,src=$module_cache,dst=/go/pkg/mod,readonly" \
+            --workdir /workspace \
+            --env GOTOOLCHAIN=local \
+            --env GOPROXY=off \
+            --env GOSUMDB=off \
+            --env GOCACHE=/tmp/go-build-cache \
+            --env HOME=/tmp/home \
+            --env TMPDIR=/tmp \
+            --env BESZEL_APT_QUERY_ISOLATED=1 \
+            --env BESZEL_REQUIRE_OFFLINE_APT_SANDBOX=1 \
+            --env BESZEL_HEALTH_DIR=/tmp/beszel-health \
+            golang:1.27.2-bookworm bash -euo pipefail -c '
+              mkdir -p "$HOME" "$GOCACHE" "$BESZEL_HEALTH_DIR"
+              test "$(go env GOVERSION)" = go1.27.2
+              go version
+              go test -race -v -tags "testing no_ui" ./agent \
+                -run "Test(DetectProcursusAPT|ParseProcursusAPT|ProcursusAPT|CompareDpkgVersions|CheckProcursusAPT)" \
+                -count=3 -timeout=180s
+            '
 
   build-ios:
     runs-on: macos-14

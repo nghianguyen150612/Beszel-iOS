@@ -12,7 +12,7 @@ spec.loader.exec_module(module)
 def message(**kwargs):
     import json
 
-    return json.dumps(kwargs)
+    return json.dumps(kwargs, indent=2)
 
 
 class P019GovulncheckTests(unittest.TestCase):

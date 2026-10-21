@@ -36,6 +36,7 @@ jobs:
     timeout-minutes: 65
     env:
       PYTHONDONTWRITEBYTECODE: '1'
+      BESZEL_HEALTH_DIR: ${{ github.workspace }}/.task/health
     steps:
       - name: Checkout candidate source, not the PR merge pseudo-commit
         uses: actions/checkout@v4
@@ -107,6 +108,8 @@ jobs:
           git diff --check
           python3 scripts/audit/validate-upstream-v021-matrix.py
           python3 scripts/audit/validate-upstream-v021-readiness.py
+      - name: Prepare workspace-local health marker directory
+        run: mkdir -p "$BESZEL_HEALTH_DIR"
       - name: Audit, bootstrap, installer and release isolation regressions
         shell: bash
         run: |

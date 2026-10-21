@@ -38,22 +38,22 @@ test("disk and network codecs preserve measured zero and legacy units", () => {
 
 test("disk throughput falls back to legacy byte rates for older Agent telemetry", () => {
 	const legacy = record({
-		dr: 2048,
-		drm: 4096,
-		dw: 8192,
-		dwm: 16384,
+		dr: 2,
+		drm: 4,
+		dw: 8,
+		dwm: 16,
 		efs: { old: { d: 100, du: 1, r: 2, rm: 4, w: 8, wm: 16 } },
 	})
-	expect(diskDataFns.read(legacy)).toBe(2048)
-	expect(diskDataFns.readMax(legacy)).toBe(4096)
-	expect(diskDataFns.write(legacy)).toBe(8192)
-	expect(diskDataFns.writeMax(legacy)).toBe(16384)
+	expect(diskDataFns.read(legacy)).toBe(2 * 1024 * 1024)
+	expect(diskDataFns.readMax(legacy)).toBe(4 * 1024 * 1024)
+	expect(diskDataFns.write(legacy)).toBe(8 * 1024 * 1024)
+	expect(diskDataFns.writeMax(legacy)).toBe(16 * 1024 * 1024)
 	expect(diskDataFns.extraRead("old")(legacy)).toBe(2 * 1024 * 1024)
 	expect(diskDataFns.extraReadMax("old")(legacy)).toBe(4 * 1024 * 1024)
 	expect(diskDataFns.extraWrite("old")(legacy)).toBe(8 * 1024 * 1024)
 	expect(diskDataFns.extraWriteMax("old")(legacy)).toBe(16 * 1024 * 1024)
 
-	const current = record({ dio: [512, 1024], dr: 2048, dw: 4096 })
+	const current = record({ dio: [512, 1024], dr: 2, dw: 4 })
 	expect(diskDataFns.read(current)).toBe(512)
 	expect(diskDataFns.write(current)).toBe(1024)
 })

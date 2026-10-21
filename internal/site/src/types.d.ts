@@ -130,13 +130,13 @@ export interface SystemStats {
 	dio?: [number, number]
 	/** max disk I/O bytes [read, write] */
 	diom?: [number, number]
-	/** @deprecated Legacy disk read bytes/sec retained for older Agent telemetry. */
+	/** @deprecated Legacy disk read rate (MiB/sec) retained for older Agent telemetry. */
 	dr?: number
-	/** @deprecated Legacy max disk read bytes/sec retained for older Agent telemetry. */
+	/** @deprecated Legacy max disk read rate (MiB/sec) retained for older Agent telemetry. */
 	drm?: number
-	/** @deprecated Legacy disk write bytes/sec retained for older Agent telemetry. */
+	/** @deprecated Legacy disk write rate (MiB/sec) retained for older Agent telemetry. */
 	dw?: number
-	/** @deprecated Legacy max disk write bytes/sec retained for older Agent telemetry. */
+	/** @deprecated Legacy max disk write rate (MiB/sec) retained for older Agent telemetry. */
 	dwm?: number
 	/** disk io stats [read time factor, write time factor, io utilization %, r_await ms, w_await ms, weighted io %] */
 	dios?: [number, number, number, number, number, number]

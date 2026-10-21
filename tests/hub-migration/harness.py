@@ -258,8 +258,12 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
             old_definition, new_definition = dict(old_fields[field]), dict(new_fields[field])
             old_values = old_definition.pop("values", [])
             new_values = new_definition.pop("values", [])
-            if old_definition != new_definition or new_values != [*old_values, "NetworkMonitorLoss"]:
-                raise HarnessError("v0.21 alerts.name changed beyond adding NetworkMonitorLoss")
+            expected_alert_options = ["NetworkMonitorLoss", "NetworkMonitorCert"]
+            if old_definition != new_definition or new_values != [*old_values, *expected_alert_options]:
+                raise HarnessError(
+                    "v0.21 alerts.name changed beyond adding the network-monitor loss and certificate options: "
+                    f"{new_values!r}"
+                )
     if actual_added_fields != expected_added_fields:
         raise HarnessError(f"v0.21 legacy field additions differ from the accepted migration: {actual_added_fields!r}")
 
@@ -367,7 +371,7 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
         "legacy_collections_preserved": sorted(before),
         "added_collections": sorted(added_collections),
         "added_legacy_fields": actual_added_fields,
-        "changed_fields": {"alerts.name.values_added": ["NetworkMonitorLoss"]},
+        "changed_fields": {"alerts.name.values_added": ["NetworkMonitorLoss", "NetworkMonitorCert"]},
         "index_changes": index_changes,
         "authorization_rule_changes": changed_rules,
         "preserved_preexisting_fields": {"containers.updatable": "bool", "zfs_pools.display_name": "text", "zfs_pools.raw": "bool"},
