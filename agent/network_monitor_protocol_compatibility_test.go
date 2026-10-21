@@ -25,7 +25,7 @@ import (
 func TestP010MonitorProtocolOverWSAndSSH(t *testing.T) {
 	h := newP009Hub(t)
 	h.a.monitorManager.Stop()
-	h.a.monitorManager = newMonitorManager()
+	h.a.monitorManager = newMonitorManager(nil)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/fail" {
 			w.WriteHeader(503)

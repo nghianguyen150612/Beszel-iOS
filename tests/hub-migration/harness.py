@@ -1227,8 +1227,12 @@ def main() -> int:
         bun = os.environ.get("BUN", "bun")
         go_version = subprocess.check_output([go, "version"], text=True).strip()
         bun_version = subprocess.check_output([bun, "--version"], text=True).strip()
-        if "go1.27.1" not in go_version or bun_version != "1.4.0":
-            raise HarnessError(f"P013 fixture requires Go 1.27.1 and Bun 1.4.0 (found {go_version!r}, Bun {bun_version!r})")
+        expected_go = "go" + next(
+            line.split()[1] for line in (repo / "go.mod").read_text().splitlines()
+            if line.strip().startswith("go ")
+        )
+        if expected_go not in go_version or bun_version != "1.4.0":
+            raise HarnessError(f"P013 fixture requires {expected_go} and Bun 1.4.0 (found {go_version!r}, Bun {bun_version!r})")
         old_binary = binaries / "beszel-hub-0.19"
         old_agent_binary = binaries / "beszel-agent-0.19"
         new_binary = binaries / "beszel-hub-0.21"

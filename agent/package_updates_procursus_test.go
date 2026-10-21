@@ -511,7 +511,11 @@ func TestProcursusAPTQueryReadOnlyAndNetworkIsolatedFixture(t *testing.T) {
 	before := snapshotPackageFixture(t, root)
 	sandboxPath, sandboxArgs, isolated := usableOfflineSandbox()
 	if !isolated {
-		t.Skip("this host has no network-disabled, read-only filesystem sandbox; the required Linux fixture must run in a capable cloud environment")
+		message := "this host has no network-disabled, read-only filesystem sandbox; the required Linux fixture must run in a capable cloud environment"
+		if os.Getenv("BESZEL_REQUIRE_OFFLINE_APT_SANDBOX") == "1" {
+			t.Fatal(message)
+		}
+		t.Skip(message)
 	}
 	t.Log("APT query ran with network namespace disabled and the filesystem read-only")
 	argsSeen := false

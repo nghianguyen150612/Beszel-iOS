@@ -51,7 +51,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(go version | awk '{print $3}')" = "go1.27.1"
+          expected_go="go$(awk '$1 == "go" { print $2; exit }' go.mod)"
+          test "$(go version | awk '{print $3}')" = "$expected_go"
           test "$(bun --version)" = "1.4.0"
           python3 scripts/audit/validate-upstream-v021-matrix.py
           python3 scripts/audit/validate-upstream-v021-readiness.py

@@ -287,7 +287,7 @@ func TestMonitorTLSOptionIsIsolated(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	t.Cleanup(server.Close)
-	probe := newMonitorManager().probe
+	probe := newMonitorManager(nil).probe
 	// Use the same manager: an opt-out must not mutate a shared/default transport.
 	for _, skip := range []bool{false, true, false} {
 		config := monitor.Config{ID: "isolated", Protocol: "http", Target: server.URL, SkipTLSVerify: skip}

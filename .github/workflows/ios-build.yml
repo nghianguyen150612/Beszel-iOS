@@ -65,6 +65,7 @@ jobs:
     timeout-minutes: 15
     env:
       PYTHONDONTWRITEBYTECODE: "1"
+      BESZEL_REQUIRE_OFFLINE_APT_SANDBOX: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

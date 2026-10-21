@@ -89,11 +89,13 @@ jobs:
           echo "package=$package" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
+        if: github.event_name == 'push'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: echo "$GITHUB_TOKEN" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
 
       - name: Check chart version is unpublished
+        if: github.event_name == 'push'
         env:
           CHART_NAME: ${{ matrix.chart.name }}
           CHART_VERSION: ${{ steps.package.outputs.version }}

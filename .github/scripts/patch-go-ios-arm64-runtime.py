@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Patch only the reviewed Go 1.27.1 ARM64 procyield body, atomically."""
+"""Patch only the reviewed Go 1.27.2 ARM64 procyield body, atomically."""
 
 import hashlib
 import json
@@ -9,10 +9,10 @@ import stat
 import subprocess
 import tempfile
 
-SUPPORTED_VERSION = "go1.27.1"
+SUPPORTED_VERSION = "go1.27.2"
 START = "TEXT runtime·procyieldAsm(SB),NOSPLIT,$0-0"
 END = "\n// Save state of caller into g->sched,"
-# Complete executable source shape from go1.27.1/src/runtime/asm_arm64.s.
+# Complete executable source shape from go1.27.2/src/runtime/asm_arm64.s.
 # Comments and horizontal whitespace carry no assembly semantics. All other
 # lines (including directives, labels and unexpected instructions) must match.
 expected_shape = (

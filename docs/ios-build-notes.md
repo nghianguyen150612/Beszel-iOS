@@ -42,12 +42,13 @@ Install under `/usr/local/bin`; `$HOME` and `/tmp` have previously produced exec
 ## Why the Apple A7 runtime patch exists
 
 The historical Apple A7 / iOS 12 environment faults on the modern Go ARM64
-`runtime.procyieldAsm` CNTVCT_EL0 path. The script accepts only the reviewed Go
-1.27.1 complete executable source shape and replaces it with a zero-guarded YIELD
-loop. Unsupported versions, unknown layouts and repeat invocation fail without
-writing. The patch is applied before every native iOS compilation to an isolated
-copy. Source/binary inspection cannot establish SIGILL-free 0.21 execution:
-physical A7 acceptance remains P018 / Gate F.
+`runtime.procyieldAsm` CNTVCT_EL0 path. The current P019 candidate uses Go
+1.27.2; the script accepts only that version's reviewed complete executable
+source shape and replaces it with a zero-guarded YIELD loop. Unsupported
+versions, unknown layouts and repeat invocation fail without writing. The patch
+is applied before every native iOS compilation to an isolated copy.
+Source/binary inspection cannot establish SIGILL-free 0.21 execution: physical
+A7 acceptance remains P018 / Gate F.
 
 ## Hub frontend build requirement
 
