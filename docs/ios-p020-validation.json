@@ -6,62 +6,273 @@
   "pull_request": 24,
   "base_branch": "ios/upstream-v021-integration",
   "base_sha": "c8bd3dba8656c8195ffacf56ff743dd58b01da25",
-  "qualification_source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
-  "status": "in_progress",
+  "implementation_source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
+  "status": "code_source_qualified; final_documentation_head_checks_required_before_merge",
   "changes": [
     "Reject universal-token GET URL query fields token, enable, and permanent with HTTP 400.",
     "Keep universal-token GET read-only and preserve POST JSON mutation behavior.",
-    "Add deterministic endpoint coverage for each rejected query field and side effects."
+    "Add deterministic endpoint coverage for each rejected query field and side effects.",
+    "Pin the Agent CPU breakdown vector order with a deterministic test; preserve the existing telemetry output order."
   ],
   "local_validation": {
     "go_version": "1.27.2",
     "api_auth_and_universal_token": "PASS",
     "universal_token_race_count_3": "PASS",
-    "format_and_diff_check": "PASS"
+    "format_and_diff_check": "PASS",
+    "cpu_breakdown_contract_race_count_3": "PASS"
   },
   "hosted_validation": {
     "p017_regression": {
-      "run_id": 39604710829,
-      "source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
-      "status_at_checkpoint": "in_progress",
-      "security_scan_steps": "PASS",
-      "go_advisories": {
+      "run_id": 39605920035,
+      "source_sha": "5819a82b8d628b66411335643c767e1e147de93d",
+      "conclusion": "success",
+      "checks": [
+        "full canonical Go tests and portable builds",
+        "Go vulnerability and Bun/npm audits",
+        "pinned upstream ancestry and patch accounting",
+        "installer/bootstrap/isolation tests",
+        "frontend tests, Lingui sync, TypeScript and Vite build"
+      ],
+      "security": {
         "GO-2026-6608": "absent",
         "GO-2026-6809": "official Go CL 851047 backport present; x509 standard-library test PASS; raw traces retained",
-        "GO-2026-5932": "open; module-level finding retained"
-      },
-      "javascript_advisory": {
+        "GO-2026-5932": "open; module-level finding retained",
         "GHSA-vfj7-8cjw-p6xm": "OPEN",
-        "critical_findings": 0
+        "javascript_critical_findings": 0
       },
       "go_evidence_artifact": {
-        "id": 12348241118,
-        "sha256": "70b4e6353dcd7623cd9e29e7f4b62351cd8b0436bfad19f3590f12ff89d464f6"
+        "id": 12347194497,
+        "sha256": "078d96ab1ffe6e7c20784f1bed1d4bab29f0a1af3bcc4a2a49c02982d46c23a0"
       },
       "javascript_evidence_artifact": {
-        "id": 12348022491,
-        "sha256": "9609492918d781f0e3be51c39d3e14379ca5cd4b68ae7c9fc739ae0cf8527665"
+        "id": 12347948106,
+        "sha256": "c73ce60b0c0d9516b4f28feba03135d32eea830f460586b67e79e9e151399f94"
+      },
+      "manifest": {
+        "id": 12347404841,
+        "sha256": "2f0da23050a724149ff07e20c19fcd59dc8e3f576ed960cf0f8f1ae8fe05ef3f",
+        "source_sha": "5819a82b8d628b66411335643c767e1e147de93d",
+        "frontend_asset_count": 97,
+        "frontend_asset_manifest_sha256": "3b80dbea2957210afc99b4f4e2322d682015f53eb6034d163f55d3a9fc2a92e1",
+        "device_tested": false,
+        "release_published": false,
+        "tag_created": false
       }
     },
     "p013_migration_fixture": {
-      "run_id": 39604711319,
-      "source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
-      "status_at_checkpoint": "in_progress"
+      "run_id": 39605920033,
+      "source_sha": "5819a82b8d628b66411335643c767e1e147de93d",
+      "conclusion": "success",
+      "fixture": "genuine v0.19 Hub initialized synthetic database",
+      "result": "upgrade, restart, full backup/restore, and interruption recovery passed",
+      "evidence_artifact": {
+        "id": 12348148448,
+        "sha256": "066897290e41baa418d1e26e283e86a3977b0752e3ea78741801be1011ef6ae3"
+      },
+      "production_data_included": false
     },
     "native_ios_build": {
-      "run_id": 39604710976,
-      "source_sha": "2ad963066aa918e86158e31c0b60d65bacb2218e",
-      "status_at_checkpoint": "in_progress",
-      "procursus_network_disabled_read_only_job": "PASS"
+      "run_id": 39605920505,
+      "source_sha": "5819a82b8d628b66411335643c767e1e147de93d",
+      "conclusion": "success",
+      "target": {
+        "go_version": "1.27.2",
+        "goos": "ios",
+        "goarch": "arm64",
+        "goarm64": "v8.0",
+        "cgo_enabled": 1,
+        "minimum_ios": "12.0",
+        "agent_macho": true,
+        "hub_macho": true,
+        "vcs_revision": "5819a82b8d628b66411335643c767e1e147de93d",
+        "vcs_modified": false,
+        "embedded_frontend_assets": 97,
+        "private_mobilewifi_linkage": false
+      },
+      "runtime_patch": {
+        "source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+        "patched_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f"
+      },
+      "agent_sha256": "46295c407078811e9fd44e5bfdecb1957cee09380de88bd1e94fddd893492ea6",
+      "hub_sha256": "c142ed153d35970558a4e27e2bafb5e73964600f39a90aa8e240fa4672cb0a02",
+      "payload_artifact": {
+        "id": 12349287095,
+        "sha256": "f29c639a630d25c2956fc96819e1adf1bde4445180d473f481ca3e39e05cf063"
+      },
+      "native_validation_artifact": {
+        "id": 12348826761,
+        "sha256": "8a32720cb42171a3c16e9b44dc93218357f4607c7d9a4f1fde0ca0228fbe9305"
+      },
+      "disabled_wifi_diagnostic_artifact": {
+        "id": 12348662683,
+        "sha256": "d33be5a3dbe1509f6498bd555798914dc2b5ba48b79c6a476607868409fb2830"
+      },
+      "release_job": "skipped"
     },
-    "installer_workflow": "No installer paths changed in P020; P019 exact-source installer workflow passed."
+    "installer_lifecycle": {
+      "run_id": 39606486222,
+      "source_sha": "5819a82b8d628b66411335643c767e1e147de93d",
+      "event": "workflow_dispatch",
+      "conclusion": "success",
+      "checks": [
+        "bootstrap checksum",
+        "bootstrap tests",
+        "Mach-O and workflow isolation fixtures",
+        "installer lifecycle tests",
+        "45 iOS patch sentinels",
+        "10 upstream-sync cases"
+      ]
+    }
   },
-  "merge_gate": "Do not merge until required checks pass on the final P020 PR head and review requirements are satisfied.",
+  "pr_reviews": {
+    "requested_reviewers": 0,
+    "submitted_reviews": 0,
+    "independent_review_claimed": false
+  },
+  "merge_gate": "Require all mandatory checks on the final documentation-only PR head to pass; do not merge if a gate fails.",
   "physical_device_validation": "NOT PERFORMED; P018 Gate F remains PENDING",
   "protected_targets": {
     "production_iOS_changed": false,
     "fork_main_changed": false,
     "release_created": false,
     "device_touched": false
+  },
+  "execution_boundary": {
+    "previous_incident_recorded": "Earlier Work opened/truncated /dev/shm/beszel_health and invoked bwrap in a Procursus isolation test.",
+    "this_continuation_repeated_incident": false,
+    "local_health_marker": "/workspace/Beszel-iOS/.task/health",
+    "procursus_isolation": "hosted --network none --read-only container"
+  },
+  "current_source_sha": "e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391",
+  "requalification_runs": {
+    "source_sha": "e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391",
+    "p017_regression": {
+      "run_id": 39609195215,
+      "status": "completed",
+      "conclusion": "success",
+      "duration": "6m3s",
+      "source_sha": "e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391",
+      "artifacts": [
+        {
+          "id": 12349927098,
+          "name": "p019-go-vulnerability-evidence",
+          "sha256": "aa994c110362e50ce3944cfc974ad95ddfed5f5ccca264cec4c1c876e876b602b1"
+        },
+        {
+          "id": 12349258335,
+          "name": "p019-javascript-audit-evidence",
+          "sha256": "6707d8261adb74e189435e8c73ba92bdb75c8b289f1568f56c0a6b70554c1c1f"
+        },
+        {
+          "id": 12348869369,
+          "name": "p017-regression-manifest",
+          "sha256": "8f3e0678dc84809a076e416921b3c6aee54985f153bd5c3a707cf36ebe7fb66a"
+        }
+      ],
+      "manifest": {
+        "frontend_asset_count": 97,
+        "frontend_asset_manifest_sha256": "3b80dbea2957210afc99b4f4e2322d682015f53eb6034d163f55d3a9fc2a92e1",
+        "device_tested": false,
+        "release_published": false,
+        "tag_created": false
+      },
+      "security": {
+        "GO-2026-6608": "absent",
+        "GO-2026-6809": "3 raw traces retained; official Go CL 851047 x509 backport present and x509 test PASS",
+        "GO-2026-5932": "one module-level finding; open and not claimed fixed",
+        "GHSA-vfj7-8cjw-p6xm": "OPEN",
+        "javascript_critical_findings": 0
+      }
+    },
+    "p013_migration_fixture": {
+      "run_id": 39609195286,
+      "status": "completed",
+      "conclusion": "success",
+      "source_sha": "e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391",
+      "fixture": "genuine v0.19 Hub initialized synthetic database",
+      "result": "upgrade, restart, complete backup/restore, and interruption recovery passed",
+      "evidence_artifact": {
+        "id": 12349727839,
+        "name": "p013-hub-recovery-evidence",
+        "sha256": "75de188c4487c01e86508d512112b6ff526e6e09d5108e33c47124d3e3c236a1"
+      },
+      "production_data_included": false
+    },
+    "native_ios_build": {
+      "run_id": 39609195413,
+      "status": "completed",
+      "conclusion": "success",
+      "duration": "13m54s",
+      "source_sha": "e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391",
+      "procursus_job": "PASS",
+      "release_job": "skipped",
+      "target": {
+        "go_version": "1.27.2",
+        "goos": "ios",
+        "goarch": "arm64",
+        "goarm64": "v8.0",
+        "cgo_enabled": 1,
+        "minimum_ios": "12.0",
+        "agent_macho": true,
+        "hub_macho": true,
+        "vcs_revision": "e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391",
+        "vcs_modified": false,
+        "embedded_frontend_assets": 97,
+        "private_mobilewifi_linkage": false
+      },
+      "runtime_patch": {
+        "source_sha256": "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db",
+        "patched_sha256": "c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f",
+        "result": "zero-guarded YIELD loop with no CNTFRQ_EL0 or CNTVCT_EL0 reads"
+      },
+      "x509_backport": {
+        "official_go_cl": "851047",
+        "patch_sha256": "111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150",
+        "test": "PASS"
+      },
+      "agent_sha256": "7956034cf1d0b0d1755cf082ccd021d3c0c40118a82fda723c4ee22c232ba1a5",
+      "hub_sha256": "727356fdc73a4d3985924dd394ba6f84f5cf7b9010e8941c4b7aabb689196bb5",
+      "payload_artifact": {
+        "id": 12349709491,
+        "name": "beszel-ios-arm64",
+        "sha256": "5b19ded34bbbfc94e9b3b68478541f93aa83a20e2310aa973fce920681df1492"
+      },
+      "native_validation_artifact": {
+        "id": 12349404872,
+        "name": "ios-native-validation",
+        "sha256": "2c7f46ab1c405cae969e9fd88539c3a0437bbb37323202fde44353a9477cf896"
+      },
+      "disabled_wifi_diagnostic_artifact": {
+        "id": 12349884248,
+        "name": "ios-wifi-diagnostic-disabled",
+        "sha256": "9f4041b702977adca9e75f630634354eefea65ce3a089baf06502bf489582d00"
+      }
+    },
+    "installer_lifecycle": {
+      "run_id": 39609283025,
+      "status": "completed",
+      "conclusion": "success",
+      "source_sha": "e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391",
+      "event": "workflow_dispatch",
+      "checks": [
+        "bootstrap checksum",
+        "bootstrap tests",
+        "Mach-O and workflow isolation fixtures",
+        "installer lifecycle tests",
+        "45 iOS patch sentinels",
+        "10 upstream-sync cases"
+      ]
+    }
+  },
+  "initial_qualified_source_sha": "5819a82b8d628b66411335643c767e1e147de93d",
+  "qualified_source_sha": "e7d3d36041d4bb49eeeb15ee4dcae2fe4d7d1391",
+  "artifact_access": {
+    "native_validation_zip_download": "HTTP 403 from GitHub signed blob URL",
+    "github_artifact_metadata": "available and matched run IDs, source, and artifact digests",
+    "ci_validation": "completed successfully on the hosted runner"
+  },
+  "final_documentation_head": {
+    "status": "checks required before merge",
+    "scope": "documentation-only update to the qualified e7d3d36 code source"
   }
 }
