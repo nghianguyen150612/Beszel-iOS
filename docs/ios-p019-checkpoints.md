@@ -21,7 +21,7 @@ patch map still contains 13 logical iOS patch IDs. P019 Draft PR #23 targets
 | `52967f47c91b82d9ea7455a541ea7c7ca099a19d` | Yes | Recovery audit and reviewed normal upstream merge |
 | `7099bb0aa63b95b4d14c1f525d8fa2be6d87cd47` | Yes | Go 1.27.2 A7 runtime source pin; telemetry and monitor compatibility corrections |
 | `cee2fc2518e2abbc58a2d6375dc85d7c996e9a95` | Yes | P019 Go and JavaScript security qualification, report validators, and evidence |
-| Pending | No | Hosted-CI corrections described below; not committed at this checkpoint |
+| `8b8284961e37dd2264084071b112c1b38e47bfe3` | Yes | Correct the migration schema expectation, legacy disk units, Procursus isolation runner, and govulncheck stream parser |
 
 ## Hosted CI on `cee2fc2518e2abbc58a2d6375dc85d7c996e9a95`
 
@@ -42,13 +42,15 @@ On the uncommitted correction tree, Python audit tests passed (74 tests), Hub
 migration harness unit tests passed (7 tests), frozen upstream matrix and
 readiness validation passed (178/178 upstream rows and 13 logical iOS patches),
 and `git diff --check` passed. The Bun tests and Go tests have not been run in
-this Work environment; exact-head hosted CI remains authoritative. The required
-Procursus fixture must run in its hosted network-disabled, read-only container.
+this Work environment. Commit `8b8284961e37dd2264084071b112c1b38e47bfe3` is
+pushed and its exact remote SHA was verified. Its hosted checks are pending;
+exact-head hosted CI remains authoritative. The required Procursus fixture must
+run in its hosted network-disabled, read-only container.
 
 ## Gate state
 
-P019 remains **IN PROGRESS**. The correction tree has not yet been committed,
-pushed, or run through CI. Source-level Go vulnerability disposition,
+P019 remains **IN PROGRESS**. The corrections are committed and pushed but
+have not yet been run through CI. Source-level Go vulnerability disposition,
 JavaScript advisory disposition, genuine v0.19-to-candidate database upgrade
 and restore, full Go/race and frontend suites, native ARM64 iOS artifacts,
 source provenance, mandatory reviews, and all exact-head required checks remain
