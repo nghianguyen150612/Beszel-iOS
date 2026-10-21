@@ -256,7 +256,11 @@ func (client *WebSocketClient) getOptions() *gws.ClientOption {
 			"X-Beszel":   []string{beszel.Version},
 		},
 		NewDialer: func() (gws.Dialer, error) {
-			return agentDialer{client.agent.connectionManager.ctx}, nil
+			var managerCtx context.Context
+			if client.agent != nil && client.agent.connectionManager != nil {
+				managerCtx = client.agent.connectionManager.ctx
+			}
+			return agentDialer{managerCtx}, nil
 		},
 	}
 
@@ -476,7 +480,6 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 		return gws.ErrConnClosed
 	}
 	client.connMu.Unlock()
-	client.agent.connectionManager.sendEvent(WebSocketConnect)
 
 	response := &common.FingerprintResponse{
 		Fingerprint: client.fingerprint,
@@ -502,6 +505,7 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 	}
 	client.hubVerified = true
 	client.connMu.Unlock()
+	client.agent.connectionManager.sendEvent(WebSocketConnect)
 	client.agent.connectionManager.notifyWebSocketChange()
 	return nil
 }

@@ -475,11 +475,16 @@ func (c *ConnectionManager) startSSHServer() {
 	}()
 }
 
-// sendEvent releases callbacks when the manager has stopped receiving events.
+// sendEvent never blocks a WebSocket callback on an unconsumed event queue.
 func (c *ConnectionManager) sendEvent(event ConnectionEvent) {
+	var done <-chan struct{}
+	if c.ctx != nil {
+		done = c.ctx.Done()
+	}
 	select {
 	case c.eventChan <- event:
-	case <-c.ctx.Done():
+	case <-done:
+	default:
 	}
 }
 

@@ -1011,7 +1011,12 @@ func dialTestAgentClient(t *testing.T, clientVersion string) *gossh.Client {
 	sshPubKey, err := gossh.NewPublicKey(pubKey)
 	require.NoError(t, err)
 
-	socketFile := filepath.Join(t.TempDir(), "beszel-test.sock")
+	// Keep the socket path short enough for macOS AF_UNIX limits even when the
+	// test name and runner's temporary directory are deeply nested.
+	socketDir, err := os.MkdirTemp(".", "beszel-test-")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = os.RemoveAll(socketDir) })
+	socketFile := filepath.Join(socketDir, "agent.sock")
 	agent, err := NewAgent("")
 	require.NoError(t, err)
 
@@ -1035,6 +1040,11 @@ func dialTestAgentClient(t *testing.T, clientVersion string) *gossh.Client {
 	require.Eventually(t, func() bool {
 		conn, err := net.Dial("unix", socketFile)
 		if err != nil {
+			select {
+			case startErr := <-errChan:
+				require.NoError(t, startErr)
+			default:
+			}
 			return false
 		}
 		_ = conn.Close()
