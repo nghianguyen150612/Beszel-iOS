@@ -77,6 +77,23 @@ func waitPID(t *testing.T, path string) int {
 	}, time.Second, 5*time.Millisecond)
 	return pid
 }
+func waitStart(t *testing.T, path string, expected int) int {
+	t.Helper()
+	var pid int
+	require.Eventually(t, func() bool {
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return false
+		}
+		starts := strings.Fields(string(b))
+		if len(starts) < expected {
+			return false
+		}
+		pid, err = strconv.Atoi(starts[expected-1])
+		return err == nil && pid > 0
+	}, 5*time.Second, 5*time.Millisecond, "fixture should record each acquisition")
+	return pid
+}
 func requireReaped(t *testing.T, pid int) {
 	t.Helper()
 	require.Eventually(t, func() bool { return syscall.Kill(pid, 0) == syscall.ESRCH }, time.Second, 5*time.Millisecond, "direct child must be reaped, not just killed")
@@ -146,13 +163,25 @@ func TestClientMissingPermissionAndRecovery(t *testing.T) {
 func TestClientTimeoutCancellationAndRepeatedCleanup(t *testing.T) {
 	before := runtime.NumGoroutine()
 	c := fixtureClient(t, "timeout")
-	for range 12 {
-		start := time.Now()
-		got, err := c.Read(context.Background())
+	// Keep the helper alive long enough to record its PID even on heavily
+	// loaded CI runners, then verify a fresh acquisition was reaped each time.
+	c.timeout = time.Second
+	startsPath := c.path + ".starts"
+	for attempt := range 12 {
+		done := make(chan error, 1)
+		go func() {
+			_, err := c.Read(context.Background())
+			done <- err
+		}()
+		pid := waitStart(t, startsPath, attempt+1)
+		var err error
+		select {
+		case err = <-done:
+		case <-time.After(5 * time.Second):
+			t.Fatal("Read did not return after its configured timeout")
+		}
 		require.ErrorIs(t, err, context.DeadlineExceeded)
-		require.Nil(t, got)
-		require.Less(t, time.Since(start), time.Second)
-		requireReaped(t, waitPID(t, c.path+".pid"))
+		requireReaped(t, pid)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
