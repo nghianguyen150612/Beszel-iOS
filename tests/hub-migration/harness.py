@@ -300,6 +300,9 @@ def validate_v021_schema(before: dict[str, dict[str, Any]], after: dict[str, dic
     }
     expected_rule_changes = {
         "alerts": expected_alert_rules,
+        "fingerprints": {
+            "updateRule": '@request.auth.id != "" && system.users.id ?= @request.auth.id && @request.auth.role != "readonly" && @request.body.system:changed = false',
+        },
         "quiet_hours": {
             "updateRule": '@request.auth.id != "" && user = @request.auth.id && @request.body.user:changed = false',
         },
