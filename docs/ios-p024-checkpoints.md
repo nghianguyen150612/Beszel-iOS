@@ -81,3 +81,9 @@ The hosted checks on the prior `508a920488f1142248401904004f3db835ea6d27` head a
 - Installer lifecycle workflow has not yet run on 01865f2. Local installer lifecycle tests were deliberately not run because the scripts hardcode `/tmp`; hosted execution is required.
 - Latest embedded manifest file SHA-256: `8d94b3062e26ab506546d21b2c16f09281b5433cfa8ceebafac2a9cd2db5ed8f`, 98 assets and 3,426,895 bytes. P017 computes a separate deterministic digest over built frontend contents.
 - The branch protection endpoint returned HTTP 403 for this connected account; PR review list was empty at last query. Do not bypass any enforcement.
+
+## Native runner lifecycle repair
+
+- At source head `2ee499fc8a1a24a3cae67692a00d7130fe4297f0`, P017 regression/security, P013 migration, installer lifecycle, and Procursus checks passed. The PR-triggered macOS job in run `39756648071` was canceled while queued and executed no build steps; its `release-ios-validate` and `release-ios` jobs were skipped.
+- GitHub `actions/runner-images` issue #13518 marks macOS 14 deprecated, warns of longer queue times, and sets November 2, 2026 as the retirement date. The P024 native job now uses the supported `macos-15` ARM64 image.
+- A nonpublishing workflow-dispatch retry, run `39758610095`, targeted the same source SHA; Procursus passed while the macOS job remained queued. It was superseded and canceled for the runner-label migration. Re-run the PR and all final-head gates after the migration.
