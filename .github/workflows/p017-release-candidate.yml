@@ -17,6 +17,7 @@ on:
       - 'docs/ios-p019-*'
       - 'docs/ios-p020-*'
       - 'docs/ios-p021-*'
+      - 'docs/ios-p022-*'
       - 'docs/ios-release-candidate*'
       - 'docs/ios-p017-*'
       - 'tests/ios-workflow-isolation-test.py'

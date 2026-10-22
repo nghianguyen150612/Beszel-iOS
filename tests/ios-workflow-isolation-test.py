@@ -42,19 +42,30 @@ def read(name: str) -> str:
 ios_build = read("ios-build.yml")
 ios_on = section(ios_build, "on:", 0)
 ios_release = section(ios_build, "release-ios:", 2)
+ios_release_validation = section(ios_build, "release-ios-validate:", 2)
 ios_build_job = section(ios_build, "build-ios:", 2)
 ios_push = section(ios_on, "push:", 2)
 ios_tags = section(ios_push, "tags:", 4)
 check("iOS build supports an explicit validation dispatch", "workflow_dispatch:" in ios_on)
 check("iOS release tags use a distinct suffix filter", '"v*-ios.*"' in ios_tags)
 check(
-    "iOS release job requires a version tag and the iOS suffix",
-    "startsWith(github.ref, 'refs/tags/v')" in ios_release
-    and "contains(github.ref_name, '-ios.')" in ios_release,
+    "read-only release validation is reachable only on a release-tag push",
+    "github.event_name == 'push'" in ios_release_validation
+    and "github.ref_type == 'tag'" in ios_release_validation
+    and "startsWith(github.ref, 'refs/tags/v')" in ios_release_validation
+    and "contains(github.ref_name, '-ios.')" in ios_release_validation,
 )
+check("publisher requires successful read-only release validation", "needs: release-ios-validate" in ios_release and "github.event_name == 'push'" in ios_release and "github.ref_type == 'tag'" in ios_release)
 check("top-level iOS build permission is read-only", "contents: read" in section(ios_build, "permissions:", 0))
 check("native build job receives no release credentials", "secrets." not in ios_build_job and "GH_TOKEN:" not in ios_build_job)
-check("release credential is confined to the guarded release job", "GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}" in ios_release)
+check("release validation job has read-only repository permission", "contents: read" in ios_release_validation and "contents: write" not in ios_release_validation)
+check("release publisher is the only job with write permission", "contents: write" in ios_release and "contents: write" not in ios_release_validation)
+check("release credential is scoped to individual publisher steps", "GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}" in ios_release and "    env:\n      GH_TOKEN:" not in ios_release)
+check("release payload validator is required before staging", "verify-ios-release-payload.py dist" in ios_release_validation and "upload-artifact@v4" in ios_release_validation)
+check("release artifacts are downloaded from this workflow run", "name: beszel-ios-arm64" in ios_release_validation and "name: ios-native-validation" in ios_release_validation and "run-id:" not in ios_release_validation)
+check("release is staged as a verified draft before publishing", "--draft" in ios_release and "--verify-tag" in ios_release and "gh release edit \"${TAG}\" --draft=false --latest" in ios_release)
+check("draft assets are downloaded and revalidated before publication", "gh release download \"${TAG}\"" in ios_release and "verify-ios-release-payload.py \"$VERIFY_DIR\"" in ios_release)
+check("release workflow makes no physical-device validation claim", "Validated on: iPad mini 2" not in ios_release)
 check(
     "native build runs installer Mach-O validation on both generated binaries",
     "sh tests/ios-macho-validation-test.sh build/ios/beszel-agent-ios-arm64 build/ios/beszel-hub-ios-arm64" in ios_build,

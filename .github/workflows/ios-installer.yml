@@ -35,6 +35,7 @@ on:
       - docs/ios-service-lifecycle.md
       - docs/ios-p016-checkpoints.md
       - docs/ios-p021-*
+      - docs/ios-p022-*
       - docs/ios-installer-validation.json
       - docs/upstream-v021-acceptance.md
       - docs/upstream-v021-acceptance.vi.md
@@ -67,6 +68,7 @@ on:
       - docs/ios-service-lifecycle.md
       - docs/ios-p016-checkpoints.md
       - docs/ios-p021-*
+      - docs/ios-p022-*
       - docs/ios-installer-validation.json
       - docs/upstream-v021-acceptance.md
       - docs/upstream-v021-acceptance.vi.md
