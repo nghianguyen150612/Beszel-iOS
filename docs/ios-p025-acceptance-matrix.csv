@@ -1,0 +1,14 @@
+area,case,scope,status,evidence
+history,cumulative upstream and iOS patchset preservation,cloud,NOT_RUN,
+go,full regression and affected race suites on Go 1.27.3,cloud,NOT_RUN,
+runtime,Apple A7 guarded instruction and native x509 checks,cloud,NOT_RUN,
+frontend,frozen Bun tests Lingui TypeScript Vite embed and audit,cloud,NOT_RUN,
+hub,auth migration records history backup restore and failure injection,cloud,NOT_RUN,
+installer,fresh install component selection update repair reconfigure restart,synthetic,NOT_RUN,
+installer,backup rollback interrupted update and checksum/corrupt/missing asset failures,synthetic,NOT_RUN,
+installer,unsupported binary low disk failed startup uninstall and purge,synthetic,NOT_RUN,
+native,Agent and Hub Mach-O iOS 12 metadata checksums VCS and payload bytes,hosted-ci,NOT_RUN,
+artifacts,same-run immutable artifact download and independent byte verification,hosted-ci,NOT_RUN,
+reproducibility,two isolated builds with identical pinned inputs,hosted-ci,NOT_RUN,
+release,PR workflows read-only publisher event isolation and synthetic release validation,cloud,NOT_RUN,
+device,artifact transfer trust signing startup services telemetry network migration recovery rollback,physical-p026,NOT_RUN

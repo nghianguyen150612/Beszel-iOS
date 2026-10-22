@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "record_status": "preliminary_checkpoint",
+  "project": "Beszel-iOS",
+  "milestone": "P025",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "starting_integration_sha": "07f6fd5f87c99348ec33549fe8dfed099464eb7f",
+  "starting_integration_tree_sha": "e1cd43c81b131c05c4e4dfcde40d598dc962b330",
+  "p024_tested_source_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7",
+  "pinned_upstream_sha": "b97abf7662a7c7a2dd7542ea2062405abd22d4dc",
+  "history_invariants": {
+    "cumulative_upstream_commits": 46,
+    "frozen_audit_rows": 178,
+    "historical_ios_commits": 35,
+    "logical_ios_patchsets": 13,
+    "status": "reported_by_p024_pending_p025_recheck"
+  },
+  "go_version": "1.27.3",
+  "p024_runs": {
+    "native_ios": {"run_id": 39759219855, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"},
+    "p017_regression": {"run_id": 39759219569, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"},
+    "p013_migration": {"run_id": 39759219686, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"},
+    "installer": {"run_id": 39759219620, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"}
+  },
+  "p024_external_artifact_download": "blocked_http_403_per_p024_record",
+  "p025_feature_head_sha": null,
+  "p025_feature_tree_sha": null,
+  "p025_merge_sha": null,
+  "p025_merge_tree_sha": null,
+  "candidate_artifact_ids": [],
+  "candidate_status": "not_frozen",
+  "gate_j": "pending",
+  "p018_gate_f": "pending",
+  "physical_device_accessed": false,
+  "production_ios_changed": false,
+  "fork_main_changed": false,
+  "tag_created": false,
+  "release_published": false
+}
