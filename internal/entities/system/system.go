@@ -4,6 +4,7 @@ package system
 
 import (
 	"encoding/json"
+	"math"
 	"time"
 
 	"github.com/henrygd/beszel/internal/entities/container"
@@ -62,6 +63,67 @@ type Stats struct {
 	MemBytes          [4]uint64            `json:"mem,omitzero" cbor:"41,keyasint,omitzero"`  // [total, used, buff/cache, zfs arc] bytes
 	MaxMemBytes       uint64               `json:"memm,omitzero" cbor:"-"`                    // max used memory bytes
 	SwapBytes         [2]uint64            `json:"swap,omitzero" cbor:"42,keyasint,omitzero"` // [total, used] bytes
+}
+
+// LegacyGigabytesToBytes converts a deprecated GB value to bytes without
+// allowing NaN, infinity, negative values, or an out-of-range float conversion
+// to produce an invalid uint64.
+func LegacyGigabytesToBytes(value float64) uint64 {
+	if math.IsNaN(value) || math.IsInf(value, 0) || value <= 0 {
+		return 0
+	}
+	bytes := value * float64(uint64(1)<<30)
+	maxUint64 := ^uint64(0)
+	if math.IsInf(bytes, 1) || bytes >= float64(maxUint64) {
+		return maxUint64
+	}
+	return uint64(bytes)
+}
+
+// MigrateDeprecatedMemoryFields fills exact byte counters from legacy GB
+// fields when the byte arrays are absent, then bounds used values by capacity.
+// The deprecated fields remain intact for older Hubs and integrations.
+func (stats *Stats) MigrateDeprecatedMemoryFields() {
+	if stats == nil {
+		return
+	}
+	if stats.MemBytes == [4]uint64{} {
+		stats.MemBytes = [4]uint64{
+			LegacyGigabytesToBytes(stats.Mem),
+			LegacyGigabytesToBytes(stats.MemUsed),
+			LegacyGigabytesToBytes(stats.MemBuffCache),
+			LegacyGigabytesToBytes(stats.MemZfsArc),
+		}
+	}
+	if stats.SwapBytes == [2]uint64{} {
+		stats.SwapBytes = [2]uint64{
+			LegacyGigabytesToBytes(stats.Swap),
+			LegacyGigabytesToBytes(stats.SwapUsed),
+		}
+	}
+	stats.MemBytes = normalizeMemoryBytes(stats.MemBytes)
+	stats.SwapBytes = normalizeSwapBytes(stats.SwapBytes)
+	if stats.MaxMemBytes == 0 {
+		stats.MaxMemBytes = LegacyGigabytesToBytes(stats.MaxMem)
+	}
+}
+
+func normalizeMemoryBytes(mem [4]uint64) [4]uint64 {
+	if mem[0] == 0 {
+		return [4]uint64{}
+	}
+	for i := 1; i < len(mem); i++ {
+		mem[i] = min(mem[i], mem[0])
+	}
+	return mem
+}
+
+func normalizeSwapBytes(swap [2]uint64) [2]uint64 {
+	if swap[0] == 0 {
+		return [2]uint64{}
+	}
+	swap[1] = min(swap[1], swap[0])
+	return swap
 }
 
 // ZfsPool holds per-pool ZFS metrics for a single collection interval.

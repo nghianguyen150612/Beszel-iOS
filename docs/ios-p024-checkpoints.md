@@ -33,4 +33,27 @@ PR base: `ios/upstream-v021-integration`
 
 ## Qualification state
 
-The normal merge checkpoint and focused tests are complete. Full compatibility fixes, history-preservation checks, full suites, hosted CI, Gate I, and PR merge remain pending. P023 Gate G and Gate H remain inherited as PASS from the merged P023 record. P018 Gate F remains PENDING.
+The normal merge checkpoint and initial focused tests are complete. P023 Gate G and Gate H remain inherited as PASS from the merged P023 record. P018 Gate F remains PENDING.
+
+## Byte telemetry compatibility checkpoint work
+
+Implemented after the upstream merge:
+
+- Legacy GB-to-byte conversion rejects negative, NaN, and infinite inputs and saturates finite overflow. Memory/swap byte fields are normalized so used values do not exceed their capacities.
+- The Agent clears stale per-sample memory values, leaves iOS swap unavailable, and skips memory publication for zero-capacity sources.
+- Record memory and swap averages use independent valid sample counts and 128-bit sums. Invalid percentages are derived from bounded byte values.
+- Frontend memory helpers prefer exact bytes, use GB only when byte fields are absent, reject invalid numbers, bound chart usage/stack values, and suppress zero cache/ARC and unavailable swap series.
+- Added Go and Bun protocol fixtures for JSON v1/v2, CBOR keys 41/42, legacy peers and records, small-memory values, missing fields, invalid values, and large uint64 counters.
+- Added `docs/ios-p024-memory-compatibility.md`, `docs/ios-p024-port-matrix.csv`, `docs/ios-p024-protocol-matrix.csv`, and an interim `docs/ios-p024-validation.json`.
+
+Focused local results on the current worktree (the merge parent is `e2b677769dd47ff97b5578fb4069372b0f2f79e4`):
+
+- Go 1.27.3 Agent memory and certificate lifecycle test selection: PASS.
+- Go 1.27.3 `./internal/entities/system`: PASS.
+- Go 1.27.3 record memory averaging selection: PASS.
+- Go 1.27.3 Hub deprecated-field migration test: PASS.
+- Bun 1.4.0 `bun test src/lib/memory.test.ts`: PASS (3 tests, 11 assertions).
+- Bun 1.4.0 `bun run build`: PASS (Lingui extraction and compile, TypeScript, Vite production build). The existing mixed dynamic-import and large-chunk warnings remain.
+- The build's generated catalog-only extraction edits were restored after the build; the pinned upstream localization changes remain committed and `internal/site/dist` is available for embedded Hub tests.
+
+These are local results only. The remote feature ref remains at `c82536a4e4fcd1ab61b75d2727cae405b8b02d7c` until this implementation checkpoint is committed and pushed. History-preservation checks, complete Go/race suites, database fixtures, security scans, native iOS/Procursus, installer, hosted workflows, Gate I, and merge remain pending.

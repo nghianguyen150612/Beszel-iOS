@@ -3,6 +3,7 @@
 package records_test
 
 import (
+	"math"
 	"sort"
 	"testing"
 
@@ -261,6 +262,47 @@ func TestAverageSystemStatsSlice_DeprecatedMemoryFields(t *testing.T) {
 	assert.Equal(t, 7.0, result.MaxMem)
 	assert.Equal(t, 4.0, result.Swap)
 	assert.Equal(t, 0.5, result.SwapUsed)
+}
+
+func TestAverageSystemStatsSlice_MixedMemorySamplesAndMissingData(t *testing.T) {
+	const mib = uint64(1 << 20)
+	result := records.AverageSystemStatsSlice([]system.Stats{
+		{Mem: 64.0 / 1024, MemUsed: 8.0 / 1024, MemPct: 12.5, Swap: 0}, // legacy 64 MiB
+		{MemBytes: [4]uint64{128 * mib, 16 * mib, 0, 0}, MemPct: 12.5},
+		{}, // unknown memory and swap do not dilute either average
+		{MemBytes: [4]uint64{0, 0, 0, 0}, SwapBytes: [2]uint64{0, 0}},
+	})
+	require.Equal(t, [4]uint64{96 * mib, 12 * mib, 0, 0}, result.MemBytes)
+	require.Equal(t, 12.5, result.MemPct)
+	require.Equal(t, [2]uint64{}, result.SwapBytes)
+}
+
+func TestAverageSystemStatsSlice_LargeByteCountersAndInvalidInputs(t *testing.T) {
+	maxUint64 := ^uint64(0)
+	result := records.AverageSystemStatsSlice([]system.Stats{
+		{
+			MemBytes: [4]uint64{maxUint64, maxUint64, maxUint64, 0},
+			MemPct:   math.NaN(), SwapBytes: [2]uint64{maxUint64, maxUint64},
+		},
+		{
+			MemBytes: [4]uint64{maxUint64, maxUint64 - 2, 0, 0},
+			MemPct:   math.Inf(1), SwapBytes: [2]uint64{maxUint64, maxUint64 - 2},
+		},
+	})
+	require.Equal(t, [4]uint64{maxUint64, maxUint64 - 1, maxUint64 / 2, 0}, result.MemBytes)
+	require.Equal(t, [2]uint64{maxUint64, maxUint64 - 1}, result.SwapBytes)
+	require.False(t, math.IsNaN(result.MemPct))
+	require.False(t, math.IsInf(result.MemPct, 0))
+	require.GreaterOrEqual(t, result.MemPct, 0.0)
+	require.LessOrEqual(t, result.MemPct, 100.0)
+
+	malformed := records.AverageSystemStatsSlice([]system.Stats{{
+		MemBytes: [4]uint64{100, 200, 500, 100}, // malformed used/cache are bounded
+		MemPct:   150, SwapBytes: [2]uint64{4, 8},
+	}})
+	require.Equal(t, [4]uint64{100, 100, 100, 100}, malformed.MemBytes)
+	require.Equal(t, 100.0, malformed.MemPct)
+	require.Equal(t, [2]uint64{4, 4}, malformed.SwapBytes)
 }
 
 // Tests that records without temperature data are excluded from the temperature average.

@@ -3,17 +3,19 @@ import AreaChartDefault from "@/components/charts/area-chart"
 import { useContainerDataPoints } from "@/components/charts/hooks"
 import { Unit } from "@/lib/enums"
 import type { ChartConfig } from "@/components/ui/chart"
-import type { ChartData, SystemStatsRecord } from "@/types"
+import type { ChartData, SystemStats, SystemStatsRecord } from "@/types"
 import { ChartCard, FilterBar, SelectAvgMax } from "../chart-card"
 import { dockerOrPodman } from "../chart-data"
 import { decimalString, formatBytes, toFixedFloat } from "@/lib/utils"
+import { memoryFieldBytes } from "@/lib/memory"
 
-/**
- * Converts deprecated GB memory values from records before 0.21.1 to bytes.
- * TODO: remove when the deprecated fields are removed. Also needed for realtime data from
- * agents < 0.21.1, which is not migrated by the hub, and for stored records (kept up to 30 days).
- */
-const gbToBytes = (gb?: number) => (gb === undefined ? undefined : gb * 1024 ** 3)
+const memoryValue = (stats: SystemStats | undefined, index: 0 | 1 | 2 | 3, legacy?: number) =>
+	memoryFieldBytes(stats?.mem?.[index], legacy)
+
+const boundedUsage = (stats: SystemStats | undefined, used?: number) => {
+	const total = memoryValue(stats, 0, stats?.m)
+	return used === undefined || total === undefined ? undefined : Math.min(used, total)
+}
 
 const tickFormatter = (value: number) => {
 	const { value: convertedValue, unit } = formatBytes(value, false, Unit.Bytes)
@@ -42,7 +44,7 @@ export function MemoryChart({
 }) {
 	const maxValSelect = isLongerChart ? <SelectAvgMax max={maxValues} /> : null
 	const lastStats = chartData.systemStats.at(-1)?.stats
-	const totalMem = lastStats?.mem?.[0] ?? gbToBytes(lastStats?.m) ?? 0
+	const totalMem = memoryValue(lastStats, 0, lastStats?.m) ?? 0
 
 	return (
 		<ChartCard
@@ -64,7 +66,10 @@ export function MemoryChart({
 					{
 						label: t`Used`,
 						dataKey: ({ stats }) =>
-							showMax ? (stats?.memm ?? gbToBytes(stats?.mm)) : (stats?.mem?.[1] ?? gbToBytes(stats?.mu)),
+							boundedUsage(
+								stats,
+								showMax ? memoryFieldBytes(stats?.memm, stats?.mm) : memoryValue(stats, 1, stats?.mu)
+							),
 						color: 2,
 						opacity: 0.4,
 						stackId: "1",
@@ -73,7 +78,13 @@ export function MemoryChart({
 					{
 						label: "ZFS ARC",
 						// undefined when zero to keep ZFS ARC out of the tooltip on systems without ZFS
-						dataKey: ({ stats }) => (showMax ? null : (stats?.mem?.[3] ?? gbToBytes(stats?.mz)) || undefined),
+						dataKey: ({ stats }) => {
+							if (showMax) return null
+							const used = boundedUsage(stats, memoryValue(stats, 1, stats?.mu)) ?? 0
+							const arc = memoryValue(stats, 3, stats?.mz)
+							const total = memoryValue(stats, 0, stats?.m)
+							return arc && arc > 0 && total !== undefined ? Math.min(arc, total - used) : undefined
+						},
 						color: "hsla(175 60% 45% / 0.8)",
 						opacity: 0.5,
 						stackId: "1",
@@ -81,7 +92,17 @@ export function MemoryChart({
 					},
 					{
 						label: t`Cache / Buffers`,
-						dataKey: ({ stats }) => (showMax ? null : (stats?.mem?.[2] ?? gbToBytes(stats?.mb))),
+						// A zero cache value also represents platforms where this source is unsupported.
+						dataKey: ({ stats }) => {
+							if (showMax) return null
+							const used = boundedUsage(stats, memoryValue(stats, 1, stats?.mu)) ?? 0
+							const arc = memoryValue(stats, 3, stats?.mz) ?? 0
+							const total = memoryValue(stats, 0, stats?.m)
+							const cache = memoryValue(stats, 2, stats?.mb)
+							return cache && cache > 0 && total !== undefined
+								? Math.min(cache, Math.max(0, total - used - arc))
+								: undefined
+						},
 						color: "hsla(160 60% 45% / 0.5)",
 						opacity: 0.4,
 						stackId: "1",
@@ -152,7 +173,9 @@ export function SwapChart({
 	// const userSettings = useStore($userSettings)
 
 	const lastStats = systemStats.at(-1)?.stats
-	const hasSwapData = (lastStats?.swap?.[1] ?? gbToBytes(lastStats?.su) ?? 0) > 0
+	const swapTotal = memoryFieldBytes(lastStats?.swap?.[0], lastStats?.s) ?? 0
+	const swapUsed = Math.min(swapTotal, memoryFieldBytes(lastStats?.swap?.[1], lastStats?.su) ?? 0)
+	const hasSwapData = swapTotal > 0 && swapUsed > 0
 	if (!hasSwapData) {
 		return null
 	}
@@ -164,7 +187,7 @@ export function SwapChart({
 					0,
 					() => {
 						const stats = chartData.systemStats.at(-1)?.stats
-						return stats?.swap?.[0] ?? gbToBytes(stats?.s) ?? 0
+						return memoryFieldBytes(stats?.swap?.[0], stats?.s) ?? 0
 					},
 				]}
 				contentFormatter={contentFormatter}
@@ -172,7 +195,11 @@ export function SwapChart({
 				dataPoints={[
 					{
 						label: t`Used`,
-						dataKey: ({ stats }) => stats?.swap?.[1] ?? gbToBytes(stats?.su),
+						dataKey: ({ stats }) => {
+							const total = memoryFieldBytes(stats?.swap?.[0], stats?.s)
+							const used = memoryFieldBytes(stats?.swap?.[1], stats?.su)
+							return total === undefined || used === undefined ? undefined : Math.min(used, total)
+						},
 						color: 2,
 						opacity: 0.4,
 					},

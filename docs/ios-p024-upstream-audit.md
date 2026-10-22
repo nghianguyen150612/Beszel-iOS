@@ -1,6 +1,6 @@
 # P024 upstream delta audit
 
-**Status:** inspected; source integration has not started.
+**Status:** five pinned commits inspected and integrated by the normal merge below; compatibility implementation and qualification are in progress.
 
 **P024 branch base:** `8e03afadb3a03480414fa47f87d40c13331e05b3` (P023 integration)
 
@@ -28,9 +28,19 @@ The target is a descendant of the previous upstream commit by exactly five commi
 
 ## Inherited preservation baseline
 
-P023's merged evidence records the existing 41 upstream commits, all 178 frozen audit rows, 35 historical iOS commits, and 13 logical iOS patchsets as preserved. P024 adds the five commits above, for a target of 46 cumulative post-v0.21 upstream commits. This initial audit does not claim post-merge preservation tests have run.
+P023's merged evidence records the existing 41 upstream commits, all 178 frozen audit rows, 35 historical iOS commits, and 13 logical iOS patchsets as preserved. P024 adds the five commits above, for a target of 46 cumulative post-v0.21 upstream commits. P024 has not yet completed post-merge history-preservation qualification.
 
-No production `iOS` branch or fork `main` mutation is part of this audit. No source changes, device access, tag, release, or deployment were made.
+## Normal merge and conflict resolution
+
+Normal merge commit: `e2b677769dd47ff97b5578fb4069372b0f2f79e4`.
+
+Parents are P024 checkpoint `b399faf01065bc89452d2d903cc5edf7d3f3e1bf` and pinned upstream `b97abf7662a7c7a2dd7542ea2062405abd22d4dc`. The upstream parent is genuine and retains all five original commits. The remote feature ref was verified at this merge commit and then advanced to checkpoint `c82536a4e4fcd1ab61b75d2727cae405b8b02d7c`.
+
+Merge conflicts were resolved semantically in `agent/memory.go`, `go.sum`, and Catalan `ca.po`; `go.mod` auto-merged. The Agent still emits legacy GB fields, avoids iOS swap and ARC inference, and uses the upstream exact byte arrays. P023's `go 1.27.3` and native x509 disposition were retained. The Catalan translation supplied by upstream replaced one previously blank entry. These statements describe the merge resolution; full qualification remains pending.
+
+Post-merge compatibility work bounds memory values, averages byte counters without uint64 overflow, excludes missing memory/swap samples from record averages, and sanitizes chart values. Focused qualification and the next remote checkpoint are in progress.
+
+No production `iOS` branch or fork `main` mutation is part of this audit. No device access, tag, release, or deployment was made.
 
 ## Net changed paths (23)
 

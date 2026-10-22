@@ -1,0 +1,49 @@
+{
+  "milestone": "P024",
+  "status": "PARTIAL",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "branch": "ios/p024-upstream-delta-low-memory",
+  "pr": "https://github.com/nghianguyen150612/Beszel-iOS/pull/28",
+  "base_integration_sha": "8e03afadb3a03480414fa47f87d40c13331e05b3",
+  "pinned_upstream_sha": "b97abf7662a7c7a2dd7542ea2062405abd22d4dc",
+  "upstream_merge_sha": "e2b677769dd47ff97b5578fb4069372b0f2f79e4",
+  "last_confirmed_remote_sha": "c82536a4e4fcd1ab61b75d2727cae405b8b02d7c",
+  "qualified_source_sha": null,
+  "checks": [
+    {"name":"five pinned upstream commits and original ancestry","state":"tested_local","result":"The pinned target is the second parent of the genuine normal merge; all five commit objects are reachable in original order."},
+    {"name":"Go 1.27.3 and module checksums","state":"tested_local","result":"go.mod retains 1.27.3; go mod download and go mod verify passed."},
+    {"name":"Agent memory and iOS unsupported-field semantics","state":"tested_local","result":"Focused Linux Agent memory tests pass, including byte precision, cgroup behavior, synthetic iOS swap omission, counter bounding, and clearing stale values."},
+    {"name":"memory JSON and CBOR protocol fixtures","state":"tested_local","result":"JSON v1/v2 and CBOR byte round trips, keys 41/42, legacy peer decoding, zero omission, invalid legacy conversion, and uint64 maximum cases pass."},
+    {"name":"Hub memory migration","state":"tested_local","result":"TestCombinedData_MigrateDeprecatedFields passes."},
+    {"name":"record memory and swap averaging","state":"tested_local","result":"Focused averaging tests pass for mixed legacy/new values, missing samples, malformed used values, and large uint64 counters."},
+    {"name":"HTTPS certificate refresh lifecycle","state":"tested_local","result":"Focused cadence, retry, cancellation, deletion, and certificate-rotation tests pass."},
+    {"name":"frontend numeric memory helpers","state":"tested_local","result":"Bun 1.4.0 helper tests pass: 3 tests, 11 assertions."},
+    {"name":"frontend catalog, TypeScript, Vite production build","state":"tested_local","result":"bun run build passes; Lingui catalogs compile, tsc -b passes, Vite emits the production bundle. Existing dynamic-import and large-chunk warnings remain."},
+    {"name":"complete Go cloud regression","state":"not_executed","result":"Pending."},
+    {"name":"full race suites","state":"not_executed","result":"Pending."},
+    {"name":"P013 migration and P017 regression/security CI","state":"not_executed","result":"Pending hosted workflows on final PR head."},
+    {"name":"native iOS Agent/Hub and Procursus CI","state":"not_executed","result":"Pending hosted macOS/Xcode and Procursus workflows; no device was accessed."},
+    {"name":"installer lifecycle and Helm/frontend hosted CI","state":"not_executed","result":"Pending hosted workflows on final PR head."},
+    {"name":"security scans and advisory reassessment","state":"not_executed","result":"Pending dependency and frontend scans after final dependency changes."},
+    {"name":"database migration, backup, restore and restart fixtures","state":"not_executed","result":"Pending disposable fixture qualification."},
+    {"name":"artifact provenance and checksums","state":"not_executed","result":"Pending hosted artifacts and independent verification."},
+    {"name":"release publishing isolation","state":"not_executed","result":"Must be verified on final PR checks; release jobs remain required to be skipped."},
+    {"name":"Gate G","state":"tested_hosted","result":"Inherited PASS from P023 PR #27 evidence."},
+    {"name":"Gate H","state":"tested_hosted","result":"Inherited PASS from P023 PR #27 evidence using Go 1.27.3, Apple A7 compatibility, native x509 remediation, and documented security residuals."},
+    {"name":"Gate I","state":"not_executed","result":"Pending all P024 gates; do not merge until PASS."},
+    {"name":"P018 Gate F","state":"deferred","result":"PENDING; no physical iPad testing is required or authorized."}
+  ],
+  "unchanged_security_residuals": [
+    {"id":"GO-2026-5932","status":"documented in P023","qualification":"No demonstrated OpenPGP reachability; reassess after P024 dependency scan."},
+    {"id":"GHSA-vfj7-8cjw-p6xm","status":"documented in P023","qualification":"HIGH build-only braces dependency with P023 mitigation; reassess after frontend install/audit."}
+  ],
+  "safety": {
+    "production_ios_modified": false,
+    "fork_main_modified": false,
+    "physical_device_accessed": false,
+    "privilege_escalation_used": false,
+    "tag_created": false,
+    "release_published": false,
+    "deployment_performed": false
+  }
+}

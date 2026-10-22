@@ -18,17 +18,23 @@ type memoryMetrics struct {
 var memoryVirtualMemory = mem.VirtualMemory
 
 func (a *Agent) updateMemoryStats(stats *system.Stats) {
+	// These stats may be reused by callers. Clear optional memory values first
+	// so a transiently unavailable collector cannot leak its previous sample.
+	stats.Mem, stats.MemUsed, stats.MemPct = 0, 0, 0
+	stats.MemBuffCache, stats.MemZfsArc = 0, 0
+	stats.Swap, stats.SwapUsed = 0, 0
+	stats.MemBytes = [4]uint64{}
+	stats.SwapBytes = [2]uint64{}
+
 	v, err := memoryVirtualMemory()
 	var hostTotal uint64
 	if err == nil && v != nil {
 		hostTotal = v.Total
-		// iOS currently has no supported swap source. Leave the optional byte
-		// array absent there instead of reporting the platform's zero defaults.
-		if runtime.GOOS != "ios" {
-			stats.SwapBytes = [2]uint64{v.SwapTotal, saturatingSub(v.SwapTotal, v.SwapFree)}
+		if swap, ok := platformSwapUsage(v, runtime.GOOS); ok {
+			stats.SwapBytes = swap
 			// Keep the deprecated GB fields for older Hubs and integrations.
-			stats.Swap = utils.BytesToGigabytes(stats.SwapBytes[0])
-			stats.SwapUsed = utils.BytesToGigabytes(stats.SwapBytes[1])
+			stats.Swap = utils.BytesToGigabytes(swap[0])
+			stats.SwapUsed = utils.BytesToGigabytes(swap[1])
 		}
 	}
 
@@ -48,6 +54,10 @@ func (a *Agent) updateMemoryStats(stats *system.Stats) {
 			}
 		}
 	}
+	metrics = normalizeMemoryMetrics(metrics)
+	if metrics.Total == 0 {
+		return
+	}
 
 	stats.MemBytes = [4]uint64{metrics.Total, metrics.Used, metrics.BuffCache, arcSize}
 	// TODO: stop populating deprecated GB fields once hubs < 0.21.1 are no longer supported
@@ -63,6 +73,24 @@ func (a *Agent) updateMemoryStats(stats *system.Stats) {
 			details.MemoryTotal = metrics.Total
 		})
 	}
+}
+
+func platformSwapUsage(v *mem.VirtualMemoryStat, platform string) ([2]uint64, bool) {
+	if v == nil || platform == "ios" || v.SwapTotal == 0 {
+		return [2]uint64{}, false
+	}
+	total := v.SwapTotal
+	used := saturatingSub(total, v.SwapFree)
+	return [2]uint64{total, min(used, total)}, true
+}
+
+func normalizeMemoryMetrics(metrics memoryMetrics) memoryMetrics {
+	if metrics.Total == 0 {
+		return memoryMetrics{}
+	}
+	metrics.Used = min(metrics.Used, metrics.Total)
+	metrics.BuffCache = min(metrics.BuffCache, metrics.Total)
+	return metrics
 }
 
 // iOS has no equivalent cache/buffer measurement in this acquisition path.
