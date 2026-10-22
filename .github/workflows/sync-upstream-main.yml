@@ -57,15 +57,15 @@ jobs:
 
           {
             echo '### Sync Beszel upstream to main'
-            printf -- '- **Previous main SHA:** `%s`\n' "$MAIN_SHA"
-            printf -- '- **Upstream Beszel SHA:** `%s`\n' "$UPSTREAM_SHA"
+            printf -- "- **Previous main SHA:** \`%s\`\n" "$MAIN_SHA"
+            printf -- "- **Upstream Beszel SHA:** \`%s\`\n" "$UPSTREAM_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [[ "$MAIN_SHA" == "$UPSTREAM_SHA" ]]; then
             echo 'main is already up to date with Beszel upstream'
             {
               echo '- **Result:** Already up to date'
-              printf -- '- **New main SHA:** `%s`\n' "$MAIN_SHA"
+              printf -- "- **New main SHA:** \`%s\`\n" "$MAIN_SHA"
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
@@ -96,7 +96,7 @@ jobs:
 
             {
               printf -- '- **Result:** Fast-forwarded by %s commit(s)\n' "$BEHIND_COUNT"
-              printf -- '- **New main SHA:** `%s`\n' "$NEW_MAIN_SHA"
+              printf -- "- **New main SHA:** \`%s\`\n" "$NEW_MAIN_SHA"
             } >> "$GITHUB_STEP_SUMMARY"
             echo "Successfully fast-forwarded main to $NEW_MAIN_SHA"
             exit 0
