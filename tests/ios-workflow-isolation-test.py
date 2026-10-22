@@ -62,7 +62,7 @@ check("native build job receives no release credentials", "secrets." not in ios_
 check("release validation job has read-only repository permission", "contents: read" in ios_release_validation and "contents: write" not in ios_release_validation)
 check("release publisher is the only job with write permission", "contents: write" in ios_release and "contents: write" not in ios_release_validation)
 check("release credential is scoped to individual publisher steps", "GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}" in ios_release and "    env:\n      GH_TOKEN:" not in ios_release)
-check("release payload validator is required before staging", "verify-ios-release-payload.py dist" in ios_release_validation and "upload-artifact@v4" in ios_release_validation)
+check("release payload validator and immutable artifact action are required before staging", "verify-ios-release-payload.py dist" in ios_release_validation and "actions/upload-artifact@" in ios_release_validation)
 check("release artifacts are downloaded from this workflow run", "name: beszel-ios-arm64" in ios_release_validation and "name: ios-native-validation" in ios_release_validation and "run-id:" not in ios_release_validation)
 check("release is staged as a verified draft before publishing", "--draft" in ios_release and "--verify-tag" in ios_release and "gh release edit \"${TAG}\" --draft=false --latest" in ios_release)
 check("draft assets are downloaded and revalidated before publication", "gh release download \"${TAG}\"" in ios_release and "verify-ios-release-payload.py \"$VERIFY_DIR\"" in ios_release)

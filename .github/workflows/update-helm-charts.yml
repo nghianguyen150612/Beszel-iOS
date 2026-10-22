@@ -25,10 +25,11 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: main
           token: ${{ env.AUTOMATION_TOKEN }}
+          persist-credentials: false
 
       - name: Update chart versions
         id: update
@@ -76,6 +77,7 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ env.AUTOMATION_TOKEN }}
+          GIT_PUSH_TOKEN: ${{ env.AUTOMATION_TOKEN }}
         run: |
           version="${RELEASE_TAG#v}"
           title="chore(helm): update app version to ${version}"
@@ -91,7 +93,18 @@ jobs:
           git commit -m "$title"
 
           git fetch origin "$BRANCH" || true
-          git push --force-with-lease origin "HEAD:refs/heads/${BRANCH}"
+          askpass="$RUNNER_TEMP/git-askpass.sh"
+          umask 077
+          cat > "$askpass" <<'ASKPASS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$GIT_PUSH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ASKPASS
+          chmod 700 "$askpass"
+          GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 git push --force-with-lease origin "HEAD:refs/heads/${BRANCH}"
 
           pr_number=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number')
           if [[ -n "$pr_number" ]]; then

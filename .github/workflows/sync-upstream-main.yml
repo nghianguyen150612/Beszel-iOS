@@ -28,14 +28,17 @@ jobs:
           fi
 
       - name: Checkout canonical iOS branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: iOS
           fetch-depth: 0
           token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+          persist-credentials: false
 
       - name: Sync upstream main
         shell: bash
+        env:
+          GIT_PUSH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -71,7 +74,18 @@ jobs:
             BEHIND_COUNT=$(git rev-list --count "$MAIN_SHA..$UPSTREAM_SHA")
             echo "main is $BEHIND_COUNT commit(s) behind upstream; fast-forwarding..."
 
-            git push origin "$UPSTREAM_SHA:refs/heads/$DEST_BRANCH"
+            askpass="$RUNNER_TEMP/git-askpass.sh"
+            umask 077
+            cat > "$askpass" <<'ASKPASS'
+            #!/bin/sh
+            case "$1" in
+              *Username*) printf '%s\n' 'x-access-token' ;;
+              *Password*) printf '%s\n' "$GIT_PUSH_TOKEN" ;;
+              *) exit 1 ;;
+            esac
+            ASKPASS
+            chmod 700 "$askpass"
+            GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 git push origin "$UPSTREAM_SHA:refs/heads/$DEST_BRANCH"
 
             git fetch --no-tags origin "refs/heads/$DEST_BRANCH:refs/remotes/origin/$DEST_BRANCH"
             NEW_MAIN_SHA=$(git rev-parse "refs/remotes/origin/$DEST_BRANCH")
