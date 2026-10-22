@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "milestone": "P023",
+  "phase": "baseline",
+  "status": "IN_PROGRESS",
+  "source_commit": "fd334076f53d8354a4924a4c734f29cf65a43879",
+  "source_tree": "723e7261903f40e1d714f385f7bc3885f4691c2c",
+  "branch": "ios/p023-security-hardening",
+  "remote_branch_sha": "fd334076f53d8354a4924a4c734f29cf65a43879",
+  "pull_request": null,
+  "starting_integration": "fd334076f53d8354a4924a4c734f29cf65a43879",
+  "p022_final_head": "ef7d780cd1c548bb97cd1891810f945323983193",
+  "p022_tree_matches_starting_integration": true,
+  "verified_refs": {
+    "integration": "fd334076f53d8354a4924a4c734f29cf65a43879",
+    "production_ios": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "fork_main": "e984ee12081f4e112601c3f718c9d81c112fe718",
+    "pinned_upstream": "b5357343550c8e2493d0e65472a06c1007396384",
+    "live_upstream_main": "b97abf7662a7c7a2dd7542ea2062405abd22d4dc",
+    "live_upstream_ahead_by": 5
+  },
+  "preservation": {
+    "pinned_upstream_commits": "41/41 expected in P022 evidence; P023 final check pending",
+    "frozen_upstream_rows": "178/178 expected in P022 evidence; P023 final check pending",
+    "historical_ios_commits": "35/35 expected in P022 evidence; P023 final check pending",
+    "logical_ios_patchsets": "13/13 expected in P022 evidence; P023 final check pending"
+  },
+  "p023_tests": {
+    "go": "PENDING",
+    "frontend": "PENDING",
+    "security": "PENDING",
+    "hub_migration": "PENDING",
+    "installer": "PENDING",
+    "native_ios_ci": "PENDING",
+    "procursus": "PENDING",
+    "artifact_verification": "PENDING"
+  },
+  "gate_g": "PASS inherited from merged P022 PR #26",
+  "gate_h": "PENDING",
+  "p018_gate_f": "PENDING",
+  "release_authorization": "NOT_GRANTED",
+  "production_ios_modified": false,
+  "fork_main_modified": false,
+  "device_accessed": false,
+  "sudo_used": false,
+  "release_created": false,
+  "tag_created": false
+}
