@@ -14,7 +14,7 @@ This documents the unusual requirements for producing working iOS binaries. The 
 1. Use the exact Go version from `go.mod` and Bun 1.4.0. Run the disposable runtime/build-validator tests.
 2. In `internal/site`, run `bun install --frozen-lockfile`, `bun run sync`, `bun test`, then `bun run build`. Verify the lock hash is unchanged; restore generated tracked PO text while retaining genuine production assets and compiled catalogs.
 3. Run `.github/scripts/check-ios-source-selection.py` to inspect actual Go dependency selection for iOS, macOS and Linux. Run the macOS GPU parser tests and macOS builds with the original toolchain.
-4. Copy the **complete** setup-go GOROOT into a job-local directory. Verify its layout/version, select it through GOROOT/PATH and GOTOOLCHAIN=local, and apply `.github/scripts/patch-go-ios-arm64-runtime.py` to the copy. Use a dedicated iOS GOCACHE. Verify the original runtime source hash remains unchanged; no sudo is needed.
+4. Require the exact Go 1.27.3 version in `go.mod`. Verify its native x509 fix with `scripts/audit/validate-go-x509-native.py`. Copy the **complete** setup-go GOROOT into a job-local directory. Verify its layout/version, select it through GOROOT/PATH and GOTOOLCHAIN=local, and apply `.github/scripts/patch-go-ios-arm64-runtime.py` to the copy. Use a dedicated iOS GOCACHE. Verify the original runtime source hash remains unchanged; no sudo is needed.
 5. Use `.github/scripts/ios-clang.sh` as CC for both native builds. It resolves the device SDK and Apple clang with `xcrun --sdk iphoneos`, fails on missing components or explicit incompatible target flags, and passes `-arch arm64 -isysroot <SDK> -mios-version-min=12.0`. Clear inherited host CGO/GOFLAGS.
 6. Build Agent and Hub into `build/ios/` with `GOOS=ios GOARCH=arm64 GOARM64=v8.0 CGO_ENABLED=1`, `-trimpath` and `-ldflags="-s -w"`. Repeat with an independent clean cache and compare both outputs.
 7. Build separate unstripped validation binaries with the same patched toolchain; run `.github/scripts/verify-ios-runtime-binary.py` to inspect the complete procyield symbol. Keep the production stripping flags.
@@ -42,13 +42,19 @@ Install under `/usr/local/bin`; `$HOME` and `/tmp` have previously produced exec
 ## Why the Apple A7 runtime patch exists
 
 The historical Apple A7 / iOS 12 environment faults on the modern Go ARM64
-`runtime.procyieldAsm` CNTVCT_EL0 path. The current P019 candidate uses Go
-1.27.2; the script accepts only that version's reviewed complete executable
-source shape and replaces it with a zero-guarded YIELD loop. Unsupported
-versions, unknown layouts and repeat invocation fail without writing. The patch
-is applied before every native iOS compilation to an isolated copy.
+`runtime.procyieldAsm` CNTVCT_EL0 path. The current P023 candidate uses Go
+1.27.3; the script checks the official runtime source SHA and accepts only that
+version's reviewed complete executable source shape before replacing it with a
+zero-guarded YIELD loop. Unsupported versions, unknown layouts and repeat
+invocation fail without writing. The patch is applied before every native iOS
+compilation to an isolated copy.
 Source/binary inspection cannot establish SIGILL-free 0.21 execution: physical
 A7 acceptance remains P018 / Gate F.
+
+Go 1.27.3 contains the native x509 correction from Go CL 851047. The native
+build validates the exact reviewed source hashes and runs `go test crypto/x509
+-count=1`; it does not apply the historical P019/P022 custom backport. See the
+[P023 Go migration record](ios-p023-go1273-migration.md).
 
 ## Hub frontend build requirement
 

@@ -5,7 +5,7 @@ on:
     branches: [ios/upstream-v021-integration]
     paths:
       - '.github/workflows/p017-release-candidate.yml'
-      - '.github/workflows/ios-build.yml'
+      - '.github/workflows/**'
       - '.github/scripts/**'
       - '**/*.go'
       - 'go.mod'
@@ -18,6 +18,7 @@ on:
       - 'docs/ios-p020-*'
       - 'docs/ios-p021-*'
       - 'docs/ios-p022-*'
+      - 'docs/ios-p023-*'
       - 'docs/ios-release-candidate*'
       - 'docs/ios-p017-*'
       - 'tests/ios-workflow-isolation-test.py'
@@ -43,85 +44,34 @@ jobs:
       BESZEL_HEALTH_DIR: ${{ github.workspace }}/.task/health
     steps:
       - name: Checkout candidate source, not the PR merge pseudo-commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - name: Pinned Go toolchain from go.mod
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
           cache: false
-      - name: Apply and test reviewed Go 1.27.2 x509 security backport
+      - name: Verify native Go 1.27.3 x509 security fix
         shell: bash
         run: |
           set -euo pipefail
-          source_goroot="$(go env GOROOT)"
-          patched_goroot="$RUNNER_TEMP/go-security-backport"
-          test "$(go env GOVERSION)" = go1.27.2
-          test ! -e "$patched_goroot"
-          mkdir "$patched_goroot"
-          cp -R "$source_goroot/." "$patched_goroot/"
-          chmod -R u+w "$patched_goroot"
-          export GOROOT="$patched_goroot" GOTOOLCHAIN=local
-          export PATH="$GOROOT/bin:$PATH" GOCACHE="$RUNNER_TEMP/p019-go-cache"
-          python3 scripts/audit/patch-go-x509-security.py \
-            --output "$RUNNER_TEMP/p019-go-x509-backport.json"
-          echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
-          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
-          echo "GOCACHE=$GOCACHE" >> "$GITHUB_ENV"
-          echo "$GOROOT/bin" >> "$GITHUB_PATH"
+          test "$(go env GOVERSION)" = go1.27.3
+          python3 scripts/audit/validate-go-x509-native.py \
+            --output "$RUNNER_TEMP/p023-go-x509-native.json"
       - name: Go standard-library and dependency vulnerability scan
         shell: bash
         run: |
           set -euo pipefail
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           "$(go env GOPATH)/bin/govulncheck" -version
-          "$(go env GOPATH)/bin/govulncheck" -format=json ./... > "$RUNNER_TEMP/p019-govulncheck.jsonl"
-          python3 scripts/audit/validate-p019-govulncheck.py \
-            --report "$RUNNER_TEMP/p019-govulncheck.jsonl" \
-            --go-version "$(go env GOVERSION)" \
-            --backport-evidence "$RUNNER_TEMP/p019-go-x509-backport.json" \
-            --output "$RUNNER_TEMP/p019-govulncheck-summary.json"
-      - name: Upload P019 Go vulnerability evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: p019-go-vulnerability-evidence
-          path: |
-            ${{ runner.temp }}/p019-govulncheck.jsonl
-            ${{ runner.temp }}/p019-govulncheck-summary.json
-            ${{ runner.temp }}/p019-go-x509-backport.json
-          if-no-files-found: ignore
-          retention-days: 14
+          "$(go env GOPATH)/bin/govulncheck" -format=json ./... > "$RUNNER_TEMP/p023-govulncheck.jsonl"
       - name: Bun 1.4.0
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
-      - name: Audit Bun and npm lockfile advisories
-        shell: bash
-        working-directory: internal/site
-        run: |
-          set -uo pipefail
-          bun audit --json --audit-level critical > "$RUNNER_TEMP/p019-bun-audit.json"
-          bun_status=$?
-          npm audit --json --audit-level=critical --package-lock-only > "$RUNNER_TEMP/p019-npm-audit.json"
-          npm_status=$?
-          python3 ../../scripts/audit/summarize-p019-js-audits.py \
-            --bun-report "$RUNNER_TEMP/p019-bun-audit.json" --bun-exit-code "$bun_status" \
-            --npm-report "$RUNNER_TEMP/p019-npm-audit.json" --npm-exit-code "$npm_status" \
-            --output "$RUNNER_TEMP/p019-js-audit-summary.json"
-      - name: Upload P019 JavaScript dependency evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: p019-javascript-audit-evidence
-          path: |
-            ${{ runner.temp }}/p019-bun-audit.json
-            ${{ runner.temp }}/p019-npm-audit.json
-            ${{ runner.temp }}/p019-js-audit-summary.json
-          if-no-files-found: ignore
-          retention-days: 14
       - name: Verify source provenance and frozen upstream ancestry
         shell: bash
         run: |
@@ -149,6 +99,84 @@ jobs:
           sh -n install.sh
           sh -n scripts/ios/install-beszel.sh
           printf '%s  %s\n' "$(sed -n 's/^engine_sha=//p' install.sh)" scripts/ios/install-beszel.sh | sha256sum -c -
+      - name: Scan GitHub Actions workflows with pinned analyzers
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIZMOR_ARCHIVE="$RUNNER_TEMP/zizmor-v1.31.1.tar.gz"
+          ACTIONLINT_ARCHIVE="$RUNNER_TEMP/actionlint-v1.7.12.tar.gz"
+          SHELLCHECK_ARCHIVE="$RUNNER_TEMP/shellcheck-v0.11.0.tar.gz"
+          SHELLCHECK_DIR="$RUNNER_TEMP/p023-shellcheck"
+          curl --fail --location --retry 2 --max-time 120 \
+            https://github.com/zizmorcore/zizmor/releases/download/v1.31.1/zizmor-x86_64-unknown-linux-gnu.tar.gz \
+            -o "$ZIZMOR_ARCHIVE"
+          printf '%s  %s\n' \
+            d185f726bdaf92df78273217dfdd24ebcd6b0ef48cf3ce776ff5762b6e138c99 \
+            "$ZIZMOR_ARCHIVE" | sha256sum -c -
+          curl --fail --location --retry 2 --max-time 120 \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            -o "$ACTIONLINT_ARCHIVE"
+          printf '%s  %s\n' \
+            8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8 \
+            "$ACTIONLINT_ARCHIVE" | sha256sum -c -
+          curl --fail --location --retry 2 --max-time 120 \
+            https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.gz \
+            -o "$SHELLCHECK_ARCHIVE"
+          printf '%s  %s\n' \
+            b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6 \
+            "$SHELLCHECK_ARCHIVE" | sha256sum -c -
+          mkdir "$SHELLCHECK_DIR"
+          tar -xzf "$SHELLCHECK_ARCHIVE" -C "$SHELLCHECK_DIR" \
+            --strip-components=1 shellcheck-v0.11.0/shellcheck
+          chmod 700 "$SHELLCHECK_DIR/shellcheck"
+          SHELLCHECK_VERSION="$("$SHELLCHECK_DIR/shellcheck" --version | awk 'NR == 2 {print $2}')"
+          test "$SHELLCHECK_VERSION" = 0.11.0
+          tar -xzf "$ZIZMOR_ARCHIVE" -C "$RUNNER_TEMP" zizmor
+          tar -xzf "$ACTIONLINT_ARCHIVE" -C "$RUNNER_TEMP" actionlint
+          set +e
+          "$RUNNER_TEMP/actionlint" \
+            -shellcheck "$SHELLCHECK_DIR/shellcheck" .github/workflows/*.yml \
+            > "$RUNNER_TEMP/p023-actionlint.log" 2>&1
+          actionlint_status=$?
+          "$RUNNER_TEMP/zizmor" --strict-collection --no-config --no-ignores \
+            --format=json --no-progress \
+            --cache-dir "$RUNNER_TEMP/p023-zizmor-cache" .github/workflows \
+            > "$RUNNER_TEMP/p023-zizmor.json" \
+            2> "$RUNNER_TEMP/p023-zizmor.stderr"
+          zizmor_status=$?
+          set -e
+          ACTIONLINT_STATUS="$actionlint_status" \
+          ZIZMOR_STATUS="$zizmor_status" \
+          SHELLCHECK_VERSION="$SHELLCHECK_VERSION" \
+          SHELLCHECK_SHA256="$(sha256sum "$SHELLCHECK_ARCHIVE" | awk '{print $1}')" \
+          ZIZMOR_SHA256="$(sha256sum "$ZIZMOR_ARCHIVE" | awk '{print $1}')" \
+          ACTIONLINT_SHA256="$(sha256sum "$ACTIONLINT_ARCHIVE" | awk '{print $1}')" \
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          findings=json.loads(pathlib.Path(os.environ['RUNNER_TEMP'],'p023-zizmor.json').read_text())
+          result={
+              'schema':1,
+              'candidate_source_sha':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+              'actionlint_version':'1.7.12',
+              'actionlint_archive_sha256':os.environ['ACTIONLINT_SHA256'],
+              'actionlint_exit_code':int(os.environ['ACTIONLINT_STATUS']),
+              'shellcheck_version':os.environ['SHELLCHECK_VERSION'],
+              'shellcheck_archive_sha256':os.environ['SHELLCHECK_SHA256'],
+              'zizmor_version':'1.31.1',
+              'zizmor_archive_sha256':os.environ['ZIZMOR_SHA256'],
+              'zizmor_exit_code':int(os.environ['ZIZMOR_STATUS']),
+              'zizmor_findings':len(findings),
+              'action_refs_pinned_by_regression_test':True,
+          }
+          pathlib.Path(os.environ['RUNNER_TEMP'],'p023-workflow-scan.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result,indent=2))
+          if result['actionlint_exit_code'] or result['zizmor_exit_code'] or findings:
+              print('ERROR: GitHub Actions workflow validation has an unreviewed finding',file=sys.stderr)
+              sys.exit(1)
+          PY
+          if [ -s "$RUNNER_TEMP/p023-actionlint.log" ]; then
+            cat "$RUNNER_TEMP/p023-actionlint.log"
+          fi
       - name: Build genuine pinned frontend and check lockfile immutability
         shell: bash
         working-directory: internal/site
@@ -162,11 +190,86 @@ jobs:
           sha256sum -c "$RUNNER_TEMP/p017-lock.sha256"
           git restore -- src/locales
           git diff --exit-code
+      - name: Audit installed Bun and npm dependency graphs
+        shell: bash
+        working-directory: internal/site
+        run: |
+          set +e
+          bun audit --json --audit-level low \
+            > "$RUNNER_TEMP/p023-bun-audit.json" \
+            2> "$RUNNER_TEMP/p023-bun-audit.stderr.log"
+          bun_status=$?
+          npm audit --json --audit-level=low --package-lock-only \
+            --fetch-retries=1 --fetch-timeout=30000 \
+            > "$RUNNER_TEMP/p023-npm-audit.json" \
+            2> "$RUNNER_TEMP/p023-npm-audit.stderr.log"
+          npm_status=$?
+          set -e
+          python3 ../../scripts/audit/scan-p023-npm-lock-osv.py \
+            --lockfile package-lock.json \
+            --candidate-source-sha "$(git rev-parse HEAD)" \
+            --request-output "$RUNNER_TEMP/p023-npm-osv-request.json" \
+            --response-output "$RUNNER_TEMP/p023-npm-osv-response.json" \
+            --output "$RUNNER_TEMP/p023-npm-osv-summary.json"
+          python3 ../../scripts/audit/summarize-p023-js-audits.py \
+            --bun-report "$RUNNER_TEMP/p023-bun-audit.json" --bun-exit-code "$bun_status" \
+            --npm-report "$RUNNER_TEMP/p023-npm-audit.json" --npm-exit-code "$npm_status" \
+            --npm-osv-report "$RUNNER_TEMP/p023-npm-osv-summary.json" \
+            --candidate-source-sha "$(git rev-parse HEAD)" \
+            --output "$RUNNER_TEMP/p023-js-audit-summary.json"
+      - name: Upload P023 JavaScript dependency evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: p023-javascript-audit-evidence
+          path: |
+            ${{ runner.temp }}/p023-bun-audit.json
+            ${{ runner.temp }}/p023-bun-audit.stderr.log
+            ${{ runner.temp }}/p023-npm-audit.json
+            ${{ runner.temp }}/p023-npm-audit.stderr.log
+            ${{ runner.temp }}/p023-npm-osv-request.json
+            ${{ runner.temp }}/p023-npm-osv-response.json
+            ${{ runner.temp }}/p023-npm-osv-summary.json
+            ${{ runner.temp }}/p023-js-audit-summary.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Verify OpenPGP package reachability
+        shell: bash
+        run: |
+          set -euo pipefail
+          go run .github/scripts/check-openpgp-imports.go \
+            --root . --output "$RUNNER_TEMP/p023-openpgp-imports.json"
+      - name: Validate exact Go scan and bounded advisory disposition
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit/validate-p023-govulncheck.py \
+            --report "$RUNNER_TEMP/p023-govulncheck.jsonl" \
+            --go-version "$(go env GOVERSION)" \
+            --candidate-source-sha "$(git rev-parse HEAD)" \
+            --x509-evidence "$RUNNER_TEMP/p023-go-x509-native.json" \
+            --openpgp-evidence "$RUNNER_TEMP/p023-openpgp-imports.json" \
+            --output "$RUNNER_TEMP/p023-govulncheck-summary.json"
+      - name: Upload P023 Go vulnerability and reachability evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: p023-go-vulnerability-evidence
+          path: |
+            ${{ runner.temp }}/p023-govulncheck.jsonl
+            ${{ runner.temp }}/p023-govulncheck-summary.json
+            ${{ runner.temp }}/p023-go-x509-native.json
+            ${{ runner.temp }}/p023-openpgp-imports.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Full canonical Go regression and portable builds
         shell: bash
         run: |
           set -euo pipefail
-          env -u NETWORK go test -tags 'testing no_ui' ./... -count=1 -timeout=20m
+          # Agent and Hub tests share the process-health marker path. Run all
+          # package test binaries serially so cleanup in one package cannot
+          # invalidate another package's liveness assertions.
+          env -u NETWORK go test -p 1 -tags 'testing no_ui' ./... -count=1 -timeout=20m
           env -u NETWORK go build -tags 'no_ui' -o "$RUNNER_TEMP/p017-agent" ./internal/cmd/agent
           env -u NETWORK go build -tags 'no_ui' -o "$RUNNER_TEMP/p017-hub" ./internal/cmd/hub
       - name: Record source and frontend manifest (not a native iOS artifact)
@@ -189,9 +292,21 @@ jobs:
           print(json.dumps(result,indent=2))
           PY
       - name: Upload candidate regression manifest only
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: p017-regression-manifest
           path: ${{ runner.temp }}/p017-regression.json
           if-no-files-found: error
+          retention-days: 14
+      - name: Upload GitHub Actions workflow security evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: p023-workflow-security-evidence
+          path: |
+            ${{ runner.temp }}/p023-actionlint.log
+            ${{ runner.temp }}/p023-zizmor.json
+            ${{ runner.temp }}/p023-zizmor.stderr
+            ${{ runner.temp }}/p023-workflow-scan.json
+          if-no-files-found: ignore
           retention-days: 14

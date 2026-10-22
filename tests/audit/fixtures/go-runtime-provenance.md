@@ -30,3 +30,17 @@ P019's patch script accepts only Go 1.27.2; a version or source-shape change
 fails closed. Native hosted CI must
 still verify the actual copied toolchain source hash and assembled Agent/Hub
 symbols before this refresh is qualified.
+
+## P023 Go 1.27.3 source refresh
+
+P023 uses the complete upstream
+[`go1.27.3/src/runtime/asm_arm64.s`](https://github.com/golang/go/blob/go1.27.3/src/runtime/asm_arm64.s)
+fixture in [`go1.27.3-asm_arm64.s`](go1.27.3-asm_arm64.s), attributed to the Go
+Authors under the repository's `LICENSE.go-runtime`. Its SHA-256 is
+`47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db`, matching
+the official Linux Go 1.27.3 toolchain file. P023 found the procyield function
+shape unchanged from P019; the exact whole-file hash guard was refreshed. The
+patch output SHA-256 in the reviewed local toolchain is
+`c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f`. Hosted
+macOS iOS links must independently record their source and output hashes and
+inspect both linked binaries.

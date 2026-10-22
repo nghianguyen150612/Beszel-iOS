@@ -59,8 +59,8 @@ def validate_payload(directory: Path, metadata_path: Path, tag: str, source_sha:
                 raise ValueError(f"{name}: native metadata mismatch for {key}")
         build = recorded.get("build_info")
         settings = build.get("settings", {}) if isinstance(build, dict) else {}
-        if not isinstance(build, dict) or build.get("go") != "go1.27.2":
-            raise ValueError(f"{name}: native metadata does not prove Go 1.27.2")
+        if not isinstance(build, dict) or build.get("go") != "go1.27.3":
+            raise ValueError(f"{name}: native metadata does not prove Go 1.27.3")
         if not isinstance(settings, dict):
             raise ValueError(f"{name}: native build settings must be an object")
         expected_settings = {
@@ -86,7 +86,7 @@ def validate_payload(directory: Path, metadata_path: Path, tag: str, source_sha:
         "payload_files": [*NAMES, "SHA256SUMS"],
         "binaries": {name: {"sha256": verified[name]["sha256"], "bytes": verified[name]["bytes"]} for name in NAMES},
         "native_metadata": "matched exact payload bytes and source VCS revision",
-        "go": "go1.27.2",
+        "go": "go1.27.3",
         "target": {"GOOS": "ios", "GOARCH": "arm64", "GOARM64": "v8.0", "CGO_ENABLED": "1", "minimum_ios": "12.0"},
     }
 

@@ -21,6 +21,7 @@ on:
       - "docs/ios-p020-*"
       - "docs/ios-p021-*"
       - "docs/ios-p022-*"
+      - "docs/ios-p023-*"
       - "docs/ios-release-candidate*"
   push:
     branches:
@@ -71,16 +72,17 @@ jobs:
       BESZEL_REQUIRE_OFFLINE_APT_SANDBOX: "1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
 
       - name: Download Go modules for offline sandbox test
         run: go mod download
@@ -104,9 +106,9 @@ jobs:
             --env BESZEL_APT_QUERY_ISOLATED=1 \
             --env BESZEL_REQUIRE_OFFLINE_APT_SANDBOX=1 \
             --env BESZEL_HEALTH_DIR=/tmp/beszel-health \
-            golang:1.27.2-bookworm bash -euo pipefail -c '
+            golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 bash -euo pipefail -c '
               mkdir -p "$HOME" "$GOCACHE" "$BESZEL_HEALTH_DIR"
-              test "$(go env GOVERSION)" = go1.27.2
+              test "$(go env GOVERSION)" = go1.27.3
               go version
               go test -race -v -tags "testing no_ui" ./agent \
                 -run "Test(DetectProcursusAPT|ParseProcursusAPT|ProcursusAPT|CompareDpkgVersions|CheckProcursusAPT)" \
@@ -115,15 +117,18 @@ jobs:
 
   build-ios:
     runs-on: macos-14
+    timeout-minutes: 90
     env:
       PYTHONDONTWRITEBYTECODE: "1"
+      BESZEL_HEALTH_DIR: ${{ github.workspace }}/.task/health
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Run iOS maintenance sentinels
         shell: bash
@@ -132,16 +137,20 @@ jobs:
           sh tests/ios-patch-sentinels.sh
           sh tests/upstream-sync-test.sh
 
+      - name: Prepare workspace-local health marker directory
+        run: mkdir -p "$BESZEL_HEALTH_DIR"
+
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
+          no-cache: true
 
       - name: Test native build validators
         run: python3 -m unittest discover -s tests/audit -p 'test_*.py' -v
@@ -170,7 +179,7 @@ jobs:
           set -euo pipefail
           env -u NETWORK go test -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system
           env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system -run 'Test(P008|IOSBattery|CalculateHostMemory|CpuMetrics|GetAllBusy|Disk|SumAndTrack|SkipNetwork|Serialization|Battery|Primary|Normalize)' -count=1
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent/health ./internal/cmd/agent -count=3
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent/health ./internal/cmd/agent -count=3
 
       - name: Test disabled native Wi-Fi diagnostic and public CF ownership
         shell: bash
@@ -190,23 +199,23 @@ jobs:
           env -u NETWORK go test -race -tags 'testing no_ui' \
             agent/wifi/wifi.go agent/wifi/wifi_ios.go \
             agent/wifi/wifi_test.go agent/wifi/wifi_ios_test.go -count=3
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent/wifi ./agent ./internal/hub/transport ./internal/hub/systems \
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent/wifi ./agent ./internal/hub/transport ./internal/hub/systems \
             -run 'TestP012|TestCreateRecordsWiFi|TestFetchDataViaWebSocketDoesNotRetainOmittedFields' -count=3 -timeout=180s
 
       - name: Test transport faults and races
         shell: bash
         run: |
           set -euo pipefail
-          env -u NETWORK go test -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems ./internal/common
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport -run TestP009 -count=3 -timeout=180s
+          env -u NETWORK go test -p 1 -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems ./internal/common
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport -run TestP009 -count=3 -timeout=180s
 
       - name: Test network monitor compatibility and fault recovery
         shell: bash
         run: |
           set -euo pipefail
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/transport -run TestP010 -count=3 -timeout=180s
-          env -u NETWORK go test -race -tags 'testing no_ui' ./internal/hub ./internal/hub/systems -run 'Test.*NetworkMonitor|TestGenerateMonitorID|TestCopyMonitor' -count=1
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent ./internal/hub/transport -run TestP010 -count=3 -timeout=180s
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./internal/hub ./internal/hub/systems -run 'Test.*NetworkMonitor|TestGenerateMonitorID|TestCopyMonitor' -count=1
 
       - name: Preserve macOS build and GPU parser tests
         shell: bash
@@ -245,29 +254,31 @@ jobs:
           test "$(go env GOVERSION)" = "go$(awk '$1 == "go" {print $2}' go.mod)"
           python3 .github/scripts/patch-go-ios-arm64-runtime.py | tee "$RUNNER_TEMP/runtime-patch.json"
           shasum -a 256 -c "$RUNNER_TEMP/original-runtime.sha256"
-          echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
-          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+          {
+            echo "GOROOT=$GOROOT"
+            echo "GOTOOLCHAIN=local"
+            echo "GOCACHE=$RUNNER_TEMP/ios-go-cache"
+            # Clear inherited host target/linker flags; share one device clang.
+            echo "GOFLAGS="
+            echo "CGO_CFLAGS=-O2 -g"
+            echo "CGO_CPPFLAGS="
+            echo "CGO_CXXFLAGS=-O2 -g"
+            echo "CGO_LDFLAGS="
+            echo "GOOS=ios"
+            echo "GOARCH=arm64"
+            echo "GOARM64=v8.0"
+            echo "CGO_ENABLED=1"
+            echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh"
+          } >> "$GITHUB_ENV"
           echo "$GOROOT/bin" >> "$GITHUB_PATH"
-          echo "GOCACHE=$RUNNER_TEMP/ios-go-cache" >> "$GITHUB_ENV"
-          # Clear inherited host target/linker flags; share one device clang.
-          echo "GOFLAGS=" >> "$GITHUB_ENV"
-          echo "CGO_CFLAGS=-O2 -g" >> "$GITHUB_ENV"
-          echo "CGO_CPPFLAGS=" >> "$GITHUB_ENV"
-          echo "CGO_CXXFLAGS=-O2 -g" >> "$GITHUB_ENV"
-          echo "CGO_LDFLAGS=" >> "$GITHUB_ENV"
-          echo "GOOS=ios" >> "$GITHUB_ENV"
-          echo "GOARCH=arm64" >> "$GITHUB_ENV"
-          echo "GOARM64=v8.0" >> "$GITHUB_ENV"
-          echo "CGO_ENABLED=1" >> "$GITHUB_ENV"
-          echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh" >> "$GITHUB_ENV"
 
-      - name: Backport and test Go 1.27.2 x509 security fix
+      - name: Verify native Go 1.27.3 x509 security fix
         shell: bash
         run: |
           set -euo pipefail
-          test "$(go env GOVERSION)" = go1.27.2
-          python3 scripts/audit/patch-go-x509-security.py \
-            --output "$RUNNER_TEMP/go-x509-security-backport.json"
+          test "$(go env GOVERSION)" = go1.27.3
+          python3 scripts/audit/validate-go-x509-native.py \
+            --output "$RUNNER_TEMP/go-x509-security-native.json"
 
       - name: Build separate disabled iOS Wi-Fi diagnostic and client compile fixture
         shell: bash
@@ -339,7 +350,7 @@ jobs:
           git diff --exit-code
 
       - name: Upload iOS review payload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: beszel-ios-arm64
           if-no-files-found: error
@@ -349,7 +360,7 @@ jobs:
             build/ios/SHA256SUMS
 
       - name: Upload separate disabled Wi-Fi diagnostic review artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ios-wifi-diagnostic-disabled
           if-no-files-found: error
@@ -360,14 +371,14 @@ jobs:
             ${{ runner.temp }}/wifi-host-validation.json
 
       - name: Upload native validation evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ios-native-validation
           if-no-files-found: error
           path: |
             ${{ runner.temp }}/source-selection.json
             ${{ runner.temp }}/runtime-patch.json
-            ${{ runner.temp }}/go-x509-security-backport.json
+            ${{ runner.temp }}/go-x509-security-native.json
             ${{ runner.temp }}/runtime-agent.json
             ${{ runner.temp }}/runtime-hub.json
             ${{ runner.temp }}/native-artifacts.json
@@ -385,7 +396,7 @@ jobs:
 
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -431,13 +442,13 @@ jobs:
           fi
 
       - name: Download iOS build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: beszel-ios-arm64
           path: dist
 
       - name: Download same-run native provenance evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ios-native-validation
           path: validation
@@ -463,7 +474,7 @@ jobs:
           echo "base_version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Upload exact validated release payload for publisher job
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ios-release-validated-payload
           path: validated/
@@ -479,14 +490,14 @@ jobs:
 
     steps:
       - name: Checkout release tag for the shared validator
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
       - name: Download validated same-run release payload
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ios-release-validated-payload
           path: validated
@@ -532,6 +543,7 @@ jobs:
       - name: Verify draft assets before publication
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IOS_SOURCE_SHA: ${{ needs.release-ios-validate.outputs.source_sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -548,7 +560,7 @@ jobs:
           python3 .github/scripts/verify-ios-release-payload.py "$VERIFY_DIR" \
             --metadata validated/native-artifacts.json \
             --tag "$TAG" \
-            --source-sha "${{ needs.release-ios-validate.outputs.source_sha }}"
+            --source-sha "$IOS_SOURCE_SHA"
 
       - name: Publish verified draft release
         env:

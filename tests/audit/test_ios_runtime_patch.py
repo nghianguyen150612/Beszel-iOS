@@ -1,5 +1,6 @@
-"""Disposable Go 1.27.2 fixtures; never patch the installed toolchain."""
+"""Disposable Go 1.27.3 fixtures; never patch the installed toolchain."""
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -12,7 +13,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 PATCH = ROOT / ".github/scripts/patch-go-ios-arm64-runtime.py"
-FIXTURE = Path(__file__).with_name("fixtures") / "go1.27.2-procyield-arm64.s"
+FIXTURE = Path(__file__).with_name("fixtures") / "go1.27.3-asm_arm64.s"
 spec = importlib.util.spec_from_file_location("runtime_patch", PATCH)
 patch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(patch)
@@ -33,7 +34,7 @@ class RuntimePatchTests(unittest.TestCase):
         self.fake = self.root / "go"
         self.fake.write_text('#!/bin/sh\n[ "$*" = "env -json GOROOT GOVERSION" ] || exit 99\nprintf "%s\\n" "$FIXTURE_GO_ENV"\n')
         self.fake.chmod(0o755)
-        self.info = {"GOROOT": str(self.root), "GOVERSION": "go1.27.2"}
+        self.info = {"GOROOT": str(self.root), "GOVERSION": "go1.27.3"}
 
     def run_patch(self, success=False):
         before = self.asm.read_bytes()
@@ -53,13 +54,14 @@ class RuntimePatchTests(unittest.TestCase):
                 before.decode()[before.decode().index(patch.START):before.decode().index(patch.END)],
                 patch.REPLACEMENT).encode()
             self.assertEqual(self.asm.read_bytes(), expected)
-            self.assertEqual(json.loads(result.stdout)["go"], "go1.27.2")
+            self.assertEqual(json.loads(result.stdout)["go"], "go1.27.3")
             self.assertEqual(self.asm.stat().st_mode & 0o777, 0o640)
         else:
             self.assertIn("ERROR:", result.stderr)
         return result
 
-    def test_exact_known_go_1_27_2(self):
+    def test_exact_known_go_1_27_3(self):
+        self.assertEqual(hashlib.sha256(self.source).hexdigest(), patch.SUPPORTED_SOURCE_SHA256)
         self.run_patch(True)
 
     def test_unknown_shapes_are_byte_identical(self):
@@ -83,8 +85,23 @@ class RuntimePatchTests(unittest.TestCase):
         }
         for label, content in mutations.items():
             with self.subTest(label=label):
+                try:
+                    text = content.decode() if isinstance(content, bytes) else content
+                except UnicodeDecodeError:
+                    self.asm.write_bytes(content)
+                    self.run_patch()
+                    continue
+                with self.assertRaises(ValueError):
+                    patch.patch_source(text)
                 self.asm.write_bytes(content if isinstance(content, bytes) else content.encode())
                 self.run_patch()
+
+    def test_comment_only_source_change_fails_file_hash_guard(self):
+        changed = self.source.replace(b"// Read more in this Arm blog post:", b"// Source note changed:", 1)
+        self.assertNotEqual(changed, self.source)
+        self.assertEqual(patch.shape(changed.decode()[changed.decode().index(patch.START):changed.decode().index(patch.END)]), patch.expected_shape)
+        self.asm.write_bytes(changed)
+        self.run_patch()
 
     def test_second_invocation_fails_without_write(self):
         self.run_patch(True)
@@ -116,7 +133,7 @@ class RuntimePatchTests(unittest.TestCase):
         self.run_patch()
 
     def test_unsupported_version(self):
-        for version in ["go1.27.1", "go1.28.0"]:
+        for version in ["go1.27.1", "go1.27.2", "go1.28.0"]:
             with self.subTest(version=version):
                 self.info["GOVERSION"] = version
                 self.assertIn("unsupported Go version", self.run_patch().stderr)

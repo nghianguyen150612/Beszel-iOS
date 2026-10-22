@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply Go's reviewed GO-2026-6809 fix to the pinned Go 1.27.2 source."""
+"""Historical P019/P022 helper for Go 1.27.2; P023 verifies the native Go 1.27.3 fix."""
 
 import argparse
 import base64

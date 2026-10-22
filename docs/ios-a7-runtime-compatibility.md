@@ -21,10 +21,12 @@ would wrap and spin for 2^32 iterations. These are concrete tooling defects.
 
 ## Supported source and replacement
 
-P007 originally validated Go 1.27.1. P019 updates the current candidate to
-**Go 1.27.2**, matching `go.mod`; the patcher now requires exactly that version
-and checks the complete executable source shape from the Go 1.27.2
-`src/runtime/asm_arm64.s` function through its next-function comment boundary.
+P007 originally validated Go 1.27.1. P019 updated its candidate to Go 1.27.2.
+P023 updates the current candidate to **Go 1.27.3**, matching `go.mod`; the
+patcher requires exactly that version and the reviewed complete source SHA and
+executable function shape from Go 1.27.3 `src/runtime/asm_arm64.s` through its
+next-function comment boundary. P019's Go 1.27.2 source evidence remains
+historical.
 [Fixture provenance](../tests/audit/fixtures/go-runtime-provenance.md) records
 both upstream sources, attribution, BSD license and fixture hashes.
 
@@ -51,8 +53,8 @@ leave the original intact and remove the temporary file. There is no guarantee
 against arbitrary concurrent writers after the last check; CI owns an exclusive
 job-local copy. A repeated invocation deliberately exits nonzero, with no write.
 Unsupported versions report the expected and observed version explicitly. The
-1.27.1 fixture remains as historical P007 evidence; the P019 patch tests use a
-separate 1.27.2 fixture.
+1.27.1 and 1.27.2 fixtures remain historical P007/P019 evidence; the P023
+patch tests use a separate full Go 1.27.3 runtime source fixture.
 
 ## Toolchain isolation
 
@@ -87,9 +89,10 @@ assembled-fixture inspection and linked-binary inspection are distinct evidence;
 none substitutes for actual A7 execution.
 
 P007 hosted run URLs and results are historical evidence for Go 1.27.1. P019
-must record its own tested source SHA, Go 1.27.2 runtime hashes, artifact
-provenance and results in the P019 checkpoint before the updated patch is
-considered qualified. Exact hosted run URLs, tested source SHA, runtime hashes and results are in
+hosted runs remain evidence for Go 1.27.2. P023 records its own tested source
+SHA, Go 1.27.3 runtime hashes, artifact provenance and results in
+`ios-p023-a7-runtime-review.md` and the P023 checkpoint before this runtime
+refresh is considered qualified. Exact prior hosted run URLs, tested source SHA, runtime hashes and results are in
 [`ios-build-validation.json`](ios-build-validation.json) and
 [PR #9](https://github.com/nghianguyen150612/Beszel-iOS/pull/9). The PR records the
 final documentation-inclusive HEAD and its rerun, avoiding a self-referential

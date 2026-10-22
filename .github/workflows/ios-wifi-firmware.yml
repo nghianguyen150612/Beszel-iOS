@@ -14,8 +14,10 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ runner.temp }}/reference.ipsw
           key: apple-ipad-16H81-780aa5b20fa9fb5770c18311663bd098dbbf8e89311675a19b4860303edc0cd9
@@ -30,7 +32,7 @@ jobs:
           fi
           # The inspector hashes every cache hit before mounting or parsing it.
           python3 scripts/audit/ios_wifi/firmware.py "$RUNNER_TEMP/reference.ipsw" --output "$RUNNER_TEMP/firmware-evidence"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: ios-wifi-firmware-evidence

@@ -36,6 +36,7 @@ on:
       - docs/ios-p016-checkpoints.md
       - docs/ios-p021-*
       - docs/ios-p022-*
+      - docs/ios-p023-*
       - docs/ios-installer-validation.json
       - docs/upstream-v021-acceptance.md
       - docs/upstream-v021-acceptance.vi.md
@@ -69,6 +70,7 @@ on:
       - docs/ios-p016-checkpoints.md
       - docs/ios-p021-*
       - docs/ios-p022-*
+      - docs/ios-p023-*
       - docs/ios-installer-validation.json
       - docs/upstream-v021-acceptance.md
       - docs/upstream-v021-acceptance.vi.md
@@ -98,7 +100,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Canonical iOS branch references
         shell: bash

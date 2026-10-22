@@ -42,8 +42,9 @@ Cài dưới `/usr/local/bin`; chạy từ `$HOME` và `/tmp` trước đây t�
 ## Vì sao có bản vá runtime Apple A7
 
 Môi trường Apple A7 / iOS 12 lịch sử gặp lỗi ở đường CNTVCT_EL0 của Go ARM64
-`runtime.procyieldAsm` mới. Candidate P019 hiện dùng Go 1.27.2; script chỉ chấp
-nhận toàn bộ source thực thi đã review của đúng phiên bản này và thay bằng vòng
+`runtime.procyieldAsm` mới. Candidate P023 hiện dùng Go 1.27.3; script kiểm tra
+SHA source runtime upstream và chỉ chấp nhận toàn bộ source thực thi đã review
+của đúng phiên bản này rồi thay bằng vòng
 YIELD có guard giá trị 0. Bản không hỗ trợ, cấu trúc lạ và lần gọi thứ hai thất
 bại, không ghi. Patch chạy trước mọi compile iOS native trên bản sao cách ly.
 Kiểm tra source/binary không chứng minh 0.21 chạy không có SIGILL: nghiệm thu A7
