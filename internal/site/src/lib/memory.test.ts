@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { legacyMemoryBytes, memoryFieldBytes, safeMemoryBytes } from "./memory"
+import { hasMeasuredSwap, legacyMemoryBytes, memoryFieldBytes, safeMemoryBytes } from "./memory"
 
 test("keeps exact byte values for small and large hosts", () => {
 	expect(safeMemoryBytes(64 * 1024 ** 2)).toBe(64 * 1024 ** 2)
@@ -19,4 +19,12 @@ test("uses exact zero and rejects invalid exact values without legacy fallback",
 	expect(memoryFieldBytes(0, 5)).toBe(0)
 	expect(memoryFieldBytes(Number.NaN, 5)).toBeUndefined()
 	expect(memoryFieldBytes(undefined, 5)).toBe(5 * 1024 ** 3)
+})
+
+test("distinguishes measured zero swap use from unavailable swap", () => {
+	expect(hasMeasuredSwap(4 * 1024 ** 3, 0)).toBe(true)
+	expect(hasMeasuredSwap(0, 0)).toBe(false)
+	expect(hasMeasuredSwap(undefined, 0)).toBe(false)
+	expect(hasMeasuredSwap(4 * 1024 ** 3, undefined)).toBe(false)
+	expect(hasMeasuredSwap(4 * 1024 ** 3, Number.NaN)).toBe(false)
 })

@@ -7,7 +7,7 @@ import type { ChartData, SystemStats, SystemStatsRecord } from "@/types"
 import { ChartCard, FilterBar, SelectAvgMax } from "../chart-card"
 import { dockerOrPodman } from "../chart-data"
 import { decimalString, formatBytes, toFixedFloat } from "@/lib/utils"
-import { memoryFieldBytes } from "@/lib/memory"
+import { hasMeasuredSwap, memoryFieldBytes } from "@/lib/memory"
 
 const memoryValue = (stats: SystemStats | undefined, index: 0 | 1 | 2 | 3, legacy?: number) =>
 	memoryFieldBytes(stats?.mem?.[index], legacy)
@@ -173,10 +173,9 @@ export function SwapChart({
 	// const userSettings = useStore($userSettings)
 
 	const lastStats = systemStats.at(-1)?.stats
-	const swapTotal = memoryFieldBytes(lastStats?.swap?.[0], lastStats?.s) ?? 0
-	const swapUsed = Math.min(swapTotal, memoryFieldBytes(lastStats?.swap?.[1], lastStats?.su) ?? 0)
-	const hasSwapData = swapTotal > 0 && swapUsed > 0
-	if (!hasSwapData) {
+	const swapTotal = memoryFieldBytes(lastStats?.swap?.[0], lastStats?.s)
+	const swapUsed = memoryFieldBytes(lastStats?.swap?.[1], lastStats?.su)
+	if (!hasMeasuredSwap(swapTotal, swapUsed)) {
 		return null
 	}
 	return (

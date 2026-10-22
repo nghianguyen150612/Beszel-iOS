@@ -14,3 +14,10 @@ export function legacyMemoryBytes(gigabytes?: number | null): number | undefined
 export function memoryFieldBytes(exact?: number | null, legacyGigabytes?: number | null) {
 	return exact == null ? legacyMemoryBytes(legacyGigabytes) : safeMemoryBytes(exact)
 }
+
+/** True only when both swap counters are present and total capacity is positive. */
+export function hasMeasuredSwap(totalBytes?: number | null, usedBytes?: number | null): boolean {
+	const total = safeMemoryBytes(totalBytes)
+	const used = safeMemoryBytes(usedBytes)
+	return total !== undefined && total > 0 && used !== undefined
+}
