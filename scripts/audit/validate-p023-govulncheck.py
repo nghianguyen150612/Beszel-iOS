@@ -4,6 +4,7 @@
 import argparse
 import json
 from pathlib import Path
+import re
 
 
 EXPECTED_GO = "go1.27.3"
@@ -26,6 +27,7 @@ EXPECTED_PROFILES = {
     "ios-arm64-development-testing-no_ui-with-tests",
 }
 POLICY_PATH = Path(__file__).resolve().parents[2] / "docs/ios-p023-advisory-policy.json"
+SOURCE_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
 def read_jsonl(report: str) -> list[dict]:
@@ -120,7 +122,9 @@ def validate_policy(policy: dict) -> dict:
     return entry
 
 
-def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_evidence: dict, policy: dict) -> dict:
+def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_evidence: dict, policy: dict, candidate_source_sha: str = "0000000000000000000000000000000000000000") -> dict:
+    if not SOURCE_SHA.fullmatch(candidate_source_sha):
+        raise ValueError("candidate source commit must be a full 40-character Git SHA")
     x509 = validate_x509(x509_evidence, expected_go)
     openpgp = validate_openpgp_guard(openpgp_evidence)
     policy_entry = validate_policy(policy)
@@ -177,6 +181,7 @@ def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_eviden
 
     return {
         "schema": 1,
+        "candidate_source_sha": candidate_source_sha,
         "scanner": config.get("scanner_version"),
         "database": config.get("db"),
         "database_last_modified": config.get("db_last_modified"),
@@ -219,6 +224,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", required=True, type=Path)
     parser.add_argument("--go-version", required=True)
+    parser.add_argument("--candidate-source-sha", required=True)
     parser.add_argument("--x509-evidence", required=True, type=Path)
     parser.add_argument("--openpgp-evidence", required=True, type=Path)
     parser.add_argument("--policy", type=Path, default=POLICY_PATH)
@@ -230,6 +236,7 @@ def main() -> int:
             json.loads(args.x509_evidence.read_text()),
             json.loads(args.openpgp_evidence.read_text()),
             json.loads(args.policy.read_text()),
+            args.candidate_source_sha,
         )
         if args.output.is_symlink():
             raise ValueError("summary output path is symlinked")

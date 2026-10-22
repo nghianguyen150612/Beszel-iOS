@@ -1,6 +1,7 @@
 """P023 JavaScript audit and lock-graph policy tests."""
 
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -53,6 +54,26 @@ class P023JavaScriptAuditTests(unittest.TestCase):
         self.assertEqual(result["severity"], "high")
         self.assertEqual(result["command_exit_code"], 1)
 
+    def test_npm_registry_timeout_is_retained_as_unavailable(self):
+        report = {
+            "message": "network timeout at: https://registry.npmjs.org/-/npm/v1/security/audits/quick",
+            "error": {"summary": "", "detail": ""},
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "npm-audit.json"
+            path.write_text(json.dumps(report))
+            result = module.audit_report(path, "npm", 1)
+        self.assertEqual(result["status"], "UNAVAILABLE_NETWORK")
+        self.assertTrue(result["raw_error_retained"])
+        self.assertIn("registry.npmjs.org", result["error_message"])
+
+    def test_unrelated_npm_errors_do_not_activate_the_fallback(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "npm-audit.json"
+            path.write_text(json.dumps({"message": "invalid lockfile", "error": {}}))
+            with self.assertRaisesRegex(ValueError, "error payload"):
+                module.audit_report(path, "npm", 1)
+
     def test_bun_advisory_record_is_retained(self):
         report = {
             "vulnerabilities": [{
@@ -99,6 +120,35 @@ class P023JavaScriptAuditTests(unittest.TestCase):
         self.assertEqual(result["remediation_status"], "MITIGATED_WITH_RESIDUAL_RISK")
         self.assertIsNone(result["first_patched_version"])
         self.assertEqual(policy["release_authorization"], "NOT_GRANTED")
+        self.assertEqual(policy["npm_audit_fallback"]["new_or_missing_findings_action"], "FAIL")
+
+    def test_full_lock_osv_fallback_is_source_and_lock_bound(self):
+        lock = ROOT / "internal/site/package-lock.json"
+        report = {
+            "schema": 1,
+            "status": "PASS_WITH_REVIEWED_ADVISORY",
+            "candidate_source_sha": "a" * 40,
+            "endpoint": "https://api.osv.dev/v1/querybatch",
+            "package_lock_sha256": hashlib.sha256(lock.read_bytes()).hexdigest(),
+            "package_lock_nodes_scanned": 510,
+            "unique_package_version_queries": 494,
+            "finding_ids": ["GHSA-vfj7-8cjw-p6xm"],
+            "findings": [{
+                "advisory_id": "GHSA-vfj7-8cjw-p6xm",
+                "cve_id": "CVE-2026-93687",
+                "package": "braces",
+                "version": "3.0.3",
+                "install_nodes": [{"path": "node_modules/braces", "dev": True}],
+                "first_patched_version": None,
+                "raw_scanner_status": "retained by full npm lock OSV query",
+                "affected_events": [{"introduced": "0"}, {"last_affected": "3.0.3"}],
+            }],
+        }
+        result = module.validate_osv_lock_scan(report, lock, "a" * 40)
+        self.assertEqual(result["status"], "PASS_WITH_REVIEWED_ADVISORY")
+        report["candidate_source_sha"] = "b" * 40
+        with self.assertRaisesRegex(ValueError, "current candidate source commit"):
+            module.validate_osv_lock_scan(report, lock, "a" * 40)
 
 
 if __name__ == "__main__":

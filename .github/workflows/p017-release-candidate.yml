@@ -127,9 +127,17 @@ jobs:
             2> "$RUNNER_TEMP/p023-npm-audit.stderr.log"
           npm_status=$?
           set -e
+          python3 ../../scripts/audit/scan-p023-npm-lock-osv.py \
+            --lockfile package-lock.json \
+            --candidate-source-sha "$(git rev-parse HEAD)" \
+            --request-output "$RUNNER_TEMP/p023-npm-osv-request.json" \
+            --response-output "$RUNNER_TEMP/p023-npm-osv-response.json" \
+            --output "$RUNNER_TEMP/p023-npm-osv-summary.json"
           python3 ../../scripts/audit/summarize-p023-js-audits.py \
             --bun-report "$RUNNER_TEMP/p023-bun-audit.json" --bun-exit-code "$bun_status" \
             --npm-report "$RUNNER_TEMP/p023-npm-audit.json" --npm-exit-code "$npm_status" \
+            --npm-osv-report "$RUNNER_TEMP/p023-npm-osv-summary.json" \
+            --candidate-source-sha "$(git rev-parse HEAD)" \
             --output "$RUNNER_TEMP/p023-js-audit-summary.json"
       - name: Upload P023 JavaScript dependency evidence
         if: always()
@@ -141,6 +149,9 @@ jobs:
             ${{ runner.temp }}/p023-bun-audit.stderr.log
             ${{ runner.temp }}/p023-npm-audit.json
             ${{ runner.temp }}/p023-npm-audit.stderr.log
+            ${{ runner.temp }}/p023-npm-osv-request.json
+            ${{ runner.temp }}/p023-npm-osv-response.json
+            ${{ runner.temp }}/p023-npm-osv-summary.json
             ${{ runner.temp }}/p023-js-audit-summary.json
           if-no-files-found: ignore
           retention-days: 14
@@ -157,6 +168,7 @@ jobs:
           python3 scripts/audit/validate-p023-govulncheck.py \
             --report "$RUNNER_TEMP/p023-govulncheck.jsonl" \
             --go-version "$(go env GOVERSION)" \
+            --candidate-source-sha "$(git rev-parse HEAD)" \
             --x509-evidence "$RUNNER_TEMP/p023-go-x509-native.json" \
             --openpgp-evidence "$RUNNER_TEMP/p023-openpgp-imports.json" \
             --output "$RUNNER_TEMP/p023-govulncheck-summary.json"

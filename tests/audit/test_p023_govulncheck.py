@@ -70,6 +70,10 @@ class P023GoVulncheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "raw scanner finding is missing"):
             module.summarize(self.report(), "go1.27.3", self.x509, self.openpgp, self.policy)
 
+    def test_requires_full_candidate_source_sha(self):
+        with self.assertRaisesRegex(ValueError, "full 40-character Git SHA"):
+            module.summarize(self.report(), "go1.27.3", self.x509, self.openpgp, self.policy, "short")
+
     def test_preserves_bounded_module_only_x_crypto_warning(self):
         finding = {"osv": "GO-2026-5932", "trace": [{"module": "golang.org/x/crypto", "version": "v0.58.0"}]}
         result = module.summarize(self.report(finding), "go1.27.3", self.x509, self.openpgp, self.policy)

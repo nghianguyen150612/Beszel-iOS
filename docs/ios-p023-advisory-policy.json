@@ -47,5 +47,14 @@
       "remediation_status": "MITIGATED_WITH_RESIDUAL_RISK",
       "release_owner_decision_required": true
     }
-  ]
+  ],
+  "npm_audit_fallback": {
+    "allowed_only_for_error_prefix": "network timeout at: https://registry.npmjs.org/-/npm/v1/security/audits/",
+    "raw_npm_error_must_be_retained": true,
+    "fallback_scanner": "https://api.osv.dev/v1/querybatch",
+    "scan_scope": "every exact package/version node in package-lock.json",
+    "allowed_finding_ids": ["GHSA-vfj7-8cjw-p6xm"],
+    "new_or_missing_findings_action": "FAIL",
+    "release_authorization": "NOT_GRANTED"
+  }
 }
