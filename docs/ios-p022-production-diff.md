@@ -23,7 +23,7 @@ The full comparison is 417 commits (394 non-merge commits) and 637 changed path 
 | `patches` | 1 |
 | Root build/version/config files | 8 |
 
-The per-file machine-readable promotion matrix is [ios-p022-production-matrix.csv](ios-p022-production-matrix.csv). Each row names the source path or rename and classifies existing behavior, candidate behavior, compatibility and upgrade/rollback exposure, evidence, outstanding validation, and a status. `PENDING` means cloud or device evidence is still required; it is not a pass.
+The machine-readable promotion matrix is split across [ios-p022-production-matrix.csv](ios-p022-production-matrix.csv) and [ios-p022-production-matrix-part-2.csv](ios-p022-production-matrix-part-2.csv), joined by `risk_profile_id` to [ios-p022-promotion-profiles.json](ios-p022-promotion-profiles.json). Together the CSV parts inventory all 637 changed paths or renames; each profile supplies production and candidate behavior, compatibility, upgrade/rollback exposure, test evidence, outstanding validation, and both starting/current status. `PENDING` means cloud or device evidence is still required; it is not a pass.
 
 ## Historical source accounting
 

@@ -34,6 +34,9 @@ No remote P022 branch or existing PR was returned by the initial search. The bra
 Planned additive evidence files:
 
 - `docs/ios-p022-production-diff.md`
+- `docs/ios-p022-production-matrix.csv`
+- `docs/ios-p022-production-matrix-part-2.csv`
+- `docs/ios-p022-promotion-profiles.json`
 - `docs/ios-p022-promotion-dry-run.md`
 - `docs/ios-p022-release-readiness.md`
 - `docs/ios-p022-release-security.md`

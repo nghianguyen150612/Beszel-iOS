@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "profiles": {
+    "documentation": {
+      "production_behavior": "v0.19.0 release and operating documentation.",
+      "candidate_behavior": "Documentation describes the v0.21 integration and iOS port.",
+      "compatibility_impact": "No runtime effect; operational claims must match the qualified source.",
+      "upgrade_risk": "None in runtime.",
+      "rollback_risk": "None in runtime.",
+      "test_evidence": "P021 evidence files record prior exact-source checks.",
+      "outstanding_validation": "Complete P022 release notes and Vietnamese counterpart; preserve explicit physical gate status.",
+      "risk_status_at_p021_baseline": "NOT_APPLICABLE",
+      "p022_status": "NOT_APPLICABLE"
+    },
+    "tests": {
+      "production_behavior": "No production behavior; existing v0.19 contracts.",
+      "candidate_behavior": "Regression, compatibility, security, migration and native-build fixtures.",
+      "compatibility_impact": "Tests describe intended compatibility but cannot prove device acceptance.",
+      "upgrade_risk": "None in runtime.",
+      "rollback_risk": "None in runtime.",
+      "test_evidence": "P021 records exact-source Go, frontend, installer, migration and native results.",
+      "outstanding_validation": "Run the complete P022 matrix on its exact final PR source SHA.",
+      "risk_status_at_p021_baseline": "NOT_APPLICABLE",
+      "p022_status": "NOT_APPLICABLE"
+    },
+    "release-native": {
+      "production_behavior": "v0.19 tag workflow builds and publishes iOS assets.",
+      "candidate_behavior": "Go 1.27.2 native Agent/Hub build, A7 runtime patch, iOS 12.0 target, checksums, provenance and tag release.",
+      "compatibility_impact": "Tag filters must isolate iOS release from branch, PR, dispatch and upstream publication paths.",
+      "upgrade_risk": "At P021 baseline, dispatch on a tag could publish; direct live publication occurred before final asset-state verification.",
+      "rollback_risk": "A partial or incorrect public release may be resolved as Latest before correction.",
+      "test_evidence": "P021 exact-head native job passed and release-ios was skipped; P022 static audit found the dispatch/publish-order gap.",
+      "outstanding_validation": "P022 must require push-tag events, verify same-run artifacts/provenance, publish a draft only after validation, and pass exact-head CI.",
+      "risk_status_at_p021_baseline": "FAIL",
+      "p022_status": "PENDING"
+    },
+    "installer": {
+      "production_behavior": "Rootful installer downloads published Latest and updates Agent/Hub components.",
+      "candidate_behavior": "Each install/update pins SHA256SUMS and binaries to one strict immutable tag; transactional backup/recovery and ldid pseudo-signing remain in the lifecycle engine.",
+      "compatibility_impact": "Preserve CLI/binary names, LaunchDaemon labels, installed paths, state roots and component modes.",
+      "upgrade_risk": "Interrupted extraction or service start can require transactional rollback; Hub schema changes may persist.",
+      "rollback_risk": "Binary rollback is separate from database rollback; restore a verified cold Hub backup before an older binary after an irreversible migration.",
+      "test_evidence": "P021 installer CI records bootstrap checksum, lifecycle, transaction and rollback assertions.",
+      "outstanding_validation": "Validate explicit checksum/provenance-selected staging without changing the Latest default or running a staged candidate on hardware.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "go-toolchain": {
+      "production_behavior": "v0.19 source and Go 1.27.1-era release toolchain.",
+      "candidate_behavior": "Go 1.27.2 dependencies, isolated Apple A7 runtime patch and official x509 security backport.",
+      "compatibility_impact": "Toolchain and crypto changes affect both Agent and Hub binaries.",
+      "upgrade_risk": "Open x/crypto module finding and raw x509 scanner traces need current disposition.",
+      "rollback_risk": "Rollback may restore old vulnerabilities and does not reverse database schema changes.",
+      "test_evidence": "P021 native CI built exact-source binaries and passed CL 851047 x509 tests.",
+      "outstanding_validation": "Rerun Go vulnerability scan and exact-source native build/provenance.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "version": {
+      "production_behavior": "beszel.Version is 0.19.0.",
+      "candidate_behavior": "beszel.Version is 0.21.0; iOS tags use v<version>-ios.<positive revision>.",
+      "compatibility_impact": "The pinned snapshot includes commits after the upstream v0.21 baseline; it does not assert a newer upstream stable release.",
+      "upgrade_risk": "Version/tag mismatch must fail closed.",
+      "rollback_risk": "Older binaries do not undo schema migrations.",
+      "test_evidence": "Source diff and current installer/release validators establish the existing convention.",
+      "outstanding_validation": "Run synthetic tag validation; do not create a tag or release in P022.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "database": {
+      "production_behavior": "v0.19 PocketBase collections and ordered migrations.",
+      "candidate_behavior": "v0.20 schema snapshot plus ordered monitor, TLS, ZFS status and socket metadata migrations.",
+      "compatibility_impact": "Users, roles, SSH identities, systems, alert and monitor history, telemetry, records and indexes must survive.",
+      "upgrade_risk": "The removed 1788955200 migration is absorbed into the v0.20 snapshot; interrupted or irreversible schema changes require recovery.",
+      "rollback_risk": "Binary rollback alone is not database rollback; restore a verified cold backup with operator approval.",
+      "test_evidence": "P002 maps the removed migration into the snapshot; P021/P020 record a genuine synthetic v0.19 fixture.",
+      "outstanding_validation": "Rerun exact-head genuine migration, restart idempotence, integrity, backup/restore and injected failures.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "frontend": {
+      "production_behavior": "v0.19 Hub UI and frontend/API contract.",
+      "candidate_behavior": "Updated dashboard, network-monitor/TLS UI, settings, localization and embedded production assets.",
+      "compatibility_impact": "UI fields and API operations must match Hub records, migrations and authorization.",
+      "upgrade_risk": "Build dependency exposure and mismatched embedded assets can affect Hub operation.",
+      "rollback_risk": "Frontend assets roll back with the Hub binary; database state remains separate.",
+      "test_evidence": "P021 records frozen-lockfile Bun build, tests and embedded asset count.",
+      "outstanding_validation": "Run Bun, TypeScript, Lingui, Vite, embedded asset and JavaScript advisory checks on exact source.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "wifi-deferred": {
+      "production_behavior": "Native iOS Wi-Fi RSSI is not a required supported path.",
+      "candidate_behavior": "Unavailable/disabled native adapter and bounded diagnostic fixtures; no private MobileWiFi linkage.",
+      "compatibility_impact": "Wi-Fi RSSI remains deferred to physical Gate F.",
+      "upgrade_risk": "No automatic native helper execution is introduced.",
+      "rollback_risk": "No schema effect; on-device compatibility remains unverified.",
+      "test_evidence": "P021 native CI checked unavailable adapter and private linkage absence.",
+      "outstanding_validation": "Rerun hosted linkage tests; do not claim physical RSSI or Gate F acceptance.",
+      "risk_status_at_p021_baseline": "DEFERRED",
+      "p022_status": "DEFERRED"
+    },
+    "agent": {
+      "production_behavior": "v0.19 host collectors and Agent/Hub wire contract.",
+      "candidate_behavior": "iOS CPU, memory, battery, disk and metadata plus updated CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.",
+      "compatibility_impact": "Preserve legacy payload semantics, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform source selection.",
+      "upgrade_risk": "Unsupported collectors must fail clearly rather than fabricate values; cross-platform collector changes can affect hosts.",
+      "rollback_risk": "Agent can roll back independently; Hub records and schema may not be backward compatible.",
+      "test_evidence": "P021 records Go, telemetry, transport/race, A7 build and iOS source-selection checks.",
+      "outstanding_validation": "Rerun full Go and affected race suites plus native Agent build; physical A7 launch remains Gate F.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "hub-api": {
+      "production_behavior": "v0.19 Hub APIs, auth, PocketBase records and Agent protocol.",
+      "candidate_behavior": "Updated OAuth roles, protected record ownership, monitor history/API and universal-token POST behavior.",
+      "compatibility_impact": "Existing users, roles, owner relationships and Agent protocol must be preserved.",
+      "upgrade_risk": "Authorization regressions can expose or mutate data; migrated defaults must remain least-privilege.",
+      "rollback_risk": "Older Hub binaries may not read new schemas; database restore is separate.",
+      "test_evidence": "P020/P021 record exact-source Go security and migration results.",
+      "outstanding_validation": "Rerun full Go/race/security suites and genuine migration fixture.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "deployment": {
+      "production_behavior": "v0.19 Docker, Helm and Debian metadata.",
+      "candidate_behavior": "Pinned upstream deployment/package configuration updates; separate from rootful iOS packages.",
+      "compatibility_impact": "Image/chart changes affect operators using those channels; iOS suffix tags remain excluded.",
+      "upgrade_risk": "Incorrect package/chart metadata can affect service rollout.",
+      "rollback_risk": "Package/chart rollback is independent of iOS Hub data recovery.",
+      "test_evidence": "Diff inventory and existing workflow tag-isolation tests.",
+      "outstanding_validation": "Rerun tag isolation and relevant CI; P022 publishes no packages.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "validation-tools": {
+      "production_behavior": "No runtime behavior.",
+      "candidate_behavior": "Source-selection, A7 runtime patch, Mach-O/provenance validation and diagnostic tooling.",
+      "compatibility_impact": "Build and safety gates depend on validator correctness.",
+      "upgrade_risk": "An incorrect validator can accept an unsafe candidate.",
+      "rollback_risk": "No device state; tool changes must be requalified with the candidate.",
+      "test_evidence": "P021 native CI exercised the toolchain and artifact validators.",
+      "outstanding_validation": "Run P022 audit tests and exact-hosted candidate validators.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "workflows": {
+      "production_behavior": "v0.19 build and upstream release/package workflow set.",
+      "candidate_behavior": "Pinned snapshot native, migration, regression and release/package automation.",
+      "compatibility_impact": "iOS suffix tags must remain excluded from GoReleaser and Docker publication.",
+      "upgrade_risk": "Event/filter errors can publish packages or assets unexpectedly.",
+      "rollback_risk": "Workflow rollback cannot retract a release already published.",
+      "test_evidence": "P021 workflow isolation checks cover release.yml and docker-images.yml tag exclusions.",
+      "outstanding_validation": "Rerun release isolation on exact P022 source; verify PR, branch and dispatch cannot publish.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    },
+    "configuration": {
+      "production_behavior": "v0.19 source/build configuration.",
+      "candidate_behavior": "Pinned upstream v0.21 integration configuration.",
+      "compatibility_impact": "Review adjacent protocol, build and data contracts.",
+      "upgrade_risk": "Path presence alone does not establish compatibility.",
+      "rollback_risk": "Rollback may require a matching binary and database state.",
+      "test_evidence": "Full paths are inventoried; P021 records prior regression suites.",
+      "outstanding_validation": "Exact-head P022 qualification must cover these changes.",
+      "risk_status_at_p021_baseline": "PENDING",
+      "p022_status": "PENDING"
+    }
+  }
+}

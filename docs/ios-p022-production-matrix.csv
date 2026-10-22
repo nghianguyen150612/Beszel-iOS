@@ -1,83 +1,321 @@
-Warning: truncated output (original token count: 102506)
-Total output lines: 638
-
-source_file_or_rename,change_kind,change_area,production_behavior,candidate_behavior,compatibility_impact,upgrade_risk,rollback_risk,test_evidence,outstanding_validation,risk_status_at_p021_baseline,p022_status
-.dockerignore,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-.github/scripts/check-ios-source-selection.py,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-.github/scripts/ios-clang.sh,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-.github/scripts/patch-go-ios-arm64-runtime.py,modified,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-.github/scripts/verify-ios-artifacts.py,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-.github/scripts/verify-ios-runtime-binary.py,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-.github/workflows/docker-images.yml,modified,CI and upstream release automation,v0.19 branch/tag workflow set.,Pinned snapshot workflows run build/qualification and scope tag-driven publication/package flows.,Tag exclusions must keep iOS releases out of GoReleaser and Docker publication.,Incorrect event filters can publish packages or releases.,Workflow rollback cannot retract already published assets.,Existing workflow isolation tests inspect release.yml/docker-images.yml tag exclusions.,P022 reruns isolation tests and confirms no publishing job on PR/branch/manual verification.,PENDING,PENDING
-.github/workflows/helm-charts.yml,modified,CI and upstream release automation,v0.19 branch/tag workflow set.,Pinned snapshot workflows run build/qualification and scope tag-driven publication/package flows.,Tag exclusions must keep iOS releases out of GoReleaser and Docker publication.,Incorrect event filters can publish packages or releases.,Workflow rollback cannot retract already published assets.,Existing workflow isolation tests inspect release.yml/docker-images.yml tag exclusions.,P022 reruns isolation tests and confirms no publishing job on PR/branch/manual verification.,PENDING,PENDING
-.github/workflows/ios-build.yml,modified,Native build and iOS release,v0.19 tag workflow builds/releases binaries; manual validation is also available.,"Go 1.27.2 iOS ARM64 A7-safe Agent/Hub build, checksums, provenance, artifacts, and tag publishing.","Tag automation is isolated, but the P021 workflow can enter release on workflow_dispatch at a tag and publishes before post-publish asset verification.",A release trigger can publish a partial release if the upload or later verification fails.,A published bad release requires manual release correction and installer users may already resolve it as Latest.,Static workflow inspection found both release-boundary weaknesses; P021 had no P022 dry-run.,"P022 must require push-tag event, validate staged same-run assets, create and verify a draft before publication, then rerun hosted workflow.",FAIL,PENDING
-.github/workflows/ios-installer.yml,modified,CI and upstream release automation,v0.19 branch/tag workflow set.,Pinned snapshot workflows run build/qualification and scope tag-driven publication/package flows.,Tag exclusions must keep iOS releases out of GoReleaser and Docker publication.,Incorrect event filters can publish packages or releases.,Workflow rollback cannot retract already published assets.,Existing workflow isolation tests inspect release.yml/docker-images.yml tag exclusions.,P022 reruns isolation tests and confirms no publishing job on PR/branch/manual verification.,PENDING,PENDING
-.github/workflows/ios-wifi-firmware.yml,added,CI and upstream release automation,v0.19 branch/tag workflow set.,Pinned snapshot workflows run build/qualification and scope tag-driven publication/package flows.,Tag exclusions must keep iOS releases out of GoReleaser and Docker publication.,Incorrect event filters can publish packages or releases.,Workflow rollback cannot retract already published assets.,Existing workflow isolation tests inspect release.yml/docker-images.yml tag exclusions.,P022 reruns isolation tests and confirms no publishing job on PR/branch/manual verification.,PENDING,PENDING
-.github/workflows/p013-hub-migration.yml,added,CI and upstream release automation,v0.19 branch/tag workflow set.,Pinned snapshot workflows run build/qualification and scope tag-driven publication/package flows.,Tag exclusions must keep iOS releases out of GoReleaser and Docker publication.,Incorrect event filters can publish packages or releases.,Workflow rollback cannot retract already published assets.,Existing workflow isolation tests inspect release.yml/docker-images.yml tag exclusions.,P022 reruns isolation tests and confirms no publishing job on PR/branch/manual verification.,PENDING,PENDING
-.github/workflows/p017-release-candidate.yml,added,CI and upstream release automation,v0.19 branch/tag workflow set.,Pinned snapshot workflows run build/qualification and scope tag-driven publication/package flows.,Tag exclusions must keep iOS releases out of GoReleaser and Docker publication.,Incorrect event filters can publish packages or releases.,Workflow rollback cannot retract already published assets.,Existing workflow isolation tests inspect release.yml/docker-images.yml tag exclusions.,P022 reruns isolation tests and confirms no publishing job on PR/branch/manual verification.,PENDING,PENDING
-.gitignore,modified,Other source/configuration,v0.19 source/configuration.,Pinned upstream v0.21 integration source/configuration.,"Review against adjacent protocol, build and data contracts.",Compatibility not established by path presence alone.,Rollback may require matching binary and database state.,Full path is recorded; P021 evidence covers baseline suites.,P022 exact-head qualification must cover this path.,PENDING,PENDING
-README.md,modified,Documentation and evidence,Existing release/port documentation for v0.19.0.,Updated v0.21 integration and native iOS operating evidence.,No executable compatibility impact; content must match qualified source.,None in runtime.,None in runtime.,P021 review documents provide the prior evidence baseline.,P022 English/Vietnamese release and operational notes remain to be completed.,NOT_APPLICABLE,NOT_APPLICABLE
-README.vi.md,modified,Documentation and evidence,Existing release/port documentation for v0.19.0.,Updated v0.21 integration and native iOS operating evidence.,No executable compatibility impact; content must match qualified source.,None in runtime.,None in runtime.,P021 review documents provide the prior evidence baseline.,P022 English/Vietnamese release and operational notes remain to be completed.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/agent.go,modified,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/agent_test_helpers.go,modified,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/battery/battery_ios.go,modified,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/battery/ios_ioreg.go,added,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/battery/ios_ioreg_test.go,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/battery/testdata/ios/README.md,added,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/battery/testdata/ios/legacy.ioreg,added,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/battery/testdata/ios/recursive.ioreg,added,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/btrfs/btrfs_linux.go,modified,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/btrfs/btrfs_linux_test.go,modified,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/client.go,modified,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/client_test.go,modified,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/collector_compatibility_test.go,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/connection_manager.go,modified,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/connection_manager_test.go,modified,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/counter_rate.go,added,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/cpu.go,modified,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/cpu_linux.go,added,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS, SMART, sensor and lifecycle behavior.","Legacy field compatibility, CBOR/JSON ordering, SSH/WebSocket lifecycle and platform selection are material.",Unsupported collectors must report unavailable rather than fabricate values; parser/collector changes can affect all hosts.,Agent binary can be rolled back separately; Hub records and schemas may not be backward compatible.,"P021 records complete Go suite, transport/race tests, telemetry compatibility and A7 build.",P022 reruns full Go and affected race suites plus native Agent build; real A7 launch remains PENDING Gate F.,PENDING,PENDING
-agent/cpu_linux_test.go,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/cpu_test.go,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-agent/cpu_unsupported.go,added,"Agent collectors, telemetry and transport",v0.19 host metrics and Agent/Hub wire contract.,"Candidate adds iOS CPU/memory/battery/disk metadata and updated cross-platform CPU, network, package, ZFS…90506 tokens truncated…21 review documents provide the prior evidence baseline.,P022 English/Vietnamese release and operational notes remain to be completed.,NOT_APPLICABLE,NOT_APPLICABLE
-supplemental/debian/beszel-agent.service,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-supplemental/helm/beszel-agent/Chart.yaml,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-supplemental/helm/beszel-agent/README.md,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-supplemental/helm/beszel-hub/Chart.yaml,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-supplemental/helm/beszel-hub/README.md,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-supplemental/helm/beszel-hub/templates/deployment.yaml,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-supplemental/helm/beszel-hub/values.yaml,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-supplemental/scripts/install-agent.sh,modified,"Container, package and deployment metadata",v0.19 container/Helm/package definitions.,Pinned upstream configuration and metadata updates for Docker/Helm/Debian deployment.,Applies to upstream-hosted service packaging; iOS rootful installer remains a separate distribution path.,Container/package tag and chart drift can affect operators using those channels.,Deployment rollback follows package/chart policy and is independent of iOS Hub data restore.,Path and workflow diff is enumerated in this matrix.,Static artifact/tag filters and CI must pass; no package publication is authorized by P022.,PENDING,PENDING
-tests/audit/fixtures/LICENSE.go-runtime,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/fixtures/go-runtime-provenance.md,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/fixtures/go1.27.1-procyield-arm64.s,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/fixtures/go1.27.2-procyield-arm64.s,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_ios_build_contract.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_ios_runtime_patch.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_ios_wifi_abi.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_ios_wifi_firmware.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_p019_go_x509_backport.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_p019_govulncheck.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_p019_js_audit.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_validate_frontend_assets.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/audit/test_validate_upstream_v021_readiness.py,modified,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/browser/p015-frontend-acceptance.cjs,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/browser/prefix_reverse_proxy.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/browser/seed_p015_fixture.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/hub-migration/README.md,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/hub-migration/backup.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/hub-migration/harness.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/hub-migration/rollup_probe.go,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/hub-migration/test_backup.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/install-sh-test.sh,modified,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/ios-macho-validation-test.sh,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/ios-patch-sentinels.sh,modified,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tests/ios-workflow-isolation-test.py,added,Tests and fixtures,No production behavior; existing checks cover v0.19 contracts.,"Adds regression, compatibility, migration, security, and native build fixtures.",Tests encode intended compatibility; they do not establish device acceptance.,No runtime upgrade effect.,No runtime rollback effect.,P021 exact-source Go/frontend/installer/migration/native CI is recorded.,P022 final exact-head workflows must rerun; device Gate F remains separate.,NOT_APPLICABLE,NOT_APPLICABLE
-tools/ios-wifi-probe/README.md,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-tools/ios-wifi-probe/core.c,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-tools/ios-wifi-probe/core.h,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-tools/ios-wifi-probe/core_test.c,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-tools/ios-wifi-probe/fixture_symbols.c,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-tools/ios-wifi-probe/loader.c,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-tools/ios-wifi-probe/loader.h,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-tools/ios-wifi-probe/loader_test.c,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
-tools/ios-wifi-probe/probe.c,added,"Build, audit and validation tools",No runtime behavior.,"Adds/updates source selection, A7 runtime patching, Mach-O/provenance validation, and audit/probe tooling.",Correctness gates the candidate build; utilities must remain deterministic and nonprivileged.,Bad validators could accept unsafe artifacts or alter runtime patches.,No device state; revert tooling only after reproducing candidate validation.,P021 native and workflow audit recorded these validators and checks.,P022 tests plus exact-hosted execution of all candidate validators required.,PENDING,PENDING
+source_path_or_rename,change_kind,risk_profile_id
+.dockerignore,modified,deployment
+.github/scripts/check-ios-source-selection.py,added,validation-tools
+.github/scripts/ios-clang.sh,added,validation-tools
+.github/scripts/patch-go-ios-arm64-runtime.py,modified,validation-tools
+.github/scripts/verify-ios-artifacts.py,added,validation-tools
+.github/scripts/verify-ios-runtime-binary.py,added,validation-tools
+.github/workflows/docker-images.yml,modified,workflows
+.github/workflows/helm-charts.yml,modified,workflows
+.github/workflows/ios-build.yml,modified,release-native
+.github/workflows/ios-installer.yml,modified,workflows
+.github/workflows/ios-wifi-firmware.yml,added,workflows
+.github/workflows/p013-hub-migration.yml,added,workflows
+.github/workflows/p017-release-candidate.yml,added,workflows
+.gitignore,modified,configuration
+README.md,modified,documentation
+README.vi.md,modified,documentation
+agent/agent.go,modified,agent
+agent/agent_test_helpers.go,modified,tests
+agent/battery/battery_ios.go,modified,agent
+agent/battery/ios_ioreg.go,added,agent
+agent/battery/ios_ioreg_test.go,added,tests
+agent/battery/testdata/ios/README.md,added,agent
+agent/battery/testdata/ios/legacy.ioreg,added,agent
+agent/battery/testdata/ios/recursive.ioreg,added,agent
+agent/btrfs/btrfs_linux.go,modified,agent
+agent/btrfs/btrfs_linux_test.go,modified,tests
+agent/client.go,modified,agent
+agent/client_test.go,modified,tests
+agent/collector_compatibility_test.go,added,tests
+agent/connection_manager.go,modified,agent
+agent/connection_manager_test.go,modified,tests
+agent/counter_rate.go,added,agent
+agent/cpu.go,modified,agent
+agent/cpu_linux.go,added,agent
+agent/cpu_linux_test.go,added,tests
+agent/cpu_test.go,added,tests
+agent/cpu_unsupported.go,added,agent
+agent/disk.go,modified,agent
+agent/disk_io_linux_test.go,added,tests
+agent/disk_test.go,modified,tests
+agent/docker.go,modified,agent
+agent/docker_image_updates.go,modified,agent
+agent/docker_image_updates_test.go,modified,tests
+agent/docker_names.go,added,agent
+agent/docker_names_test.go,added,tests
+agent/docker_registry.go,modified,agent
+agent/docker_registry_test.go,modified,tests
+agent/docker_test.go,modified,tests
+agent/emmc_linux.go,modified,agent
+agent/emmc_linux_test.go,modified,tests
+agent/emmc_stub.go,modified,agent
+agent/fans.go,modified,agent
+agent/fans_test.go,modified,tests
+agent/gpu.go,modified,agent
+agent/gpu_darwin.go,modified,agent
+agent/gpu_darwin_test.go,modified,tests
+agent/gpu_darwin_unsupported.go,modified,agent
+agent/gpu_fixture_test.go,added,tests
+agent/gpu_intel.go,modified,agent
+agent/gpu_nvml.go,modified,agent
+agent/gpu_nvml_sample_test.go,added,tests
+agent/gpu_nvml_unsupported_test.go,added,tests
+agent/gpu_test.go,modified,tests
+agent/handlers.go,modified,agent
+agent/handlers_test.go,modified,tests
+agent/health/health.go,modified,agent
+agent/health/health_test.go,modified,tests
+agent/health/health_test_helpers.go,added,tests
+agent/health/owner_other.go,added,agent
+agent/health/owner_unix.go,added,agent
+agent/ios_disk.go,added,agent
+agent/ios_memory.go,added,agent
+agent/ios_metadata.go,added,agent
+agent/ios_metadata_test.go,added,tests
+agent/ios_metrics_test.go,added,tests
+agent/ios_payload_test.go,added,tests
+agent/lhm/beszel_lhm.cs,modified,agent
+agent/lifecycle_test.go,added,tests
+agent/mdraid_linux.go,modified,agent
+agent/mdraid_linux_test.go,modified,tests
+agent/mdraid_stub.go,modified,agent
+agent/memory.go,added,agent
+agent/memory_linux.go,added,agent
+agent/memory_linux_test.go,added,tests
+agent/memory_platform_ios.go,added,agent
+agent/memory_unsupported.go,added,agent
+agent/network.go,modified,agent
+agent/network_counters_linux.go,added,agent
+agent/network_counters_linux_test.go,added,tests
+agent/network_counters_unsupported.go,added,agent
+agent/network_monitor.go,added,agent
+agent/network_monitor_cert.go,added,agent
+agent/network_monitor_cert_test.go,added,tests
+agent/network_monitor_compatibility_test.go,added,tests
+agent/network_monitor_dns_fault_test.go,added,tests
+agent/network_monitor_history.go,added,agent
+agent/network_monitor_history_test.go,added,tests
+agent/network_monitor_icmp_compatibility_test.go,added,tests
+agent/network_monitor_lifecycle_compatibility_test.go,added,tests
+agent/network_monitor_ping.go,added,agent
+agent/network_monitor_ping_test.go,added,tests
+agent/network_monitor_probe.go,added,agent
+agent/network_monitor_protocol_compatibility_test.go,added,tests
+agent/network_monitor_resume.go,added,agent
+agent/network_monitor_resume_test.go,added,tests
+agent/network_monitor_schedule.go,added,agent
+agent/network_monitor_schedule_test.go,added,tests
+agent/network_monitor_task.go,added,agent
+agent/network_monitor_task_test.go,added,tests
+agent/network_monitor_test.go,added,tests
+agent/network_monitor_tls_compatibility_test.go,added,tests
+agent/network_test.go,modified,tests
+agent/p009_client_test.go,added,tests
+agent/p009_manager_test.go,added,tests
+agent/p009_tls_test.go,added,tests
+agent/package_updates.go,added,agent
+agent/package_updates_ios.go,added,agent
+agent/package_updates_otheros.go,added,agent
+agent/package_updates_process_other.go,added,agent
+agent/package_updates_process_unix.go,added,agent
+agent/package_updates_procursus.go,added,agent
+agent/package_updates_procursus_test.go,added,tests
+agent/package_updates_test.go,added,tests
+agent/sensors.go,modified,agent
+agent/sensors_default.go,modified,agent
+agent/sensors_ios.go,added,agent
+agent/sensors_test.go,modified,tests
+agent/server.go,modified,agent
+agent/server_config_test.go,added,tests
+agent/server_test.go,modified,tests
+agent/smart.go,modified,agent
+agent/smart_parse.go,added,agent
+agent/smart_test.go,modified,tests
+agent/storage_pool.go,modified,agent
+agent/storage_pool_test.go,modified,tests
+agent/system.go,modified,agent
+agent/system_platform_ios.go,modified,agent
+agent/system_test.go,modified,tests
+agent/systemd.go,modified,agent
+agent/systemd_nonlinux.go,modified,agent
+agent/systemd_test.go,modified,tests
+agent/test-data/package_updates/apk_alpine320_list_upgradable.txt,added,tests
+agent/test-data/package_updates/apt_debian12.txt,added,tests
+agent/test-data/package_updates/apt_procursus_simulate.txt,added,tests
+agent/test-data/package_updates/apt_ubuntu2204.txt,added,tests
+agent/test-data/package_updates/dnf4_rocky9_check_update.txt,added,tests
+agent/test-data/package_updates/dnf4_rocky9_check_update_security.txt,added,tests
+agent/test-data/package_updates/dnf4_rocky9_rpm_installed.txt,added,tests
+agent/test-data/package_updates/dnf5_fedora42_check_update.txt,added,tests
+agent/test-data/package_updates/dnf5_fedora42_check_update_security.txt,added,tests
+agent/test-data/package_updates/dnf5_fedora42_rpm_installed.txt,added,tests
+agent/test-data/package_updates/pacman_checkupdates.txt,added,tests
+agent/test-data/package_updates/xbps_void_check_update.txt,added,tests
+agent/test-data/package_updates/xbps_void_install_update.txt,added,tests
+agent/test-data/package_updates/xbps_void_query_installed.txt,added,tests
+agent/test-data/package_updates/zypper_leap155_list_patches_security.txt,added,tests
+agent/test-data/package_updates/zypper_leap155_list_updates.txt,added,tests
+agent/test-data/package_updates/zypper_leap156_list_updates_none.txt,added,tests
+agent/test-data/smart/nvme_permission_denied.json,added,tests
+agent/test-data/smart/sat.json,added,tests
+agent/test-data/smart/sat_sleep_permission.json,added,tests
+agent/test-data/smart/scsi_identity.json,added,tests
+agent/test-data/zfs/zpool_status.txt,modified,tests
+agent/utils/cgroup_linux.go,added,agent
+agent/utils/cgroup_linux_test.go,added,tests
+agent/wifi/README.md,added,wifi-deferred
+agent/wifi/ioshelper/README.md,added,wifi-deferred
+agent/wifi/ioshelper/client.go,added,wifi-deferred
+agent/wifi/ioshelper/client_test.go,added,tests
+agent/wifi/ioshelper/process_other.go,added,wifi-deferred
+agent/wifi/ioshelper/process_unix.go,added,wifi-deferred
+agent/wifi/ioshelper/protocol.go,added,wifi-deferred
+agent/wifi/ioshelper/protocol_test.go,added,tests
+agent/wifi/ioshelper/reaper_linux_test.go,added,tests
+agent/wifi/ioshelper/reaper_other_test.go,added,tests
+agent/wifi/ioshelper/testdata/fakehelper/main.go,added,wifi-deferred
+agent/wifi/wifi.go,added,wifi-deferred
+agent/wifi/wifi_darwin.go,added,wifi-deferred
+agent/wifi/wifi_ios.go,added,wifi-deferred
+agent/wifi/wifi_ios_test.go,added,tests
+agent/wifi/wifi_linux.go,added,wifi-deferred
+agent/wifi/wifi_linux_test.go,added,tests
+agent/wifi/wifi_test.go,added,tests
+agent/wifi/wifi_unsupported.go,added,wifi-deferred
+agent/wifi/wifi_windows.go,added,wifi-deferred
+agent/wifi_test.go,added,tests
+agent/zfs/zfs.go,modified,agent
+agent/zfs/zfs_ios.go,added,agent
+agent/zfs/zfs_ios_test.go,added,tests
+agent/zfs/zfs_linux.go,modified,agent
+agent/zfs/zfs_linux_test.go,modified,tests
+agent/zfs/zfs_nonlinux.go,added,agent
+agent/zfs/zfs_nonlinux_test.go,added,tests
+agent/zfs/zfs_status.go,modified,agent
+agent/zfs/zfs_test.go,modified,tests
+beszel.go,modified,version
+docs/device-validation.md,modified,documentation
+docs/evidence/ios-wifi-12.5.7/firmware-report.json,added,documentation
+docs/evidence/ios-wifi-12.5.7/selected-functions.txt,added,documentation
+docs/evidence/p014/baseline-json-rollup-failures.txt,added,documentation
+docs/evidence/p014/baseline-power-presence-failure.txt,added,documentation
+docs/evidence/p014/baseline-retired-poll-failure.txt,added,documentation
+docs/evidence/p014/baseline-sparse-alert-failures.txt,added,documentation
+docs/evidence/p014/concurrency-reproductions.txt,added,documentation
+docs/evidence/p014/final-validation.md,added,documentation
+docs/evidence/p014/native-artifact-verification.json,added,documentation
+docs/ios-a7-runtime-compatibility.md,added,documentation
+docs/ios-a7-runtime-compatibility.vi.md,added,documentation
+docs/ios-alert-monitor-contracts.md,added,documentation
+docs/ios-build-notes.md,modified,documentation
+docs/ios-build-notes.vi.md,modified,documentation
+docs/ios-build-validation.json,added,documentation
+docs/ios-collector-capability-matrix.md,added,documentation
+docs/ios-dependency-advisory-review.md,added,documentation
+docs/ios-frontend-assets-compatibility.md,added,documentation
+docs/ios-frontend-assets-compatibility.vi.md,added,documentation
+docs/ios-frontend-assets-manifest.sha256,added,documentation
+docs/ios-frontend-assets-validation.json,added,documentation
+docs/ios-frontend-route-matrix.md,added,documentation
+docs/ios-hub-backup-restore-evidence.md,added,documentation
+docs/ios-hub-database-migration.md,added,documentation
+docs/ios-hub-database-migration.vi.md,added,documentation
+docs/ios-hub-database-validation-prior-checkpoint.json,added,documentation
+docs/ios-hub-database-validation.json,added,documentation
+docs/ios-hub-monitoring-compatibility.md,added,documentation
+docs/ios-hub-monitoring-compatibility.vi.md,added,documentation
+docs/ios-hub-monitoring-validation.json,added,documentation
+docs/ios-hub-security-validation.md,added,documentation
+docs/ios-installer-rollback-evidence.md,added,documentation
+docs/ios-installer-security.md,added,documentation
+docs/ios-installer-security.vi.md,added,documentation
+docs/ios-installer-validation.json,added,documentation
+docs/ios-localization-validation.md,added,documentation
+docs/ios-native-build-validation.md,added,documentation
+docs/ios-native-build-validation.vi.md,added,documentation
+docs/ios-network-monitors-compatibility.md,added,documentation
+docs/ios-network-monitors-compatibility.vi.md,added,documentation
+docs/ios-network-monitors-validation.json,added,documentation
+docs/ios-network-transport-compatibility.md,added,documentation
+docs/ios-network-transport-compatibility.vi.md,added,documentation
+docs/ios-network-transport-validation.json,added,documentation
+docs/ios-p014-rebuild-checkpoints.md,added,documentation
+docs/ios-p015-checkpoints.md,added,documentation
+docs/ios-p016-checkpoints.md,added,documentation
+docs/ios-p017-checkpoints.md,added,documentation
+docs/ios-p019-checkpoints.md,added,documentation
+docs/ios-p019-recovery-audit.md,added,documentation
+docs/ios-p019-security-review.md,added,documentation
+docs/ios-p019-upstream-merge-review.md,added,documentation
+docs/ios-p020-checkpoints.md,added,documentation
+docs/ios-p020-integration-review.md,added,documentation
+docs/ios-p020-regression-matrix.csv,added,documentation
+docs/ios-p020-security-review.md,added,documentation
+docs/ios-p020-validation.json,added,documentation
+docs/ios-p021-acceptance-matrix.csv,added,documentation
+docs/ios-p021-checkpoints.md,added,documentation
+docs/ios-p021-final-review.md,added,documentation
+docs/ios-p021-security-disposition.md,added,documentation
+docs/ios-p021-validation.json,added,documentation
+docs/ios-privilege-and-signing-review.md,added,documentation
+docs/ios-procursus-package-updates.md,added,documentation
+docs/ios-procursus-package-updates.vi.md,added,documentation
+docs/ios-procursus-package-validation.json,added,documentation
+docs/ios-release-candidate-artifacts.json,added,documentation
+docs/ios-release-candidate-validation.json,added,documentation
+docs/ios-release-candidate.md,added,documentation
+docs/ios-release-candidate.vi.md,added,documentation
+docs/ios-release-security-review.md,added,documentation
+docs/ios-remote-agent-telemetry-matrix.md,added,documentation
+docs/ios-service-lifecycle.md,added,documentation
+docs/ios-system-metrics-compatibility.md,added,documentation
+docs/ios-system-metrics-compatibility.vi.md,added,documentation
+docs/ios-system-metrics-validation.json,added,documentation
+docs/ios-wifi-native-abi-manifest.json,added,documentation
+docs/ios-wifi-native-blocker-resolution.md,added,documentation
+docs/ios-wifi-native-blocker-resolution.vi.md,added,documentation
+docs/ios-wifi-provider-feasibility.md,added,documentation
+docs/ios-wifi-rssi-checkpoints.md,added,documentation
+docs/ios-wifi-rssi-compatibility.md,added,documentation
+docs/ios-wifi-rssi-compatibility.vi.md,added,documentation
+docs/ios-wifi-rssi-validation.json,added,documentation
+docs/upstream-v021-acceptance.md,modified,documentation
+docs/upstream-v021-acceptance.vi.md,modified,documentation
+docs/upstream-v021-db-rollback.md,modified,documentation
+docs/upstream-v021-p004-integration.md,added,documentation
+docs/upstream-v021-p004-integration.vi.md,added,documentation
+docs/upstream-v021-p004-preservation.json,added,documentation
+docs/upstream-v021-p005-integration.md,added,documentation
+docs/upstream-v021-p005-integration.vi.md,added,documentation
+docs/upstream-v021-p005-preservation.json,added,documentation
+docs/upstream-v021-p006-integration.md,added,documentation
+docs/upstream-v021-p006-integration.vi.md,added,documentation
+docs/upstream-v021-p006-preservation.json,added,documentation
+docs/upstream-v021-risk-register.csv,modified,documentation
+docs/upstream-v021-risk-register.md,modified,documentation
+go.mod,modified,go-toolchain
+go.sum,modified,go-toolchain
+install.sh,modified,installer
+internal/alerts/alerts.go,modified,hub-api
+internal/alerts/alerts_access_test.go,added,tests
+internal/alerts/alerts_api.go,modified,hub-api
+internal/alerts/alerts_api_test.go,modified,tests
+internal/alerts/alerts_battery_test.go,modified,tests
+internal/alerts/alerts_cache.go,modified,hub-api
+internal/alerts/alerts_disk_test.go,modified,tests
+internal/alerts/alerts_history.go,modified,hub-api
+internal/alerts/alerts_network_monitor_cert_test.go,added,tests
+internal/alerts/alerts_network_monitors.go,added,hub-api
+internal/alerts/alerts_network_monitors_test.go,added,tests
+internal/alerts/alerts_quiet_hours_test.go,modified,tests
+internal/alerts/alerts_shutdown_test.go,added,tests
+internal/alerts/alerts_status_test.go,modified,tests
+internal/alerts/alerts_system.go,modified,hub-api
+internal/alerts/alerts_test.go,modified,tests
+internal/alerts/alerts_test_helpers.go,modified,tests
+internal/alerts/alerts_zfs_disk_test.go,modified,tests
+internal/alerts/network_monitor_cache.go,added,hub-api
+internal/alerts/notification_client_test.go,modified,tests
+internal/alerts/p014_missing_test.go,added,tests
+internal/alerts/p014_sparse_history_test.go,added,tests
