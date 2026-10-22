@@ -17,6 +17,9 @@ on:
       - tests/ios-workflow-isolation-test.py
       - tests/ios-patch-sentinels.sh
       - tests/upstream-sync-test.sh
+      - scripts/ios/p018-device-preflight.sh
+      - tests/ios-p018-device-preflight-test.sh
+      - docs/ios-p018-*
       - README.md
       - README.vi.md
       - docs/architecture.md
@@ -58,6 +61,9 @@ on:
       - tests/ios-workflow-isolation-test.py
       - tests/ios-patch-sentinels.sh
       - tests/upstream-sync-test.sh
+      - scripts/ios/p018-device-preflight.sh
+      - tests/ios-p018-device-preflight-test.sh
+      - docs/ios-p018-*
       - README.md
       - README.vi.md
       - docs/architecture.md
@@ -145,6 +151,11 @@ jobs:
           sh -n tests/bootstrap-test.sh
           sh -n tests/ios-patch-sentinels.sh
           sh -n tests/upstream-sync-test.sh
+          sh -n scripts/ios/p018-device-preflight.sh
+          sh -n tests/ios-p018-device-preflight-test.sh
+
+      - name: P018 read-only device preflight safety
+        run: sh tests/ios-p018-device-preflight-test.sh
 
       - name: Bootstrap checksum pin
         shell: bash

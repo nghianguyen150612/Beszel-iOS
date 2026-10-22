@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "milestone": "P018",
+  "status": "BLOCKED_REFERENCE_DEVICE_UNAVAILABLE",
+  "gate": "F",
+  "gateF": "PENDING",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "base": "ios/upstream-v021-integration",
+  "startingIntegrationSha": "f9d6500c7a68572dc8e464dd305d79bf6c1e79a9",
+  "device": {
+    "model": "iPad mini 2 A1489/iPad4,4",
+    "soc": "Apple A7",
+    "ios": "12.5.7",
+    "jailbreak": "Amethyst/Procursus rootful",
+    "physicalAccess": false,
+    "accessAssessment": "No authorized terminal/SSH session or target endpoint for the reference iPad was available through this ChatGPT Work execution. No network scan or device connection attempt was made."
+  },
+  "candidate": {
+    "release": false,
+    "tag": null,
+    "productBuildSha": "5a7351f752376e206a3e1809b3698bb03cc87b98",
+    "iosBuildRun": 39095687398,
+    "agentSha256": "87dff966e93d324e2b83a5029c749ce4578f906f099c388811a8ad025f73a4df",
+    "hubSha256": "54751f8191faddb58e8c933d0dff0929387cfd9cbe68e64b7c37c34a0bc309df"
+  },
+  "phases": {
+    "readOnlyPreflight": "NOT_RUN_ON_IPAD",
+    "coldBackupAndRecovery": "NOT_STARTED_REQUIRES_OPERATOR",
+    "stagedCandidateSigning": "NOT_STARTED_REQUIRES_OPERATOR",
+    "nativeRuntime": "NOT_RUN",
+    "telemetryAndNetwork": "NOT_RUN",
+    "launchdAndReboot": "NOT_RUN",
+    "dataPreservationAndRollback": "NOT_RUN",
+    "releaseApproval": "NOT_GRANTED"
+  },
+  "acceptance": {
+    "A7-DEVICE-01": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-01": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-02": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-03": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-04": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-05": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-AGENT-06": "PENDING_PHYSICAL_EVIDENCE",
+    "IOS-INSTALL-05": "PENDING_PHYSICAL_EVIDENCE",
+    "DB-DEVICE-01": "PENDING_PHYSICAL_EVIDENCE",
+    "WIFI-ABI-12": "PENDING_PHYSICAL_EVIDENCE",
+    "WIFI-ASSOCIATION-12": "PENDING_PHYSICAL_EVIDENCE",
+    "WIFI-AUTH-12": "PENDING_PHYSICAL_EVIDENCE",
+    "WIFI-BOUND-12": "PENDING_PHYSICAL_EVIDENCE"
+  },
+  "wifiNativeRSSI": "DEFERRED_P012_NO_AUTHORIZED_NATIVE_ACQUISITION",
+  "securityResiduals": [
+    {
+      "id": "GO-2026-6608",
+      "severity": "HIGH",
+      "status": "OPEN"
+    },
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "severity": "HIGH",
+      "status": "OPEN"
+    }
+  ],
+  "safety": {
+    "releasePublished": false,
+    "tagCreated": false,
+    "deviceContacted": false,
+    "productionDatabaseChanged": false,
+    "launchDaemonsChanged": false,
+    "automatedInstall": false,
+    "explicitReleaseAuthorization": false
+  },
+  "notes": [
+    "Rootful only; no Chimera-specific tweak instructions",
+    "No v0.21 GitHub Release exists; never test it by calling an installer that resolves Latest",
+    "Historical v0.19 on-device PASS is not v0.21 hardware evidence",
+    "No device testimony or credentials entered; GitHub evidence must remain sanitized"
+  ],
+  "cloudPreparation": {
+    "recordedAtUtc": "2026-10-18T05:09:23Z",
+    "lastUpdatedAtUtc": "2026-10-18T05:12:16Z",
+    "repositoryHeadUnderTest": "25aa2589182d1460839a300849f71f394472a4fb",
+    "workingTreeChangesAtLocalTest": [
+      ".github/workflows/ios-installer.yml",
+      "tests/ios-p018-device-preflight-test.sh"
+    ],
+    "deviceConnection": "BLOCKED_NO_AUTHORIZED_DEVICE_CONNECTION",
+    "upstreamAccounting": {
+      "frozenUpstreamCommits": "PASS 178/178",
+      "logicalIosPatches": "PASS 13/13",
+      "source": "scripts/audit/validate-upstream-v021-matrix.py and scripts/audit/validate-upstream-v021-readiness.py"
+    },
+    "tests": [
+      {
+        "id": "P018-CLOUD-01",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; syntax-only check did not execute candidate binaries",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh -n scripts/ios/p018-device-preflight.sh && sh -n tests/ios-p018-device-preflight-test.sh",
+        "expected": "Both POSIX shell scripts parse successfully.",
+        "actual": "Exit status 0.",
+        "result": "PASS",
+        "limitation": "Host syntax validation only; no iPad execution."
+      },
+      {
+        "id": "P018-CLOUD-02",
+        "environment": "ChatGPT Work Linux workspace, isolated host command stubs; branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; test exercised only the preflight script",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/ios-p018-device-preflight-test.sh",
+        "expected": "Only launchctl list is invoked; prohibited service, filesystem, installer, reboot, network, process-stop, and database-writer commands remain unused; unexpected arguments fail before service inspection.",
+        "actual": "P018 read-only device preflight safety checks passed.",
+        "result": "PASS",
+        "limitation": "Deterministic host-side safety test, not physical-device evidence."
+      },
+      {
+        "id": "P018-CLOUD-03",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; installer bootstrap fixtures only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/bootstrap-test.sh",
+        "expected": "All bootstrap integrity and lifecycle-isolation assertions pass.",
+        "actual": "54 passed, 0 failed.",
+        "result": "PASS",
+        "limitation": "Host fixtures only; no production install or device change."
+      },
+      {
+        "id": "P018-CLOUD-04",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; installer lifecycle fixtures only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/install-sh-test.sh",
+        "expected": "Installer lifecycle, read-only CLI, ordering, rollback, and data-preservation assertions pass.",
+        "actual": "873 passed, 0 failed.",
+        "result": "PASS",
+        "limitation": "Sandboxed host fixtures only; does not prove device signing, LaunchDaemon, or reboot behavior."
+      },
+      {
+        "id": "P018-CLOUD-05",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; synchronization parser fixtures only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/upstream-sync-test.sh",
+        "expected": "In-sync, behind, ahead, and malformed cases are classified correctly.",
+        "actual": "10 passed, 0 failed.",
+        "result": "PASS",
+        "limitation": "Fixture validation; not a device test."
+      },
+      {
+        "id": "P018-CLOUD-06",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; source-preservation sentinels only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "sh tests/ios-patch-sentinels.sh",
+        "expected": "Frozen iOS patch and runtime safety sentinels pass.",
+        "actual": "45 passed, 0 failed.",
+        "result": "PASS",
+        "limitation": "Source assertions; not native A7 execution."
+      },
+      {
+        "id": "P018-CLOUD-07",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; frozen upstream matrix audit",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "python3 scripts/audit/validate-upstream-v021-matrix.py",
+        "expected": "All expected upstream commits and historical iOS commits are accounted for with no unresolved audit rows.",
+        "actual": "178/178 upstream commits, 35/35 historical iOS commits, 0 unresolved audit rows; validation PASS.",
+        "result": "PASS",
+        "limitation": "Repository accounting only."
+      },
+      {
+        "id": "P018-CLOUD-08",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation at 25aa2589182d1460839a300849f71f394472a4fb",
+        "candidateHash": "N/A; readiness matrix audit",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "python3 scripts/audit/validate-upstream-v021-readiness.py",
+        "expected": "Readiness coverage includes all upstream commits, logical iOS patches, P0 risks, acceptance cases, and compatibility scenarios.",
+        "actual": "178 commits, 13 logical iOS patches, 21 P0 risks, 24 acceptance cases, 33 compatibility scenarios; validation PASS.",
+        "result": "PASS",
+        "limitation": "Readiness accounting only."
+      },
+      {
+        "id": "P018-CLOUD-09",
+        "environment": "ChatGPT Work Linux workspace, branch ios/p018-device-validation after local P018 tooling changes",
+        "candidateHash": "N/A; whitespace validation only",
+        "dateTimeUtc": "2026-10-18T05:09:23Z (result checkpoint)",
+        "command": "git diff --check",
+        "expected": "No whitespace errors or conflict markers in the working diff.",
+        "actual": "Exit status 0.",
+        "result": "PASS",
+        "limitation": "Local whitespace check only; hosted CI evidence is recorded separately as P018-CLOUD-10."
+      },
+      {
+        "id": "P018-CLOUD-10",
+        "environment": "GitHub Actions ubuntu-latest, iOS installer lifecycle workflow, pull_request event",
+        "repositoryHead": "e6e41c3e24654703006b4501251c4ebb2f8b1456",
+        "candidateHash": "N/A; workflow ran installer fixtures and did not launch the P017 Agent or Hub",
+        "dateTimeUtc": "2026-10-18T05:11:36Z to 2026-10-18T05:12:16Z",
+        "command": "Automatic workflow .github/workflows/ios-installer.yml for PR #22; run 39099705082",
+        "expected": "Changed-file CI steps complete successfully, including the P018 preflight safety test and existing installer regression checks.",
+        "actual": "Run 39099705082 completed with conclusion SUCCESS; POSIX syntax, P018 preflight safety, bootstrap pin/tests, Mach-O/workflow fixtures, 873 installer assertions, patch sentinels, and upstream-sync steps succeeded.",
+        "result": "PASS",
+        "evidence": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39099705082",
+        "limitation": "Hosted Linux CI only; no physical iPad identity, native runtime, signing, service, data, telemetry, or reboot behavior was tested."
+      }
+    ]
+  }
+}
