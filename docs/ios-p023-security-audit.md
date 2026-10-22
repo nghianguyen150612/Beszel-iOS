@@ -1,6 +1,6 @@
 # P023 security audit
 
-**Reviewed candidate code commit:** `c9e68e1858bd71792ac79193257c95e406eb4c87`\
+**Reviewed candidate code commit:** `f7a4525aeb7513163439b56b330ddfbd527c4da8`\
 **Branch:** `ios/p023-security-hardening`\
 **PR:** [#27](https://github.com/nghianguyen150612/Beszel-iOS/pull/27), Draft, targeting `ios/upstream-v021-integration`\
 **Starting integration:** `fd334076f53d8354a4924a4c734f29cf65a43879`
@@ -62,7 +62,7 @@ ahead of the pinned snapshot at baseline; those commits remain excluded.
   verified fixed `braces` release.
 - The independent OSV scan covers all 510 npm lock nodes and 494 unique
   package/version queries. The result source-bound to
-  `c9e68e1858bd71792ac79193257c95e406eb4c87` contains only the same GHSA for
+  `304cc862e79ee821080e2b217da1009e945aa9d2` contains only the same GHSA for
   `braces@3.0.3`, with no fixed version. On an earlier run, the official npm
   registry timed out; only that exact timeout activates the OSV fallback,
   and raw npm errors remain retained.
@@ -89,24 +89,40 @@ ahead of the pinned snapshot at baseline; those commits remain excluded.
   verification remains enabled.
 - Docker Go builder images use reviewed Go 1.27.3 Alpine and Bookworm
   manifest digests and fail if the image reports another Go version.
-- Workflow action references remain version tags rather than immutable action
-  commit SHAs. The local environment had no `zizmor` or `actionlint`;
-  workflow source, permissions, trigger isolation, and repository workflow
-  regression tests were reviewed. No independent advisory database scan of
-  Actions dependencies is claimed.
+- The initial `zizmor v1.31.1` scan found 72 workflow findings: 51 mutable
+  action references, 9 checkout credential-persistence findings, 6 cache
+  exposure findings, 4 broad permission findings, and 2 shell interpolation
+  findings. P023 resolved all 19 unique action release tags to their upstream
+  commit SHAs and pinned all 54 workflow action use sites. A regression test
+  now rejects any unpinned action reference.
+- P023 narrowed GHCR write permission to the push-only Helm publish job, moved
+  chart outputs through environment variables, disabled reusable Bun/Go caches
+  in release and native build workflows, and stopped checkout from persisting
+  credentials. The two workflows that push with explicit secrets now use
+  short-lived `GIT_ASKPASS` helpers instead of checkout credential storage.
+- `actionlint v1.7.12` and `zizmor v1.31.1` official Linux release archives
+  were SHA-256 verified as `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8`
+  and `d185f726bdaf92df78273217dfdd24ebcd6b0ef48cf3ce776ff5762b6e138c99`.
+  Both scanned the final workflow set locally: actionlint passed and Zizmor
+  returned zero findings. P017 repeats both checks on the exact PR source,
+  fails on findings or syntax errors, and uploads raw reports for review.
+- Zizmor checks workflow patterns and known vulnerable action use. This is not
+  a full dependency/CVE scan of every action's bundled runtime. Commit pinning
+  prevents tag movement; residual action-code vulnerability coverage remains
+  limited to the scanner's online rules and is disclosed for release review.
 
 ## Regression and release safeguards
 
 The exact-head P017 run covers the Go suite and Agent/Hub builds, dependency
-scans, auth and transport regressions, source ancestry checks, frontend
-installation/tests/build, localization, installer/bootstrap behavior, and
-release workflow isolation. P013 builds and migrates a disposable genuine
-v0.19 fixture. The installer workflow covers bootstrap, rollback, lifecycle,
+scans, actionlint and Zizmor workflow analysis, auth and transport regressions,
+source ancestry checks, frontend installation/tests/build, localization,
+installer/bootstrap behavior, and release workflow isolation. P013 builds
+and migrates a disposable genuine v0.19 fixture. The installer workflow covers bootstrap, rollback, lifecycle,
 and artifact integrity. Hosted macOS CI separately builds Agent and Hub with
 Go 1.27.3 and validates Mach-O metadata, iOS 12.0 minimum, A7 instructions,
 checksums, source provenance, embedded assets, and private MobileWiFi linkage.
 
-Local evidence includes a serial full Go suite PASS, 117 audit tests PASS,
+Local evidence includes a serial full Go suite PASS, 123 audit tests PASS,
 `crypto/x509` tests PASS, frozen frontend installation, Bun tests, Lingui
 extraction/compilation, TypeScript/Vite build, and lockfile immutability. The
 first local Go full-suite run used parallel package test binaries and exposed
@@ -115,11 +131,18 @@ assertion was weakened. An early frontend command's whole-worktree check
 returned nonzero because P023 code was already uncommitted; targeted
 catalog/lockfile checks and the frontend rerun passed.
 
-Hosted runs on
-`c9e68e1858bd71792ac79193257c95e406eb4c87` are authoritative for Gate H.
-The current run IDs and in-progress status are recorded in
-[P023 validation](ios-p023-validation.json) and the
-[checkpoint log](ios-p023-checkpoints.md); the final PR-head runs must pass.
+Hosted run 39717185832 on
+`304cc862e79ee821080e2b217da1009e945aa9d2` failed the newly added actionlint
+step (SC2129 and malformed heredoc indentation); Zizmor reported zero findings.
+The workflow fixes are pushed at
+`f7a4525aeb7513163439b56b330ddfbd527c4da8`. That source's P017, native,
+installer, migration, and Helm runs are in progress or queued; the current IDs
+are recorded in [P023 validation](ios-p023-validation.json). The first local
+audit test invocation also used Python's default `/tmp` for temporary fixtures;
+they were automatically removed. The successful rerun used the workspace-local
+pinned toolchain and all temporary/cache paths under `.p023-task`. This boundary
+incident remains disclosed in the validation record. Final PR-head runs remain
+mandatory for Gate H.
 
 ## Boundaries and residual decisions
 

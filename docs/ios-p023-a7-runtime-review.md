@@ -1,6 +1,6 @@
 # P023 Apple A7 runtime review
 
-**Reviewed candidate code commit:** `c9e68e1858bd71792ac79193257c95e406eb4c87`  
+**Reviewed candidate code commit:** `f7a4525aeb7513163439b56b330ddfbd527c4da8`\
 **Toolchain:** Go 1.27.3  
 **Target:** iOS device ARM64, deployment minimum 12.0
 

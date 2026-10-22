@@ -3,7 +3,7 @@
   "milestone": "P023",
   "phase": "exact_head_hosted_qualification",
   "status": "IN_PROGRESS",
-  "candidate_code_source_sha": "c9e68e1858bd71792ac79193257c95e406eb4c87",
+  "candidate_code_source_sha": "f7a4525aeb7513163439b56b330ddfbd527c4da8",
   "branch": "ios/p023-security-hardening",
   "pull_request": {
     "number": 27,
@@ -30,38 +30,59 @@
   },
   "local_checks": {
     "serial_full_go_suite": "PASS; package tests run with -p 1 to avoid the shared process-health marker race",
-    "audit_unit_tests": "PASS; 117 tests",
+    "audit_unit_tests": "PASS; 123 tests under Go 1.27.3 with HOME, TMPDIR, GOCACHE, GOMODCACHE, and GOPATH under /workspace/Beszel-iOS/.p023-task",
     "crypto_x509": "PASS; go test crypto/x509 -count=1",
     "frontend": "PASS; frozen install, Bun tests, Lingui extraction/compile, Vite build, lockfile hashes unchanged",
     "hub_migration_backup_tests": "PASS; 7 tests",
     "openpgp_profiles": "PASS; six profiles, no OpenPGP imports or packages",
-    "npm_osv_lock_scan": "PASS_WITH_REVIEWED_ADVISORY; source-bound to c9e68e1858bd71792ac79193257c95e406eb4c87; 510 lock nodes, 494 exact package/version queries, only GHSA-vfj7-8cjw-p6xm",
-    "docker_toolchain_contract": "PASS; six Docker Go builder stages pinned and version-checked"
+    "npm_osv_lock_scan": "PASS_WITH_REVIEWED_ADVISORY; source-bound to 304cc862e79ee821080e2b217da1009e945aa9d2; 510 lock nodes, 494 exact package/version queries, only GHSA-vfj7-8cjw-p6xm",
+    "docker_toolchain_contract": "PASS; six Docker Go builder stages pinned and version-checked",
+    "ios_workflow_isolation": "PASS; 36 checks",
+    "actionlint": "PASS; v1.7.12; official archive SHA-256 verified after hosted shell scan findings were fixed",
+    "zizmor": "PASS; v1.31.1; zero findings on current workflow tree; official archive SHA-256 verified",
+    "github_action_refs": "PASS; 54 use sites, 19 unique upstream tag refs pinned to full commit SHAs"
   },
   "github_workflow_runs": {
-    "candidate_source_sha": "c9e68e1858bd71792ac79193257c95e406eb4c87",
+    "candidate_source_sha": "f7a4525aeb7513163439b56b330ddfbd527c4da8",
     "ios_build": {
-      "run_id": 39715959892,
+      "run_id": 39717756410,
       "status": "IN_PROGRESS"
     },
     "installer_lifecycle": {
-      "run_id": 39715959834,
-      "status": "IN_PROGRESS"
+      "run_id": 39717756362,
+      "status": "SUCCESS"
     },
     "hub_migration": {
-      "run_id": 39715960089,
+      "run_id": 39717756382,
       "status": "IN_PROGRESS"
     },
     "p017_security_regression": {
-      "run_id": 39715959911,
+      "run_id": 39717756411,
       "status": "IN_PROGRESS",
-      "go_security_scan": "PASS on exact source SHA c9e68e1858bd71792ac79193257c95e406eb4c87; overall workflow in progress"
+      "workflow_security_scan": "PENDING; exact-source actionlint and Zizmor step not yet reached",
+      "go_security_scan": "Native x509 verification PASS; govulncheck running on exact source f7a4525aeb7513163439b56b330ddfbd527c4da8"
+    },
+    "helm_validation": {
+      "run_id": 39717756365,
+      "status": "SUCCESS",
+      "publish_job": "SKIPPED_ON_PULL_REQUEST"
+    },
+    "previous_head_304cc": {
+      "source_sha": "304cc862e79ee821080e2b217da1009e945aa9d2",
+      "ios_build_run_id": 39717185808,
+      "installer_lifecycle_run_id": 39717185951,
+      "hub_migration_run_id": 39717185990,
+      "hub_migration_status": "SUCCESS",
+      "p017_security_regression_run_id": 39717185832,
+      "p017_status": "FAILURE",
+      "p017_failure": "Hosted actionlint exited 1: SC2129 repeated GITHUB_ENV redirects in ios-build.yml and malformed heredoc indentation in sync-upstream-main.yml. Zizmor exited 0 with zero findings. Both actionlint findings were fixed in f7a4525aeb7513163439b56b330ddfbd527c4da8.",
+      "workflow_evidence_artifact_id": 12399702486
     }
   },
   "native_artifact": {
     "downloaded": false,
-    "independent_sha256_verification": "PENDING",
-    "source_sha_binding": "PENDING"
+    "independent_sha256_verification": "PENDING exact-head iOS build artifact",
+    "source_sha_binding": "PENDING exact-head iOS build artifact"
   },
   "preservation": {
     "pinned_upstream_commits": "41/41 expected; exact candidate workflow check pending",
@@ -76,7 +97,7 @@
   "javascript_dependency_review": "docs/ios-p023-javascript-dependency-review.md",
   "release_security_disposition": "docs/ios-p023-release-security.md",
   "gate_g": "PASS inherited from merged P022 PR #26",
-  "gate_h": "PENDING exact-head hosted qualification",
+  "gate_h": "PENDING exact-head hosted qualification; workspace-boundary incident disclosed in this record",
   "p018_gate_f": "PENDING",
   "release_authorization": "NOT_GRANTED",
   "production_ios_modified": false,
@@ -85,8 +106,11 @@
   "sudo_used": false,
   "release_created": false,
   "tag_created": false,
-  "workspace_violations": [],
+  "workspace_violations": [
+    "Initial local audit unittest invocation omitted TMPDIR, so Python TemporaryDirectory created short-lived fixtures outside /workspace/Beszel-iOS. The test failed before producing JSON because /usr/bin/go was a nonstandard wrapper. Python cleaned the temporary fixtures. A later run used the pinned Go 1.27.3 binary and set HOME, TMPDIR, TMP, TEMP, GOCACHE, GOMODCACHE, and GOPATH inside /workspace/Beszel-iOS/.p023-task; all 123 audit tests passed."
+  ],
   "unpushed_commits": [],
-  "qualification_snapshot_utc": "2026-10-22T03:19:53Z",
-  "branch_sha_at_snapshot": "c9e68e1858bd71792ac79193257c95e406eb4c87"
+  "qualification_snapshot_utc": "2026-10-22T03:37:53Z",
+  "branch_sha_at_snapshot": "f7a4525aeb7513163439b56b330ddfbd527c4da8",
+  "uncommitted_changes": "Documentation checkpoint updates in progress; implementation fixes already committed and pushed"
 }

@@ -2,7 +2,7 @@
   "schema": 1,
   "milestone": "P023",
   "phase": "candidate_qualification",
-  "reviewed_source_commit": "c9e68e1858bd71792ac79193257c95e406eb4c87",
+  "reviewed_source_commit": "f7a4525aeb7513163439b56b330ddfbd527c4da8",
   "reviewed_on": "2026-10-22",
   "advisories": [
     {
@@ -107,5 +107,41 @@
   ],
   "newly_discovered_advisories": [],
   "release_authorization": "NOT_GRANTED",
-  "exact_head_hosted_qualification": "PENDING"
+  "exact_head_hosted_qualification": "PENDING",
+  "workflow_security_review": {
+    "scanner_tools": {
+      "zizmor": {
+        "version": "1.31.1",
+        "archive_sha256": "d185f726bdaf92df78273217dfdd24ebcd6b0ef48cf3ce776ff5762b6e138c99"
+      },
+      "actionlint": {
+        "version": "1.7.12",
+        "archive_sha256": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+      }
+    },
+    "initial_static_findings": {
+      "total": 72,
+      "unpinned_uses": 51,
+      "artipacked": 9,
+      "cache_poisoning": 6,
+      "excessive_permissions": 4,
+      "template_injection": 2
+    },
+    "pinned_action_targets": 19,
+    "pinned_action_use_sites": 54,
+    "implemented_changes": [
+      "pin every external workflow action use site to an upstream-resolved full commit SHA",
+      "scope GHCR packages:write to push-only Helm publishing",
+      "disable reusable Bun and Go caches in release/native builds",
+      "disable checkout credential persistence and use GIT_ASKPASS for the two required write workflows",
+      "pass chart and native source outputs through environment variables"
+    ],
+    "final_local_status": {
+      "actionlint": "PASS",
+      "zizmor_findings": 0,
+      "immutable_action_ref_regression": "PASS"
+    },
+    "hosted_gate": "PENDING exact-head P017 run 39717756411 on source f7a4525aeb7513163439b56b330ddfbd527c4da8",
+    "scope_limit": "Zizmor checks workflow patterns and known vulnerable action use; no comprehensive CVE scan of every action bundled runtime is claimed."
+  }
 }

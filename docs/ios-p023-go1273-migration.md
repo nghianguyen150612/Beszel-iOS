@@ -1,6 +1,6 @@
 # P023 Go 1.27.3 migration
 
-**Reviewed candidate code commit:** `c9e68e1858bd71792ac79193257c95e406eb4c87`  
+**Reviewed candidate code commit:** `f7a4525aeb7513163439b56b330ddfbd527c4da8`\
 **Go release:** `go1.27.3`, released 2026-10-19  
 **Starting integration:** `fd334076f53d8354a4924a4c734f29cf65a43879`
 
@@ -73,7 +73,7 @@ The source-level scan does not infer exploitability from the mere presence of
 ## Qualification scope
 
 Local Go 1.27.3 qualification passed `go test crypto/x509 -count=1`, all
-117 audit tests, the six-profile OpenPGP guard, and the serial full Go suite.
+123 audit tests, the six-profile OpenPGP guard, and the serial full Go suite.
 Hosted P017 CI runs the same-version symbol scan, full Go tests, and portable
 Agent/Hub builds. Hosted macOS CI patches an isolated Go 1.27.3 GOROOT for A7
 compatibility and independently builds native iOS Agent and Hub. It checks

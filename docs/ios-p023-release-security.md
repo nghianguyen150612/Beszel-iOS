@@ -1,6 +1,6 @@
 # P023 release security disposition
 
-**Reviewed candidate code commit:** `c9e68e1858bd71792ac79193257c95e406eb4c87`  
+**Reviewed candidate code commit:** `f7a4525aeb7513163439b56b330ddfbd527c4da8`\
 **PR:** [#27](https://github.com/nghianguyen150612/Beszel-iOS/pull/27)  
 **State:** Draft; Gate H pending exact-head cloud qualification
 
@@ -38,6 +38,18 @@ and no fixed version.
   and rollback controls remain covered by P017 and installer lifecycle tests.
 - P023 changes no tag, published release, production `iOS` branch, fork
   `main`, database, or physical device.
+
+## GitHub Actions supply chain
+
+The initial workflow scan found 72 static findings. P023 pinned all 54 action
+use sites to 19 commit SHAs resolved from upstream release tags, narrowed
+permissions, removed reusable release/native build caches, and stopped
+persisting checkout credentials. The final local `actionlint v1.7.12` run passed and `zizmor v1.31.1`
+reported zero findings. The first hosted scan on 304cc failed actionlint on two
+shell lint findings, which were fixed and pushed at f7a4525. P017 is rerunning
+both scans on that exact source and retains raw output. Zizmor's workflow scan is not
+a complete CVE scan of bundled action runtimes; action-source advisory coverage
+remains bounded by its online rules.
 
 ## Gate H and authorization
 

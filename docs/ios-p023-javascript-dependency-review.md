@@ -1,6 +1,6 @@
 # P023 JavaScript dependency review
 
-**Reviewed candidate code commit:** `c9e68e1858bd71792ac79193257c95e406eb4c87`  
+**Reviewed candidate code commit:** `f7a4525aeb7513163439b56b330ddfbd527c4da8`\
 **Reviewed on:** 2026-10-22  
 **Finding:** `GHSA-vfj7-8cjw-p6xm` / `CVE-2026-93687`
 
