@@ -106,7 +106,7 @@ jobs:
             --env BESZEL_APT_QUERY_ISOLATED=1 \
             --env BESZEL_REQUIRE_OFFLINE_APT_SANDBOX=1 \
             --env BESZEL_HEALTH_DIR=/tmp/beszel-health \
-            golang:1.27.3-bookworm bash -euo pipefail -c '
+            golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 bash -euo pipefail -c '
               mkdir -p "$HOME" "$GOCACHE" "$BESZEL_HEALTH_DIR"
               test "$(go env GOVERSION)" = go1.27.3
               go version
@@ -120,6 +120,7 @@ jobs:
     timeout-minutes: 90
     env:
       PYTHONDONTWRITEBYTECODE: "1"
+      BESZEL_HEALTH_DIR: ${{ github.workspace }}/.task/health
 
     steps:
       - name: Checkout
@@ -135,6 +136,9 @@ jobs:
           set -euo pipefail
           sh tests/ios-patch-sentinels.sh
           sh tests/upstream-sync-test.sh
+
+      - name: Prepare workspace-local health marker directory
+        run: mkdir -p "$BESZEL_HEALTH_DIR"
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -174,7 +178,7 @@ jobs:
           set -euo pipefail
           env -u NETWORK go test -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system
           env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./agent/battery ./agent/deltatracker ./internal/entities/system -run 'Test(P008|IOSBattery|CalculateHostMemory|CpuMetrics|GetAllBusy|Disk|SumAndTrack|SkipNetwork|Serialization|Battery|Primary|Normalize)' -count=1
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent/health ./internal/cmd/agent -count=3
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent/health ./internal/cmd/agent -count=3
 
       - name: Test disabled native Wi-Fi diagnostic and public CF ownership
         shell: bash
@@ -194,23 +198,23 @@ jobs:
           env -u NETWORK go test -race -tags 'testing no_ui' \
             agent/wifi/wifi.go agent/wifi/wifi_ios.go \
             agent/wifi/wifi_test.go agent/wifi/wifi_ios_test.go -count=3
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent/wifi ./agent ./internal/hub/transport ./internal/hub/systems \
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent/wifi ./agent ./internal/hub/transport ./internal/hub/systems \
             -run 'TestP012|TestCreateRecordsWiFi|TestFetchDataViaWebSocketDoesNotRetainOmittedFields' -count=3 -timeout=180s
 
       - name: Test transport faults and races
         shell: bash
         run: |
           set -euo pipefail
-          env -u NETWORK go test -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems ./internal/common
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport -run TestP009 -count=3 -timeout=180s
+          env -u NETWORK go test -p 1 -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems ./internal/common
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport ./internal/hub/systems
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent ./internal/hub/ws ./internal/hub/transport -run TestP009 -count=3 -timeout=180s
 
       - name: Test network monitor compatibility and fault recovery
         shell: bash
         run: |
           set -euo pipefail
-          env -u NETWORK go test -race -tags 'testing no_ui' ./agent ./internal/hub/transport -run TestP010 -count=3 -timeout=180s
-          env -u NETWORK go test -race -tags 'testing no_ui' ./internal/hub ./internal/hub/systems -run 'Test.*NetworkMonitor|TestGenerateMonitorID|TestCopyMonitor' -count=1
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./agent ./internal/hub/transport -run TestP010 -count=3 -timeout=180s
+          env -u NETWORK go test -p 1 -race -tags 'testing no_ui' ./internal/hub ./internal/hub/systems -run 'Test.*NetworkMonitor|TestGenerateMonitorID|TestCopyMonitor' -count=1
 
       - name: Preserve macOS build and GPU parser tests
         shell: bash

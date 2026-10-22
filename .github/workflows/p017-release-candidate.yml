@@ -72,30 +72,6 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.0
-      - name: Audit Bun and npm lockfile advisories
-        shell: bash
-        working-directory: internal/site
-        run: |
-          set -uo pipefail
-          bun audit --json --audit-level low > "$RUNNER_TEMP/p023-bun-audit.json"
-          bun_status=$?
-          npm audit --json --audit-level=low --package-lock-only > "$RUNNER_TEMP/p023-npm-audit.json"
-          npm_status=$?
-          python3 ../../scripts/audit/summarize-p023-js-audits.py \
-            --bun-report "$RUNNER_TEMP/p023-bun-audit.json" --bun-exit-code "$bun_status" \
-            --npm-report "$RUNNER_TEMP/p023-npm-audit.json" --npm-exit-code "$npm_status" \
-            --output "$RUNNER_TEMP/p023-js-audit-summary.json"
-      - name: Upload P023 JavaScript dependency evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: p023-javascript-audit-evidence
-          path: |
-            ${{ runner.temp }}/p023-bun-audit.json
-            ${{ runner.temp }}/p023-npm-audit.json
-            ${{ runner.temp }}/p023-js-audit-summary.json
-          if-no-files-found: ignore
-          retention-days: 14
       - name: Verify source provenance and frozen upstream ancestry
         shell: bash
         run: |
@@ -136,6 +112,38 @@ jobs:
           sha256sum -c "$RUNNER_TEMP/p017-lock.sha256"
           git restore -- src/locales
           git diff --exit-code
+      - name: Audit installed Bun and npm dependency graphs
+        shell: bash
+        working-directory: internal/site
+        run: |
+          set +e
+          bun audit --json --audit-level low \
+            > "$RUNNER_TEMP/p023-bun-audit.json" \
+            2> "$RUNNER_TEMP/p023-bun-audit.stderr.log"
+          bun_status=$?
+          npm audit --json --audit-level=low --package-lock-only \
+            --fetch-retries=1 --fetch-timeout=30000 \
+            > "$RUNNER_TEMP/p023-npm-audit.json" \
+            2> "$RUNNER_TEMP/p023-npm-audit.stderr.log"
+          npm_status=$?
+          set -e
+          python3 ../../scripts/audit/summarize-p023-js-audits.py \
+            --bun-report "$RUNNER_TEMP/p023-bun-audit.json" --bun-exit-code "$bun_status" \
+            --npm-report "$RUNNER_TEMP/p023-npm-audit.json" --npm-exit-code "$npm_status" \
+            --output "$RUNNER_TEMP/p023-js-audit-summary.json"
+      - name: Upload P023 JavaScript dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p023-javascript-audit-evidence
+          path: |
+            ${{ runner.temp }}/p023-bun-audit.json
+            ${{ runner.temp }}/p023-bun-audit.stderr.log
+            ${{ runner.temp }}/p023-npm-audit.json
+            ${{ runner.temp }}/p023-npm-audit.stderr.log
+            ${{ runner.temp }}/p023-js-audit-summary.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Verify OpenPGP package reachability
         shell: bash
         run: |
@@ -168,7 +176,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          env -u NETWORK go test -tags 'testing no_ui' ./... -count=1 -timeout=20m
+          # Agent and Hub tests share the process-health marker path. Run all
+          # package test binaries serially so cleanup in one package cannot
+          # invalidate another package's liveness assertions.
+          env -u NETWORK go test -p 1 -tags 'testing no_ui' ./... -count=1 -timeout=20m
           env -u NETWORK go build -tags 'no_ui' -o "$RUNNER_TEMP/p017-agent" ./internal/cmd/agent
           env -u NETWORK go build -tags 'no_ui' -o "$RUNNER_TEMP/p017-hub" ./internal/cmd/hub
       - name: Record source and frontend manifest (not a native iOS artifact)

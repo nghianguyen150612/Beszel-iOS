@@ -143,7 +143,10 @@ func scanDependencyProfiles(root string) ([]Profile, error) {
 	profiles := []profileSpec{
 		{name: "host-default-with-tests", args: []string{"-deps", "-test", "-json", "./..."}},
 		{name: "host-testing-no_ui-with-tests", args: []string{"-deps", "-test", "-json", "-tags=testing,no_ui", "./..."}},
+		{name: "host-development-with-tests", args: []string{"-deps", "-test", "-json", "-tags=development", "./..."}},
+		{name: "host-development-testing-no_ui-with-tests", args: []string{"-deps", "-test", "-json", "-tags=development,testing,no_ui", "./..."}},
 		{name: "ios-arm64-testing-no_ui-with-tests", args: []string{"-deps", "-test", "-json", "-tags=testing,no_ui", "./..."}, env: map[string]string{"GOOS": "ios", "GOARCH": "arm64", "GOARM64": "v8.0", "CGO_ENABLED": "1", "CC": "clang"}},
+		{name: "ios-arm64-development-testing-no_ui-with-tests", args: []string{"-deps", "-test", "-json", "-tags=development,testing,no_ui", "./..."}, env: map[string]string{"GOOS": "ios", "GOARCH": "arm64", "GOARM64": "v8.0", "CGO_ENABLED": "1", "CC": "clang"}},
 	}
 	results := make([]Profile, 0, len(profiles))
 	for _, profile := range profiles {

@@ -57,10 +57,18 @@ class P023GoVulncheckTests(unittest.TestCase):
         return "\n".join([message(**self.config), message(**self.sbom), *(message(finding=f) for f in findings)])
 
     def test_clean_go_1273_scan_and_native_x509_pass(self):
-        result = module.summarize(self.report(), "go1.27.3", self.x509, self.openpgp, self.policy)
-        self.assertEqual(result["finding_ids"], [])
+        retained = {"osv": "GO-2026-5932", "trace": [{"module": "golang.org/x/crypto", "version": "v0.58.0"}]}
+        result = module.summarize(self.report(retained), "go1.27.3", self.x509, self.openpgp, self.policy)
+        self.assertEqual(result["finding_ids"], ["GO-2026-5932"])
         self.assertEqual(result["security_dispositions"][0]["remediation_status"], "REMEDIATED_AND_VERIFIED")
-        self.assertTrue(result["security_dispositions"][1]["not_a_vulnerability_fix"])
+        go6608 = next(item for item in result["security_dispositions"] if item["advisory"] == "GO-2026-6608")
+        self.assertEqual(go6608["remediation_status"], "REMEDIATED_AND_VERIFIED")
+        go5932 = next(item for item in result["security_dispositions"] if item["advisory"] == "GO-2026-5932")
+        self.assertTrue(go5932["not_a_vulnerability_fix"])
+
+    def test_fails_if_the_known_module_finding_disappears(self):
+        with self.assertRaisesRegex(ValueError, "raw scanner finding is missing"):
+            module.summarize(self.report(), "go1.27.3", self.x509, self.openpgp, self.policy)
 
     def test_preserves_bounded_module_only_x_crypto_warning(self):
         finding = {"osv": "GO-2026-5932", "trace": [{"module": "golang.org/x/crypto", "version": "v0.58.0"}]}

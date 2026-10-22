@@ -20,7 +20,10 @@ EXPECTED_X509_SOURCE_SHA256 = {
 EXPECTED_PROFILES = {
     "host-default-with-tests",
     "host-testing-no_ui-with-tests",
+    "host-development-with-tests",
+    "host-development-testing-no_ui-with-tests",
     "ios-arm64-testing-no_ui-with-tests",
+    "ios-arm64-development-testing-no_ui-with-tests",
 }
 POLICY_PATH = Path(__file__).resolve().parents[2] / "docs/ios-p023-advisory-policy.json"
 
@@ -103,6 +106,7 @@ def validate_policy(policy: dict) -> dict:
         "resolved_module_version": "v0.58.0",
         "affected_package_prefix": OPENPGP_PREFIX,
         "allowed_finding_shape": "module-only trace with no package or function symbols",
+        "minimum_occurrences": 1,
         "maximum_occurrences": 1,
         "remediation_status": "NOT_REACHABLE_WITH_EVIDENCE",
         "release_owner_decision_required": True,
@@ -157,8 +161,8 @@ def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_eviden
     unreviewed = sorted(set(counts) - {GO_5932})
     if unreviewed:
         raise ValueError(f"unreviewed Go advisory findings fail the P023 gate: {unreviewed}")
-    if counts.get(GO_5932, 0) > policy_entry["maximum_occurrences"]:
-        raise ValueError("GO-2026-5932 exceeds the reviewed occurrence bound")
+    if not policy_entry["minimum_occurrences"] <= counts.get(GO_5932, 0) <= policy_entry["maximum_occurrences"]:
+        raise ValueError("GO-2026-5932 raw scanner finding is missing or exceeds its reviewed occurrence bound")
 
     for finding in details:
         if finding["id"] != GO_5932:
@@ -186,12 +190,22 @@ def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_eviden
         "security_dispositions": [
             x509,
             {
+                "advisory": GO_6608,
+                "raw_scanner_status": "absent from the exact Go 1.27.3 source scan",
+                "affected_versions": "Go 1.27.0 before 1.27.2",
+                "fixed_version": "go1.27.2",
+                "current_go_version": EXPECTED_GO,
+                "remediation_status": "REMEDIATED_AND_VERIFIED",
+                "actual_mitigation": "Run the official Go 1.27.3 toolchain, which includes the Go 1.27.2 standard-library fix; exact source scan contains no GO-2026-6608 finding.",
+                "release_owner_decision_required": False,
+            },
+            {
                 "advisory": GO_5932,
                 "raw_scanner_status": "module-level finding retained" if GO_5932 in counts else "absent from raw source findings",
                 "remediation_status": "NOT_REACHABLE_WITH_EVIDENCE",
                 "affected_package_imported_or_reachable": False,
                 "module_remains_present": True,
-                "actual_mitigation": "Static Go AST import guard plus host/default, host/testing/no_ui, and iOS arm64/testing/no_ui go list profiles; no OpenPGP paths found.",
+                "actual_mitigation": "Static Go AST import guard plus host default, testing/no_ui, development, development/testing/no_ui, iOS testing/no_ui, and iOS development/testing/no_ui go list profiles; no OpenPGP paths found.",
                 "not_a_vulnerability_fix": True,
                 "release_owner_decision_required": True,
             },
