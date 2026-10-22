@@ -15,6 +15,7 @@ on:
       - "docs/ios-hub-*"
       - "docs/ios-p021-*"
       - "docs/ios-p022-*"
+      - "docs/ios-p023-*"
       - "docs/ios-wifi-rssi-*"
       - ".github/workflows/p013-hub-migration.yml"
 
@@ -38,6 +39,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@v6

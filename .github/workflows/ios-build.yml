@@ -21,6 +21,7 @@ on:
       - "docs/ios-p020-*"
       - "docs/ios-p021-*"
       - "docs/ios-p022-*"
+      - "docs/ios-p023-*"
       - "docs/ios-release-candidate*"
   push:
     branches:
@@ -75,6 +76,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -104,9 +106,9 @@ jobs:
             --env BESZEL_APT_QUERY_ISOLATED=1 \
             --env BESZEL_REQUIRE_OFFLINE_APT_SANDBOX=1 \
             --env BESZEL_HEALTH_DIR=/tmp/beszel-health \
-            golang:1.27.2-bookworm bash -euo pipefail -c '
+            golang:1.27.3-bookworm bash -euo pipefail -c '
               mkdir -p "$HOME" "$GOCACHE" "$BESZEL_HEALTH_DIR"
-              test "$(go env GOVERSION)" = go1.27.2
+              test "$(go env GOVERSION)" = go1.27.3
               go version
               go test -race -v -tags "testing no_ui" ./agent \
                 -run "Test(DetectProcursusAPT|ParseProcursusAPT|ProcursusAPT|CompareDpkgVersions|CheckProcursusAPT)" \
@@ -115,6 +117,7 @@ jobs:
 
   build-ios:
     runs-on: macos-14
+    timeout-minutes: 90
     env:
       PYTHONDONTWRITEBYTECODE: "1"
 
@@ -124,6 +127,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Run iOS maintenance sentinels
         shell: bash
@@ -261,13 +265,13 @@ jobs:
           echo "CGO_ENABLED=1" >> "$GITHUB_ENV"
           echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh" >> "$GITHUB_ENV"
 
-      - name: Backport and test Go 1.27.2 x509 security fix
+      - name: Verify native Go 1.27.3 x509 security fix
         shell: bash
         run: |
           set -euo pipefail
-          test "$(go env GOVERSION)" = go1.27.2
-          python3 scripts/audit/patch-go-x509-security.py \
-            --output "$RUNNER_TEMP/go-x509-security-backport.json"
+          test "$(go env GOVERSION)" = go1.27.3
+          python3 scripts/audit/validate-go-x509-native.py \
+            --output "$RUNNER_TEMP/go-x509-security-native.json"
 
       - name: Build separate disabled iOS Wi-Fi diagnostic and client compile fixture
         shell: bash
@@ -367,7 +371,7 @@ jobs:
           path: |
             ${{ runner.temp }}/source-selection.json
             ${{ runner.temp }}/runtime-patch.json
-            ${{ runner.temp }}/go-x509-security-backport.json
+            ${{ runner.temp }}/go-x509-security-native.json
             ${{ runner.temp }}/runtime-agent.json
             ${{ runner.temp }}/runtime-hub.json
             ${{ runner.temp }}/native-artifacts.json

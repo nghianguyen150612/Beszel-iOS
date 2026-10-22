@@ -2,7 +2,7 @@
 
 `harness.py` builds the real Beszel Hub from the pinned production v0.19 source and the v0.21 source at the clean checkout `HEAD`. It builds each version's actual production frontend from the frozen Bun lockfile, then starts v0.19 in a fresh temporary data directory and seeds synthetic accounts, settings, systems, and historical records through Hub/PocketBase APIs. It reopens that original fixture with the same v0.19 binary and records a redacted manifest. The SQLite database and private SSH key are never copied to the output directory.
 
-Requirements are the Go version pinned by `go.mod` (Go 1.27.2 for the P019 candidate), Bun 1.4.0, Python 3, `git`, `tar`, and `ssh-keygen`. The checkout must be clean and descend from the verified P013 starting integration SHA `d6239915e404668c10453ab2ec44f797b2f0178e`.
+Requirements are the Go version pinned by `go.mod` (Go 1.27.3 for P023), Bun 1.4.0, Python 3, `git`, `tar`, and `ssh-keygen`. The checkout must be clean and descend from the verified P013 starting integration SHA `d6239915e404668c10453ab2ec44f797b2f0178e`.
 
 Run from the repository root:
 

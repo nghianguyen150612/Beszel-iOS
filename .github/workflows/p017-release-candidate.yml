@@ -18,6 +18,7 @@ on:
       - 'docs/ios-p020-*'
       - 'docs/ios-p021-*'
       - 'docs/ios-p022-*'
+      - 'docs/ios-p023-*'
       - 'docs/ios-release-candidate*'
       - 'docs/ios-p017-*'
       - 'tests/ios-workflow-isolation-test.py'
@@ -47,53 +48,26 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - name: Pinned Go toolchain from go.mod
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
-      - name: Apply and test reviewed Go 1.27.2 x509 security backport
+      - name: Verify native Go 1.27.3 x509 security fix
         shell: bash
         run: |
           set -euo pipefail
-          source_goroot="$(go env GOROOT)"
-          patched_goroot="$RUNNER_TEMP/go-security-backport"
-          test "$(go env GOVERSION)" = go1.27.2
-          test ! -e "$patched_goroot"
-          mkdir "$patched_goroot"
-          cp -R "$source_goroot/." "$patched_goroot/"
-          chmod -R u+w "$patched_goroot"
-          export GOROOT="$patched_goroot" GOTOOLCHAIN=local
-          export PATH="$GOROOT/bin:$PATH" GOCACHE="$RUNNER_TEMP/p019-go-cache"
-          python3 scripts/audit/patch-go-x509-security.py \
-            --output "$RUNNER_TEMP/p019-go-x509-backport.json"
-          echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
-          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
-          echo "GOCACHE=$GOCACHE" >> "$GITHUB_ENV"
-          echo "$GOROOT/bin" >> "$GITHUB_PATH"
+          test "$(go env GOVERSION)" = go1.27.3
+          python3 scripts/audit/validate-go-x509-native.py \
+            --output "$RUNNER_TEMP/p023-go-x509-native.json"
       - name: Go standard-library and dependency vulnerability scan
         shell: bash
         run: |
           set -euo pipefail
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           "$(go env GOPATH)/bin/govulncheck" -version
-          "$(go env GOPATH)/bin/govulncheck" -format=json ./... > "$RUNNER_TEMP/p019-govulncheck.jsonl"
-          python3 scripts/audit/validate-p019-govulncheck.py \
-            --report "$RUNNER_TEMP/p019-govulncheck.jsonl" \
-            --go-version "$(go env GOVERSION)" \
-            --backport-evidence "$RUNNER_TEMP/p019-go-x509-backport.json" \
-            --output "$RUNNER_TEMP/p019-govulncheck-summary.json"
-      - name: Upload P019 Go vulnerability evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: p019-go-vulnerability-evidence
-          path: |
-            ${{ runner.temp }}/p019-govulncheck.jsonl
-            ${{ runner.temp }}/p019-govulncheck-summary.json
-            ${{ runner.temp }}/p019-go-x509-backport.json
-          if-no-files-found: ignore
-          retention-days: 14
+          "$(go env GOPATH)/bin/govulncheck" -format=json ./... > "$RUNNER_TEMP/p023-govulncheck.jsonl"
       - name: Bun 1.4.0
         uses: oven-sh/setup-bun@v2
         with:
@@ -103,23 +77,23 @@ jobs:
         working-directory: internal/site
         run: |
           set -uo pipefail
-          bun audit --json --audit-level critical > "$RUNNER_TEMP/p019-bun-audit.json"
+          bun audit --json --audit-level low > "$RUNNER_TEMP/p023-bun-audit.json"
           bun_status=$?
-          npm audit --json --audit-level=critical --package-lock-only > "$RUNNER_TEMP/p019-npm-audit.json"
+          npm audit --json --audit-level=low --package-lock-only > "$RUNNER_TEMP/p023-npm-audit.json"
           npm_status=$?
-          python3 ../../scripts/audit/summarize-p019-js-audits.py \
-            --bun-report "$RUNNER_TEMP/p019-bun-audit.json" --bun-exit-code "$bun_status" \
-            --npm-report "$RUNNER_TEMP/p019-npm-audit.json" --npm-exit-code "$npm_status" \
-            --output "$RUNNER_TEMP/p019-js-audit-summary.json"
-      - name: Upload P019 JavaScript dependency evidence
+          python3 ../../scripts/audit/summarize-p023-js-audits.py \
+            --bun-report "$RUNNER_TEMP/p023-bun-audit.json" --bun-exit-code "$bun_status" \
+            --npm-report "$RUNNER_TEMP/p023-npm-audit.json" --npm-exit-code "$npm_status" \
+            --output "$RUNNER_TEMP/p023-js-audit-summary.json"
+      - name: Upload P023 JavaScript dependency evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: p019-javascript-audit-evidence
+          name: p023-javascript-audit-evidence
           path: |
-            ${{ runner.temp }}/p019-bun-audit.json
-            ${{ runner.temp }}/p019-npm-audit.json
-            ${{ runner.temp }}/p019-js-audit-summary.json
+            ${{ runner.temp }}/p023-bun-audit.json
+            ${{ runner.temp }}/p023-npm-audit.json
+            ${{ runner.temp }}/p023-js-audit-summary.json
           if-no-files-found: ignore
           retention-days: 14
       - name: Verify source provenance and frozen upstream ancestry
@@ -162,6 +136,34 @@ jobs:
           sha256sum -c "$RUNNER_TEMP/p017-lock.sha256"
           git restore -- src/locales
           git diff --exit-code
+      - name: Verify OpenPGP package reachability
+        shell: bash
+        run: |
+          set -euo pipefail
+          go run .github/scripts/check-openpgp-imports.go \
+            --root . --output "$RUNNER_TEMP/p023-openpgp-imports.json"
+      - name: Validate exact Go scan and bounded advisory disposition
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit/validate-p023-govulncheck.py \
+            --report "$RUNNER_TEMP/p023-govulncheck.jsonl" \
+            --go-version "$(go env GOVERSION)" \
+            --x509-evidence "$RUNNER_TEMP/p023-go-x509-native.json" \
+            --openpgp-evidence "$RUNNER_TEMP/p023-openpgp-imports.json" \
+            --output "$RUNNER_TEMP/p023-govulncheck-summary.json"
+      - name: Upload P023 Go vulnerability and reachability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p023-go-vulnerability-evidence
+          path: |
+            ${{ runner.temp }}/p023-govulncheck.jsonl
+            ${{ runner.temp }}/p023-govulncheck-summary.json
+            ${{ runner.temp }}/p023-go-x509-native.json
+            ${{ runner.temp }}/p023-openpgp-imports.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Full canonical Go regression and portable builds
         shell: bash
         run: |

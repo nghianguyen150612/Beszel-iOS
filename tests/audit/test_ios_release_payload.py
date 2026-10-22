@@ -44,7 +44,7 @@ class IOSReleasePayloadTests(unittest.TestCase):
             self.metadata[name] = {
                 **result,
                 "build_info": {
-                    "go": "go1.27.2",
+                    "go": "go1.27.3",
                     "settings": {
                         "GOOS": "ios", "GOARCH": "arm64", "GOARM64": "v8.0", "CGO_ENABLED": "1",
                         "vcs.revision": self.source_sha, "vcs.modified": "false",

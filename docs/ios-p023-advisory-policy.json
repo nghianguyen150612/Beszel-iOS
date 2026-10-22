@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "milestone": "P023",
+  "reviewed_on": "2026-10-22",
+  "default_action": "FAIL_ON_UNREVIEWED_FINDING",
+  "raw_scan_must_be_retained": true,
+  "release_authorization": "NOT_GRANTED",
+  "allowlist": [
+    {
+      "advisory_id": "GO-2026-5932",
+      "affected_module": "golang.org/x/crypto",
+      "resolved_module_version": "v0.58.0",
+      "affected_package_prefix": "golang.org/x/crypto/openpgp",
+      "allowed_finding_shape": "module-only trace with no package or function symbols",
+      "maximum_occurrences": 1,
+      "required_evidence": [
+        "Go AST scan of every repository .go file, including build-tagged and test files, reports no OpenPGP import",
+        "go list -deps -test reports no OpenPGP package for host default, testing/no_ui, or iOS arm64 testing/no_ui profiles",
+        "govulncheck raw finding remains retained and contains no OpenPGP package or function trace"
+      ],
+      "justification": "The repository uses golang.org/x/crypto/ssh for Agent and Hub SSH transport. No affected OpenPGP package is imported or reachable in the reviewed package profiles. The module-level scanner warning is preserved; this guard reduces accidental reachability and does not fix the unmaintained package.",
+      "fix_availability": "No fixed module version was listed in the reviewed advisory database snapshot dated 2026-10-21.",
+      "remediation_status": "NOT_REACHABLE_WITH_EVIDENCE",
+      "residual_risk": "The module remains present and its unmaintained OpenPGP packages remain in the downloaded module source.",
+      "release_owner_decision_required": true
+    }
+  ],
+  "frontend_residuals": [
+    {
+      "advisory_id": "GHSA-vfj7-8cjw-p6xm",
+      "cve_id": "CVE-2026-93687",
+      "package": "braces",
+      "resolved_version": "3.0.3",
+      "severity": "high",
+      "affected_version_range": "<= 3.0.3",
+      "first_patched_version": null,
+      "reviewed_on": "2026-10-22",
+      "execution_classification": "BUILD_ONLY_TRANSITIVE",
+      "dependency_paths": [
+        ["@lingui/vite-plugin", "@lingui/cli", "chokidar", "braces"],
+        ["@lingui/vite-plugin", "@lingui/cli", "micromatch", "braces"]
+      ],
+      "actual_mitigation": "Run PR-controlled frontend tooling on isolated hosted runners with contents:read, no persisted checkout credential, no release secrets, and a bounded job timeout. Lingui catalog and Vite patterns are repository configuration and are not supplied through the Beszel runtime API.",
+      "exposure_limit": "A contributor can alter the checked-in Lingui configuration in a PR and cause a build-time denial of service. The Hub embeds generated assets and does not ship or execute the Node.js tooling or braces package at runtime.",
+      "fix_availability": "GitHub Advisory API review on 2026-10-22 lists no first patched version.",
+      "remediation_status": "MITIGATED_WITH_RESIDUAL_RISK",
+      "release_owner_decision_required": true
+    }
+  ]
+}
