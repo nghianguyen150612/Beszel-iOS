@@ -184,7 +184,9 @@ func TestP014AuthenticatedRemoteTelemetryAPI(t *testing.T) {
 			require.Equal(t, record.Id, history.Items[0].System)
 			var stats system.Stats
 			require.NoError(t, json.Unmarshal(history.Items[0].Stats, &stats))
-			require.Equal(t, f.Data.Stats, stats)
+			expectedStats := f.Data.Stats
+			expectedStats.MigrateDeprecatedMemoryFields()
+			require.Equal(t, expectedStats, stats)
 			var actual map[string]json.RawMessage
 			require.NoError(t, json.Unmarshal(history.Items[0].Stats, &actual))
 			require.Equal(t, byte('['), actual["cpus"][0])

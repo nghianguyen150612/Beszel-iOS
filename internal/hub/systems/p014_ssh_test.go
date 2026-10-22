@@ -85,7 +85,9 @@ func TestP014SSHPlatformIngestion(t *testing.T) {
 					require.Len(t, records, 1)
 					var got system.Stats
 					require.NoError(t, records[0].UnmarshalJSONField("stats", &got))
-					require.Equal(t, f.Data.Stats, got)
+					expectedStats := f.Data.Stats
+					expectedStats.MigrateDeprecatedMemoryFields()
+					require.Equal(t, expectedStats, got)
 					require.Equal(t, sys.Id, records[0].GetString("system"))
 				})
 			}

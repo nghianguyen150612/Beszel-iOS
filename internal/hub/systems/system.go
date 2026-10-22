@@ -1153,6 +1153,9 @@ func migrateDeprecatedFields(cd *system.CombinedData, createDetails bool) {
 		}
 		fs.DiskReadPs, fs.DiskWritePs = 0, 0
 	}
+	// migration added 0.21.1
+	cd.Stats.MigrateDeprecatedMemoryFields()
+	// GB fields are kept in stored records for third-party integrations until they are removed
 	// migration added 0.19.0 - Move deprecated Info fields to Details struct
 	if cd.Details == nil && cd.Info.Hostname != "" {
 		if createDetails {
@@ -1164,7 +1167,7 @@ func migrateDeprecatedFields(cd *system.CombinedData, createDetails bool) {
 				CpuModel:    cd.Info.CpuModel,
 				Podman:      cd.Info.Podman,
 				Os:          cd.Info.Os,
-				MemoryTotal: uint64(cd.Stats.Mem * 1024 * 1024 * 1024),
+				MemoryTotal: cd.Stats.MemBytes[0],
 			}
 		}
 		// zero the deprecated fields to prevent saving them in systems.info DB json payload

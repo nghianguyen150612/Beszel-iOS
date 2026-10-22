@@ -4,6 +4,7 @@ package records
 import (
 	"encoding/json"
 	"math"
+	"math/bits"
 	"time"
 
 	"github.com/henrygd/beszel/internal/entities/container"
@@ -36,6 +37,28 @@ func NewRecordManager(app core.App) *RecordManager {
 
 type StatsRecord struct {
 	Stats []byte `db:"stats"`
+}
+
+// uint64Mean keeps an exact 128-bit sum so averaging large byte counters never
+// wraps around uint64. A Go slice has fewer than MaxUint64 records, so the
+// quotient of any such sum remains representable as uint64.
+type uint64Mean struct {
+	hi, lo, count uint64
+}
+
+func (m *uint64Mean) add(value uint64) {
+	var carry uint64
+	m.lo, carry = bits.Add64(m.lo, value, 0)
+	m.hi += carry
+	m.count++
+}
+
+func (m uint64Mean) average() uint64 {
+	if m.count == 0 {
+		return 0
+	}
+	quotient, _ := bits.Div64(m.hi, m.lo, m.count)
+	return quotient
 }
 
 // Create longer records by averaging shorter records
@@ -288,6 +311,9 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	packagePowerCounts := make(map[string]uint64)
 	engineCounts := make(map[string]map[string]uint64)
 	var fanSums map[string]uint64
+	var memoryMeans [4]uint64Mean
+	var swapMeans [2]uint64Mean
+	var memoryPercentSum float64
 
 	zfsPoolCounts := make(map[string]uint64)
 	zfsCapacityCounts := make(map[string]uint64)
@@ -314,13 +340,18 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 				cpuBreakdownCounts[j]++
 			}
 		}
-		sum.Mem += stats.Mem
-		sum.MemUsed += stats.MemUsed
-		sum.MemPct += stats.MemPct
-		sum.MemBuffCache += stats.MemBuffCache
-		sum.MemZfsArc += stats.MemZfsArc
-		sum.Swap += stats.Swap
-		sum.SwapUsed += stats.SwapUsed
+		memBytes, swapBytes, maxMemBytes := memoryBytes(stats)
+		if memBytes[0] > 0 {
+			for j, v := range memBytes {
+				memoryMeans[j].add(v)
+			}
+			memoryPercentSum += memoryPercentage(stats.MemPct, memBytes)
+		}
+		if swapBytes[0] > 0 {
+			for j, v := range swapBytes {
+				swapMeans[j].add(v)
+			}
+		}
 		sum.DiskTotal += stats.DiskTotal
 		sum.DiskUsed += stats.DiskUsed
 		sum.DiskPct += stats.DiskPct
@@ -360,7 +391,7 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 		}
 		// Set peak values
 		sum.MaxCpu = max(sum.MaxCpu, stats.MaxCpu, stats.Cpu)
-		sum.MaxMem = max(sum.MaxMem, stats.MaxMem, stats.MemUsed)
+		sum.MaxMemBytes = max(sum.MaxMemBytes, maxMemBytes, memBytes[1])
 		sum.MaxNetworkSent = max(sum.MaxNetworkSent, stats.MaxNetworkSent, stats.NetworkSent)
 		sum.MaxNetworkRecv = max(sum.MaxNetworkRecv, stats.MaxNetworkRecv, stats.NetworkRecv)
 		sum.MaxBandwidth[0] = max(sum.MaxBandwidth[0], stats.MaxBandwidth[0], stats.Bandwidth[0])
@@ -521,13 +552,23 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 
 	// Compute averages
 	sum.Cpu = twoDecimals(sum.Cpu / count)
-	sum.Mem = twoDecimals(sum.Mem / count)
-	sum.MemUsed = twoDecimals(sum.MemUsed / count)
-	sum.MemPct = twoDecimals(sum.MemPct / count)
-	sum.MemBuffCache = twoDecimals(sum.MemBuffCache / count)
-	sum.MemZfsArc = twoDecimals(sum.MemZfsArc / count)
-	sum.Swap = twoDecimals(sum.Swap / count)
-	sum.SwapUsed = twoDecimals(sum.SwapUsed / count)
+	for i := range sum.MemBytes {
+		sum.MemBytes[i] = memoryMeans[i].average()
+	}
+	if memoryMeans[0].count > 0 {
+		sum.MemPct = twoDecimals(memoryPercentSum / float64(memoryMeans[0].count))
+	}
+	for i := range sum.SwapBytes {
+		sum.SwapBytes[i] = swapMeans[i].average()
+	}
+	// TODO: stop populating deprecated GB fields when they are removed from the agent
+	sum.Mem = bytesToGigabytes(sum.MemBytes[0])
+	sum.MemUsed = bytesToGigabytes(sum.MemBytes[1])
+	sum.MemBuffCache = bytesToGigabytes(sum.MemBytes[2])
+	sum.MemZfsArc = bytesToGigabytes(sum.MemBytes[3])
+	sum.MaxMem = bytesToGigabytes(sum.MaxMemBytes)
+	sum.Swap = bytesToGigabytes(sum.SwapBytes[0])
+	sum.SwapUsed = bytesToGigabytes(sum.SwapBytes[1])
 	sum.DiskTotal = twoDecimals(sum.DiskTotal / count)
 	sum.DiskUsed = twoDecimals(sum.DiskUsed / count)
 	sum.DiskPct = twoDecimals(sum.DiskPct / count)
@@ -752,6 +793,33 @@ func (rm *RecordManager) AverageMonitorStats(db dbx.Builder, monitorID, recordTy
 }
 
 /* Round float to two decimals */
+const gb = 1024 * 1024 * 1024
+
+// memoryBytes returns memory bytes, swap bytes, and max used memory bytes for a record,
+// converting the deprecated GB fields of records created before 0.21.1.
+//
+// TODO: remove the GB conversion when the deprecated fields are removed. Hubs upgraded from
+// versions before 0.21.1 average pre-upgrade records only in the first few hours after upgrade.
+func memoryBytes(stats *system.Stats) (mem [4]uint64, swap [2]uint64, maxUsed uint64) {
+	if stats == nil {
+		return mem, swap, maxUsed
+	}
+	copy := *stats
+	copy.MigrateDeprecatedMemoryFields()
+	return copy.MemBytes, copy.SwapBytes, copy.MaxMemBytes
+}
+
+func memoryPercentage(percent float64, mem [4]uint64) float64 {
+	if math.IsNaN(percent) || math.IsInf(percent, 0) || percent < 0 || percent > 100 || (percent == 0 && mem[1] > 0) {
+		percent = float64(mem[1]) / float64(mem[0]) * 100
+	}
+	return min(max(percent, 0), 100)
+}
+
+func bytesToGigabytes(b uint64) float64 {
+	return twoDecimals(float64(b) / gb)
+}
+
 func twoDecimals(value float64) float64 {
 	return math.Round(value*100) / 100
 }

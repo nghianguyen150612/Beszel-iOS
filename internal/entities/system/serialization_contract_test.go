@@ -26,7 +26,7 @@ func TestSerializationPresenceContracts(t *testing.T) {
 			}
 			stats := object(Stats{Temperatures: map[string]float64{}, CpuBreakdown: []float64{}})
 			require.Equal(t, "0", string(stats["cpu"]), "required zero remains explicit")
-			for _, key := range []string{"cpum", "mz", "bat", "b", "t", "cpub", "g", "z"} {
+			for _, key := range []string{"cpum", "mz", "bat", "b", "t", "cpub", "g", "z", "mem", "memm", "swap"} {
 				require.NotContains(t, stats, key, "optional zero/empty field %s", key)
 			}
 			zero := 0.0
@@ -86,6 +86,8 @@ func TestSerializationCBORKeysAndOptionalZero(t *testing.T) {
 	require.Contains(t, keys, uint64(26), "bandwidth tag is unchanged")
 	require.Contains(t, keys, uint64(29), "zero percent with known charge state is present")
 	require.NotContains(t, keys, uint64(22), "absent GPU remains absent")
+	require.NotContains(t, keys, uint64(41), "unavailable memory arrays remain omitted")
+	require.NotContains(t, keys, uint64(42), "unsupported swap remains omitted")
 	// Details carries Go durations and is transported as CBOR, not stored JSON v2.
 	combined := CombinedData{Details: &Details{MemoryTotal: 1024}}
 	data, err = cbor.Marshal(combined)

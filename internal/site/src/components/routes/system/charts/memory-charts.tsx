@@ -3,10 +3,29 @@ import AreaChartDefault from "@/components/charts/area-chart"
 import { useContainerDataPoints } from "@/components/charts/hooks"
 import { Unit } from "@/lib/enums"
 import type { ChartConfig } from "@/components/ui/chart"
-import type { ChartData, SystemStatsRecord } from "@/types"
+import type { ChartData, SystemStats, SystemStatsRecord } from "@/types"
 import { ChartCard, FilterBar, SelectAvgMax } from "../chart-card"
 import { dockerOrPodman } from "../chart-data"
 import { decimalString, formatBytes, toFixedFloat } from "@/lib/utils"
+import { hasMeasuredSwap, memoryFieldBytes } from "@/lib/memory"
+
+const memoryValue = (stats: SystemStats | undefined, index: 0 | 1 | 2 | 3, legacy?: number) =>
+	memoryFieldBytes(stats?.mem?.[index], legacy)
+
+const boundedUsage = (stats: SystemStats | undefined, used?: number) => {
+	const total = memoryValue(stats, 0, stats?.m)
+	return used === undefined || total === undefined ? undefined : Math.min(used, total)
+}
+
+const tickFormatter = (value: number) => {
+	const { value: convertedValue, unit } = formatBytes(value, false, Unit.Bytes)
+	return `${toFixedFloat(convertedValue, convertedValue >= 10 ? 0 : 1)} ${unit}`
+}
+
+const contentFormatter = ({ value }: { value: number }) => {
+	const { value: convertedValue, unit } = formatBytes(value, false, Unit.Bytes)
+	return `${decimalString(convertedValue, convertedValue >= 100 ? 1 : 2)} ${unit}`
+}
 
 export function MemoryChart({
 	chartData,
@@ -24,7 +43,8 @@ export function MemoryChart({
 	maxValues: boolean
 }) {
 	const maxValSelect = isLongerChart ? <SelectAvgMax max={maxValues} /> : null
-	const totalMem = toFixedFloat(chartData.systemStats.at(-1)?.stats.m ?? 0, 1)
+	const lastStats = chartData.systemStats.at(-1)?.stats
+	const totalMem = memoryValue(lastStats, 0, lastStats?.m) ?? 0
 
 	return (
 		<ChartCard
@@ -40,18 +60,16 @@ export function MemoryChart({
 				itemSorter={(a, b) => a.order - b.order}
 				maxToggled={showMax}
 				showTotal={true}
-				tickFormatter={(value) => {
-					const { value: convertedValue, unit } = formatBytes(value * 1024, false, Unit.Bytes, true)
-					return `${toFixedFloat(convertedValue, value >= 10 ? 0 : 1)} ${unit}`
-				}}
-				contentFormatter={({ value }) => {
-					const { value: convertedValue, unit } = formatBytes(value * 1024, false, Unit.Bytes, true)
-					return `${decimalString(convertedValue, convertedValue >= 100 ? 1 : 2)} ${unit}`
-				}}
+				tickFormatter={tickFormatter}
+				contentFormatter={contentFormatter}
 				dataPoints={[
 					{
 						label: t`Used`,
-						dataKey: ({ stats }) => (showMax ? stats?.mm : stats?.mu),
+						dataKey: ({ stats }) =>
+							boundedUsage(
+								stats,
+								showMax ? memoryFieldBytes(stats?.memm, stats?.mm) : memoryValue(stats, 1, stats?.mu)
+							),
 						color: 2,
 						opacity: 0.4,
 						stackId: "1",
@@ -59,14 +77,32 @@ export function MemoryChart({
 					},
 					{
 						label: "ZFS ARC",
-						dataKey: ({ stats }) => (showMax ? null : stats?.mz),
+						// undefined when zero to keep ZFS ARC out of the tooltip on systems without ZFS
+						dataKey: ({ stats }) => {
+							if (showMax) return null
+							const used = boundedUsage(stats, memoryValue(stats, 1, stats?.mu)) ?? 0
+							const arc = memoryValue(stats, 3, stats?.mz)
+							const total = memoryValue(stats, 0, stats?.m)
+							return arc && arc > 0 && total !== undefined ? Math.min(arc, total - used) : undefined
+						},
 						color: "hsla(175 60% 45% / 0.8)",
 						opacity: 0.5,
+						stackId: "1",
 						order: 2,
 					},
 					{
 						label: t`Cache / Buffers`,
-						dataKey: ({ stats }) => (showMax ? null : stats?.mb),
+						// A zero cache value also represents platforms where this source is unsupported.
+						dataKey: ({ stats }) => {
+							if (showMax) return null
+							const used = boundedUsage(stats, memoryValue(stats, 1, stats?.mu)) ?? 0
+							const arc = memoryValue(stats, 3, stats?.mz) ?? 0
+							const total = memoryValue(stats, 0, stats?.m)
+							const cache = memoryValue(stats, 2, stats?.mb)
+							return cache && cache > 0 && total !== undefined
+								? Math.min(cache, Math.max(0, total - used - arc))
+								: undefined
+						},
 						color: "hsla(160 60% 45% / 0.5)",
 						opacity: 0.4,
 						stackId: "1",
@@ -136,28 +172,33 @@ export function SwapChart({
 }) {
 	// const userSettings = useStore($userSettings)
 
-	const hasSwapData = (systemStats.at(-1)?.stats.su ?? 0) > 0
-	if (!hasSwapData) {
+	const lastStats = systemStats.at(-1)?.stats
+	const swapTotal = memoryFieldBytes(lastStats?.swap?.[0], lastStats?.s)
+	const swapUsed = memoryFieldBytes(lastStats?.swap?.[1], lastStats?.su)
+	if (!hasMeasuredSwap(swapTotal, swapUsed)) {
 		return null
 	}
 	return (
 		<ChartCard empty={dataEmpty} grid={grid} title={t`Swap Usage`} description={t`Swap space used by the system`}>
 			<AreaChartDefault
 				chartData={chartData}
-				domain={[0, () => toFixedFloat(chartData.systemStats.at(-1)?.stats.s ?? 0.04, 2)]}
-				contentFormatter={({ value }) => {
-					// mem values are supplied as GB
-					const { value: convertedValue, unit } = formatBytes(value * 1024, false, Unit.Bytes, true)
-					return `${decimalString(convertedValue, convertedValue >= 100 ? 1 : 2)} ${unit}`
-				}}
-				tickFormatter={(value) => {
-					const { value: convertedValue, unit } = formatBytes(value * 1024, false, Unit.Bytes, true)
-					return `${toFixedFloat(convertedValue, value >= 10 ? 0 : 1)} ${unit}`
-				}}
+				domain={[
+					0,
+					() => {
+						const stats = chartData.systemStats.at(-1)?.stats
+						return memoryFieldBytes(stats?.swap?.[0], stats?.s) ?? 0
+					},
+				]}
+				contentFormatter={contentFormatter}
+				tickFormatter={tickFormatter}
 				dataPoints={[
 					{
 						label: t`Used`,
-						dataKey: ({ stats }) => stats?.su,
+						dataKey: ({ stats }) => {
+							const total = memoryFieldBytes(stats?.swap?.[0], stats?.s)
+							const used = memoryFieldBytes(stats?.swap?.[1], stats?.su)
+							return total === undefined || used === undefined ? undefined : Math.min(used, total)
+						},
 						color: 2,
 						opacity: 0.4,
 					},

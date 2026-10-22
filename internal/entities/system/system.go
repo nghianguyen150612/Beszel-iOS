@@ -4,6 +4,7 @@ package system
 
 import (
 	"encoding/json"
+	"math"
 	"time"
 
 	"github.com/henrygd/beszel/internal/entities/container"
@@ -22,14 +23,14 @@ type WiFi struct {
 type Stats struct {
 	Cpu            float64             `json:"cpu" cbor:"0,keyasint"`
 	MaxCpu         float64             `json:"cpum,omitzero" cbor:"-"`
-	Mem            float64             `json:"m" cbor:"2,keyasint"`
-	MaxMem         float64             `json:"mm,omitzero" cbor:"-"`
-	MemUsed        float64             `json:"mu" cbor:"3,keyasint"`
+	Mem            float64             `json:"m" cbor:"2,keyasint"`  // Deprecated: GB, use MemBytes. Memory GB fields are kept for older hubs and integrations.
+	MaxMem         float64             `json:"mm,omitzero" cbor:"-"` // Deprecated: GB, use MaxMemBytes.
+	MemUsed        float64             `json:"mu" cbor:"3,keyasint"` // Deprecated: GB, use MemBytes.
 	MemPct         float64             `json:"mp" cbor:"4,keyasint"`
-	MemBuffCache   float64             `json:"mb" cbor:"5,keyasint"`
-	MemZfsArc      float64             `json:"mz,omitzero" cbor:"6,keyasint,omitempty"` // ZFS ARC memory
-	Swap           float64             `json:"s,omitzero" cbor:"7,keyasint,omitempty"`
-	SwapUsed       float64             `json:"su,omitzero" cbor:"8,keyasint,omitempty"`
+	MemBuffCache   float64             `json:"mb" cbor:"5,keyasint"`                    // Deprecated: GB, use MemBytes.
+	MemZfsArc      float64             `json:"mz,omitzero" cbor:"6,keyasint,omitempty"` // Deprecated: GB, use MemBytes.
+	Swap           float64             `json:"s,omitzero" cbor:"7,keyasint,omitempty"`  // Deprecated: GB, use SwapBytes.
+	SwapUsed       float64             `json:"su,omitzero" cbor:"8,keyasint,omitempty"` // Deprecated: GB, use SwapBytes.
 	DiskTotal      float64             `json:"d" cbor:"9,keyasint"`
 	DiskUsed       float64             `json:"du" cbor:"10,keyasint"`
 	DiskPct        float64             `json:"dp" cbor:"11,keyasint"`
@@ -59,7 +60,70 @@ type Stats struct {
 	ZfsPools          map[string]*ZfsPool  `json:"z,omitempty" cbor:"39,keyasint,omitempty"`  // ZFS pool metrics, keyed by pool name
 	DiskIOTotal       [2]uint64            `json:"diot,omitzero" cbor:"38,keyasint,omitzero"` // [total read bytes, total write bytes] cumulative device counters
 	WiFi              map[string]int8      `json:"wf,omitempty" cbor:"40,keyasint,omitempty"` // RSSI dBm keyed by interface; unavailable readings omitted
+	MemBytes          [4]uint64            `json:"mem,omitzero" cbor:"41,keyasint,omitzero"`  // [total, used, buff/cache, zfs arc] bytes
+	MaxMemBytes       uint64               `json:"memm,omitzero" cbor:"-"`                    // max used memory bytes
+	SwapBytes         [2]uint64            `json:"swap,omitzero" cbor:"42,keyasint,omitzero"` // [total, used] bytes
+}
 
+// LegacyGigabytesToBytes converts a deprecated GB value to bytes without
+// allowing NaN, infinity, negative values, or an out-of-range float conversion
+// to produce an invalid uint64.
+func LegacyGigabytesToBytes(value float64) uint64 {
+	if math.IsNaN(value) || math.IsInf(value, 0) || value <= 0 {
+		return 0
+	}
+	bytes := value * float64(uint64(1)<<30)
+	maxUint64 := ^uint64(0)
+	if math.IsInf(bytes, 1) || bytes >= float64(maxUint64) {
+		return maxUint64
+	}
+	return uint64(bytes)
+}
+
+// MigrateDeprecatedMemoryFields fills exact byte counters from legacy GB
+// fields when the byte arrays are absent, then bounds used values by capacity.
+// The deprecated fields remain intact for older Hubs and integrations.
+func (stats *Stats) MigrateDeprecatedMemoryFields() {
+	if stats == nil {
+		return
+	}
+	if stats.MemBytes == [4]uint64{} {
+		stats.MemBytes = [4]uint64{
+			LegacyGigabytesToBytes(stats.Mem),
+			LegacyGigabytesToBytes(stats.MemUsed),
+			LegacyGigabytesToBytes(stats.MemBuffCache),
+			LegacyGigabytesToBytes(stats.MemZfsArc),
+		}
+	}
+	if stats.SwapBytes == [2]uint64{} {
+		stats.SwapBytes = [2]uint64{
+			LegacyGigabytesToBytes(stats.Swap),
+			LegacyGigabytesToBytes(stats.SwapUsed),
+		}
+	}
+	stats.MemBytes = normalizeMemoryBytes(stats.MemBytes)
+	stats.SwapBytes = normalizeSwapBytes(stats.SwapBytes)
+	if stats.MaxMemBytes == 0 {
+		stats.MaxMemBytes = LegacyGigabytesToBytes(stats.MaxMem)
+	}
+}
+
+func normalizeMemoryBytes(mem [4]uint64) [4]uint64 {
+	if mem[0] == 0 {
+		return [4]uint64{}
+	}
+	for i := 1; i < len(mem); i++ {
+		mem[i] = min(mem[i], mem[0])
+	}
+	return mem
+}
+
+func normalizeSwapBytes(swap [2]uint64) [2]uint64 {
+	if swap[0] == 0 {
+		return [2]uint64{}
+	}
+	swap[1] = min(swap[1], swap[0])
+	return swap
 }
 
 // ZfsPool holds per-pool ZFS metrics for a single collection interval.
