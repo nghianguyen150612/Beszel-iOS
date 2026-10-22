@@ -69,3 +69,15 @@ The first local `go test -tags testing ./... -count=1` run failed and is recorde
 The P014 API goldens were regenerated from disposable synthetic fixtures under `internal/hub/testdata/p014`; the API and SSH ingestion tests now pass. A sanitized complete `go test -tags testing ./... -count=1` run also passes with `NETWORK`, `LISTEN`, and `PORT` cleared. All Go temporary paths and test database directories were redirected through `.p024-runtime`; no temporary files were sent to `/tmp` or any protected system path.
 
 The hosted checks on the prior `508a920488f1142248401904004f3db835ea6d27` head are historical failed attempts. P013 migration passed on that head, and the iOS workflow's Procursus package update job passed. P017 and the iOS build job stopped in their Go regression tests because the same P014 SSH fixtures still expected zero `MemBytes`; the current checkpoint corrects those assertions and snapshots. The native compile/package steps did not run on that head. Both release jobs were skipped. All required workflows must rerun on the corrected exact PR head.
+
+## Latest durable code checkpoint
+
+- Feature branch and Draft PR #28 head: `01865f223d5c4f744b47b42b4268f4b3ced11d27`, confirmed on the remote.
+- This checkpoint adds `internal/records/p024_memory_rollups_test.go`, a disposable Hub persistence test with legacy GB and exact byte fixtures across 1m, 10m, 20m, 120m, and 480m tiers. It asserts byte values, historical GB fallbacks, max-used high water, zero-use measured swap, and data after Hub restart.
+- The new test passes locally with Go 1.27.3 normally and under `-race`. The prior full local Go suite and full affected race suite passed before this new integration fixture; P017 on the updated 01865f2 source reruns the canonical Go suite.
+- P017 run `39755571369` was still in progress at the last query. It passed on prior code head b6c0b5af at run `39754342581`.
+- P013 run `39755571381` passed the genuine v0.19 migration, restart, backup/restore failure, and recovery harness on 01865f2. The prior b6c0b5af P013 run `39754342524` also passed.
+- iOS Build run `39755571531` passed Procursus validation. Its required macOS/Xcode job remained queued; the b6c0b5af native job was canceled by the next push before starting and is not a pass.
+- Installer lifecycle workflow has not yet run on 01865f2. Local installer lifecycle tests were deliberately not run because the scripts hardcode `/tmp`; hosted execution is required.
+- Latest embedded manifest file SHA-256: `8d94b3062e26ab506546d21b2c16f09281b5433cfa8ceebafac2a9cd2db5ed8f`, 98 assets and 3,426,895 bytes. P017 computes a separate deterministic digest over built frontend contents.
+- The branch protection endpoint returned HTTP 403 for this connected account; PR review list was empty at last query. Do not bypass any enforcement.

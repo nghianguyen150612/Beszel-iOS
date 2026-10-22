@@ -7,47 +7,182 @@
   "base_integration_sha": "8e03afadb3a03480414fa47f87d40c13331e05b3",
   "pinned_upstream_sha": "b97abf7662a7c7a2dd7542ea2062405abd22d4dc",
   "upstream_merge_sha": "e2b677769dd47ff97b5578fb4069372b0f2f79e4",
-  "last_confirmed_remote_sha": "508a920488f1142248401904004f3db835ea6d27",
-  "qualified_source_sha": null,
-  "checks": [
-    {"name":"five pinned upstream commits and original ancestry","state":"tested_local","result":"The pinned target is the second parent of the genuine normal merge; all five commit objects are reachable in original order."},
-    {"name":"Go 1.27.3 and module checksums","state":"tested_local","result":"go.mod retains 1.27.3; go mod download and go mod verify passed."},
-    {"name":"Agent memory and iOS unsupported-field semantics","state":"tested_local","result":"Focused Linux Agent memory tests pass, including byte precision, cgroup behavior, synthetic iOS swap omission, counter bounding, and clearing stale values."},
-    {"name":"memory JSON and CBOR protocol fixtures","state":"tested_local","result":"JSON v1/v2 and CBOR byte round trips, keys 41/42, legacy peer decoding, zero omission, invalid legacy conversion, and uint64 maximum cases pass."},
-    {"name":"Hub memory migration","state":"tested_local","result":"TestCombinedData_MigrateDeprecatedFields passes."},
-    {"name":"record memory and swap averaging","state":"tested_local","result":"Focused averaging tests pass for mixed legacy/new values, missing samples, malformed used values, and large uint64 counters."},
-    {"name":"HTTPS certificate refresh lifecycle","state":"tested_local","result":"Focused cadence, retry, cancellation, deletion, and certificate-rotation tests pass."},
-    {"name":"frontend numeric memory helpers","state":"tested_local","result":"Bun 1.4.0 helper tests pass: 3 tests, 11 assertions."},
-    {"name":"frontend catalog, TypeScript, Vite production build","state":"tested_local","result":"bun run build passes; Lingui catalogs compile, tsc -b passes, Vite emits the production bundle. Existing dynamic-import and large-chunk warnings remain."},
-    {"name":"production frontend asset manifest and Go embed","state":"tested_local","result":"Updated manifest validation and TestEmbeddedFrontendMatchesManifest pass for 98 assets, including the Catalan locale chunk; manifest SHA-256 b61d31f45ecdaca5fe54e9bb59751ad325bd8e7da6569913d3339efcff0be926."},
-    {"name":"first full local Go regression attempt","state":"failed","result":"The suite exposed outdated legacy memory API/SSH fixture expectations and an outdated embedded asset manifest; two command tests also inherited NETWORK=caas_neko_desktop. The API/SSH fixtures and manifest were corrected; the issue did not require a product-code change."},
-    {"name":"sanitized complete Go cloud regression","state":"tested_local","result":"go test -tags testing ./... -count=1 passes across all packages with workspace-local temp paths and NETWORK/LISTEN/PORT cleared."},
-    {"name":"P014 legacy API and SSH fixture compatibility","state":"tested_local","result":"Hub API snapshot and SSH ingestion tests pass with legacy GB Agent inputs migrated to exact byte fields."},
-    {"name":"prior-head hosted workflow findings","state":"failed","result":"On 508a920488f1142248401904004f3db835ea6d27, P013 migration passed and the iOS Procursus update job passed. P017 canonical Go regression and iOS Go regression stopped on stale P014 MemBytes fixture expectations; native compile/package steps did not run. Release jobs were skipped. Corrected fixtures are in the unpushed current worktree and all applicable workflows must rerun on the exact new PR head."},
-    {"name":"full race suites","state":"not_executed","result":"Pending."},
-    {"name":"P013 migration and P017 regression/security CI","state":"not_executed","result":"P013 passed on prior head 508a920488f1142248401904004f3db835ea6d27; rerun all applicable hosted workflows on final PR head."},
-    {"name":"native iOS Agent/Hub and Procursus CI","state":"not_executed","result":"Procursus update passed on prior head 508a920488f1142248401904004f3db835ea6d27; Go regression stopped before native compile/package. Rerun macOS/Xcode and Procursus workflow on final PR head; no device was accessed."},
-    {"name":"installer lifecycle and Helm/frontend hosted CI","state":"not_executed","result":"Pending hosted workflows on final PR head."},
-    {"name":"security scans and advisory reassessment","state":"not_executed","result":"Pending dependency and frontend scans after final dependency changes."},
-    {"name":"database migration, backup, restore and restart fixtures","state":"not_executed","result":"Pending disposable fixture qualification."},
-    {"name":"artifact provenance and checksums","state":"not_executed","result":"Pending hosted artifacts and independent verification."},
-    {"name":"release publishing isolation","state":"not_executed","result":"Must be verified on final PR checks; release jobs remain required to be skipped."},
-    {"name":"Gate G","state":"tested_hosted","result":"Inherited PASS from P023 PR #27 evidence."},
-    {"name":"Gate H","state":"tested_hosted","result":"Inherited PASS from P023 PR #27 evidence using Go 1.27.3, Apple A7 compatibility, native x509 remediation, and documented security residuals."},
-    {"name":"Gate I","state":"not_executed","result":"Pending all P024 gates; do not merge until PASS."},
-    {"name":"P018 Gate F","state":"deferred","result":"PENDING; no physical iPad testing is required or authorized."}
+  "source_sha_under_review": "01865f223d5c4f744b47b42b4268f4b3ced11d27",
+  "last_confirmed_remote_code_sha_before_evidence_docs": "01865f223d5c4f744b47b42b4268f4b3ced11d27",
+  "final_qualified_source_sha": null,
+  "review_state": "Evidence snapshot for code checkpoint 01865f2. The final documentation checkpoint creates a new PR head; final installer/native/required workflow results are authoritative from the exact current PR checks and must pass before merge.",
+  "snapshot_semantics": "This file records the state when the evidence documentation checkpoint was prepared. Exact final-head checks are evaluated from GitHub PR check runs after this documentation commit; no merge is authorized by this snapshot alone.",
+  "evidence_states": {
+    "implemented": "Code and documentation changes are present in the candidate.",
+    "tested_local": "Command completed in the workspace; artifacts/logs are workspace-local.",
+    "tested_hosted": "GitHub workflow completed successfully for the named exact source SHA.",
+    "not_executed": "No result is claimed.",
+    "failed": "The attempt failed; remediation and rerun are separately recorded.",
+    "deferred": "Intentionally outside the cloud qualification scope."
+  },
+  "upstream_and_history": {
+    "pinned_commits_ordered_and_reachable": "5/5",
+    "pinned_five_commit_audit_paths": 23,
+    "original_upstream_commits_preserved": "41/41",
+    "cumulative_post_v021_upstream_commits": "46/46",
+    "frozen_audit_rows": "178/178",
+    "historical_ios_commits": "35/35",
+    "logical_ios_patchsets": "13/13",
+    "normal_merge_sha": "e2b677769dd47ff97b5578fb4069372b0f2f79e4",
+    "normal_merge_parents": [
+      "b399faf01065bc89452d2d903cc5edf7d3f3e1bf",
+      "b97abf7662a7c7a2dd7542ea2062405abd22d4dc"
+    ],
+    "local_result": "PASS: matrix and readiness validators preserve all 178 rows, 35 historical commits, 13 patchsets, and the pinned upstream ancestry."
+  },
+  "local_qualification": [
+    {
+      "name": "Full Go suite",
+      "state": "tested_local",
+      "result": "Go 1.27.3: go test -tags testing ./... -count=1 passed after clearing inherited NETWORK, LISTEN, and PORT values."
+    },
+    {
+      "name": "Affected Go race suites",
+      "state": "tested_local",
+      "result": "Agent, system entities, Hub systems, Hub transport, and records passed under -race."
+    },
+    {
+      "name": "Go audit suite",
+      "state": "tested_local",
+      "result": "123 tests passed using Go 1.27.3."
+    },
+    {
+      "name": "Memory Agent, protocol, migration, and record fixtures",
+      "state": "tested_local",
+      "result": "Exact byte collection, legacy GB compatibility, JSON v1/v2, CBOR keys 41/42, old peer structs, unsupported iOS swap, invalid float bounds, missing samples, large uint64 counters, and zero-use swap behavior pass."
+    },
+    {
+      "name": "Mixed-format memory across Hub system rollups and restart",
+      "state": "tested_local",
+      "result": "TestP024MemoryCompatibilityAcrossSystemRollups passed normally and under -race in a disposable Hub. It mixes GB-only and byte records through 1m to 10m, 20m, 120m, and 480m, then reopens the database and verifies exact byte fields."
+    },
+    {
+      "name": "HTTPS certificate refresh",
+      "state": "tested_local",
+      "result": "Cadence, retry, cancellation, deletion, and certificate rotation tests pass; affected Agent race suite passes."
+    },
+    {
+      "name": "Frontend",
+      "state": "tested_local",
+      "result": "Bun 1.4.0 frozen install, 64 tests/309 assertions, Lingui extraction and compile, TypeScript, and Vite production build pass. Existing mixed dynamic-import and large-chunk warnings remain."
+    },
+    {
+      "name": "Embedded frontend assets",
+      "state": "tested_local",
+      "result": "Manifest validator and Go embed test pass: 98 assets, 3,426,895 bytes; current bundle digest 8d94b3062e26ab506546d21b2c16f09281b5433cfa8ceebafac2a9cd2db5ed8f."
+    },
+    {
+      "name": "Go modules",
+      "state": "tested_local",
+      "result": "go mod verify passes. Go directive remains 1.27.3. purego glibc-tag compile and iOS source-selection validator pass."
+    },
+    {
+      "name": "Installer local suites",
+      "state": "not_executed",
+      "result": "The repository installer tests hardcode /tmp. They were not run locally to honor the workspace-only filesystem boundary; hosted installer CI is required."
+    }
   ],
-  "unchanged_security_residuals": [
-    {"id":"GO-2026-5932","status":"documented in P023","qualification":"No demonstrated OpenPGP reachability; reassess after P024 dependency scan."},
-    {"id":"GHSA-vfj7-8cjw-p6xm","status":"documented in P023","qualification":"HIGH build-only braces dependency with P023 mitigation; reassess after frontend install/audit."}
+  "hosted_runs_on_candidate_01865f2": [
+    {
+      "workflow": "P017 Release Candidate Regression",
+      "run_id": 39755571369,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39755571369",
+      "head_sha": "01865f223d5c4f744b47b42b4268f4b3ced11d27",
+      "state": "success",
+      "details": "Full P017 regression/security workflow passed on 01865f223d5c4f744b47b42b4268f4b3ced11d27, including the new all-tier byte-memory persistence fixture, full Go suite, Go and JavaScript advisory review, source matrix, frontend build, and workflow analyzers. Evidence-doc-head rerun remains required."
+    },
+    {
+      "workflow": "P013 Hub migration fixture",
+      "run_id": 39755571381,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39755571381",
+      "head_sha": "01865f223d5c4f744b47b42b4268f4b3ced11d27",
+      "state": "success",
+      "details": "Genuine v0.19 fixture, migration, backup/restore failure tests, and restart/recovery harness passed on 01865f223d5c4f744b47b42b4268f4b3ced11d27. Final evidence-doc head rerun remains required."
+    },
+    {
+      "workflow": "iOS Build",
+      "run_id": 39755571531,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39755571531",
+      "head_sha": "01865f223d5c4f744b47b42b4268f4b3ced11d27",
+      "state": "in_progress",
+      "details": "Procursus validation passed; macOS/Xcode Agent and Hub build job is queued. Release validation/publish jobs must finish skipped on the final non-tag PR run."
+    },
+    {
+      "workflow": "iOS installer lifecycle",
+      "run_id": null,
+      "url": null,
+      "head_sha": null,
+      "state": "not_executed",
+      "details": "A prior installer pass on edd7e9e is not treated as evidence for the current source. Run on final PR head required."
+    }
   ],
+  "security": {
+    "go_version": "1.27.3",
+    "native_x509_remediation": "retained; obsolete custom backport absent",
+    "go_advisories_remediated": [
+      "GO-2026-6608",
+      "GO-2026-6809"
+    ],
+    "unchanged_open_residuals": [
+      {
+        "id": "GO-2026-5932",
+        "status": "open; module-level only in P023 evidence, no OpenPGP reachability demonstrated"
+      },
+      {
+        "id": "GHSA-vfj7-8cjw-p6xm",
+        "status": "open; HIGH braces build-tool residual with P023 isolation mitigation; no fixed release claimed"
+      }
+    ],
+    "p024_scan_state": "P017 run 39755571369 passed on 01865f2; exactly the documented GO-2026-5932 and GHSA-vfj7-8cjw-p6xm residuals remain. Repeat on final evidence-doc head."
+  },
+  "artifact_verification": {
+    "state": "hosted_metadata_received; independent_archive_verification_pending",
+    "limitation": "GitHub API metadata digests are available for P017 run 39755571369. An earlier download attempt on edd7e9e was denied by artifact blob storage with HTTP 403; current run artifact bytes have not yet been independently verified. Retry after the final exact-head run."
+  },
+  "release_isolation": {
+    "reviewed": true,
+    "final_hosted_job_state": "pending",
+    "tag_created": false,
+    "release_published": false,
+    "production_deployment": false
+  },
+  "gate_g": {
+    "state": "PASS_INHERITED",
+    "evidence": "P023 PR #27 merged with Gate G PASS."
+  },
+  "gate_h": {
+    "state": "PASS_INHERITED",
+    "evidence": "P023 PR #27 passed Go 1.27.3, A7 compatibility, native x509 remediation, and documented security residual checks."
+  },
+  "gate_i": {
+    "state": "PENDING",
+    "required_before_merge": "All 18 Gate I conditions, exact final PR-head hosted checks, release jobs skipped, and applicable GitHub review/branch rules."
+  },
+  "p018_gate_f": "PENDING; no physical iPad test is required for P024.",
+  "github_requirements": {
+    "branch_protection_api": "Could not read the integration branch protection endpoint: GitHub API returned HTTP 403. Do not bypass any review or required-check rule; inspect available PR review/check state and let GitHub enforce merge rules.",
+    "pr_state": "OPEN Draft; head 01865f223d5c4f744b47b42b4268f4b3ced11d27 at last check."
+  },
   "safety": {
     "production_ios_modified": false,
     "fork_main_modified": false,
     "physical_device_accessed": false,
-    "privilege_escalation_used": false,
+    "sudo_or_privilege_escalation_used": false,
     "tag_created": false,
     "release_published": false,
-    "deployment_performed": false
+    "deployment_performed": false,
+    "database_changes": "Disposable migration fixtures only; no production database modified.",
+    "workspace_boundary": "Work-controlled files, caches, logs, downloads, builds, Git metadata, and worktrees remain under /workspace/Beszel-iOS."
+  },
+  "merge": {
+    "ready_for_review": false,
+    "merged": false,
+    "merge_sha": null,
+    "final_integration_head": null
   }
 }

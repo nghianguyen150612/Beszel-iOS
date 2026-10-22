@@ -1,6 +1,6 @@
 # P024 upstream delta audit
 
-**Status:** five pinned commits inspected and integrated by the normal merge below; compatibility implementation and qualification are in progress.
+**Status:** all five pinned commits inspected and integrated by the normal merge below; compatibility implementation and local qualification are complete; exact-final-head hosted qualification remains pending.
 
 **P024 branch base:** `8e03afadb3a03480414fa47f87d40c13331e05b3` (P023 integration)
 
@@ -22,23 +22,29 @@ The target is a descendant of the previous upstream commit by exactly five commi
 
 1. `agent/memory.go` has an iOS-specific collector in `agent/memory_platform_ios.go` and `agent/ios_memory.go`. It derives `Total` from `hw.memsize`, uses Darwin free plus inactive pages for available memory, bounds used memory, and does not infer swap or cache from those counters. The byte port must preserve those choices and retain the existing legacy GB fields.
 2. The upstream protocol uses fixed arrays. A zeroed optional swap array is omitted by the existing `omitzero` tags; P024 must not turn an unsupported iOS source into a visible `[0,0]` measurement. Fixed memory arrays cannot mark individual cache/ARC elements unavailable, so iOS zero values for those slots must be documented and hidden as unsupported in the chart where platform context is available.
-3. The upstream Hub and records fallback treats an all-zero byte array as legacy data and converts GB floats. Conversion must reject negative, NaN, and infinite values and saturate out-of-range legacy values. Mixed historical/new records must keep units separate and avoid uint64 sum overflow.
+3. The upstream Hub and records fallback treats an all-zero byte array as legacy data and converts GB floats. The P024 conversion rejects negative, NaN, and infinite values and saturates out-of-range legacy values. Mixed historical/new records keep units separate, use independent valid sample counts, and avoid uint64 sum overflow with 128-bit accumulation.
 4. The upstream frontend reads exact byte arrays first and legacy GB fields second. P024 must preserve that fallback, handle absent/partial data, and avoid rendering unsupported iOS swap or cache/ARC as measured values.
 5. `go.mod` conflicts with P023 only on the Go directive and any already-remediated dependency handling. Keep `go 1.27.3`, retain native Go x509 remediation, and adopt pinned dependency updates only after qualification.
 
 ## Inherited preservation baseline
 
-P023's merged evidence records the existing 41 upstream commits, all 178 frozen audit rows, 35 historical iOS commits, and 13 logical iOS patchsets as preserved. P024 adds the five commits above, for a target of 46 cumulative post-v0.21 upstream commits. P024 has not yet completed post-merge history-preservation qualification.
+P023's merged evidence records the existing 41 upstream commits, all 178 frozen audit rows, 35 historical iOS commits, and 13 logical iOS patchsets as preserved. P024 adds the five commits above, for 46 cumulative post-v0.21 upstream commits. The local matrix and readiness validators pass after the P024 merge: 178/178 frozen rows, 35/35 historical iOS commits, 13/13 logical patchsets, and no unresolved preservation entries. P017 ancestry validation is running on source 01865f223d5c4f744b47b42b4268f4b3ced11d27.
 
 ## Normal merge and conflict resolution
 
 Normal merge commit: `e2b677769dd47ff97b5578fb4069372b0f2f79e4`.
 
-Parents are P024 checkpoint `b399faf01065bc89452d2d903cc5edf7d3f3e1bf` and pinned upstream `b97abf7662a7c7a2dd7542ea2062405abd22d4dc`. The upstream parent is genuine and retains all five original commits. The remote feature ref was verified at this merge commit and then advanced to checkpoint `c82536a4e4fcd1ab61b75d2727cae405b8b02d7c`.
+Parents are P024 checkpoint `b399faf01065bc89452d2d903cc5edf7d3f3e1bf` and pinned upstream `b97abf7662a7c7a2dd7542ea2062405abd22d4dc`. The upstream parent is genuine and retains all five original commits. The remote feature ref was verified at the merge commit and after each durable checkpoint; its current code head is `01865f223d5c4f744b47b42b4268f4b3ced11d27`.
 
 Merge conflicts were resolved semantically in `agent/memory.go`, `go.sum`, and Catalan `ca.po`; `go.mod` auto-merged. The Agent still emits legacy GB fields, avoids iOS swap and ARC inference, and uses the upstream exact byte arrays. P023's `go 1.27.3` and native x509 disposition were retained. The Catalan translation supplied by upstream replaced one previously blank entry. These statements describe the merge resolution; full qualification remains pending.
 
-Post-merge compatibility work bounds memory values, averages byte counters without uint64 overflow, excludes missing memory/swap samples from record averages, and sanitizes chart values. Focused qualification and the next remote checkpoint are in progress.
+Post-merge compatibility work bounds memory values, averages byte counters without uint64 overflow, excludes missing memory/swap samples from record averages, and sanitizes chart values. The full local Go suite, affected Go race suites, frontend tests/build, module verification, asset-manifest tests, and the new all-tier mixed-format database fixture pass. P017, P013, and iOS/Procursus runs on 01865f2 are in progress; final evidence documentation and exact-head reruns are still pending.
+
+## Current remote checkpoint
+
+The P024 feature ref and open Draft PR #28 were last confirmed at `01865f223d5c4f744b47b42b4268f4b3ced11d27`. P017 run `39755571369` and P013 run `39755571381` were in progress at the last status check. iOS Build run `39755571531` passed Procursus validation and had its macOS/Xcode job queued. Previous code head b6c0b5af passed P017 run `39754342581` and P013 run `39754342524`; its native macOS job was canceled by the next feature push and is not a native pass. The required system memory rollup fixture was added at 01865f2 and passes locally under normal and race tests.
+
+The required installer workflow was not yet dispatched for 01865f2. An earlier pass on source edd7e9e is historical only. GitHub's branch-protection endpoint returned HTTP 403 to the connected account; actual review and merge enforcement must not be bypassed.
 
 No production `iOS` branch or fork `main` mutation is part of this audit. No device access, tag, release, or deployment was made.
 
