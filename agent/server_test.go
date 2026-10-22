@@ -916,6 +916,14 @@ func TestWriteToSessionEncoding(t *testing.T) {
 
 				assert.Equal(t, testData.Details.Hostname, decodedCbor.Details.Hostname)
 				assert.Equal(t, testData.Stats.Cpu, decodedCbor.Stats.Cpu)
+				assert.Equal(t, testData.Stats.MemBytes, decodedCbor.Stats.MemBytes)
+				assert.Equal(t, testData.Stats.SwapBytes, decodedCbor.Stats.SwapBytes)
+
+				// A Hub with the pre-byte Stats shape ignores the new CBOR keys
+				// and still receives the deprecated GB values unchanged.
+				var legacy legacyCombinedData
+				require.NoError(t, cbor.Unmarshal([]byte(encodedData), &legacy))
+				assertLegacyMemoryValues(t, legacy.Stats)
 			} else {
 				// Should be JSON - try to decode as JSON
 				var decodedJson system.CombinedData
@@ -929,6 +937,14 @@ func TestWriteToSessionEncoding(t *testing.T) {
 				// Verify the decoded JSON data matches our test data
 				assert.Equal(t, testData.Details.Hostname, decodedJson.Details.Hostname)
 				assert.Equal(t, testData.Stats.Cpu, decodedJson.Stats.Cpu)
+				assert.Equal(t, testData.Stats.MemBytes, decodedJson.Stats.MemBytes)
+				assert.Equal(t, testData.Stats.SwapBytes, decodedJson.Stats.SwapBytes)
+
+				// A Hub with the pre-byte Stats shape ignores the new JSON names
+				// and still receives the deprecated GB values unchanged.
+				var legacy legacyCombinedData
+				require.NoError(t, json.Unmarshal([]byte(encodedData), &legacy))
+				assertLegacyMemoryValues(t, legacy.Stats)
 
 				// Verify it looks like JSON (starts with '{' and contains readable field names)
 				assert.True(t, strings.HasPrefix(encodedData, "{"), "JSON should start with '{'")
@@ -939,17 +955,44 @@ func TestWriteToSessionEncoding(t *testing.T) {
 	}
 }
 
+type legacyCombinedData struct {
+	Stats legacyMemoryStats `json:"stats" cbor:"0,keyasint"`
+}
+
+type legacyMemoryStats struct {
+	Mem          float64 `json:"m" cbor:"2,keyasint"`
+	MemUsed      float64 `json:"mu" cbor:"3,keyasint"`
+	MemBuffCache float64 `json:"mb" cbor:"5,keyasint"`
+	Swap         float64 `json:"s" cbor:"7,keyasint"`
+	SwapUsed     float64 `json:"su" cbor:"8,keyasint"`
+}
+
+func assertLegacyMemoryValues(t *testing.T, stats legacyMemoryStats) {
+	t.Helper()
+	assert.Equal(t, float64(8), stats.Mem)
+	assert.Equal(t, float64(4), stats.MemUsed)
+	assert.Equal(t, float64(2), stats.MemBuffCache)
+	assert.Equal(t, float64(2), stats.Swap)
+	assert.Equal(t, float64(1), stats.SwapUsed)
+}
+
 // Helper function to create test data for encoding tests
 func createTestCombinedData() *system.CombinedData {
+	const gib = uint64(1 << 30)
 	return &system.CombinedData{
 		Stats: system.Stats{
-			Cpu:       25.5,
-			Mem:       8589934592, // 8GB
-			MemUsed:   4294967296, // 4GB
-			MemPct:    50.0,
-			DiskTotal: 1099511627776, // 1TB
-			DiskUsed:  549755813888,  // 512GB
-			DiskPct:   50.0,
+			Cpu:          25.5,
+			Mem:          8,
+			MemUsed:      4,
+			MemPct:       50.0,
+			MemBuffCache: 2,
+			MemBytes:     [4]uint64{8 * gib, 4 * gib, 2 * gib},
+			Swap:         2,
+			SwapUsed:     1,
+			SwapBytes:    [2]uint64{2 * gib, gib},
+			DiskTotal:    1099511627776, // 1TB
+			DiskUsed:     549755813888,  // 512GB
+			DiskPct:      50.0,
 		},
 		Details: &system.Details{
 			Hostname: "test-host",
