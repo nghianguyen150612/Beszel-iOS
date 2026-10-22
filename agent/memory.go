@@ -22,12 +22,17 @@ func (a *Agent) updateMemoryStats(stats *system.Stats) {
 	var hostTotal uint64
 	if err == nil && v != nil {
 		hostTotal = v.Total
-		// Swap fields are populated only when supplied by the platform source.
-		// iOS acquisition leaves unsupported swap fields absent.
-		stats.Swap = utils.BytesToGigabytes(v.SwapTotal)
-		stats.SwapUsed = utils.BytesToGigabytes(saturatingSub(v.SwapTotal, v.SwapFree))
+		// iOS currently has no supported swap source. Leave the optional byte
+		// array absent there instead of reporting the platform's zero defaults.
+		if runtime.GOOS != "ios" {
+			stats.SwapBytes = [2]uint64{v.SwapTotal, saturatingSub(v.SwapTotal, v.SwapFree)}
+			// Keep the deprecated GB fields for older Hubs and integrations.
+			stats.Swap = utils.BytesToGigabytes(stats.SwapBytes[0])
+			stats.SwapUsed = utils.BytesToGigabytes(stats.SwapBytes[1])
+		}
 	}
 
+	var arcSize uint64
 	metrics, fromCgroup := containerMemoryMetrics(hostTotal, a.forceUseCgroup)
 	if !fromCgroup {
 		if err != nil || v == nil {
@@ -36,17 +41,20 @@ func (a *Agent) updateMemoryStats(stats *system.Stats) {
 		used, cacheBuff := platformMemoryUsage(v, a.memCalc == "htop", runtime.GOOS)
 		metrics = memoryMetrics{Total: v.Total, Used: used, BuffCache: cacheBuff}
 		// Host ARC must not be subtracted from container-scoped accounting.
-		if a.zfs {
-			if arcSize, _ := zfs.ARCSize(); arcSize > 0 && arcSize < metrics.Used {
+		if a.zfs && runtime.GOOS != "ios" {
+			if size, _ := zfs.ARCSize(); size > 0 && size < metrics.Used {
+				arcSize = size
 				metrics.Used -= arcSize
-				stats.MemZfsArc = utils.BytesToGigabytes(arcSize)
 			}
 		}
 	}
 
+	stats.MemBytes = [4]uint64{metrics.Total, metrics.Used, metrics.BuffCache, arcSize}
+	// TODO: stop populating deprecated GB fields once hubs < 0.21.1 are no longer supported
 	stats.Mem = utils.BytesToGigabytes(metrics.Total)
 	stats.MemUsed = utils.BytesToGigabytes(metrics.Used)
 	stats.MemBuffCache = utils.BytesToGigabytes(metrics.BuffCache)
+	stats.MemZfsArc = utils.BytesToGigabytes(arcSize)
 	if metrics.Total > 0 {
 		stats.MemPct = utils.TwoDecimals(float64(metrics.Used) / float64(metrics.Total) * 100)
 	}
