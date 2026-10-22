@@ -105,6 +105,8 @@ jobs:
           set -euo pipefail
           ZIZMOR_ARCHIVE="$RUNNER_TEMP/zizmor-v1.31.1.tar.gz"
           ACTIONLINT_ARCHIVE="$RUNNER_TEMP/actionlint-v1.7.12.tar.gz"
+          SHELLCHECK_ARCHIVE="$RUNNER_TEMP/shellcheck-v0.11.0.tar.gz"
+          SHELLCHECK_DIR="$RUNNER_TEMP/p023-shellcheck"
           curl --fail --location --retry 2 --max-time 120 \
             https://github.com/zizmorcore/zizmor/releases/download/v1.31.1/zizmor-x86_64-unknown-linux-gnu.tar.gz \
             -o "$ZIZMOR_ARCHIVE"
@@ -117,10 +119,23 @@ jobs:
           printf '%s  %s\n' \
             8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8 \
             "$ACTIONLINT_ARCHIVE" | sha256sum -c -
+          curl --fail --location --retry 2 --max-time 120 \
+            https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.gz \
+            -o "$SHELLCHECK_ARCHIVE"
+          printf '%s  %s\n' \
+            b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6 \
+            "$SHELLCHECK_ARCHIVE" | sha256sum -c -
+          mkdir "$SHELLCHECK_DIR"
+          tar -xzf "$SHELLCHECK_ARCHIVE" -C "$SHELLCHECK_DIR" \
+            --strip-components=1 shellcheck-v0.11.0/shellcheck
+          chmod 700 "$SHELLCHECK_DIR/shellcheck"
+          SHELLCHECK_VERSION="$("$SHELLCHECK_DIR/shellcheck" --version | awk 'NR == 2 {print $2}')"
+          test "$SHELLCHECK_VERSION" = 0.11.0
           tar -xzf "$ZIZMOR_ARCHIVE" -C "$RUNNER_TEMP" zizmor
           tar -xzf "$ACTIONLINT_ARCHIVE" -C "$RUNNER_TEMP" actionlint
           set +e
-          "$RUNNER_TEMP/actionlint" .github/workflows/*.yml \
+          "$RUNNER_TEMP/actionlint" \
+            -shellcheck "$SHELLCHECK_DIR/shellcheck" .github/workflows/*.yml \
             > "$RUNNER_TEMP/p023-actionlint.log" 2>&1
           actionlint_status=$?
           "$RUNNER_TEMP/zizmor" --strict-collection --no-config --no-ignores \
@@ -132,6 +147,8 @@ jobs:
           set -e
           ACTIONLINT_STATUS="$actionlint_status" \
           ZIZMOR_STATUS="$zizmor_status" \
+          SHELLCHECK_VERSION="$SHELLCHECK_VERSION" \
+          SHELLCHECK_SHA256="$(sha256sum "$SHELLCHECK_ARCHIVE" | awk '{print $1}')" \
           ZIZMOR_SHA256="$(sha256sum "$ZIZMOR_ARCHIVE" | awk '{print $1}')" \
           ACTIONLINT_SHA256="$(sha256sum "$ACTIONLINT_ARCHIVE" | awk '{print $1}')" \
           python3 - <<'PY'
@@ -143,6 +160,8 @@ jobs:
               'actionlint_version':'1.7.12',
               'actionlint_archive_sha256':os.environ['ACTIONLINT_SHA256'],
               'actionlint_exit_code':int(os.environ['ACTIONLINT_STATUS']),
+              'shellcheck_version':os.environ['SHELLCHECK_VERSION'],
+              'shellcheck_archive_sha256':os.environ['SHELLCHECK_SHA256'],
               'zizmor_version':'1.31.1',
               'zizmor_archive_sha256':os.environ['ZIZMOR_SHA256'],
               'zizmor_exit_code':int(os.environ['ZIZMOR_STATUS']),
