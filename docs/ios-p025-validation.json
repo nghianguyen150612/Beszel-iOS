@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "record_status": "preliminary_checkpoint",
+  "project": "Beszel-iOS",
+  "milestone": "P025",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "starting_integration_sha": "07f6fd5f87c99348ec33549fe8dfed099464eb7f",
+  "starting_integration_tree_sha": "e1cd43c81b131c05c4e4dfcde40d598dc962b330",
+  "p024_tested_source_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7",
+  "pinned_upstream_sha": "b97abf7662a7c7a2dd7542ea2062405abd22d4dc",
+  "history_invariants": {
+    "cumulative_upstream_commits": 46,
+    "frozen_audit_rows": 178,
+    "historical_ios_commits": 35,
+    "logical_ios_patchsets": 13,
+    "status": "reported_by_p024_pending_p025_recheck"
+  },
+  "go_version": "1.27.3",
+  "p024_runs": {
+    "native_ios": {"run_id": 39759219855, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"},
+    "p017_regression": {"run_id": 39759219569, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"},
+    "p013_migration": {"run_id": 39759219686, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"},
+    "installer": {"run_id": 39759219620, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"}
+  },
+  "p024_external_artifact_download": "confirmed_http_403_by_authenticated_p025_cli_retry",
+  "p025_initial_checkpoint": {
+    "commit_sha": "e90427e6a61553b3d7ca1db5aba5dd18473c92db",
+    "tree_sha": "de2e7cdda3906c8f372602e50675fb972d0975f8",
+    "remote_sha_verified": true,
+    "draft_pr_number": 29
+  },
+  "p025_external_artifact_download_attempt": {
+    "payload_artifact_id": 12418500671,
+    "native_validation_artifact_id": 12417553816,
+    "result": "both_blocked_http_403",
+    "github_connector_result": "file_service_references_returned_without_workspace_byte_access",
+    "hosted_independent_consumer": "pending"
+  },
+  "hash_algorithms": {
+    "git_commit_and_tree_objects": "SHA-1",
+    "binary_and_artifact_file_digests": "SHA-256",
+    "github_artifact_digest_metadata": "SHA-256; not equivalent to an independently computed archive digest"
+  },
+  "p025_feature_head_sha": null,
+  "p025_feature_tree_sha": null,
+  "p025_merge_sha": null,
+  "p025_merge_tree_sha": null,
+  "candidate_artifact_ids": [],
+  "candidate_status": "not_frozen",
+  "gate_j": "pending",
+  "p018_gate_f": "pending",
+  "physical_device_accessed": false,
+  "production_ios_changed": false,
+  "fork_main_changed": false,
+  "tag_created": false,
+  "release_published": false
+}

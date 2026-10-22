@@ -2,6 +2,7 @@
 """Check the complete symbol-level A7 replacement in an unstripped build."""
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -31,6 +32,9 @@ def main():
         assembly = subprocess.check_output(['go', 'tool', 'objdump', '-s',
                                             r'^runtime\.procyieldAsm(\.abi0)?$', str(args.binary)], text=True)
         result = validate(assembly)
+        binary = args.binary.read_bytes()
+        result['binary_sha256'] = hashlib.sha256(binary).hexdigest()
+        result['binary_bytes'] = len(binary)
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
         raise SystemExit(f'ERROR: {exc}') from exc
     print(assembly)

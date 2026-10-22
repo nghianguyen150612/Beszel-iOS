@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "record_status": "implementation_checkpoint_hosted_qualification_pending",
+  "hash_algorithms": {
+    "git_commit_and_tree_objects": "SHA-1",
+    "binary_artifacts_and_files": "SHA-256",
+    "artifact_zip_digest_field": "GitHub-reported SHA-256; independently downloaded ZIP SHA-256 recorded separately"
+  },
+  "repository": "https://github.com/nghianguyen150612/Beszel-iOS",
+  "integration_baseline": {
+    "ref": "ios/upstream-v021-integration",
+    "commit_sha": "07f6fd5f87c99348ec33549fe8dfed099464eb7f",
+    "tree_sha": "e1cd43c81b131c05c4e4dfcde40d598dc962b330"
+  },
+  "previous_p024_artifacts": {
+    "workflow_run_id": 39759219855,
+    "source_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7",
+    "payload": {
+      "artifact_id": 12418500671,
+      "github_reported_archive_sha256": "c74e9916186998df60462846cf1445fb701ca3b94849802127e8fe1e5e28228e",
+      "independent_local_archive_sha256": null,
+      "download_status": "blocked_http_403"
+    },
+    "native_validation": {
+      "artifact_id": 12417553816,
+      "github_reported_archive_sha256": "445971fe64d41798bcacbafddd6ef8742ed4559629d87ca7ed70f2d0e667bc66",
+      "independent_local_archive_sha256": null,
+      "download_status": "blocked_http_403"
+    }
+  },
+  "initial_p025_checkpoint": {
+    "commit_sha": "e90427e6a61553b3d7ca1db5aba5dd18473c92db",
+    "tree_sha": "de2e7cdda3906c8f372602e50675fb972d0975f8",
+    "remote_sha_verified": true,
+    "draft_pr_number": 29
+  },
+  "feature_branch": "ios/p025-artifact-rc-freeze",
+  "feature_head_sha": null,
+  "feature_tree_sha": null,
+  "pinned_upstream_sha": "b97abf7662a7c7a2dd7542ea2062405abd22d4dc",
+  "candidate_source_sha": null,
+  "candidate_tree_sha": null,
+  "go_version": "1.27.3",
+  "frontend_lockfile_sha256": null,
+  "build_workflow_sha256": null,
+  "runtime_patch_sha256": null,
+  "agent": {
+    "binary_name": "beszel-agent-ios-arm64",
+    "sha256": null,
+    "artifact_id": null,
+    "artifact_archive_sha256": null
+  },
+  "hub": {
+    "binary_name": "beszel-hub-ios-arm64",
+    "sha256": null,
+    "artifact_id": null,
+    "artifact_archive_sha256": null,
+    "frontend_assets_sha256": null
+  },
+  "native_validation": {
+    "artifact_id": null,
+    "artifact_archive_sha256": null,
+    "manifest_sha256": null
+  },
+  "artifact_workflow_run_id": null,
+  "artifact_verification": {
+    "hosted_independent_consumer": "pending",
+    "local_external_download": "blocked_http_403_on_p024_artifacts",
+    "uploaded_payload_bytes": "pending_hosted_consumer"
+  },
+  "toolchain": {
+    "go": "1.27.3",
+    "goos": "ios",
+    "goarch": "arm64",
+    "goarm64": "v8.0",
+    "cgo_enabled": 1,
+    "minimum_ios": "12.0"
+  },
+  "proposed_release_version": "v0.21.0-ios.1",
+  "physical_acceptance_status": "pending_p026",
+  "release_authorization_status": "not_authorized",
+  "gate_j": "pending"
+}

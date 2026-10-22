@@ -13,6 +13,7 @@ on:
       - "go.sum"
       - "internal/site/**"
       - "tests/**"
+      - ".github/scripts/**"
       - "scripts/audit/**"
       - "patches/go/**"
       - "install.sh"
@@ -22,6 +23,8 @@ on:
       - "docs/ios-p021-*"
       - "docs/ios-p022-*"
       - "docs/ios-p023-*"
+      - "docs/ios-p024-*"
+      - "docs/ios-p025-*"
       - "docs/ios-release-candidate*"
   push:
     branches:
@@ -298,9 +301,16 @@ jobs:
           for binary in agent hub; do
             go build -trimpath -ldflags="-s -w" -o "build/ios/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
             GOCACHE="$RUNNER_TEMP/ios-repeat-cache" go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/ios-repeat/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
-            cmp "build/ios/beszel-$binary-ios-arm64" "$RUNNER_TEMP/ios-repeat/beszel-$binary-ios-arm64"
-            echo "PASS: two clean-cache $binary builds are byte-identical"
           done
+          python3 .github/scripts/create-ios-reproducibility-manifest.py \
+            --root "$GITHUB_WORKSPACE" \
+            --primary-build "$GITHUB_WORKSPACE/build/ios" \
+            --repeat-build "$RUNNER_TEMP/ios-repeat" \
+            --runtime-asm "$(go env GOROOT)/src/runtime/asm_arm64.s" \
+            --xcode-version "$(xcodebuild -version | tr '\n' ' ')" \
+            --ios-sdk-version "$(xcrun --sdk iphoneos --show-sdk-version)" \
+            --workflow-run-id "$GITHUB_RUN_ID" \
+            --output "$RUNNER_TEMP/native-build-reproducibility.json"
           shasum -a 256 -c "$RUNNER_TEMP/original-runtime.sha256"
 
       - name: Inspect runtime instructions in unstripped validation builds
@@ -382,10 +392,103 @@ jobs:
             ${{ runner.temp }}/runtime-agent.json
             ${{ runner.temp }}/runtime-hub.json
             ${{ runner.temp }}/native-artifacts.json
+            ${{ runner.temp }}/native-build-reproducibility.json
             ${{ runner.temp }}/wifi-linkage.txt
 
-  release-ios-validate:
+  verify-ios-artifacts:
+    name: Verify uploaded iOS artifact bytes
     needs: build-ios
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      actions: read
+      contents: read
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact candidate source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Go 1.27.3 for binary metadata inspection
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Set up Bun 1.4.0 for independent frontend reconstruction
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+          no-cache: true
+
+      - name: Rebuild frozen frontend assets from the candidate source
+        working-directory: internal/site
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(bun --version)" = 1.4.0
+          bun install --frozen-lockfile
+          bun run sync
+          bun run build
+          git restore -- src/locales
+          git diff --exit-code
+
+      - name: Download same-run native payload
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: beszel-ios-arm64
+          path: ${{ runner.temp }}/ios-payload
+          run-id: ${{ github.run_id }}
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+
+      - name: Download same-run native validation evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ios-native-validation
+          path: ${{ runner.temp }}/ios-native-validation
+          run-id: ${{ github.run_id }}
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+
+      - name: Independently verify artifact ZIPs, payload bytes, and provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
+          test "$SOURCE_SHA" = "$CANDIDATE_SOURCE_SHA"
+          test "$(go env GOVERSION)" = go1.27.3
+          python3 .github/scripts/verify-ios-artifact-consumer.py \
+            --repository "$REPOSITORY" \
+            --run-id "$WORKFLOW_RUN_ID" \
+            --source-sha "$SOURCE_SHA" \
+            --source-tree-sha "$SOURCE_TREE_SHA" \
+            --source-root "$GITHUB_WORKSPACE" \
+            --payload "$RUNNER_TEMP/ios-payload" \
+            --native "$RUNNER_TEMP/ios-native-validation" \
+            --frontend "$GITHUB_WORKSPACE/internal/site/dist" \
+            --output "$RUNNER_TEMP/ios-artifact-consumer-verification.json"
+
+      - name: Upload sanitized artifact verification manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ios-artifact-consumer-verification
+          path: ${{ runner.temp }}/ios-artifact-consumer-verification.json
+          if-no-files-found: error
+          retention-days: 30
+
+  release-ios-validate:
+    needs: [build-ios, verify-ios-artifacts]
     if: github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v') && contains(github.ref_name, '-ios.')
     runs-on: ubuntu-latest
     permissions:
