@@ -194,7 +194,10 @@ def audit_report(path: Path, manager: str, exit_code: int) -> dict:
     counts = metadata.get("vulnerabilities", {}) if isinstance(metadata, dict) else {}
     if isinstance(counts, dict) and any(count for level, count in counts.items() if level in SEVERITIES and level != "high"):
         raise ValueError(f"{manager} raw audit includes additional severity classes: {counts}")
-    if isinstance(counts, dict) and counts.get("high", 1) > 1:
+    affected_package_count = len(package_nodes)
+    if manager == "npm":
+        affected_package_count = validate_npm_advisory_tree(data, counts)
+    elif isinstance(counts, dict) and counts.get("high", 1) > 1:
         raise ValueError(f"{manager} raw audit includes more than the one reviewed high package: {counts}")
     if exit_code not in (0, 1):
         raise ValueError(f"{manager} audit exited {exit_code}; inspect the retained report")
@@ -204,12 +207,46 @@ def audit_report(path: Path, manager: str, exit_code: int) -> dict:
         "report_bytes": len(raw.encode()),
         "advisory_ids": sorted(ids),
         "severity": "high",
-        "vulnerable_package_count": 1,
+        "vulnerable_package_count": affected_package_count,
+        "root_advisory_count": 1,
         "command_exit_code": exit_code,
         "exit_status_interpreted_as": "reviewed vulnerability present" if exit_code == 1 else "audit command success; advisory still reported",
         "raw_finding_retained": True,
         "status": "PASS_WITH_REVIEWED_ADVISORY",
     }
+
+
+def validate_npm_advisory_tree(data: dict, counts: dict) -> int:
+    vulnerabilities = data.get("vulnerabilities")
+    expected = {"@lingui/cli", "@lingui/vite-plugin", "braces", "chokidar", "micromatch"}
+    if not isinstance(vulnerabilities, dict) or set(vulnerabilities) != expected:
+        raise ValueError("npm audit vulnerability graph differs from the reviewed five-package Lingui/braces chain")
+    if counts != {"info": 0, "low": 0, "moderate": 0, "high": 5, "critical": 0, "total": 5}:
+        raise ValueError(f"npm audit severity totals differ from the reviewed five-package chain: {counts}")
+    for name, record in vulnerabilities.items():
+        if record.get("name") != name or record.get("severity") != "high":
+            raise ValueError(f"npm audit has an unexpected affected package or severity: {name}")
+        if record.get("nodes") != [f"node_modules/{name}"]:
+            raise ValueError(f"npm audit installed nodes for {name} differ from the reviewed lock graph")
+    expected_edges = {
+        "@lingui/cli": {"chokidar", "micromatch"},
+        "@lingui/vite-plugin": {"@lingui/cli"},
+        "chokidar": {"braces"},
+        "micromatch": {"braces"},
+    }
+    for parent, children in expected_edges.items():
+        via = vulnerabilities[parent].get("via")
+        if not isinstance(via, list) or set(via) != children:
+            raise ValueError(f"npm audit dependency path for {parent} differs from the reviewed Lingui/braces chain")
+    braces_via = vulnerabilities["braces"].get("via")
+    if not isinstance(braces_via, list) or len(braces_via) != 1 or not isinstance(braces_via[0], dict):
+        raise ValueError("npm audit braces record does not identify one direct advisory")
+    advisory = braces_via[0]
+    if advisory.get("source") != 1240992 or advisory.get("name") != PACKAGE or GHSA not in advisory.get("url", ""):
+        raise ValueError("npm audit braces record does not match the reviewed GHSA")
+    if any(vulnerabilities[name].get("severity") != "high" for name in expected):
+        raise ValueError("npm audit affected dependency chain contains an unexpected severity")
+    return len(expected)
 
 
 def validate_osv_lock_scan(report: dict, lock_path: Path, candidate_source_sha: str) -> dict:

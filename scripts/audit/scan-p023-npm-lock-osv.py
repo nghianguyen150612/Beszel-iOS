@@ -196,7 +196,7 @@ def scan(lock_bytes: bytes, source_sha: str, batch_responses: list[dict], adviso
             "first_patched_version": None,
             "raw_scanner_status": "retained by full npm lock OSV query",
         }],
-        "npm_audit_endpoint_status": "network_unavailable_on_this_run; raw error retained; OSV full-lock scan used as fallback",
+        "npm_audit_relationship": "independent full-lock cross-check; fallback is permitted only after the configured npm registry timeout",
         "release_authorization": "NOT_GRANTED",
     }
     return summary, {"queries": queries, "batch_responses": batch_responses, "advisory": advisory}

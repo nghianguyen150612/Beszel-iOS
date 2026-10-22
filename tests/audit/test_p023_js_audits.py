@@ -15,6 +15,29 @@ spec.loader.exec_module(module)
 
 
 class P023JavaScriptAuditTests(unittest.TestCase):
+    def npm_report(self):
+        advisory = {
+            "source": 1240992,
+            "name": "braces",
+            "dependency": "braces",
+            "title": "stack exhaustion",
+            "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+            "severity": "high",
+            "range": "<=3.0.3",
+        }
+        vulnerabilities = {
+            "@lingui/cli": {"name": "@lingui/cli", "severity": "high", "via": ["chokidar", "micromatch"], "nodes": ["node_modules/@lingui/cli"]},
+            "@lingui/vite-plugin": {"name": "@lingui/vite-plugin", "severity": "high", "via": ["@lingui/cli"], "nodes": ["node_modules/@lingui/vite-plugin"]},
+            "braces": {"name": "braces", "severity": "high", "via": [advisory], "nodes": ["node_modules/braces"]},
+            "chokidar": {"name": "chokidar", "severity": "high", "via": ["braces"], "nodes": ["node_modules/chokidar"]},
+            "micromatch": {"name": "micromatch", "severity": "high", "via": ["braces"], "nodes": ["node_modules/micromatch"]},
+        }
+        return {
+            "auditReportVersion": 2,
+            "vulnerabilities": vulnerabilities,
+            "metadata": {"vulnerabilities": {"info": 0, "low": 0, "moderate": 0, "high": 5, "critical": 0, "total": 5}},
+        }
+
     def test_real_lockfiles_show_build_only_lingui_paths(self):
         package = json.loads((ROOT / "internal/site/package.json").read_text())
         bun = module.bun_graph(package, ROOT / "internal/site/bun.lock")
@@ -24,28 +47,7 @@ class P023JavaScriptAuditTests(unittest.TestCase):
         self.assertTrue(npm["dev_dependency"])
 
     def test_npm_high_advisory_is_retained_even_with_nonzero_audit_exit(self):
-        report = {
-            "auditReportVersion": 2,
-            "vulnerabilities": {
-                "braces": {
-                    "name": "braces",
-                    "severity": "high",
-                    "via": [{
-                        "source": 93687,
-                        "name": "braces",
-                        "dependency": "braces",
-                        "title": "stack exhaustion",
-                        "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
-                        "range": "<=3.0.3",
-                    }],
-                    "effects": [],
-                    "range": "<=3.0.3",
-                    "nodes": ["node_modules/braces"],
-                    "fixAvailable": False,
-                }
-            },
-            "metadata": {"vulnerabilities": {"info": 0, "low": 0, "moderate": 0, "high": 1, "critical": 0, "total": 1}},
-        }
+        report = self.npm_report()
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "npm-audit.json"
             path.write_text(json.dumps(report))
@@ -53,6 +55,19 @@ class P023JavaScriptAuditTests(unittest.TestCase):
         self.assertIn("GHSA-vfj7-8cjw-p6xm", result["advisory_ids"])
         self.assertEqual(result["severity"], "high")
         self.assertEqual(result["command_exit_code"], 1)
+        self.assertEqual(result["vulnerable_package_count"], 5)
+        self.assertEqual(result["root_advisory_count"], 1)
+
+    def test_npm_audit_rejects_a_new_package_in_the_vulnerability_tree(self):
+        report = self.npm_report()
+        report["vulnerabilities"]["unexpected"] = {
+            "name": "unexpected", "severity": "high", "via": ["braces"], "nodes": ["node_modules/unexpected"]
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "npm-audit.json"
+            path.write_text(json.dumps(report))
+            with self.assertRaisesRegex(ValueError, "five-package Lingui/braces chain"):
+                module.audit_report(path, "npm", 1)
 
     def test_npm_registry_timeout_is_retained_as_unavailable(self):
         report = {
