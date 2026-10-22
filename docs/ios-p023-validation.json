@@ -1,22 +1,20 @@
 {
   "schema": 1,
   "milestone": "P023",
-  "phase": "baseline_pushed",
+  "phase": "exact_head_hosted_qualification",
   "status": "IN_PROGRESS",
-  "source_commit": "fd334076f53d8354a4924a4c734f29cf65a43879",
-  "source_tree": "723e7261903f40e1d714f385f7bc3885f4691c2c",
+  "candidate_code_source_sha": "c9e68e1858bd71792ac79193257c95e406eb4c87",
   "branch": "ios/p023-security-hardening",
-  "remote_branch_sha": "fd334076f53d8354a4924a4c734f29cf65a43879",
   "pull_request": {
     "number": 27,
     "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/27",
     "state": "open",
     "draft": true,
-    "base": "ios/upstream-v021-integration"
+    "base": "ios/upstream-v021-integration",
+    "base_sha": "fd334076f53d8354a4924a4c734f29cf65a43879"
   },
   "starting_integration": "fd334076f53d8354a4924a4c734f29cf65a43879",
   "p022_final_head": "ef7d780cd1c548bb97cd1891810f945323983193",
-  "p022_tree_matches_starting_integration": true,
   "verified_refs": {
     "integration": "fd334076f53d8354a4924a4c734f29cf65a43879",
     "production_ios": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
@@ -25,24 +23,60 @@
     "live_upstream_main": "b97abf7662a7c7a2dd7542ea2062405abd22d4dc",
     "live_upstream_ahead_by": 5
   },
+  "toolchains": {
+    "go": "go1.27.3",
+    "bun": "1.4.0",
+    "govulncheck": "v1.9.0"
+  },
+  "local_checks": {
+    "serial_full_go_suite": "PASS; package tests run with -p 1 to avoid the shared process-health marker race",
+    "audit_unit_tests": "PASS; 117 tests",
+    "crypto_x509": "PASS; go test crypto/x509 -count=1",
+    "frontend": "PASS; frozen install, Bun tests, Lingui extraction/compile, Vite build, lockfile hashes unchanged",
+    "hub_migration_backup_tests": "PASS; 7 tests",
+    "openpgp_profiles": "PASS; six profiles, no OpenPGP imports or packages",
+    "npm_osv_lock_scan": "PASS_WITH_REVIEWED_ADVISORY; source-bound to c9e68e1858bd71792ac79193257c95e406eb4c87; 510 lock nodes, 494 exact package/version queries, only GHSA-vfj7-8cjw-p6xm",
+    "docker_toolchain_contract": "PASS; six Docker Go builder stages pinned and version-checked"
+  },
+  "github_workflow_runs": {
+    "candidate_source_sha": "c9e68e1858bd71792ac79193257c95e406eb4c87",
+    "ios_build": {
+      "run_id": 39715959892,
+      "status": "IN_PROGRESS"
+    },
+    "installer_lifecycle": {
+      "run_id": 39715959834,
+      "status": "IN_PROGRESS"
+    },
+    "hub_migration": {
+      "run_id": 39715960089,
+      "status": "IN_PROGRESS"
+    },
+    "p017_security_regression": {
+      "run_id": 39715959911,
+      "status": "IN_PROGRESS",
+      "go_security_scan": "PASS on exact source SHA c9e68e1858bd71792ac79193257c95e406eb4c87; overall workflow in progress"
+    }
+  },
+  "native_artifact": {
+    "downloaded": false,
+    "independent_sha256_verification": "PENDING",
+    "source_sha_binding": "PENDING"
+  },
   "preservation": {
-    "pinned_upstream_commits": "41/41 expected in P022 evidence; P023 final check pending",
-    "frozen_upstream_rows": "178/178 expected in P022 evidence; P023 final check pending",
-    "historical_ios_commits": "35/35 expected in P022 evidence; P023 final check pending",
-    "logical_ios_patchsets": "13/13 expected in P022 evidence; P023 final check pending"
+    "pinned_upstream_commits": "41/41 expected; exact candidate workflow check pending",
+    "frozen_upstream_rows": "178/178 expected; exact candidate workflow check pending",
+    "historical_ios_commits": "35/35 expected; exact candidate workflow check pending",
+    "logical_ios_patchsets": "13/13 expected; exact candidate workflow check pending",
+    "p019_p022_normal_merge_ancestry": "preserved in branch history"
   },
-  "p023_tests": {
-    "go": "PENDING",
-    "frontend": "PENDING",
-    "security": "PENDING",
-    "hub_migration": "PENDING",
-    "installer": "PENDING",
-    "native_ios_ci": "PENDING",
-    "procursus": "PENDING",
-    "artifact_verification": "PENDING"
-  },
+  "advisory_matrix": "docs/ios-p023-advisory-matrix.json",
+  "go_1_27_3_migration": "docs/ios-p023-go1273-migration.md",
+  "a7_runtime_review": "docs/ios-p023-a7-runtime-review.md",
+  "javascript_dependency_review": "docs/ios-p023-javascript-dependency-review.md",
+  "release_security_disposition": "docs/ios-p023-release-security.md",
   "gate_g": "PASS inherited from merged P022 PR #26",
-  "gate_h": "PENDING",
+  "gate_h": "PENDING exact-head hosted qualification",
   "p018_gate_f": "PENDING",
   "release_authorization": "NOT_GRANTED",
   "production_ios_modified": false,
@@ -51,5 +85,8 @@
   "sudo_used": false,
   "release_created": false,
   "tag_created": false,
-  "last_pushed_sha": "48308ecd44198ac79cb827c8ccbeacb62688dd3c"
+  "workspace_violations": [],
+  "unpushed_commits": [],
+  "qualification_snapshot_utc": "2026-10-22T03:19:53Z",
+  "branch_sha_at_snapshot": "c9e68e1858bd71792ac79193257c95e406eb4c87"
 }

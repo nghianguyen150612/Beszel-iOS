@@ -1,73 +1,111 @@
 {
   "schema": 1,
   "milestone": "P023",
-  "phase": "baseline",
-  "source_commit": "fd334076f53d8354a4924a4c734f29cf65a43879",
-  "source_tree": "723e7261903f40e1d714f385f7bc3885f4691c2c",
+  "phase": "candidate_qualification",
+  "reviewed_source_commit": "c9e68e1858bd71792ac79193257c95e406eb4c87",
+  "reviewed_on": "2026-10-22",
   "advisories": [
     {
       "advisory_id": "GO-2026-6608",
-      "affected_package": "Go standard library multipart MIME parser",
-      "affected_versions": "P022 record: Go 1.27.2 source scan did not report it",
-      "current_resolved_version": "Go 1.27.2",
-      "reachability": "Absent in P022 exact-head source scan; P023 re-scan pending",
-      "actual_mitigation": "None required if P023 reproduces absence; no P023 result yet",
-      "fix_availability": "Reassess against current Go vulnerability database",
-      "change_implemented": false,
-      "tests_executed": [],
-      "raw_scanner_status": "P022 absent; P023 not run",
-      "remediation_status": "UNKNOWN",
-      "residual_severity": "Unknown pending P023 scan",
-      "release_owner_decision_required": true,
-      "evidence_links": ["docs/ios-p022-release-security.md", "https://github.com/nghianguyen150612/Beszel-iOS/pull/26"]
+      "affected_package": "Go standard library net/textproto and mime/multipart",
+      "affected_versions": "Go 1.27.0 through versions before 1.27.2",
+      "current_resolved_version": "Go 1.27.3",
+      "reachability": "Agent/Hub symbol-level source scan on Go 1.27.3 reports no finding",
+      "actual_mitigation": "Upgrade the official Go toolchain from 1.27.2 to 1.27.3; the upstream fix is present in Go 1.27.2 and later",
+      "fix_availability": "Fixed in Go 1.27.2",
+      "change_implemented": true,
+      "tests_executed": [
+        "govulncheck v1.9.0 symbol-level source scan",
+        "P023 Go toolchain contract and full Go suite"
+      ],
+      "raw_scanner_status": "Absent from the Go 1.27.3 source scan",
+      "remediation_status": "REMEDIATED_AND_VERIFIED",
+      "residual_severity": "No known residual on the verified toolchain",
+      "release_owner_decision_required": false,
+      "evidence_links": [
+        "docs/ios-p023-go1273-migration.md",
+        "P017 raw Go vulnerability artifact on the candidate PR head"
+      ]
     },
     {
       "advisory_id": "GO-2026-6809",
-      "affected_package": "crypto/x509 in the Go standard library",
+      "affected_package": "Go standard library crypto/x509 and crypto/tls",
       "affected_versions": "Go 1.27 before 1.27.3",
-      "current_resolved_version": "Go 1.27.2",
-      "reachability": "P022 retained three raw traces, including crypto/x509 and crypto/tls; P023 source/toolchain review pending",
-      "actual_mitigation": "P022 used the official Go CL 851047 x509 backport and passed crypto/x509 tests",
-      "fix_availability": "Go 1.27.3 includes the native security fix",
-      "change_implemented": false,
-      "tests_executed": ["P022: go test crypto/x509 -count=1 PASS on the backported Go 1.27.2 source"],
-      "raw_scanner_status": "P022: three occurrences; P023 not run",
-      "remediation_status": "UNKNOWN",
-      "residual_severity": "Unknown pending P023 toolchain and raw scan evidence",
-      "release_owner_decision_required": true,
-      "evidence_links": ["docs/ios-p022-release-security.md", "docs/ios-p022-security-disposition.json"]
+      "current_resolved_version": "Go 1.27.3",
+      "reachability": "Previously reachable through Agent/Hub TLS; exact Go 1.27.3 symbol-level scan reports no finding",
+      "actual_mitigation": "Upgrade to official Go 1.27.3, verify native CL 851047 source hashes, stop applying the P019/P022 backport, and pass crypto/x509 tests",
+      "fix_availability": "Fixed in Go 1.27.3",
+      "change_implemented": true,
+      "tests_executed": [
+        "scripts/audit/validate-go-x509-native.py",
+        "go test crypto/x509 -count=1",
+        "govulncheck v1.9.0 symbol-level source scan",
+        "Hosted native Agent and Hub qualification"
+      ],
+      "raw_scanner_status": "Absent from the Go 1.27.3 source scan",
+      "remediation_status": "REMEDIATED_AND_VERIFIED",
+      "residual_severity": "No known residual on the verified toolchain; no physical A7 launch claim",
+      "release_owner_decision_required": false,
+      "evidence_links": [
+        "docs/ios-p023-go1273-migration.md",
+        "docs/ios-p023-a7-runtime-review.md",
+        "P017 raw Go vulnerability artifact on the candidate PR head"
+      ]
     },
     {
       "advisory_id": "GO-2026-5932",
       "affected_package": "golang.org/x/crypto/openpgp subpackages",
-      "affected_versions": "No fixed version listed by P022's advisory review",
+      "affected_versions": "Unmaintained package; no fixed version listed by the reviewed OSV record",
       "current_resolved_version": "golang.org/x/crypto v0.58.0",
-      "reachability": "P022 module-level finding without OpenPGP symbol trace; P023 import/call graph review pending",
-      "actual_mitigation": "None confirmed; do not remove unrelated x/crypto uses without a replacement analysis",
-      "fix_availability": "No fixed version recorded by P022",
-      "change_implemented": false,
-      "tests_executed": [],
-      "raw_scanner_status": "P022 module-level finding; P023 not run",
-      "remediation_status": "UNKNOWN",
-      "residual_severity": "Unknown pending source-level reachability review",
+      "reachability": "Module-level scanner finding only; no repository import or OpenPGP dependency package in six host/iOS build-tag and test profiles",
+      "actual_mitigation": "Go AST import guard across 377 files, six go list dependency profiles, and exact module-only finding shape required by the policy",
+      "fix_availability": "No fixed version listed",
+      "change_implemented": true,
+      "tests_executed": [
+        "Go AST OpenPGP import guard",
+        "Six host/iOS go list -deps -test profiles",
+        "govulncheck raw module finding retained",
+        "P023 fail-closed policy tests"
+      ],
+      "raw_scanner_status": "OPEN; one module-only GO-2026-5932 finding retained",
+      "remediation_status": "NOT_REACHABLE_WITH_EVIDENCE",
+      "residual_severity": "Unscored module-level advisory; affected package remains in downloaded module source",
       "release_owner_decision_required": true,
-      "evidence_links": ["docs/ios-p022-release-security.md", "docs/ios-p022-security-disposition.json"]
+      "evidence_links": [
+        "docs/ios-p023-go1273-migration.md",
+        "docs/ios-p023-advisory-policy.json",
+        "P017 raw Go vulnerability and OpenPGP reachability artifacts on candidate PR head"
+      ]
     },
     {
       "advisory_id": "GHSA-vfj7-8cjw-p6xm",
+      "cve_id": "CVE-2026-93687",
       "affected_package": "braces",
-      "affected_versions": "<=3.0.3",
-      "current_resolved_version": "3.0.3 in both Bun and npm lockfiles",
-      "reachability": "P022 build-tool dependency paths; production runtime reachability not established",
-      "actual_mitigation": "Generated assets are embedded in Hub; P023 must verify trusted, bounded build inputs and pipeline isolation",
-      "fix_availability": "P022 found no compatible patched version; proposed Lingui major upgrade was unqualified",
-      "change_implemented": false,
-      "tests_executed": [],
-      "raw_scanner_status": "P022 Bun/npm audit OPEN; P023 not run",
-      "remediation_status": "UNKNOWN",
-      "residual_severity": "HIGH in build dependency graph per P022; runtime exposure not established",
+      "affected_versions": "<= 3.0.3",
+      "current_resolved_version": "3.0.3 in Bun and npm lockfiles",
+      "reachability": "Build-only transitive dependency through Lingui, chokidar, and micromatch; not a Hub runtime dependency",
+      "actual_mitigation": "Isolated PR build runner, contents:read, no persisted checkout credential, no release secrets, bounded timeout, Bun and npm audits, strict validation of the exact five-node npm graph for the single GHSA, and full npm-lock OSV fallback only after the configured registry timeout",
+      "fix_availability": "No fixed version listed on 2026-10-22",
+      "change_implemented": true,
+      "tests_executed": [
+        "Bun install --frozen-lockfile",
+        "Bun tests, Lingui extraction/compilation, TypeScript/Vite build",
+        "Bun and npm raw audits; npm reports five affected package entries for one GHSA root and the P023 graph validator passes",
+        "Source-bound OSV scan of 510 npm lock nodes and 494 exact package/version queries",
+        "Embedded frontend asset validation"
+      ],
+      "raw_scanner_status": "OPEN; Bun and npm audits report high severity; npm reports five affected package entries tracing to this one GHSA; source-bound full-lock OSV scan reports only this GHSA and no fix",
+      "remediation_status": "MITIGATED_WITH_RESIDUAL_RISK",
+      "residual_severity": "HIGH build-time denial-of-service risk; no production runtime braces dependency established",
       "release_owner_decision_required": true,
-      "evidence_links": ["docs/ios-p022-release-security.md", "docs/ios-p022-security-disposition.json"]
+      "evidence_links": [
+        "docs/ios-p023-javascript-dependency-review.md",
+        "docs/ios-p023-advisory-policy.json",
+        "P017 raw JavaScript and OSV audit artifacts on candidate PR head"
+      ]
     }
-  ]
+  ],
+  "newly_discovered_advisories": [],
+  "release_authorization": "NOT_GRANTED",
+  "exact_head_hosted_qualification": "PENDING"
 }
