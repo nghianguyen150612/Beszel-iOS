@@ -20,6 +20,17 @@ PR base: `ios/upstream-v021-integration`
 - Initial audit checkpoint: `adfdad88e315d2ec191e4ef7f18ea21a799d32b8`, parent `8e03afadb3a03480414fa47f87d40c13331e05b3`. `git ls-remote` confirmed the feature ref at the exact commit.
 - Draft PR: [#28](https://github.com/nghianguyen150612/Beszel-iOS/pull/28), base `ios/upstream-v021-integration`; PR head matched the confirmed remote SHA at creation.
 
+## Normal upstream merge checkpoint
+
+- Merge commit: `e2b677769dd47ff97b5578fb4069372b0f2f79e4`.
+- Parents, in order: P024 head `b399faf01065bc89452d2d903cc5edf7d3f3e1bf`; pinned upstream `b97abf7662a7c7a2dd7542ea2062405abd22d4dc`.
+- The merge preserves the pinned five-commit chain from `b5357343550c8e2493d0e65472a06c1007396384`; `git rev-list` reported 5 commits in that range. The upstream target and prior base are ancestors of the merge commit.
+- `go.mod` retains `go 1.27.3`; dependency downloads completed and `go mod verify` reported `all modules verified`.
+- Focused Go tests passed with local Go 1.27.3: Agent memory/certificate cases, system serialization, Hub memory migration, and record averaging. Their logs are in the workspace-local `.p024-runtime/test-artifacts/` directory.
+- Bun 1.4.0 `install --frozen-lockfile` installed 385 packages without lockfile changes. Lingui extraction, catalog compilation, TypeScript, and Vite production build passed. Vite reported a mixed dynamic-import warning and large-chunk warnings.
+- Hub and records tests initially could not set up because embedded `internal/site/dist` was absent. After the frontend build generated that directory, the focused tests passed.
+- `git ls-remote` confirmed remote P024 at `e2b677769dd47ff97b5578fb4069372b0f2f79e4` immediately after push.
+
 ## Qualification state
 
-All implementation and qualification gates are pending. P023 Gate G and Gate H remain inherited as PASS from the merged P023 record. P018 Gate F remains PENDING. No P024 test result is claimed here.
+The normal merge checkpoint and focused tests are complete. Full compatibility fixes, history-preservation checks, full suites, hosted CI, Gate I, and PR merge remain pending. P023 Gate G and Gate H remain inherited as PASS from the merged P023 record. P018 Gate F remains PENDING.
