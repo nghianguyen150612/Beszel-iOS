@@ -52,6 +52,8 @@ def validate_payload(directory: Path, metadata_path: Path, tag: str, source_sha:
     for name in NAMES:
         observed = verified[name]
         recorded = metadata[name]
+        if not isinstance(recorded, dict):
+            raise ValueError(f"{name}: native metadata entry must be an object")
         for key in ("cpu", "filetype", "command", "platform", "minos", "sha256", "bytes"):
             if recorded.get(key) != observed.get(key):
                 raise ValueError(f"{name}: native metadata mismatch for {key}")
@@ -59,6 +61,8 @@ def validate_payload(directory: Path, metadata_path: Path, tag: str, source_sha:
         settings = build.get("settings", {}) if isinstance(build, dict) else {}
         if not isinstance(build, dict) or build.get("go") != "go1.27.2":
             raise ValueError(f"{name}: native metadata does not prove Go 1.27.2")
+        if not isinstance(settings, dict):
+            raise ValueError(f"{name}: native build settings must be an object")
         expected_settings = {
             "GOOS": "ios",
             "GOARCH": "arm64",
@@ -70,7 +74,7 @@ def validate_payload(directory: Path, metadata_path: Path, tag: str, source_sha:
         for key, value in expected_settings.items():
             if settings.get(key) != value:
                 raise ValueError(f"{name}: native build provenance mismatch for {key}")
-        if name == NAMES[1] and not isinstance(recorded.get("embedded_asset_count"), int):
+        if name == NAMES[1] and (not isinstance(recorded.get("embedded_asset_count"), int) or recorded["embedded_asset_count"] < 1):
             raise ValueError("Hub metadata is missing the embedded frontend asset count")
 
     return {
