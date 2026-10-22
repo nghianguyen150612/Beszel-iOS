@@ -1,158 +1,81 @@
 # P023 security audit
 
-**Reviewed candidate code commit:** `f7a4525aeb7513163439b56b330ddfbd527c4da8`\
-**Branch:** `ios/p023-security-hardening`\
-**PR:** [#27](https://github.com/nghianguyen150612/Beszel-iOS/pull/27), Draft, targeting `ios/upstream-v021-integration`\
-**Starting integration:** `fd334076f53d8354a4924a4c734f29cf65a43879`
+**Qualified implementation source:** fd6b1595ff2e8b4d7037229ce6d71af87f907b4e
+**Branch:** ios/p023-security-hardening
+**PR:** [#27](https://github.com/nghianguyen150612/Beszel-iOS/pull/27), Draft, targeting ios/upstream-v021-integration
+**Starting integration:** fd334076f53d8354a4924a4c734f29cf65a43879
+**Qualification snapshot:** 2026-10-22
 
-P023 upgrades the candidate to Go 1.27.3, replaces the P019/P022 x509
-backport with the fix in the official Go release, preserves the exact-source
-Apple A7 runtime guard, and adds fail-closed scan policies for reviewed
-module-level and frontend residuals. Gate H is pending exact-head hosted
-qualification. This report does not authorize a public release.
+P023 upgrades the Go toolchain to 1.27.3, verifies the native x509 fix, retires the redundant P021/P022 x509 backport, preserves the fail-closed Apple A7 runtime patch, and records current Go and JavaScript advisory exposure. The implementation source passes the P017, native iOS, installer, migration, Procursus, and Helm hosted workflows. The documentation checkpoint that contains this report must also pass exact-head checks before merge.
 
-## Verified starting state
+A Gate H PASS qualifies this cloud integration candidate only. It does not authorize a public release or close P018 Gate F. The GO-2026-5932 and GHSA-vfj7-8cjw-p6xm release-owner decisions remain OPEN.
 
-The integration tree matched P022's final source tree. Before P023 edits,
-GitHub refs were verified as:
+## Verified starting state and preserved history
+
+Before P023 edits, GitHub refs were verified as:
 
 | Ref | SHA |
 |---|---|
-| Integration | `fd334076f53d8354a4924a4c734f29cf65a43879` |
-| Production `iOS` | `0c3e4cd22ac24264834c401ad412e44aeda4e4f3` |
-| Fork `main` | `e984ee12081f4e112601c3f718c9d81c112fe718` |
-| Pinned upstream | `b5357343550c8e2493d0e65472a06c1007396384` |
+| Integration | fd334076f53d8354a4924a4c734f29cf65a43879 |
+| Production iOS | 0c3e4cd22ac24264834c401ad412e44aeda4e4f3 |
+| Fork main | e984ee12081f4e112601c3f718c9d81c112fe718 |
+| Pinned upstream | b5357343550c8e2493d0e65472a06c1007396384 |
 
-PR #26 is merged and P022 Gate G passed. Live upstream main was five commits
-ahead of the pinned snapshot at baseline; those commits remain excluded.
+PR #26 is merged and Gate G passed. Live upstream main was b97abf7662a7c7a2dd7542ea2062405abd22d4dc, five commits ahead of the pinned snapshot, both at baseline and at this review. Those commits are excluded from P023.
 
-## Threat and dependency review
+P017's source-ancestry check passes on fd6b1595. It confirms 41/41 pinned upstream commits, 178/178 frozen historical audit rows, 35/35 historical iOS commits, and 13/13 logical iOS patchsets. P019–P022 normal merge ancestry is preserved.
 
-### Go standard library and modules
+## Go and module findings
 
-- Go 1.27.3 is declared in `go.mod`; Go Actions use
-  `go-version-file: go.mod`; Docker Go build stages are digest-pinned to
-  Go 1.27.3 and assert `go env GOVERSION`.
-- `govulncheck v1.9.0` ran in symbol-level source mode for Agent and Hub
-  roots against the Go vulnerability database last updated
-  2026-10-21 00:27:29 UTC. The raw report is retained by P017.
-- The reviewed report contains one module-only `GO-2026-5932` finding for
-  `golang.org/x/crypto v0.58.0`. It contains no OpenPGP package or function
-  trace. No other Go finding was reported.
-- A repository-wide Go AST guard checks every Go file, including build-tagged
-  and test files. Six `go list -deps -test` profiles cover default,
-  testing/no_ui, development, development/testing/no_ui, iOS testing/no_ui,
-  and iOS development/testing/no_ui. They found no
-  `golang.org/x/crypto/openpgp` package. The module remains because Agent and
-  Hub use `golang.org/x/crypto/ssh`; this is risk reduction, not a fix for
-  the unmaintained OpenPGP packages.
+The official Go 1.27.3 toolchain is pinned and checked across go.mod, Actions, native build scripts, provenance validators, Docker builders, and release validators. P017 uses govulncheck v1.9.0 in symbol-level source mode with Go 1.27.3 and reports only GO-2026-5932, as a module-only finding for golang.org/x/crypto v0.58.0.
 
-### JavaScript build graph
+- GO-2026-6608 is absent from the Go 1.27.3 source scan. Go fixed it in 1.27.2.
+- GO-2026-6809 is absent from the Go 1.27.3 source scan. The official native fix is verified by source hashes and crypto/x509 tests; the custom P021/P022 backport is no longer applied.
+- GO-2026-5932 remains in raw scanner output. A repository-wide AST scan and six host/iOS build-tag and test dependency profiles find no OpenPGP import or package. The x/crypto module remains for SSH. This is reachability evidence, not a fix for the unmaintained OpenPGP code.
 
-- Both frozen lockfiles resolve `braces@3.0.3` through
-  `@lingui/vite-plugin` → `@lingui/cli` → `chokidar` or `micromatch`.
-  Lingui and `braces` are development dependencies.
-- Bun's raw audit retained only the high-severity
-  `GHSA-vfj7-8cjw-p6xm` / `CVE-2026-93687` finding.
-- npm audit's latest completed report contains five high-severity affected
-  package entries along the Lingui → chokidar/micromatch → braces graph; all
-  five stem from one `GHSA-vfj7-8cjw-p6xm` root advisory. P023 checks the exact
-  report graph and fails on additional package nodes or IDs. Its suggested
-  fix is a major Lingui 6.10.0 upgrade; that suggestion is not treated as a
-  verified fixed `braces` release.
-- The independent OSV scan covers all 510 npm lock nodes and 494 unique
-  package/version queries. The result source-bound to
-  `304cc862e79ee821080e2b217da1009e945aa9d2` contains only the same GHSA for
-  `braces@3.0.3`, with no fixed version. On an earlier run, the official npm
-  registry timed out; only that exact timeout activates the OSV fallback,
-  and raw npm errors remain retained.
-- The Hub embeds generated static assets and does not ship Node or execute
-  `braces` at runtime. A PR contributor can still alter checked-in Lingui
-  configuration and cause build-time denial of service. PR builds run on
-  isolated hosted runners with `contents:read`, checkout credentials
-  disabled, no release secrets, and bounded timeouts. Build-only risk remains.
+The reviewed Go vulnerability records do not publish a severity score for these findings. The P021 historical review classified GO-2026-6608 as HIGH. The other Go advisory severity fields remain unscored.
 
-### GitHub Actions, tools, and release path
+## JavaScript dependency finding
 
-- P017 runs workflow-isolation tests for PR, branch, ordinary tag, iOS tag,
-  and dispatch behavior. Release and Docker publishing workflows are
-  tag-gated and do not publish on PRs.
-- PR candidate workflows use read-only repository permission and
-  `persist-credentials: false`. Native binaries and scan outputs upload only
-  as expiring Actions artifacts.
-- Go 1.27.3 and Bun 1.4.0 are version-checked. The official Linux Go 1.27.3
-  archive was SHA-256 checked as
-  `65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40`.
-  The local Bun 1.4.0 archive was checked as
-  `184fb4595f0d401a217cf7c78c1bc430ba83314dab7a8b94805babbf7fa7097f`.
-  Go vulnerability tooling is pinned to `v1.9.0`; Go module checksum
-  verification remains enabled.
-- Docker Go builder images use reviewed Go 1.27.3 Alpine and Bookworm
-  manifest digests and fail if the image reports another Go version.
-- The initial `zizmor v1.31.1` scan found 72 workflow findings: 51 mutable
-  action references, 9 checkout credential-persistence findings, 6 cache
-  exposure findings, 4 broad permission findings, and 2 shell interpolation
-  findings. P023 resolved all 19 unique action release tags to their upstream
-  commit SHAs and pinned all 54 workflow action use sites. A regression test
-  now rejects any unpinned action reference.
-- P023 narrowed GHCR write permission to the push-only Helm publish job, moved
-  chart outputs through environment variables, disabled reusable Bun/Go caches
-  in release and native build workflows, and stopped checkout from persisting
-  credentials. The two workflows that push with explicit secrets now use
-  short-lived `GIT_ASKPASS` helpers instead of checkout credential storage.
-- `actionlint v1.7.12` and `zizmor v1.31.1` official Linux release archives
-  were SHA-256 verified as `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8`
-  and `d185f726bdaf92df78273217dfdd24ebcd6b0ef48cf3ce776ff5762b6e138c99`.
-  Both scanned the final workflow set locally: actionlint passed and Zizmor
-  returned zero findings. P017 repeats both checks on the exact PR source,
-  fails on findings or syntax errors, and uploads raw reports for review.
-- Zizmor checks workflow patterns and known vulnerable action use. This is not
-  a full dependency/CVE scan of every action's bundled runtime. Commit pinning
-  prevents tag movement; residual action-code vulnerability coverage remains
-  limited to the scanner's online rules and is disclosed for release review.
+Bun and npm lockfiles resolve braces 3.0.3 through Lingui CLI, chokidar, and micromatch. Bun and npm audits report GHSA-vfj7-8cjw-p6xm / CVE-2026-93687 as HIGH (CVSS 7.5). npm shows five affected package entries that trace to this one advisory. A source-bound OSV scan covers all 510 npm lock nodes and 494 unique package/version queries and reports only this GHSA. No fixed version is listed by the reviewed advisory.
 
-## Regression and release safeguards
+The affected packages are development/build tooling and are not established as Hub runtime dependencies. The Hub embeds generated static assets. Build jobs run on isolated hosted runners with read-only contents permission, no persisted checkout credentials, no release secrets, and bounded timeouts. A contributor can still cause build-time denial of service by changing checked-in patterns. P023 keeps the warning OPEN and records a build-only mitigation with residual risk; it does not claim the package is fixed.
 
-The exact-head P017 run covers the Go suite and Agent/Hub builds, dependency
-scans, actionlint and Zizmor workflow analysis, auth and transport regressions,
-source ancestry checks, frontend installation/tests/build, localization,
-installer/bootstrap behavior, and release workflow isolation. P013 builds
-and migrates a disposable genuine v0.19 fixture. The installer workflow covers bootstrap, rollback, lifecycle,
-and artifact integrity. Hosted macOS CI separately builds Agent and Hub with
-Go 1.27.3 and validates Mach-O metadata, iOS 12.0 minimum, A7 instructions,
-checksums, source provenance, embedded assets, and private MobileWiFi linkage.
+## GitHub Actions and downloaded tools
 
-Local evidence includes a serial full Go suite PASS, 123 audit tests PASS,
-`crypto/x509` tests PASS, frozen frontend installation, Bun tests, Lingui
-extraction/compilation, TypeScript/Vite build, and lockfile immutability. The
-first local Go full-suite run used parallel package test binaries and exposed
-a shared health-marker race; the unchanged suite passed with `-p 1`. No
-assertion was weakened. An early frontend command's whole-worktree check
-returned nonzero because P023 code was already uncommitted; targeted
-catalog/lockfile checks and the frontend rerun passed.
+All 54 external action use sites are pinned to 19 upstream-resolved full commit SHAs. P023 also narrows write permissions, disables reusable caches on native/release builds, disables checkout credential persistence, and moves required write credentials to short-lived GIT_ASKPASS helpers.
 
-Hosted run 39717185832 on
-`304cc862e79ee821080e2b217da1009e945aa9d2` failed the newly added actionlint
-step (SC2129 and malformed heredoc indentation); Zizmor reported zero findings.
-The workflow fixes are pushed at
-`f7a4525aeb7513163439b56b330ddfbd527c4da8`. That source's P017, native,
-installer, migration, and Helm runs are in progress or queued; the current IDs
-are recorded in [P023 validation](ios-p023-validation.json). The first local
-audit test invocation also used Python's default `/tmp` for temporary fixtures;
-they were automatically removed. The successful rerun used the workspace-local
-pinned toolchain and all temporary/cache paths under `.p023-task`. This boundary
-incident remains disclosed in the validation record. Final PR-head runs remain
-mandatory for Gate H.
+On the exact fd6 source, pinned actionlint 1.7.12 and ShellCheck 0.11.0 pass; pinned zizmor 1.31.1 reports zero findings. The workflow evidence records tool versions, archive digests, source SHA, raw logs, and exit codes. Zizmor does not provide a complete CVE scan of every bundled action runtime; that scope limit remains disclosed.
 
-## Boundaries and residual decisions
+Go 1.27.3, Bun 1.4.0, govulncheck 1.9.0, actionlint, ShellCheck, and zizmor were version or digest checked. Docker Go builder images are digest-pinned and assert their Go version.
 
-P022 authentication, ownership, universal-token, secret handling, TLS,
-WebSocket/SSH, resource-limit, installer rollback, artifact checksum, and
-release-isolation protections remain covered by existing regression tests.
-P023 adds no product endpoint or authentication changes.
+## Exact-source cloud evidence
 
-The remaining security decisions are release-owner decisions for the
-unmaintained but unimported OpenPGP packages and the high-severity,
-build-only `braces` advisory. P018 Gate F remains pending. No production
-`iOS` branch, fork `main`, database, physical device, tag, or public release
-was modified or accessed. Gate H does not grant release authorization.
+All links below are hosted GitHub checks on source fd6b1595ff2e8b4d7037229ce6d71af87f907b4e:
+
+| Gate | Run | Result |
+|---|---:|---|
+| P017 regression and security | [39718772365](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772365) | PASS; full serial Go suite and portable Agent/Hub builds, Go and JS scans, actionlint, ShellCheck, zizmor, source ancestry |
+| Native iOS and Procursus | [39718772276](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772276) | PASS; exact Go 1.27.3 runtime/x509 checks, iOS ARM64 Agent/Hub, Mach-O, provenance, checksums, assets; release jobs skipped |
+| P013 Hub migration | [39718772288](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772288) | PASS; genuine disposable v0.19 fixture and recovery tests |
+| Installer lifecycle | [39718772319](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772319) | PASS |
+| Helm workflow | [39718772278](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772278) | PASS; no publish job executed on the PR |
+
+The native payload archive, validation archive, disabled Wi-Fi diagnostic archive, Go scan archive, JavaScript audit archive, workflow scan archive, and P017 regression manifest were independently downloaded. Every archive SHA-256 matched GitHub's artifact digest. Agent and Hub payload SHA-256 values matched the included SHA256SUMS and the independent artifact validator.
+
+The independent local payload validator confirmed both Mach-O binaries are ARM64 iOS executables with minimum iOS 12.0, Go 1.27.3, GOARM64 v8.0, CGO_ENABLED=1, clean VCS metadata at fd6b1595, and Hub embedding all 97 production frontend assets. The A7 runtime instruction reports pass with no counter-register access. Agent and Hub have no private MobileWiFi/CoreWLAN linkage. This does not establish launchability on a physical A7 device.
+
+P017 release-isolation tests pass. The native release validation and publishing jobs were skipped for the PR; no release or tag was created.
+
+## Regression scope and remaining decisions
+
+Existing P019–P022 OAuth default-role, record ownership, universal-token authorization, secret masking/redaction, no secret-bearing GET URL, TLS certificate validation, WebSocket/SSH reconnect, timeout/cancellation, network-monitor recovery, HTTP resource-limit, installer rollback, artifact checksum/provenance, and release-isolation checks remain enabled. P023 adds only advisory and workflow supply-chain guards; it does not add product endpoints or weaken existing tests.
+
+The outstanding release-owner decisions are:
+
+1. Accept or require removal of the unmaintained but unimported OpenPGP module-level residual, GO-2026-5932.
+2. Accept the HIGH build-time braces denial-of-service residual or wait for a genuine fixed release/dependency path, GHSA-vfj7-8cjw-p6xm.
+
+The first local audit unittest invocation omitted TMPDIR and briefly created automatically cleaned Python fixtures under the default /tmp. The failed invocation used a nonstandard /usr/bin/go wrapper. The successful rerun used Go 1.27.3 and placed HOME, TMPDIR, TMP, TEMP, and Go caches under /workspace/Beszel-iOS/.p023-task. This workspace-boundary incident is recorded in the validation file. No other workspace violation was recorded.
+
+Production iOS, fork main, production data, devices, tags, and public releases were not changed or accessed. No sudo was used.

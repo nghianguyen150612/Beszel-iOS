@@ -1,20 +1,20 @@
 {
   "schema": 1,
   "milestone": "P023",
-  "phase": "exact_head_hosted_qualification",
-  "status": "IN_PROGRESS",
-  "candidate_code_source_sha": "f7a4525aeb7513163439b56b330ddfbd527c4da8",
+  "phase": "qualified_implementation_source_documentation_checkpoint",
+  "status": "PASS_FOR_IMPLEMENTATION_SOURCE",
+  "candidate_code_source_sha": "fd6b1595ff2e8b4d7037229ce6d71af87f907b4e",
   "branch": "ios/p023-security-hardening",
   "pull_request": {
     "number": 27,
     "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/27",
-    "state": "open",
-    "draft": true,
+    "state_at_qualification": "open",
+    "draft_at_qualification": true,
     "base": "ios/upstream-v021-integration",
-    "base_sha": "fd334076f53d8354a4924a4c734f29cf65a43879"
+    "base_sha": "fd334076f53d8354a4924a4c734f29cf65a43879",
+    "head_sha_at_qualification": "fd6b1595ff2e8b4d7037229ce6d71af87f907b4e"
   },
   "starting_integration": "fd334076f53d8354a4924a4c734f29cf65a43879",
-  "p022_final_head": "ef7d780cd1c548bb97cd1891810f945323983193",
   "verified_refs": {
     "integration": "fd334076f53d8354a4924a4c734f29cf65a43879",
     "production_ios": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
@@ -26,70 +26,136 @@
   "toolchains": {
     "go": "go1.27.3",
     "bun": "1.4.0",
-    "govulncheck": "v1.9.0"
+    "govulncheck": "v1.9.0",
+    "actionlint": "1.7.12",
+    "shellcheck": "0.11.0",
+    "zizmor": "1.31.1"
   },
   "local_checks": {
-    "serial_full_go_suite": "PASS; package tests run with -p 1 to avoid the shared process-health marker race",
-    "audit_unit_tests": "PASS; 123 tests under Go 1.27.3 with HOME, TMPDIR, GOCACHE, GOMODCACHE, and GOPATH under /workspace/Beszel-iOS/.p023-task",
+    "serial_full_go_suite": "PASS; go test -p 1 -tags 'testing no_ui' ./... -count=1 -timeout=20m",
+    "audit_unit_tests": "PASS; 123 tests using Go 1.27.3 and workspace-local HOME, TMPDIR, TMP, TEMP, GOCACHE, GOMODCACHE, and GOPATH",
     "crypto_x509": "PASS; go test crypto/x509 -count=1",
-    "frontend": "PASS; frozen install, Bun tests, Lingui extraction/compile, Vite build, lockfile hashes unchanged",
-    "hub_migration_backup_tests": "PASS; 7 tests",
-    "openpgp_profiles": "PASS; six profiles, no OpenPGP imports or packages",
-    "npm_osv_lock_scan": "PASS_WITH_REVIEWED_ADVISORY; source-bound to 304cc862e79ee821080e2b217da1009e945aa9d2; 510 lock nodes, 494 exact package/version queries, only GHSA-vfj7-8cjw-p6xm",
+    "frontend": "PASS; frozen install, Bun tests, Lingui extraction/compile, TypeScript, Vite production build, localization, lockfile hashes unchanged; 97-asset manifest matches P017",
+    "hub_migration_backup_tests": "PASS; local focused recovery tests and hosted genuine v0.19 migration",
+    "openpgp_profiles": "PASS; six host/iOS profiles, no OpenPGP imports or packages",
+    "npm_osv_lock_scan": "PASS_WITH_REVIEWED_ADVISORY; 510 lock nodes, 494 exact package/version queries, only GHSA-vfj7-8cjw-p6xm",
     "docker_toolchain_contract": "PASS; six Docker Go builder stages pinned and version-checked",
-    "ios_workflow_isolation": "PASS; 36 checks",
-    "actionlint": "PASS; v1.7.12; official archive SHA-256 verified after hosted shell scan findings were fixed",
-    "zizmor": "PASS; v1.31.1; zero findings on current workflow tree; official archive SHA-256 verified",
-    "github_action_refs": "PASS; 54 use sites, 19 unique upstream tag refs pinned to full commit SHAs"
+    "workflow_isolation": "PASS; 36 focused workflow tests plus hosted P017 workflow isolation",
+    "actionlint_shellcheck": "PASS; actionlint 1.7.12 with explicit ShellCheck 0.11.0, official archive digests verified",
+    "zizmor": "PASS; v1.31.1; zero findings",
+    "github_action_refs": "PASS; 54 use sites, 19 unique upstream release refs pinned to full commit SHAs"
   },
   "github_workflow_runs": {
-    "candidate_source_sha": "f7a4525aeb7513163439b56b330ddfbd527c4da8",
-    "ios_build": {
-      "run_id": 39717756410,
-      "status": "IN_PROGRESS"
+    "candidate_source_sha": "fd6b1595ff2e8b4d7037229ce6d71af87f907b4e",
+    "p017_security_regression": {
+      "run_id": 39718772365,
+      "status": "SUCCESS",
+      "full_go_suite_and_portable_builds": "PASS",
+      "javascript_audit": "PASS_WITH_REVIEWED_ADVISORY",
+      "workflow_scan": "PASS; actionlint exit 0; ShellCheck 0.11.0; zizmor exit 0 with zero findings"
     },
-    "installer_lifecycle": {
-      "run_id": 39717756362,
-      "status": "SUCCESS"
+    "ios_build_and_procursus": {
+      "run_id": 39718772276,
+      "status": "SUCCESS",
+      "build_ios_job": "PASS",
+      "procursus_package_updates_job": "PASS",
+      "release_ios_validate_job": "SKIPPED_ON_PULL_REQUEST",
+      "release_ios_job": "SKIPPED_ON_PULL_REQUEST"
     },
     "hub_migration": {
-      "run_id": 39717756382,
-      "status": "IN_PROGRESS"
+      "run_id": 39718772288,
+      "status": "SUCCESS",
+      "fixture": "genuine disposable v0.19-to-candidate migration"
     },
-    "p017_security_regression": {
-      "run_id": 39717756411,
-      "status": "IN_PROGRESS",
-      "workflow_security_scan": "PENDING; exact-source actionlint and Zizmor step not yet reached",
-      "go_security_scan": "Native x509 verification PASS; govulncheck running on exact source f7a4525aeb7513163439b56b330ddfbd527c4da8"
+    "installer_lifecycle": {
+      "run_id": 39718772319,
+      "status": "SUCCESS"
     },
     "helm_validation": {
-      "run_id": 39717756365,
+      "run_id": 39718772278,
       "status": "SUCCESS",
-      "publish_job": "SKIPPED_ON_PULL_REQUEST"
-    },
-    "previous_head_304cc": {
-      "source_sha": "304cc862e79ee821080e2b217da1009e945aa9d2",
-      "ios_build_run_id": 39717185808,
-      "installer_lifecycle_run_id": 39717185951,
-      "hub_migration_run_id": 39717185990,
-      "hub_migration_status": "SUCCESS",
-      "p017_security_regression_run_id": 39717185832,
-      "p017_status": "FAILURE",
-      "p017_failure": "Hosted actionlint exited 1: SC2129 repeated GITHUB_ENV redirects in ios-build.yml and malformed heredoc indentation in sync-upstream-main.yml. Zizmor exited 0 with zero findings. Both actionlint findings were fixed in f7a4525aeb7513163439b56b330ddfbd527c4da8.",
-      "workflow_evidence_artifact_id": 12399702486
+      "publish_job": "SKIPPED; no changed chart; P017 PR release-isolation regression passed"
     }
   },
-  "native_artifact": {
-    "downloaded": false,
-    "independent_sha256_verification": "PENDING exact-head iOS build artifact",
-    "source_sha_binding": "PENDING exact-head iOS build artifact"
-  },
+  "artifacts": [
+    {
+      "name": "p023-go-vulnerability-evidence",
+      "id": 12400770871,
+      "github_sha256": "5f84ceab3a43ee26780a6153c198d60cd18153bf2e30a6bffbc3fcacdd174575",
+      "independent_download_sha256_matches": true,
+      "finding_ids": [
+        "GO-2026-5932"
+      ]
+    },
+    {
+      "name": "p023-javascript-audit-evidence",
+      "id": 12400546337,
+      "github_sha256": "50c62882b601152bbb34672030300375ba1ae89d3b93566ee9e47000144ee9cf",
+      "independent_download_sha256_matches": true,
+      "finding_ids": [
+        "GHSA-vfj7-8cjw-p6xm"
+      ]
+    },
+    {
+      "name": "p023-workflow-security-evidence",
+      "id": 12399997767,
+      "github_sha256": "d9338ff671cb01a50f9ec2b6c3b73c860f4a4afc1cbf8a09c9e020d01620be46",
+      "independent_download_sha256_matches": true,
+      "actionlint_exit_code": 0,
+      "shellcheck": "0.11.0",
+      "zizmor_findings": 0
+    },
+    {
+      "name": "p017-regression-manifest",
+      "id": 12399674410,
+      "github_sha256": "63ec779deac4796a8aa02dabb338edcc52db20c7a071c05b4139c03d4afe2727",
+      "independent_download_sha256_matches": true,
+      "frontend_asset_count": 97,
+      "frontend_asset_manifest_sha256": "3b80dbea2957210afc99b4f4e2322d682015f53eb6034d163f55d3a9fc2a92e1",
+      "device_tested": false,
+      "release_published": false,
+      "tag_created": false
+    },
+    {
+      "name": "beszel-ios-arm64",
+      "id": 12400817906,
+      "github_sha256": "73b8080826c337b70588c023cea93ccc6b1ce222a0a375807095d560eb963d30",
+      "independent_download_sha256_matches": true,
+      "agent_sha256": "5676c4b49a0312339c0697cdf490cbda16177bebda7d311cc47a99a8fdd8719f",
+      "hub_sha256": "2d63fa87486f0c455122886f7c9b262a0c465586d27940a8d2f3025e5592b850",
+      "source_sha": "fd6b1595ff2e8b4d7037229ce6d71af87f907b4e",
+      "go": "go1.27.3",
+      "target": "ios/arm64 GOARM64=v8.0 CGO_ENABLED=1 min iOS 12.0",
+      "embedded_frontend_assets": 97,
+      "independent_payload_validator": "PASS"
+    },
+    {
+      "name": "ios-native-validation",
+      "id": 12400214755,
+      "github_sha256": "03abd713ee11bafddb76174683d9a5badc652f7976b8474312b105e500cd63ef",
+      "independent_download_sha256_matches": true,
+      "runtime_patch_status": "PASS; exact source and patched hashes",
+      "runtime_instruction_status": "PASS for Agent and Hub; no counter access",
+      "x509_native_fix": "PASS; native Go 1.27.3 CL 851047",
+      "private_mobilewifi_linkage": "ABSENT from Agent/Hub"
+    },
+    {
+      "name": "ios-wifi-diagnostic-disabled",
+      "id": 12400947269,
+      "github_sha256": "5a3dd663a211ca6afd5b6c497167010abb8d820f0616dfd72421be0a65c17cb6",
+      "independent_download_sha256_matches": true,
+      "separate_from_agent_hub": true,
+      "acquisition_enabled": false,
+      "private_calls_executed": false,
+      "device_tested": false
+    }
+  ],
   "preservation": {
-    "pinned_upstream_commits": "41/41 expected; exact candidate workflow check pending",
-    "frozen_upstream_rows": "178/178 expected; exact candidate workflow check pending",
-    "historical_ios_commits": "35/35 expected; exact candidate workflow check pending",
-    "logical_ios_patchsets": "13/13 expected; exact candidate workflow check pending",
-    "p019_p022_normal_merge_ancestry": "preserved in branch history"
+    "pinned_upstream_commits": "41/41 PASS",
+    "frozen_upstream_rows": "178/178 PASS",
+    "historical_ios_commits": "35/35 PASS",
+    "logical_ios_patchsets": "13/13 PASS",
+    "p019_p022_normal_merge_ancestry": "PRESERVED"
   },
   "advisory_matrix": "docs/ios-p023-advisory-matrix.json",
   "go_1_27_3_migration": "docs/ios-p023-go1273-migration.md",
@@ -97,7 +163,7 @@
   "javascript_dependency_review": "docs/ios-p023-javascript-dependency-review.md",
   "release_security_disposition": "docs/ios-p023-release-security.md",
   "gate_g": "PASS inherited from merged P022 PR #26",
-  "gate_h": "PENDING exact-head hosted qualification; workspace-boundary incident disclosed in this record",
+  "gate_h": "PASS for implementation source fd6b1595; merge requires all mandatory checks to pass on the current final PR head.",
   "p018_gate_f": "PENDING",
   "release_authorization": "NOT_GRANTED",
   "production_ios_modified": false,
@@ -107,10 +173,19 @@
   "release_created": false,
   "tag_created": false,
   "workspace_violations": [
-    "Initial local audit unittest invocation omitted TMPDIR, so Python TemporaryDirectory created short-lived fixtures outside /workspace/Beszel-iOS. The test failed before producing JSON because /usr/bin/go was a nonstandard wrapper. Python cleaned the temporary fixtures. A later run used the pinned Go 1.27.3 binary and set HOME, TMPDIR, TMP, TEMP, GOCACHE, GOMODCACHE, and GOPATH inside /workspace/Beszel-iOS/.p023-task; all 123 audit tests passed."
+    "Initial local audit unittest invocation omitted TMPDIR, so Python TemporaryDirectory created short-lived fixtures outside /workspace/Beszel-iOS. They were automatically cleaned. That invocation failed before producing JSON because /usr/bin/go was a nonstandard wrapper. The successful rerun used Go 1.27.3 and set HOME, TMPDIR, TMP, TEMP, GOCACHE, GOMODCACHE, and GOPATH under /workspace/Beszel-iOS/.p023-task; all 123 audit tests passed."
   ],
-  "unpushed_commits": [],
-  "qualification_snapshot_utc": "2026-10-22T03:37:53Z",
-  "branch_sha_at_snapshot": "f7a4525aeb7513163439b56b330ddfbd527c4da8",
-  "uncommitted_changes": "Documentation checkpoint updates in progress; implementation fixes already committed and pushed"
+  "qualification_snapshot_utc": "2026-10-22T04:05:53Z",
+  "branch_sha_at_snapshot": "fd6b1595ff2e8b4d7037229ce6d71af87f907b4e",
+  "working_tree_before_documentation_checkpoint": "clean",
+  "unpushed_commits_at_snapshot": [],
+  "documentation_checkpoint_parent_sha": "fd6b1595ff2e8b4d7037229ce6d71af87f907b4e",
+  "final_pr_head_requalification": "GitHub Actions on the current PR head are authoritative for merge; this snapshot identifies the qualified code source fd6b1595ff2e8b4d7037229ce6d71af87f907b4e.",
+  "downloaded_tool_digests": {
+    "go1.27.3-linux-amd64-archive": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+    "bun1.4.0-linux-x64-archive": "184fb4595f0d401a217cf7c78c1bc430ba83314dab7a8b94805babbf7fa7097f",
+    "actionlint-1.7.12-linux-amd64-archive": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
+    "shellcheck-0.11.0-linux-x86_64-archive": "b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6",
+    "zizmor-1.31.1-linux-amd64-archive": "d185f726bdaf92df78273217dfdd24ebcd6b0ef48cf3ce776ff5762b6e138c99"
+  }
 }

@@ -1,147 +1,124 @@
 {
   "schema": 1,
   "milestone": "P023",
-  "phase": "candidate_qualification",
-  "reviewed_source_commit": "f7a4525aeb7513163439b56b330ddfbd527c4da8",
+  "phase": "implementation_source_qualification",
+  "reviewed_source_commit": "fd6b1595ff2e8b4d7037229ce6d71af87f907b4e",
   "reviewed_on": "2026-10-22",
   "advisories": [
     {
       "advisory_id": "GO-2026-6608",
+      "severity": "No severity field in the reviewed Go vulnerability record; P021 historical review classified HIGH.",
       "affected_package": "Go standard library net/textproto and mime/multipart",
-      "affected_versions": "Go 1.27.0 through versions before 1.27.2",
+      "affected_versions": "Go 1.27.0 through versions before 1.27.2; Go 1.26 versions before 1.26.9",
       "current_resolved_version": "Go 1.27.3",
-      "reachability": "Agent/Hub symbol-level source scan on Go 1.27.3 reports no finding",
-      "actual_mitigation": "Upgrade the official Go toolchain from 1.27.2 to 1.27.3; the upstream fix is present in Go 1.27.2 and later",
-      "fix_availability": "Fixed in Go 1.27.2",
+      "reachability": "The package was part of the Go standard library; exact Go 1.27.3 Agent/Hub symbol-level source scan reports no finding.",
+      "actual_mitigation": "Upgrade to the official Go 1.27.3 toolchain, which includes the upstream fix.",
+      "fix_availability": "Fixed in Go 1.27.2 for the Go 1.27 line.",
       "change_implemented": true,
       "tests_executed": [
-        "govulncheck v1.9.0 symbol-level source scan",
-        "P023 Go toolchain contract and full Go suite"
+        "govulncheck v1.9.0 exact-toolchain symbol-level source scan",
+        "P017 full serial Go test suite and portable Agent/Hub builds"
       ],
-      "raw_scanner_status": "Absent from the Go 1.27.3 source scan",
+      "raw_scanner_status": "Absent from the exact Go 1.27.3 source report; the report contains only GO-2026-5932.",
       "remediation_status": "REMEDIATED_AND_VERIFIED",
-      "residual_severity": "No known residual on the verified toolchain",
+      "residual_severity": "No known residual on the verified toolchain.",
       "release_owner_decision_required": false,
       "evidence_links": [
-        "docs/ios-p023-go1273-migration.md",
-        "P017 raw Go vulnerability artifact on the candidate PR head"
+        "https://pkg.go.dev/vuln/GO-2026-6608",
+        "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772365"
       ]
     },
     {
       "advisory_id": "GO-2026-6809",
+      "cve_id": "CVE-2026-111943",
+      "severity": "No severity score in the reviewed Go vulnerability record.",
       "affected_package": "Go standard library crypto/x509 and crypto/tls",
-      "affected_versions": "Go 1.27 before 1.27.3",
+      "affected_versions": "Go 1.27 before 1.27.3; Go 1.26 before 1.26.10",
       "current_resolved_version": "Go 1.27.3",
-      "reachability": "Previously reachable through Agent/Hub TLS; exact Go 1.27.3 symbol-level scan reports no finding",
-      "actual_mitigation": "Upgrade to official Go 1.27.3, verify native CL 851047 source hashes, stop applying the P019/P022 backport, and pass crypto/x509 tests",
-      "fix_availability": "Fixed in Go 1.27.3",
+      "reachability": "TLS/x509 is used by Agent/Hub; the vulnerable Go standard-library version is no longer present.",
+      "actual_mitigation": "Use official Go 1.27.3 with native CL 851047; verify source hashes, pass crypto/x509 tests, and do not apply the custom P021/P022 backport.",
+      "fix_availability": "Fixed in Go 1.27.3 for the Go 1.27 line.",
       "change_implemented": true,
       "tests_executed": [
         "scripts/audit/validate-go-x509-native.py",
         "go test crypto/x509 -count=1",
         "govulncheck v1.9.0 symbol-level source scan",
-        "Hosted native Agent and Hub qualification"
+        "Hosted native Agent/Hub x509 qualification",
+        "P017 TLS, transport, and network-monitor regression tests"
       ],
-      "raw_scanner_status": "Absent from the Go 1.27.3 source scan",
+      "raw_scanner_status": "Absent from the exact Go 1.27.3 source report.",
       "remediation_status": "REMEDIATED_AND_VERIFIED",
-      "residual_severity": "No known residual on the verified toolchain; no physical A7 launch claim",
+      "residual_severity": "No known residual on the verified toolchain; physical-device launchability is not claimed.",
       "release_owner_decision_required": false,
       "evidence_links": [
-        "docs/ios-p023-go1273-migration.md",
-        "docs/ios-p023-a7-runtime-review.md",
-        "P017 raw Go vulnerability artifact on the candidate PR head"
+        "https://pkg.go.dev/vuln/GO-2026-6809",
+        "https://go-review.googlesource.com/c/go/+/851047",
+        "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772276"
       ]
     },
     {
       "advisory_id": "GO-2026-5932",
+      "severity": "No severity score in the reviewed Go vulnerability record; the record describes known security issues in unmaintained OpenPGP packages.",
       "affected_package": "golang.org/x/crypto/openpgp subpackages",
-      "affected_versions": "Unmaintained package; no fixed version listed by the reviewed OSV record",
+      "affected_versions": "No fixed version listed; advisory applies to the unmaintained package.",
       "current_resolved_version": "golang.org/x/crypto v0.58.0",
-      "reachability": "Module-level scanner finding only; no repository import or OpenPGP dependency package in six host/iOS build-tag and test profiles",
-      "actual_mitigation": "Go AST import guard across 377 files, six go list dependency profiles, and exact module-only finding shape required by the policy",
-      "fix_availability": "No fixed version listed",
+      "reachability": "Module-only scanner finding. No repository import or OpenPGP dependency package in six host/iOS build-tag and test profiles. The module remains for SSH.",
+      "actual_mitigation": "Deterministic AST import guard plus six go list -deps -test profiles. This is risk reduction, not a vulnerability fix.",
+      "fix_availability": "No fixed version listed in the reviewed advisory.",
       "change_implemented": true,
       "tests_executed": [
-        "Go AST OpenPGP import guard",
-        "Six host/iOS go list -deps -test profiles",
-        "govulncheck raw module finding retained",
-        "P023 fail-closed policy tests"
+        "Go AST OpenPGP import guard over 377 Go source files",
+        "Six host/iOS dependency profiles",
+        "Raw govulncheck finding shape and exact version policy"
       ],
-      "raw_scanner_status": "OPEN; one module-only GO-2026-5932 finding retained",
+      "raw_scanner_status": "OPEN; one module-only GO-2026-5932 finding retained.",
       "remediation_status": "NOT_REACHABLE_WITH_EVIDENCE",
-      "residual_severity": "Unscored module-level advisory; affected package remains in downloaded module source",
+      "residual_severity": "Unscored module-level advisory; affected package source remains in the downloaded module.",
       "release_owner_decision_required": true,
       "evidence_links": [
-        "docs/ios-p023-go1273-migration.md",
+        "https://pkg.go.dev/vuln/GO-2026-5932",
         "docs/ios-p023-advisory-policy.json",
-        "P017 raw Go vulnerability and OpenPGP reachability artifacts on candidate PR head"
+        "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772365"
       ]
     },
     {
       "advisory_id": "GHSA-vfj7-8cjw-p6xm",
       "cve_id": "CVE-2026-93687",
-      "affected_package": "braces",
+      "severity": "HIGH; CVSS 3.1 score 7.5; CWE-674.",
+      "affected_package": "npm package braces",
       "affected_versions": "<= 3.0.3",
-      "current_resolved_version": "3.0.3 in Bun and npm lockfiles",
-      "reachability": "Build-only transitive dependency through Lingui, chokidar, and micromatch; not a Hub runtime dependency",
-      "actual_mitigation": "Isolated PR build runner, contents:read, no persisted checkout credential, no release secrets, bounded timeout, Bun and npm audits, strict validation of the exact five-node npm graph for the single GHSA, and full npm-lock OSV fallback only after the configured registry timeout",
-      "fix_availability": "No fixed version listed on 2026-10-22",
+      "current_resolved_version": "braces 3.0.3 in Bun and npm lockfiles",
+      "reachability": "Build-only transitive dependency through Lingui/chokidar/micromatch; not established as a Hub runtime dependency.",
+      "actual_mitigation": "Run frontend tooling on isolated PR runners with contents:read, no persisted checkout credentials, no release secrets, bounded timeouts, trusted checked-in pattern inputs, and retain raw Bun/npm/OSV findings.",
+      "fix_availability": "No first patched version listed by the reviewed GitHub Advisory/OSV record on 2026-10-22.",
       "change_implemented": true,
       "tests_executed": [
         "Bun install --frozen-lockfile",
-        "Bun tests, Lingui extraction/compilation, TypeScript/Vite build",
-        "Bun and npm raw audits; npm reports five affected package entries for one GHSA root and the P023 graph validator passes",
-        "Source-bound OSV scan of 510 npm lock nodes and 494 exact package/version queries",
-        "Embedded frontend asset validation"
+        "Bun tests, Lingui extraction/compilation, TypeScript/Vite production build, localization and asset embedding",
+        "Raw Bun and npm audits; five npm package entries trace to one GHSA",
+        "Source-bound OSV query over 510 lock nodes and 494 unique package/version queries"
       ],
-      "raw_scanner_status": "OPEN; Bun and npm audits report high severity; npm reports five affected package entries tracing to this one GHSA; source-bound full-lock OSV scan reports only this GHSA and no fix",
+      "raw_scanner_status": "OPEN in Bun/npm audits; one GHSA in the full-lock OSV scan; no fixed version.",
       "remediation_status": "MITIGATED_WITH_RESIDUAL_RISK",
-      "residual_severity": "HIGH build-time denial-of-service risk; no production runtime braces dependency established",
+      "residual_severity": "HIGH build-time denial-of-service risk; no production runtime braces dependency established.",
       "release_owner_decision_required": true,
       "evidence_links": [
+        "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
         "docs/ios-p023-javascript-dependency-review.md",
-        "docs/ios-p023-advisory-policy.json",
-        "P017 raw JavaScript and OSV audit artifacts on candidate PR head"
+        "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39718772365"
       ]
     }
   ],
   "newly_discovered_advisories": [],
+  "exact_source_qualification": {
+    "source_sha": "fd6b1595ff2e8b4d7037229ce6d71af87f907b4e",
+    "status": "PASS",
+    "pr_final_documentation_head_requalification": "GitHub exact-head check results on the current PR head are required before merge.",
+    "raw_findings_retained": true
+  },
   "release_authorization": "NOT_GRANTED",
-  "exact_head_hosted_qualification": "PENDING",
-  "workflow_security_review": {
-    "scanner_tools": {
-      "zizmor": {
-        "version": "1.31.1",
-        "archive_sha256": "d185f726bdaf92df78273217dfdd24ebcd6b0ef48cf3ce776ff5762b6e138c99"
-      },
-      "actionlint": {
-        "version": "1.7.12",
-        "archive_sha256": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
-      }
-    },
-    "initial_static_findings": {
-      "total": 72,
-      "unpinned_uses": 51,
-      "artipacked": 9,
-      "cache_poisoning": 6,
-      "excessive_permissions": 4,
-      "template_injection": 2
-    },
-    "pinned_action_targets": 19,
-    "pinned_action_use_sites": 54,
-    "implemented_changes": [
-      "pin every external workflow action use site to an upstream-resolved full commit SHA",
-      "scope GHCR packages:write to push-only Helm publishing",
-      "disable reusable Bun and Go caches in release/native builds",
-      "disable checkout credential persistence and use GIT_ASKPASS for the two required write workflows",
-      "pass chart and native source outputs through environment variables"
-    ],
-    "final_local_status": {
-      "actionlint": "PASS",
-      "zizmor_findings": 0,
-      "immutable_action_ref_regression": "PASS"
-    },
-    "hosted_gate": "PENDING exact-head P017 run 39717756411 on source f7a4525aeb7513163439b56b330ddfbd527c4da8",
-    "scope_limit": "Zizmor checks workflow patterns and known vulnerable action use; no comprehensive CVE scan of every action bundled runtime is claimed."
+  "release_owner_decisions": {
+    "GO-2026-5932": "OPEN",
+    "GHSA-vfj7-8cjw-p6xm": "OPEN"
   }
 }
