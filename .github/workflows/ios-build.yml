@@ -20,6 +20,7 @@ on:
       - "docs/ios-p019-*"
       - "docs/ios-p020-*"
       - "docs/ios-p021-*"
+      - "docs/ios-p022-*"
       - "docs/ios-release-candidate*"
   push:
     branches:
@@ -372,20 +373,22 @@ jobs:
             ${{ runner.temp }}/native-artifacts.json
             ${{ runner.temp }}/wifi-linkage.txt
 
-  release-ios:
+  release-ios-validate:
     needs: build-ios
-    if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref_name, '-ios.')
+    if: github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v') && contains(github.ref_name, '-ios.')
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      contents: read
+    outputs:
+      source_sha: ${{ steps.provenance.outputs.source_sha }}
+      base_version: ${{ steps.provenance.outputs.base_version }}
 
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Validate iOS release tag format
         shell: bash
@@ -433,79 +436,145 @@ jobs:
           name: beszel-ios-arm64
           path: dist
 
-      - name: Verify release payload
+      - name: Download same-run native provenance evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-native-validation
+          path: validation
+
+      - name: Verify release payload, source and native provenance
+        id: provenance
         shell: bash
         run: |
           set -euo pipefail
-          cd dist
-          for f in beszel-agent-ios-arm64 beszel-hub-ios-arm64 SHA256SUMS; do
-            if [ ! -f "$f" ]; then
-              echo "ERROR: missing payload file: $f" >&2
-              exit 1
-            fi
-            if [ ! -s "$f" ]; then
-              echo "ERROR: empty payload file: $f" >&2
-              exit 1
-            fi
-          done
-          echo "--- SHA256SUMS ---"
-          cat SHA256SUMS
-          if [ "$(wc -l < SHA256SUMS | tr -d ' ')" != "2" ]; then
-            echo "ERROR: SHA256SUMS must contain exactly 2 entries" >&2
-            exit 1
-          fi
-          if ! grep -Eq '^[0-9a-f]{64} [ *]beszel-agent-ios-arm64$' SHA256SUMS; then
-            echo "ERROR: SHA256SUMS missing valid beszel-agent-ios-arm64 entry" >&2
-            exit 1
-          fi
-          if ! grep -Eq '^[0-9a-f]{64} [ *]beszel-hub-ios-arm64$' SHA256SUMS; then
-            echo "ERROR: SHA256SUMS missing valid beszel-hub-ios-arm64 entry" >&2
-            exit 1
-          fi
-          sha256sum -c SHA256SUMS
-          echo "Payload verification OK"
-          ls -l
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          TAG_SHA="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          test "$SOURCE_SHA" = "$GITHUB_SHA"
+          test "$TAG_SHA" = "$SOURCE_SHA"
+          python3 .github/scripts/verify-ios-release-payload.py dist \
+            --metadata validation/native-artifacts.json \
+            --tag "$GITHUB_REF_NAME" \
+            --source-sha "$SOURCE_SHA" \
+            --output "$RUNNER_TEMP/ios-release-payload-validation.json"
+          mkdir -p validated/payload
+          cp dist/beszel-agent-ios-arm64 dist/beszel-hub-ios-arm64 dist/SHA256SUMS validated/payload/
+          cp validation/native-artifacts.json validated/
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "base_version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Publish GitHub Release
+      - name: Upload exact validated release payload for publisher job
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release-validated-payload
+          path: validated/
+          if-no-files-found: error
+          retention-days: 7
+
+  release-ios:
+    needs: release-ios-validate
+    if: github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v') && contains(github.ref_name, '-ios.')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout release tag for the shared validator
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Download validated same-run release payload
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-release-validated-payload
+          path: validated
+
+      - name: Revalidate publisher inputs
+        env:
+          EXPECTED_SOURCE_SHA: ${{ needs.release-ios-validate.outputs.source_sha }}
+          BASE_VERSION: ${{ needs.release-ios-validate.outputs.base_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          python3 .github/scripts/verify-ios-release-payload.py validated/payload \
+            --metadata validated/native-artifacts.json \
+            --tag "$GITHUB_REF_NAME" \
+            --source-sha "$EXPECTED_SOURCE_SHA"
+
+      - name: Create draft release after validation
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
           BASE_VERSION="${BASE_VERSION:?BASE_VERSION is empty (tag validation must run first)}"
-          NOTES_FILE="$(mktemp)"
+          NOTES_FILE="$RUNNER_TEMP/ios-release-notes.md"
           cat > "${NOTES_FILE}" <<EOF
           Beszel iOS ${TAG} - unofficial community port of Beszel, based on Beszel ${BASE_VERSION}.
 
           - Native Agent and Hub binaries for jailbroken iOS (arm64)
-          - Validated on: iPad mini 2 (Apple A7, iOS 12.5.7)
-          - Broader device compatibility remains untested
+          - Hosted CI validates the iOS ARM64 build, runtime patch, checksums and embedded frontend
+          - Physical device compatibility is not claimed by this release workflow; P018 Gate F requires separate acceptance
           - Verify checksums after download: run shasum -a 256 -c SHA256SUMS
           - Upstream Beszel: https://github.com/henrygd/beszel
           EOF
           gh release create "${TAG}" \
             --title "Beszel iOS ${TAG}" \
             --notes-file "${NOTES_FILE}" \
-            --latest \
-            dist/beszel-agent-ios-arm64 dist/beszel-hub-ios-arm64 dist/SHA256SUMS
+            --draft \
+            --verify-tag \
+            validated/payload/beszel-agent-ios-arm64 validated/payload/beszel-hub-ios-arm64 validated/payload/SHA256SUMS
+
+      - name: Verify draft assets before publication
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
+          DRAFT="$(gh release view "${TAG}" --json isDraft --jq .isDraft)"
+          [ "${DRAFT}" = "true" ] || { echo "ERROR: release ${TAG} was not staged as a draft" >&2; exit 1; }
+          ACTUAL="$(gh release view "${TAG}" --json assets --jq '.assets[].name' | sort)"
+          EXPECTED="$(printf '%s\n' SHA256SUMS beszel-agent-ios-arm64 beszel-hub-ios-arm64 | sort)"
+          [ "${ACTUAL}" = "${EXPECTED}" ] || { echo "ERROR: draft release assets do not match the validated payload" >&2; exit 1; }
+          VERIFY_DIR="$RUNNER_TEMP/ios-release-draft-download"
+          test ! -e "$VERIFY_DIR"
+          mkdir -p "$VERIFY_DIR"
+          gh release download "${TAG}" --dir "$VERIFY_DIR"
+          python3 .github/scripts/verify-ios-release-payload.py "$VERIFY_DIR" \
+            --metadata validated/native-artifacts.json \
+            --tag "$TAG" \
+            --source-sha "${{ needs.release-ios-validate.outputs.source_sha }}"
+
+      - name: Publish verified draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
+          gh release edit "${TAG}" --draft=false --latest
 
       - name: Verify published release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME:?GITHUB_REF_NAME is empty}"
           REPO="${{ github.repository }}"
-          echo "== release view =="
           gh release view "${TAG}" --json tagName,name,isDraft,isPrerelease,assets
           DRAFT="$(gh release view "${TAG}" --json isDraft --jq .isDraft)"
           PRERELEASE="$(gh release view "${TAG}" --json isPrerelease --jq .isPrerelease)"
-          [ "${DRAFT}" = "false" ] || { echo "ERROR: release ${TAG} is a draft" >&2; exit 1; }
+          [ "${DRAFT}" = "false" ] || { echo "ERROR: release ${TAG} remains a draft" >&2; exit 1; }
           [ "${PRERELEASE}" = "false" ] || { echo "ERROR: release ${TAG} is marked prerelease" >&2; exit 1; }
-          for asset in beszel-agent-ios-arm64 beszel-hub-ios-arm64 SHA256SUMS; do
-            gh release view "${TAG}" --json assets --jq '.assets[].name' | grep -qx "${asset}" \
-              || { echo "ERROR: release asset missing: ${asset}" >&2; exit 1; }
-          done
-          COUNT="$(gh release view "${TAG}" --json assets --jq '.assets | length')"
-          [ "${COUNT}" = "3" ] || { echo "ERROR: expected exactly 3 release assets, found ${COUNT}" >&2; exit 1; }
+          ACTUAL="$(gh release view "${TAG}" --json assets --jq '.assets[].name' | sort)"
+          EXPECTED="$(printf '%s\n' SHA256SUMS beszel-agent-ios-arm64 beszel-hub-ios-arm64 | sort)"
+          [ "${ACTUAL}" = "${EXPECTED}" ] || { echo "ERROR: published release assets differ from the validated payload" >&2; exit 1; }
           LATEST_TAG="$(gh api "repos/${REPO}/releases/latest" --jq .tag_name)"
           [ "${LATEST_TAG}" = "${TAG}" ] || { echo "ERROR: latest release is ${LATEST_TAG}, expected ${TAG}" >&2; exit 1; }
           echo "Release verification OK: ${TAG} is published, non-draft, non-prerelease, Latest, with 3 assets."

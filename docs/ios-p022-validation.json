@@ -1,0 +1,196 @@
+{
+  "schema": 1,
+  "milestone": "P022",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "branch": "ios/p022-release-readiness",
+  "pull_request": 26,
+  "base_branch": "ios/upstream-v021-integration",
+  "p018": {
+    "pull_request": 22,
+    "url": "https://github.com/nghianguyen150612/Beszel-iOS/pull/22",
+    "state": "open",
+    "draft": true,
+    "physical_gate_f": "PENDING"
+  },
+  "starting_integration_sha": "228b50644a8f1a28c61c5f6944698bc1011d0926",
+  "production_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+  "fork_main_sha": "e984ee12081f4e112601c3f718c9d81c112fe718",
+  "pinned_upstream_sha": "b5357343550c8e2493d0e65472a06c1007396384",
+  "observed_upstream_main_sha": "b97abf7662a7c7a2dd7542ea2062405abd22d4dc",
+  "upstream_drift": {
+    "commits_ahead_of_pin": 5,
+    "commits_behind_pin": 0,
+    "integrated": false
+  },
+  "accounting": {
+    "post_v021_upstream_commits": {
+      "expected": 41,
+      "observed": 41,
+      "status": "PASS"
+    },
+    "frozen_historical_upstream_rows": {
+      "expected": 178,
+      "observed": 178,
+      "status": "PASS"
+    },
+    "historical_ios_commits": {
+      "expected": 35,
+      "observed": 35,
+      "status": "PASS"
+    },
+    "logical_ios_patchsets": {
+      "expected": 13,
+      "observed": 13,
+      "status": "PASS"
+    },
+    "unresolved_accounting_rows": 0
+  },
+  "production_diff": {
+    "files_changed": 637,
+    "added": 368,
+    "modified": 266,
+    "renamed": 2,
+    "deleted": 1,
+    "casefold_collisions": 0,
+    "status": "PASS"
+  },
+  "promotion_dry_run": {
+    "production_start_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "integration_source_sha": "228b50644a8f1a28c61c5f6944698bc1011d0926",
+    "merge_base_sha": "0c3e4cd22ac24264834c401ad412e44aeda4e4f3",
+    "simulation_tree_sha": "53d0f5abc11c4973ec27db84952a46e0611175ac",
+    "local_only_merge_sha": "9ee85fa27fea0b5f5e3dc75407575e00dce5afcd",
+    "conflicts": [],
+    "tests": "focused history/workflow sentinels PASS; exact P022 product and hosted CI qualification remains separate",
+    "result": "PASS"
+  },
+  "release_simulation": {
+    "validator_synthetic_tests": {
+      "passed": 7,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "workflow_isolation_local_tests": {
+      "passed": 36,
+      "failed": 0,
+      "status": "PASS"
+    },
+    "tag_created": false,
+    "release_created": false,
+    "release_published": false
+  },
+  "qualification_checkpoint_3b7f14e": {
+    "source_sha": "3b7f14eef0971b5e0636e98bcd7246878f89c381",
+    "p013_migration": {
+      "run_id": 39699212188,
+      "status": "success",
+      "artifact_id": 12392591121,
+      "artifact_sha256": "0e0474d7b152b590342640d75e868664d4a50a59a75017ba06a377b3aec39c46",
+      "archive_downloaded_and_digest_verified": true,
+      "synthetic_only": true
+    },
+    "installer": {
+      "run_id": 39699212345,
+      "status": "success"
+    },
+    "p017": {
+      "run_id": 39699212157,
+      "status": "success",
+      "go_and_javascript_scans": "completed and evidence artifacts independently digest-verified",
+      "full_regression": "PASS",
+      "manifest_artifact_id": 12392311796,
+      "manifest_sha256": "7dc92c528f935630aba96550dd7541e6e684e0b4333e2c0be322f0d8a7e6a872",
+      "frontend_asset_count": 97
+    },
+    "native_ios": {
+      "run_id": 39699212169,
+      "procursus_status": "success",
+      "build_ios_status_at_checkpoint": "success",
+      "native_artifact_download": "pending",
+      "workflow_status": "success",
+      "completed_at": "2026-10-22T00:37Z",
+      "release_validation_job_status": "skipped",
+      "release_publisher_job_status": "skipped",
+      "review_payload_artifact": {
+        "id": 12392662907,
+        "sha256": "c276756a55f5f8cb36e521adb4323e698b10227b36ba0231e88d4bcc5fd01ea0",
+        "downloaded_and_digest_verified": true
+      },
+      "native_validation_artifact": {
+        "id": 12392303371,
+        "sha256": "ea630b073b9b95ba0be118d9f7dfc654d9b0f75bce0b3f5329fd8c5396dbeb5d",
+        "downloaded_and_digest_verified": true
+      },
+      "agent_sha256": "0606d36665d6c887f51034574fe3fd7a7ca289a8b96bb58bc9f58d0faafcd18d",
+      "hub_sha256": "6618e2cd3b9129d553208096a413528c9a42bead5e401124badbd19959063d45",
+      "native_payload_validation": "PASS exact bytes, checksums, Go build settings, clean VCS revision and native metadata",
+      "minimum_ios": "12.0",
+      "embedded_frontend_assets": 97,
+      "a7_runtime_instruction_scan": "PASS; no counter access",
+      "private_MobileWiFi_linkage": false,
+      "independent_archive_verification": "PASS for binary and native-validation ZIPs"
+    }
+  },
+  "hosted_exact_head_qualification": {
+    "source_sha": "3b7f14eef0971b5e0636e98bcd7246878f89c381",
+    "p013_migration": {
+      "run_id": 39699212188,
+      "status": "success",
+      "synthetic_only": true
+    },
+    "p017_regression_and_security": {
+      "run_id": 39699212157,
+      "status": "success"
+    },
+    "native_ios_and_procursus": {
+      "run_id": 39699212169,
+      "build_ios": "success",
+      "procursus": "success"
+    },
+    "installer": {
+      "run_id": 39699212345,
+      "status": "success"
+    },
+    "release_validation_job": "SKIPPED (pull request event)",
+    "release_publisher_job": "SKIPPED (pull request event)",
+    "artifact_archive_independent_verification": "PASS for binary and native-validation artifacts",
+    "source_sha_is_current_before_final_evidence_commit": true
+  },
+  "phase_status": {
+    "A_production_difference": "PASS",
+    "B_promotion_dry_run": "PASS",
+    "C_release_workflow": "PASS at 3b7f14e; synthetic tests PASS; final-document-head release jobs must be skipped",
+    "D_artifacts_signing": "PASS at 3b7f14e; hosted binaries and provenance ZIPs independently downloaded and verified; no physical signing/trust claim",
+    "E_installer": "PASS at source 3b7f14e; final evidence-document head rerun pending",
+    "F_migration_rollback": "PASS at source 3b7f14e; final evidence-document head rerun pending",
+    "G_security": "P017 scan and regression PASS at source 3b7f14e; residual advisories documented; final-head rescan pending",
+    "H_versioning_release_notes": "PASS as unpublished proposal",
+    "I_cloud_qualification": "PENDING final evidence-document head reruns"
+  },
+  "gate_g": "PENDING final evidence-document head cloud qualification and review condition",
+  "p018_physical_gate_f": "PENDING",
+  "production_iOS_modified": false,
+  "fork_main_modified": false,
+  "physical_device_contacted": false,
+  "release_tag_created": false,
+  "release_published": false,
+  "deployment_performed": false,
+  "pending_final_evidence_head_qualification": {
+    "source_sha": "created by the final evidence-document checkpoint; read exact value from PR #26 head",
+    "p013_migration": "PENDING",
+    "p017_regression_and_security": "PENDING",
+    "native_ios_and_procursus": "PENDING",
+    "installer": "PENDING",
+    "release_jobs": "must remain SKIPPED",
+    "artifact_archive_independent_verification": "PENDING"
+  },
+  "signing_or_device_trust_proven": false,
+  "repository_review_rules": {
+    "integration_branch_protected": false,
+    "repository_rulesets": 0,
+    "required_review_gate_observed": false,
+    "submitted_reviews_on_pr_26": 0,
+    "evidence": "GitHub branch metadata reports protected=false for integration; repository rulesets endpoint returned an empty list; PR review API returned no reviews.",
+    "approval_fabricated": false
+  }
+}

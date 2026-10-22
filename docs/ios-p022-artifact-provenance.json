@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "milestone": "P022",
+  "candidate_source_sha": "228b50644a8f1a28c61c5f6944698bc1011d0926",
+  "upstream_pinned_sha": "b5357343550c8e2493d0e65472a06c1007396384",
+  "toolchain_contract": {
+    "go": "1.27.2",
+    "GOOS": "ios",
+    "GOARCH": "arm64",
+    "GOARM64": "v8.0",
+    "CGO_ENABLED": "1",
+    "minimum_ios": "12.0",
+    "runtime_patch": "Apple A7-safe guarded procyield; exact-source CI required",
+    "x509_backport_patch_sha256_from_P021": "111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150"
+  },
+  "required_payload": [
+    "beszel-agent-ios-arm64",
+    "beszel-hub-ios-arm64",
+    "SHA256SUMS"
+  ],
+  "prior_exact_source_evidence": {
+    "source_sha": "b20ed2b636d95bca26c87161de06d8e1e7f03862",
+    "native_workflow_run_id": 39620426859,
+    "native_workflow_status": "success",
+    "release_job_status": "skipped",
+    "agent_sha256": "5b4a5a25cd0fe5405d411d71186bd8bca3440deb82c31a11186c71735d9337ed",
+    "hub_sha256": "15e20c2fa549ad887f780b9d681642e84de04f8f8e2a664ece60e9cba07abc30",
+    "embedded_frontend_assets": 97,
+    "private_MobileWiFi_linkage": false,
+    "github_artifacts": [
+      {
+        "name": "beszel-ios-arm64",
+        "id": 12355147476,
+        "archive_sha256": "901152c81188f82e19e7136bab130f722688093fe2a0c59e11744a1cd4a57a42"
+      },
+      {
+        "name": "ios-native-validation",
+        "id": 12355811635,
+        "archive_sha256": "c16a09222916389c1993a33d79c4eb4c9df577675893be1bd80bc279f1e22c09"
+      }
+    ],
+    "independent_archive_verification": "P021 metadata was available; prior direct ZIP download returned HTTP 403. This is not independent verification of ZIP bytes. P022 authorized artifact download remains pending."
+  },
+  "p022_exact_head_evidence": {
+    "status": "PASS on source 3b7f14e; final evidence-document head qualification pending",
+    "source_sha": "3b7f14eef0971b5e0636e98bcd7246878f89c381",
+    "workflow_run_id": 39699212169,
+    "workflow_status": "success",
+    "procursus_job_status": "success",
+    "release_validation_job_status": "skipped",
+    "release_publisher_job_status": "skipped",
+    "binaries": {
+      "beszel-agent-ios-arm64": {
+        "sha256": "0606d36665d6c887f51034574fe3fd7a7ca289a8b96bb58bc9f58d0faafcd18d",
+        "bytes": 9576424
+      },
+      "beszel-hub-ios-arm64": {
+        "sha256": "6618e2cd3b9129d553208096a413528c9a42bead5e401124badbd19959063d45",
+        "bytes": 32076160,
+        "embedded_frontend_assets": 97
+      }
+    },
+    "artifact_archives": [
+      {
+        "name": "beszel-ios-arm64",
+        "id": 12392662907,
+        "size_bytes": 16333626,
+        "github_sha256": "c276756a55f5f8cb36e521adb4323e698b10227b36ba0231e88d4bcc5fd01ea0",
+        "downloaded_zip_sha256": "c276756a55f5f8cb36e521adb4323e698b10227b36ba0231e88d4bcc5fd01ea0",
+        "independent_archive_verification": "PASS"
+      },
+      {
+        "name": "ios-native-validation",
+        "id": 12392303371,
+        "size_bytes": 9027,
+        "github_sha256": "ea630b073b9b95ba0be118d9f7dfc654d9b0f75bce0b3f5329fd8c5396dbeb5d",
+        "downloaded_zip_sha256": "ea630b073b9b95ba0be118d9f7dfc654d9b0f75bce0b3f5329fd8c5396dbeb5d",
+        "independent_archive_verification": "PASS"
+      },
+      {
+        "name": "ios-wifi-diagnostic-disabled",
+        "id": 12392747844,
+        "size_bytes": 6049,
+        "github_sha256": "66c1eb6a506276ea1789dbd9fcb9474c07037a41c3e2d3f8a0cc9099e552350a",
+        "metadata_available": "YES",
+        "independent_archive_verification": "NOT_PERFORMED; separate diagnostic artifact not needed to validate the release payload"
+      }
+    ],
+    "payload_validation": {
+      "synthetic_release_tag": "v0.21.0-ios.1",
+      "tag_created": false,
+      "release_created": false,
+      "release_published": false,
+      "payload_layout": "exactly Agent, Hub and SHA256SUMS",
+      "checksum_to_binary_bytes": "PASS",
+      "native_metadata_matches_exact_binary_bytes": "PASS",
+      "go": "go1.27.2",
+      "GOOS": "ios",
+      "GOARCH": "arm64",
+      "GOARM64": "v8.0",
+      "CGO_ENABLED": "1",
+      "source_vcs_revision": "3b7f14eef0971b5e0636e98bcd7246878f89c381",
+      "vcs_modified": "false",
+      "macho": "thin ARM64 MH_EXECUTE, LC_BUILD_VERSION iOS platform 2, minimum iOS 12.0",
+      "hub_embedded_asset_count": 97,
+      "agent_runtime_patch": "PASS; guarded zero-delay YIELD loop, no CNTFRQ_EL0/CNTVCT_EL0 counter access",
+      "hub_runtime_patch": "PASS; guarded zero-delay YIELD loop, no CNTFRQ_EL0/CNTVCT_EL0 counter access",
+      "x509_backport_sha256": "111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150",
+      "private_MobileWiFi_linkage": "absent from both binary import lists",
+      "rootful_trust": "No production identity or device was used; hosted validation does not establish physical launchability or Apple trust",
+      "device_tested": false
+    },
+    "source_vcs_revision_must_match": true,
+    "checksums_must_match_exact_binary_bytes": true,
+    "final_evidence_document_head_qualification": "PENDING; documentation commit will trigger all P022 qualification workflows"
+  },
+  "p022_source_regression_evidence": {
+    "source_sha": "3b7f14eef0971b5e0636e98bcd7246878f89c381",
+    "p017_run_id": 39699212157,
+    "status": "success",
+    "frontend_asset_count": 97,
+    "manifest_artifact": {
+      "id": 12392311796,
+      "sha256": "7dc92c528f935630aba96550dd7541e6e684e0b4333e2c0be322f0d8a7e6a872",
+      "independent_download_and_digest_verification": "PASS"
+    },
+    "go_scan_artifact_id": 12393020398,
+    "javascript_scan_artifact_id": 12392261997,
+    "native_binary_zip": "Downloaded through authorized GitHub artifact API; ZIP digest independently matches GitHub metadata, exact payload and native provenance validated.",
+    "native_workflow_run_id": 39699212169,
+    "native_workflow_status": "success"
+  }
+}
