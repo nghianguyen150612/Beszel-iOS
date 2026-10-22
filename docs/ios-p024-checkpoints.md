@@ -57,3 +57,15 @@ Focused local results on the current worktree (the merge parent is `e2b677769dd4
 - The build's generated catalog-only extraction edits were restored after the build; the pinned upstream localization changes remain committed and `internal/site/dist` is available for embedded Hub tests.
 
 These are local results only. The remote feature ref remains at `c82536a4e4fcd1ab61b75d2727cae405b8b02d7c` until this implementation checkpoint is committed and pushed. History-preservation checks, complete Go/race suites, database fixtures, security scans, native iOS/Procursus, installer, hosted workflows, Gate I, and merge remain pending.
+
+## Full-suite findings and corrections
+
+The first local `go test -tags testing ./... -count=1` run failed and is recorded as a failed attempt, not a PASS. Agent, most packages, records, migrations, and users completed; failures were:
+
+- Legacy P014 Hub API and SSH fixture assertions expected only deprecated GB memory. The Hub now derives exact bytes for legacy Agents. Assertions and the four synthetic API snapshots were updated to include that expected conversion.
+- The production build added the Catalan locale chunk and refreshed asset hashes. The embedded manifest was regenerated to 98 entries with digest `b61d31f45ecdaca5fe54e9bb59751ad325bd8e7da6569913d3339efcff0be926`; the Go embed test passes.
+- Two `internal/cmd/agent` tests inherited the execution environment's `NETWORK` value and failed address-type expectations. The isolated rerun clears `NETWORK`, `LISTEN`, and `PORT`; no production code change was made for this environment-only failure.
+
+The P014 API goldens were regenerated from disposable synthetic fixtures under `internal/hub/testdata/p014`; the API and SSH ingestion tests now pass. A sanitized complete `go test -tags testing ./... -count=1` run also passes with `NETWORK`, `LISTEN`, and `PORT` cleared. All Go temporary paths and test database directories were redirected through `.p024-runtime`; no temporary files were sent to `/tmp` or any protected system path.
+
+The hosted checks on the prior `508a920488f1142248401904004f3db835ea6d27` head are historical failed attempts. P013 migration passed on that head, and the iOS workflow's Procursus package update job passed. P017 and the iOS build job stopped in their Go regression tests because the same P014 SSH fixtures still expected zero `MemBytes`; the current checkpoint corrects those assertions and snapshots. The native compile/package steps did not run on that head. Both release jobs were skipped. All required workflows must rerun on the corrected exact PR head.
