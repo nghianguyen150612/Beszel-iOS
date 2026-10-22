@@ -10,5 +10,5 @@ installer,unsupported binary low disk failed startup uninstall and purge,synthet
 native,Agent and Hub Mach-O iOS 12 metadata checksums VCS and payload bytes,hosted-ci,NOT_RUN,
 artifacts,same-run immutable artifact download and independent byte verification,hosted-ci,NOT_RUN,
 reproducibility,two isolated builds with identical pinned inputs,hosted-ci,NOT_RUN,
-release,PR workflows read-only publisher event isolation and synthetic release validation,cloud,NOT_RUN,
+release,PR workflows read-only publisher event isolation and synthetic release validation,cloud,LOCAL_CHECKS_PASS_HOSTED_PENDING,tests/ios-workflow-isolation-test.py; P025 PR CI pending
 device,artifact transfer trust signing startup services telemetry network migration recovery rollback,physical-p026,NOT_RUN

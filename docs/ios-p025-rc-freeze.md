@@ -1,6 +1,6 @@
 # P025 Cloud Release Candidate Freeze
 
-**Status: INITIAL CHECKPOINT — qualification not started.** This is a cloud-only milestone. It does not authorize signing, installation, device access, tagging, publishing, or production promotion.
+**Status: IMPLEMENTATION CHECKPOINT — hosted qualification pending.** This is a cloud-only milestone. It does not authorize signing, installation, device access, tagging, publishing, or production promotion.
 
 ## Verified baseline
 
@@ -27,12 +27,16 @@ The following runs completed successfully on P024 feature head `13c63387c588f65e
 - P013 migration fixture: [39759219686](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39759219686)
 - Installer lifecycle: [39759219620](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39759219620)
 
-P024 reports that external artifact ZIP downloads returned HTTP 403. GitHub-reported archive digests are recorded in the P024 PR description; they are not independent byte verification. P025 still needs an uploaded-artifact consumer job and exact downloaded-byte verification.
+P024 reports that external artifact ZIP downloads returned HTTP 403. GitHub-reported archive digests are recorded in the P024 PR description; they are not independent byte verification. P025 adds a hosted same-run artifact consumer and exact downloaded-byte checks; its hosted result is still pending.
+
+P025 retried the P024 payload and native-validation ZIPs with authenticated `gh run download`; both exact artifact IDs returned HTTP 403 from artifact storage. The connected GitHub artifact tool returned File Service references, but this workspace has no supported path to read those referenced bytes. No archive or binary digest was computed locally from those responses. The hosted same-run consumer is therefore required to close the evidence gap.
 
 ## P025 state at checkpoint
 
 - Feature branch: `ios/p025-artifact-rc-freeze` from the exact integration baseline.
-- Candidate source, build outputs, artifact IDs, and immutable manifest: pending.
+- Initial evidence checkpoint: `e90427e6a61553b3d7ca1db5aba5dd18473c92db` (tree `de2e7cdda3906c8f372602e50675fb972d0975f8`), pushed and confirmed by `git ls-remote`.
+- Draft PR: [#29](https://github.com/nghianguyen150612/Beszel-iOS/pull/29), targeting integration.
+- Artifact-consumer and two-build reproducibility tooling are implemented in the current local checkpoint; exact source identity, hosted results, build outputs, artifact IDs, and immutable manifest remain pending.
 - Gate J: **PENDING**.
 - P018 Gate F: **PENDING**.
 - Physical-device testing: not performed and out of scope for P025.

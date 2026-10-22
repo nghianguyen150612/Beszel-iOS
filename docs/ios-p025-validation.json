@@ -22,7 +22,25 @@
     "p013_migration": {"run_id": 39759219686, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"},
     "installer": {"run_id": 39759219620, "head_sha": "13c63387c588f65e288449ba611e5a83c6d6eef7", "conclusion": "success"}
   },
-  "p024_external_artifact_download": "blocked_http_403_per_p024_record",
+  "p024_external_artifact_download": "confirmed_http_403_by_authenticated_p025_cli_retry",
+  "p025_initial_checkpoint": {
+    "commit_sha": "e90427e6a61553b3d7ca1db5aba5dd18473c92db",
+    "tree_sha": "de2e7cdda3906c8f372602e50675fb972d0975f8",
+    "remote_sha_verified": true,
+    "draft_pr_number": 29
+  },
+  "p025_external_artifact_download_attempt": {
+    "payload_artifact_id": 12418500671,
+    "native_validation_artifact_id": 12417553816,
+    "result": "both_blocked_http_403",
+    "github_connector_result": "file_service_references_returned_without_workspace_byte_access",
+    "hosted_independent_consumer": "pending"
+  },
+  "hash_algorithms": {
+    "git_commit_and_tree_objects": "SHA-1",
+    "binary_and_artifact_file_digests": "SHA-256",
+    "github_artifact_digest_metadata": "SHA-256; not equivalent to an independently computed archive digest"
+  },
   "p025_feature_head_sha": null,
   "p025_feature_tree_sha": null,
   "p025_merge_sha": null,
