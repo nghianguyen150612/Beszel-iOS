@@ -254,21 +254,23 @@ jobs:
           test "$(go env GOVERSION)" = "go$(awk '$1 == "go" {print $2}' go.mod)"
           python3 .github/scripts/patch-go-ios-arm64-runtime.py | tee "$RUNNER_TEMP/runtime-patch.json"
           shasum -a 256 -c "$RUNNER_TEMP/original-runtime.sha256"
-          echo "GOROOT=$GOROOT" >> "$GITHUB_ENV"
-          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+          {
+            echo "GOROOT=$GOROOT"
+            echo "GOTOOLCHAIN=local"
+            echo "GOCACHE=$RUNNER_TEMP/ios-go-cache"
+            # Clear inherited host target/linker flags; share one device clang.
+            echo "GOFLAGS="
+            echo "CGO_CFLAGS=-O2 -g"
+            echo "CGO_CPPFLAGS="
+            echo "CGO_CXXFLAGS=-O2 -g"
+            echo "CGO_LDFLAGS="
+            echo "GOOS=ios"
+            echo "GOARCH=arm64"
+            echo "GOARM64=v8.0"
+            echo "CGO_ENABLED=1"
+            echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh"
+          } >> "$GITHUB_ENV"
           echo "$GOROOT/bin" >> "$GITHUB_PATH"
-          echo "GOCACHE=$RUNNER_TEMP/ios-go-cache" >> "$GITHUB_ENV"
-          # Clear inherited host target/linker flags; share one device clang.
-          echo "GOFLAGS=" >> "$GITHUB_ENV"
-          echo "CGO_CFLAGS=-O2 -g" >> "$GITHUB_ENV"
-          echo "CGO_CPPFLAGS=" >> "$GITHUB_ENV"
-          echo "CGO_CXXFLAGS=-O2 -g" >> "$GITHUB_ENV"
-          echo "CGO_LDFLAGS=" >> "$GITHUB_ENV"
-          echo "GOOS=ios" >> "$GITHUB_ENV"
-          echo "GOARCH=arm64" >> "$GITHUB_ENV"
-          echo "GOARM64=v8.0" >> "$GITHUB_ENV"
-          echo "CGO_ENABLED=1" >> "$GITHUB_ENV"
-          echo "CC=$GITHUB_WORKSPACE/.github/scripts/ios-clang.sh" >> "$GITHUB_ENV"
 
       - name: Verify native Go 1.27.3 x509 security fix
         shell: bash

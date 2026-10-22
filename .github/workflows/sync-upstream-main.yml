@@ -77,13 +77,13 @@ jobs:
             askpass="$RUNNER_TEMP/git-askpass.sh"
             umask 077
             cat > "$askpass" <<'ASKPASS'
-            #!/bin/sh
-            case "$1" in
-              *Username*) printf '%s\n' 'x-access-token' ;;
-              *Password*) printf '%s\n' "$GIT_PUSH_TOKEN" ;;
-              *) exit 1 ;;
-            esac
-            ASKPASS
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$GIT_PUSH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ASKPASS
             chmod 700 "$askpass"
             GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 git push origin "$UPSTREAM_SHA:refs/heads/$DEST_BRANCH"
 
