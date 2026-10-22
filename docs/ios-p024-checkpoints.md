@@ -17,7 +17,8 @@ PR base: `ios/upstream-v021-integration`
 - The local `work` checkout at production iOS SHA `0c3e4cd22ac24264834c401ad412e44aeda4e4f3` was left untouched. P024 work is isolated in `.p024-worktree`.
 - The five upstream commit objects, ordered ancestry, and 23 changed paths were verified locally. Source merge and implementation have not started.
 - The five-commit audit and semantic conflict inventory are in `docs/ios-p024-upstream-audit.md`.
-- Initial audit commit SHA and remote verification will be recorded in the next checkpoint entry after push.
+- Initial audit checkpoint: `adfdad88e315d2ec191e4ef7f18ea21a799d32b8`, parent `8e03afadb3a03480414fa47f87d40c13331e05b3`. `git ls-remote` confirmed the feature ref at the exact commit.
+- Draft PR: [#28](https://github.com/nghianguyen150612/Beszel-iOS/pull/28), base `ios/upstream-v021-integration`; PR head matched the confirmed remote SHA at creation.
 
 ## Qualification state
 
