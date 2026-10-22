@@ -14,3 +14,8 @@
   `ios-p023-validation.json`.
 - P023 qualification has not run yet. Gate H is pending; P018 Gate F remains
   pending. No public release is authorized.
+
+- Initial baseline commit `48308ecd44198ac79cb827c8ccbeacb62688dd3c` was pushed
+  and independently verified as the remote branch SHA.
+- Draft PR [#27](https://github.com/nghianguyen150612/Beszel-iOS/pull/27) is
+  open against `ios/upstream-v021-integration`.
