@@ -71,6 +71,9 @@ class IOSReleasePayloadTests(unittest.TestCase):
         self.assertFalse(result["release_published"])
         self.assertEqual(result["source_sha"], self.source_sha)
 
+    def test_validates_proposed_tag_against_repository_version(self):
+        self.assertEqual(release.validate_tag("v0.21.0-ios.1", ROOT), "0.21.0")
+
     def test_rejects_wrong_or_non_candidate_tag(self):
         for tag in ("v0.22.0-ios.1", "v0.21.0-ios.0", "v0.21.0-ios.01", "v0.21.0", "candidate-v0.21.0-ios.1"):
             with self.subTest(tag=tag), self.assertRaises(ValueError):

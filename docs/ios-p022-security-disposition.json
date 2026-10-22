@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "milestone": "P022",
+  "baseline_source_sha": "b20ed2b636d95bca26c87161de06d8e1e7f03862",
+  "p022_scan_source_sha": "3b7f14eef0971b5e0636e98bcd7246878f89c381",
+  "p022_scan_status": "PASS on source 3b7f14e; final evidence-document head rescan pending",
+  "go_scan": {
+    "database_last_modified": "2026-10-21T00:27:29Z",
+    "go_version": "go1.27.2",
+    "scanner": "govulncheck v1.9.0",
+    "scan_level": "symbol",
+    "scan_mode": "source",
+    "finding_count": 4,
+    "GO-2026-6608_present": false,
+    "GO-2026-6809_occurrences": 3,
+    "GO-2026-5932_occurrences": 1,
+    "x509_backport_sha256": "111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150",
+    "x509_test": "go test crypto/x509 -count=1: PASS"
+  },
+  "javascript_scan": {
+    "bun": "1.4.0",
+    "critical_findings": 0,
+    "GHSA-vfj7-8cjw-p6xm": "OPEN, high severity, braces <=3.0.3, build-only dependency graph",
+    "fix_available": "npm audit proposes @lingui/cli 6.10.0; semver-major upgrade not yet qualified"
+  },
+  "scan_artifacts": [
+    {
+      "name": "p019-go-vulnerability-evidence",
+      "id": 12393020398,
+      "source_sha": "3b7f14eef0971b5e0636e98bcd7246878f89c381",
+      "sha256": "c503311407a57cab1976715852dc98f676cadc886b5f15f7df6c755a619e808f",
+      "downloaded_and_digest_verified": true
+    },
+    {
+      "name": "p019-javascript-audit-evidence",
+      "id": 12392261997,
+      "source_sha": "3b7f14eef0971b5e0636e98bcd7246878f89c381",
+      "sha256": "ef6f12dbcc820aef82cc78fc91a53f77dea20875f72c64633249495b64ad76e1",
+      "downloaded_and_digest_verified": true
+    }
+  ],
+  "advisories": [
+    {
+      "advisory": "GO-2026-6608",
+      "severity": "No severity field in the scanned Go vulnerability record; P021 historical review classified HIGH",
+      "affected_component": "Go standard library/toolchain",
+      "reachability": "Absent from P022 Go 1.27.2 govulncheck findings on source 3b7f14e; exact final-head rescan pending.",
+      "available_mitigation": "Go 1.27.2 candidate toolchain and current Go advisory fixes.",
+      "remediation_status": "Absent in P022 scan on source 3b7f14e; confirm again on final evidence-document head.",
+      "validation_source": "P022 P017 artifact 12393020398 (SHA-256 c503311407a57cab1976715852dc98f676cadc886b5f15f7df6c755a619e808f); scan database last modified 2026-10-21.",
+      "required_release_decision": "Confirm absent or document the exact affected call path and mitigation before Gate G."
+    },
+    {
+      "advisory": "GO-2026-6809",
+      "severity": "No severity field in scanned Go vulnerability record; CVE-2026-111943",
+      "affected_component": "crypto/x509 in Go 1.27.2 candidate toolchain",
+      "reachability": "P022 scanner retained three raw occurrences, including crypto/x509 and a crypto/tls call trace through FetchLatestRelease.",
+      "available_mitigation": "Official Go CL 851047 x509 backport; required patch SHA-256 111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150.",
+      "remediation_status": "Official backport hash matches and x509 tests passed on P022 scan source; advisory remains visible in raw output and is not absent.",
+      "validation_source": "P022 artifact 12393020398; patch SHA-256 111bf066e27cb60df43881cbfa9b1d22b7682b720628b4b691a960a853b48150; go test crypto/x509 -count=1 PASS.",
+      "required_release_decision": "Review residual raw occurrences and accept the official backport evidence explicitly."
+    },
+    {
+      "advisory": "GO-2026-5932",
+      "severity": "No severity field in scanned Go vulnerability record",
+      "affected_component": "golang.org/x/crypto module dependency",
+      "reachability": "P022 reported one module-level finding for unmaintained OpenPGP; no OpenPGP symbol call trace was reported. Module presence is not proven runtime reachability.",
+      "available_mitigation": "No fixed module version in the scan; remove or replace OpenPGP if it becomes reachable. No replacement is introduced by P022.",
+      "remediation_status": "OPEN; not claimed fixed. Exact final-head scan and release disposition pending.",
+      "validation_source": "P022 P017 artifact 12393020398 (SHA-256 c503311407a57cab1976715852dc98f676cadc886b5f15f7df6c755a619e808f).",
+      "required_release_decision": "Record reachable package/use, fix availability, and explicit acceptance or remediation before release."
+    },
+    {
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "severity": "HIGH, CVSS 7.5 in Bun/npm audit; CWE-674",
+      "affected_component": "Frontend build dependency tree (braces via build tooling)",
+      "reachability": "P022 reports braces <=3.0.3 through chokidar/micromatch in @lingui/cli and @lingui/vite-plugin build dependencies. Hub embeds built assets, not these tools; no runtime dependency is established.",
+      "available_mitigation": "npm audit proposes @lingui/cli 6.10.0, which is a semver-major upgrade; no compatible in-range fix was reported. Qualify the major migration before adopting it.",
+      "remediation_status": "OPEN; zero critical JavaScript findings; major-version fix not yet tested.",
+      "validation_source": "P022 P017 artifact 12392261997 (SHA-256 ef6f12dbcc820aef82cc78fc91a53f77dea20875f72c64633249495b64ad76e1); Bun and npm report GHSA-vfj7-8cjw-p6xm.",
+      "required_release_decision": "Document high build-only exposure and decide whether to accept it temporarily or perform and qualify the Lingui major upgrade before public release."
+    }
+  ],
+  "application_security_controls": {
+    "universal_token_authorization": "P021 regression coverage; exact final P022 P017 run pending",
+    "secrets_absent_from_urls": "P021 source review; exact P022 re-review pending",
+    "oauth_default_roles": "P021 regression coverage; exact P022 P017 run pending",
+    "record_ownership_protection": "P021 regression coverage; exact P022 P017/P013 run pending",
+    "ssh_key_handling": "P021 installer and synthetic migration review; exact P022 rerun pending",
+    "api_authorization": "P021 regression coverage; exact P022 P017 run pending",
+    "installer_download_integrity": "Exact checksum manifest and tag pin in source; exact P022 installer run pending",
+    "logging_redaction": "P021 source review; exact P022 review pending",
+    "artifact_provenance": "P022 same-run validator implemented; exact hosted artifacts pending",
+    "frontend_dependency_integrity": "P022 Bun/npm scan passed on source 3b7f14e; final PR head re-scan pending"
+  },
+  "release_status": "NOT APPROVED FOR PRODUCTION; open advisories require explicit release decisions; final exact-head scans pending",
+  "final_evidence_document_head_scan": "PENDING"
+}
