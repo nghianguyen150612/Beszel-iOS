@@ -6,6 +6,14 @@
   "repository": "nghianguyen150612/Beszel-iOS",
   "base_branch": "ios/upstream-v021-integration",
   "feature_branch": "ios/p026-device-acceptance",
+  "p026_pr": {
+    "number": 30,
+    "state": "open",
+    "draft": true,
+    "base_sha": "bb945dc603ba2ae1673bb22866cc929d037fb9dd",
+    "created_head_sha": "c65201bad5be5cab8434316eabfc25bdbffa9657",
+    "merge_sha": null
+  },
   "candidate": {
     "source_sha": "bb945dc603ba2ae1673bb22866cc929d037fb9dd",
     "tree_sha": "8806c06d89881c9b41d5839babde84ca850dbd82",
@@ -34,6 +42,12 @@
       "artifact_consumer_job": "success",
       "release_validation": "skipped",
       "release_publisher": "skipped"
+    },
+    "p018_preflight_safety_harness": {
+      "status": "PASS",
+      "source_commit": "8e951a005dbd684f1b3e09c35a27ed1d08001d14",
+      "script_sha256": "8044ccfd6ccd199c01746bcc67985fabf3c5c1a9",
+      "scope": "host-only guarded stubs; no physical device evidence"
     },
     "artifacts": {
       "payload": {

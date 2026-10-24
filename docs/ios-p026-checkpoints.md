@@ -13,6 +13,7 @@ Recorded 2026-10-24 UTC.
 - P025 Gate J is PASS for the frozen merge source and exact-run artifacts.
 - P018 PR #22 remains Draft at head 8e951a005dbd684f1b3e09c35a27ed1d08001d14. Its old source branch is used only for the reviewed read-only preflight helper; no P018 source branch was merged.
 - No later integration source update has superseded the frozen candidate.
+- The pinned P018 preflight and its host-side safety harness were syntax-checked; the harness passed. This is host-only safety evidence, not physical evidence.
 
 ## Checkpoint 1 — Phase B artifact verification and local staging
 
@@ -29,6 +30,13 @@ Completed 2026-10-24 UTC. No device transfer occurred.
 The operator selected the existing SSH path for the read-only preflight. Actual output has not yet been supplied. No device connection was attempted from this workspace.
 
 Required next evidence: sanitized output from the exact P018 helper pinned at commit 8e951a005dbd684f1b3e09c35a27ed1d08001d14, plus the operator's report of physical access, stable power, and known manual Amethyst reactivation/recovery path. Phase A remains PENDING until the observed identity, rootful layout, tools, install state, service labels, and storage are reviewed.
+
+## Checkpoint 2 — Draft P026 tracking PR
+
+- P026 branch ios/p026-device-acceptance was created from current integration and pushed.
+- Draft PR #30 targets ios/upstream-v021-integration. It was created with branch head c65201bad5be5cab8434316eabfc25bdbffa9657 and base bb945dc603ba2ae1673bb22866cc929d037fb9dd.
+- The PR is intentionally Draft. Gate F is PENDING and no merge SHA exists.
+- The follow-up checkpoint records PR #30 and updates its validation metadata; the PR head advances with that documentation commit.
 
 ## Subsequent checkpoints
 
