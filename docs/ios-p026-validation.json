@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "milestone": "P026",
+  "status": "PARTIAL",
+  "gate_f": "PENDING",
+  "repository": "nghianguyen150612/Beszel-iOS",
+  "base_branch": "ios/upstream-v021-integration",
+  "feature_branch": "ios/p026-device-acceptance",
+  "p026_pr": {
+    "number": 30,
+    "state": "open",
+    "draft": true,
+    "base_sha": "bb945dc603ba2ae1673bb22866cc929d037fb9dd",
+    "created_head_sha": "c65201bad5be5cab8434316eabfc25bdbffa9657",
+    "merge_sha": null
+  },
+  "candidate": {
+    "source_sha": "bb945dc603ba2ae1673bb22866cc929d037fb9dd",
+    "tree_sha": "8806c06d89881c9b41d5839babde84ca850dbd82",
+    "integration_head_matches_source": true,
+    "superseded_by_later_integration_source": false,
+    "p025_pr": {
+      "number": 29,
+      "merged": true,
+      "merge_sha": "bb945dc603ba2ae1673bb22866cc929d037fb9dd"
+    },
+    "p018_tracking_pr": {
+      "number": 22,
+      "draft": true,
+      "merged": false,
+      "head_sha": "8e951a005dbd684f1b3e09c35a27ed1d08001d14"
+    }
+  },
+  "cloud_qualification": {
+    "gate_j": "PASS",
+    "inherited_p025_preliminary_json": "still records gate_j pending from before the post-merge run; this P026 record adds the exact-merge run and consumer evidence",
+    "workflow": {
+      "run_id": 39782135426,
+      "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39782135426",
+      "conclusion": "success",
+      "head_sha": "bb945dc603ba2ae1673bb22866cc929d037fb9dd",
+      "build_job": "success",
+      "artifact_consumer_job": "success",
+      "release_validation": "skipped",
+      "release_publisher": "skipped"
+    },
+    "p018_preflight_safety_harness": {
+      "status": "PASS",
+      "source_commit": "8e951a005dbd684f1b3e09c35a27ed1d08001d14",
+      "script_sha256": "8044ccfd6ccd199c01746bcc67985fabf3c5c1a9",
+      "scope": "host-only guarded stubs; no physical device evidence"
+    },
+    "artifacts": {
+      "payload": {
+        "id": 12428152331,
+        "name": "beszel-ios-arm64",
+        "size_bytes": 16366579,
+        "downloaded_archive_sha256": "b87b8545f1104c0915e39634275d91467f88e993a9c14def2bbc24eaf71d0c99",
+        "archive_digest_matches_github": true,
+        "sha256sums_valid": true
+      },
+      "native_validation": {
+        "id": 12428676214,
+        "name": "ios-native-validation",
+        "size_bytes": 15810,
+        "downloaded_archive_sha256": "fafe67f1c2a8634d689f98e8dee1f1c9da070244136d2a35f1d5d48b8357bcc5",
+        "archive_digest_matches_github": true
+      },
+      "artifact_consumer": {
+        "id": 12428267122,
+        "name": "ios-artifact-consumer-verification",
+        "size_bytes": 3481,
+        "downloaded_archive_sha256": "e5189ca9667a4e868d87081abb536af56bd810662ea6f331515397bc05ee7640",
+        "verification_status": "PASS"
+      }
+    },
+    "binaries": {
+      "agent": {
+        "name": "beszel-agent-ios-arm64",
+        "bytes": 9576424,
+        "sha256": "3db9aa10205add17318e832ad561604bb8d0e23466d90f5da9a8ffecbf32ec42",
+        "cpu": "arm64",
+        "minimum_ios": "12.0",
+        "source_revision": "bb945dc603ba2ae1673bb22866cc929d037fb9dd"
+      },
+      "hub": {
+        "name": "beszel-hub-ios-arm64",
+        "bytes": 32174816,
+        "sha256": "e746ea219c5e30ec2e749bf1d1c247f473d00ae2b49c31d0575ba132d0c6f202",
+        "cpu": "arm64",
+        "minimum_ios": "12.0",
+        "source_revision": "bb945dc603ba2ae1673bb22866cc929d037fb9dd"
+      }
+    },
+    "a7_static_runtime_check": "PASS_FOR_REPORTED_RUNTIME_SYMBOL_ONLY"
+  },
+  "device": {
+    "expected_model": "iPad mini 2 A1489 / iPad4,4",
+    "expected_soc": "Apple A7 ARM64",
+    "expected_ios": "12.5.7",
+    "expected_jailbreak": "Amethyst / Procursus rootful semi-untethered",
+    "observed_preflight": null,
+    "preflight_status": "PENDING_OPERATOR_OUTPUT",
+    "recovery_capability": "PENDING_OPERATOR_REPORT"
+  },
+  "phase_status": {
+    "A_read_only_preflight": "PENDING_OPERATOR_OUTPUT",
+    "B_artifact_verification_and_local_staging": "PASS",
+    "C_backup_and_recovery": "NOT_STARTED_REQUIRES_SEPARATE_APPROVAL",
+    "D_isolated_transfer_signing_runtime": "NOT_STARTED_REQUIRES_SEPARATE_APPROVAL",
+    "E_functional_acceptance": "NOT_STARTED",
+    "F_controlled_upgrade_and_rollback": "NOT_STARTED_REQUIRES_SEPARATE_APPROVAL",
+    "G_reboot_and_persistence": "NOT_STARTED_REQUIRES_SEPARATE_APPROVAL",
+    "H_gate_f_review": "PENDING"
+  },
+  "release_authorization": "NOT_GRANTED",
+  "safety": {
+    "device_changes_made": false,
+    "production_ios_changed": false,
+    "public_release_created": false,
+    "secrets_disclosed": false,
+    "production_database_touched": false,
+    "services_stopped": false,
+    "reboot_performed": false
+  },
+  "unresolved_blockers": [
+    "Actual read-only device preflight output and operator recovery-capability report are pending.",
+    "Separate operator approvals are required before backup/service-stop, candidate transfer/signing/execution, production upgrade, or reboot."
+  ],
+  "next_exact_action": "Run the pinned P018 read-only preflight through the operator's existing SSH alias and submit sanitized output."
+}
