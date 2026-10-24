@@ -33,6 +33,7 @@
   },
   "cloud_qualification": {
     "gate_j": "PASS",
+    "inherited_p025_preliminary_json": "still records gate_j pending from before the post-merge run; this P026 record adds the exact-merge run and consumer evidence",
     "workflow": {
       "run_id": 39782135426,
       "url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/39782135426",

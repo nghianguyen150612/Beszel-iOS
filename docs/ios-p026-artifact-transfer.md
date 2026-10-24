@@ -17,6 +17,8 @@
 
 The current integration ref is still exactly the frozen source SHA. No later integration source update has superseded this candidate.
 
+The inherited P025 preliminary validation and artifact-manifest files still say gate_j is pending because they were written before the post-merge run. The exact-merge run and its passing artifact consumer below provide the later evidence; P026 records that completed checkpoint without rewriting the historical preliminary P025 snapshot.
+
 ## Independently checked downloaded bytes
 
 The GitHub artifact API associated each artifact with workflow 39782135426 and source SHA bb945dc603ba2ae1673bb22866cc929d037fb9dd. Downloaded archive hashes were calculated from the bytes obtained in this session and match GitHub's artifact digest metadata:

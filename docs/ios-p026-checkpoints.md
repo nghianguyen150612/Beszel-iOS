@@ -11,6 +11,7 @@ Recorded 2026-10-24 UTC.
 - P025 workflow 39782135426 completed SUCCESS on that exact merge SHA.
 - The build, Procursus update check, and separate artifact-consumer verification jobs succeeded. Release validation and publishing were skipped.
 - P025 Gate J is PASS for the frozen merge source and exact-run artifacts.
+- The inherited P025 preliminary validation and artifact-manifest JSON still say gate_j is pending from their pre-merge checkpoint. The post-merge exact-source run and passing consumer close that checkpoint; P026 records the later evidence while leaving the historical preliminary snapshot intact.
 - P018 PR #22 remains Draft at head 8e951a005dbd684f1b3e09c35a27ed1d08001d14. Its old source branch is used only for the reviewed read-only preflight helper; no P018 source branch was merged.
 - No later integration source update has superseded the frozen candidate.
 - The pinned P018 preflight and its host-side safety harness were syntax-checked; the harness passed. This is host-only safety evidence, not physical evidence.
