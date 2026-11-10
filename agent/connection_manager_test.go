@@ -397,7 +397,8 @@ func TestConnectionManager_PreservesPendingWebSocket(t *testing.T) {
 			cm.eventChan = make(chan ConnectionEvent, 1)
 			cm.agent.connectionManager = cm
 			client := &WebSocketClient{agent: cm.agent, hubURL: &url.URL{Host: "test-hub"}, options: &gws.ClientOption{
-				Addr: "ws" + strings.TrimPrefix(hub.URL, "http"),
+				Addr:      "ws" + strings.TrimPrefix(hub.URL, "http"),
+				NewDialer: func() (gws.Dialer, error) { return &net.Dialer{}, nil },
 			}}
 			cm.wsClient = client
 			defer client.Close()
@@ -406,7 +407,9 @@ func TestConnectionManager_PreservesPendingWebSocket(t *testing.T) {
 			require.NotNil(t, original)
 
 			// Reproduce a slow successful dial with the retry ticker ready before auth is processed.
+			client.connMu.Lock()
 			client.lastConnectAttempt = time.Now().Add(-11 * time.Second)
+			client.connMu.Unlock()
 			if verified {
 				client.connMu.Lock()
 				client.hubVerified = true
