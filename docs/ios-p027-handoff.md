@@ -29,7 +29,7 @@ unchanged. Existing API authorization and WebSocket regressions were ported.
 The iOS Build PR trigger now includes the stacked P026 target; upstream
 synchronization workflows and schedules are untouched.
 
-Next batch: qualify x/net 0.62.0, PocketBase 0.40.6, CBOR and shoutrrr
+Next batch: qualify PocketBase 0.40.6, CBOR and shoutrrr
 upgrades (5750cead); run full synthetic migration harness before accepting
 PocketBase changes. Review upstream Battery json/v2, swap telemetry and
 no_self_update against existing iOS adapters/build contracts. Then remaining
@@ -69,3 +69,67 @@ ac6f73f025d7e8e468e44cf793c2849c49e7f1df fix(hub): verify write access to target
  internal/users/users_test.go                     | 53 ++++++++++++++
  11 files changed, 312 insertions(+), 8 deletions(-)
 ```
+
+## Host validation (Linux)
+
+All Go commands below used `/workspace/.tools/go1.27.1/bin` first on PATH;
+auto toolchain selection used Go 1.27.3 as required by go.mod.
+
+| Result | Command / scope | Exact outcome |
+| --- | --- | --- |
+| PASS | `go test -p 2 -tags='testing no_ui' ./internal/hub ./agent ./internal/users` | exit 0; Hub 215.385s, Agent 51.399s, users 89.697s |
+| PASS | `go vet -p 2 -tags='testing no_ui' ./internal/hub ./agent ./internal/users` | exit 0 |
+| PASS | `go build -p 2 -tags=no_ui -o /workspace/scratch/beszel-p027-hub ./internal/cmd/hub` | exit 0 |
+| PASS | `go build -p 2 -o /workspace/scratch/beszel-p027-agent ./internal/cmd/agent` | exit 0 |
+| PASS | `bun install --frozen-lockfile --cwd internal/site` then `bun run --cwd internal/site build` | exit 0; Vite completed; chunk-size warning only |
+| PASS | `sh tests/ios-patch-sentinels.sh` | 45 passed, 0 failed |
+| PASS | `python3 tests/ios-workflow-isolation-test.py` | 41 passed, 0 failed; includes stacked PR trigger |
+| PASS | `sh tests/ios-macho-validation-test.sh` | 9 passed, 0 failed; fixture validation only |
+| PASS | `python3 -m unittest discover -s tests/hub-migration -p 'test_*.py'` | 7 passed; synthetic backup/restore fixtures |
+| PASS | `python3 -m unittest discover -s tests/audit -p 'test_*.py'` with Go PATH | 137 passed |
+| PASS | `go mod verify` | all modules verified |
+| PASS | `git diff --check` | exit 0 |
+| BLOCKED | local native iOS/ARM64 link | Linux host lacks xcrun/iPhoneOS SDK; hosted native workflow requested |
+| NOT RUN | full old-to-new Hub migration harness | no PocketBase/schema/dependency change in this batch; required next batch |
+| NOT RUN | local race/full repository suites | targeted packages and existing hosted gates used; no full-suite claim |
+| DEFERRED | all physical-device gates | OWNER APPROVED |
+
+Initial checks retained for honesty: broad audit invocation without Go PATH
+FAILED with two OpenPGP guard JSON decode errors (the system `go` is not the
+Go compiler); corrected invocation passed all 137 tests. The first combined
+Hub/Agent run passed Hub but FAILED Agent because the imported regression
+fixture omitted P026's required explicit cancellable dialer. Commit
+fc86f938004a1fe44134c05322f0ac52c68a25f8 supplies that fixture adaptation and
+locks the simulated timestamp update. The focused regression and final
+three-package run passed. No test was removed or weakened.
+
+Frontend validation regenerated locale catalogs; only those build-generated
+changes were restored after the successful build, retaining the source patch.
+P026 historical evidence and all scheduled watcher files remain untouched.
+
+
+## Final dependency security batch
+
+The pinned govulncheck v1.9.0 symbol scan initially FAILED (exit 3): reachable
+GO-2026-6860 in x/net 0.61.0. Ported only the x/net 0.62.0 portion of official
+5750cead8db77ae5aeebea98a0db29d976116728; all other module versions and Go/A7
+contracts remain unchanged. PocketBase remains 0.40.5, so no schema upgrade
+or migration was introduced. Modified go.mod and go.sum.
+
+Final `govulncheck -tags=no_ui ./...`: PASS, exit 0, zero reachable findings;
+zero imported-package findings and one required-module-only advisory remain.
+This is a Linux source scan, not proof of iOS runtime security.
+
+Final post-dependency checks: PASS, `go test -p 1 -tags='testing no_ui'
+./internal/hub ./agent ./internal/users`: Hub 31.953s, Agent 17.307s,
+users cached. Host Hub/Agent builds, vet and `go mod verify` also PASS after
+the dependency change. The prior `-p 2` attempt FAILED because Hub and Agent
+packages share `/dev/shm/beszel_health` and raced on removal. Serial package
+execution (also used by existing CI gates) resolves this fixture collision;
+no product code, assertion or test was removed.
+
+Host qualification: selected checks PASS; full qualification BLOCKED pending
+hosted native iOS results and remaining dependency/protocol/migration batches.
+Full old-to-new migration and local race suites remain NOT RUN in this batch.
+Device qualification: DEFERRED — OWNER APPROVED.
+Draft PR: https://github.com/nghianguyen150612/Beszel-iOS/pull/31
