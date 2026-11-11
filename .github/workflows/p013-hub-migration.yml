@@ -31,6 +31,10 @@ jobs:
   genuine-hub-fixture:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        upgrade_path: [direct, via-p027]
     env:
       PYTHONDONTWRITEBYTECODE: "1"
       BESZEL_HEALTH_DIR: ${{ github.workspace }}/.task/health
@@ -72,18 +76,19 @@ jobs:
 
       - name: Build genuine v0.19 fixture and reopen with v0.19
         shell: bash
+        env:
+          UPGRADE_PATH: ${{ matrix.upgrade_path }}
         run: |
           set -euo pipefail
-          python3 tests/hub-migration/harness.py --output "$RUNNER_TEMP/p013-hub-fixture-evidence"
-          python3 tests/hub-migration/harness.py --via-p027 --output "$RUNNER_TEMP/p028-p027-fixture-evidence"
+          args=()
+          if [ "$UPGRADE_PATH" = via-p027 ]; then args+=(--via-p027); fi
+          python3 tests/hub-migration/harness.py "${args[@]}" --output "$RUNNER_TEMP/p013-hub-fixture-evidence"
 
       - name: Upload synthetic fixture manifest only
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: p013-hub-recovery-evidence
-          path: |
-            ${{ runner.temp }}/p013-hub-fixture-evidence/
-            ${{ runner.temp }}/p028-p027-fixture-evidence/
+          name: p013-hub-recovery-evidence-${{ matrix.upgrade_path }}
+          path: ${{ runner.temp }}/p013-hub-fixture-evidence/
           if-no-files-found: ignore
           retention-days: 14
