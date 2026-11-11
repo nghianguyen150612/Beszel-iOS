@@ -133,3 +133,27 @@ hosted native iOS results and remaining dependency/protocol/migration batches.
 Full old-to-new migration and local race suites remain NOT RUN in this batch.
 Device qualification: DEFERRED — OWNER APPROVED.
 Draft PR: https://github.com/nghianguyen150612/Beszel-iOS/pull/31
+
+
+## P027 upstream refresh — 2026-11-10
+
+Fresh fetch verified official `main` at `800d18bbb5fa2240b6dbc7e155f3af0c34c01ad5` (`2026-11-10T14:29:34-05:00`). Fork tracking `main` remains `85d168c385907293c116814590bc468c82783154`, the merge base, and is 10 commits behind. P026 baseline and P027 ancestry are unchanged; their common ancestor with upstream is `b97abf7662a7c7a2dd7542ea2062405abd22d4dc`, with 38 upstream ancestry commits to the refreshed head (33 at the previous snapshot). Production `iOS` remains `0c3e4cd22ac24264834c401ad412e44aeda4e4f3`. The actual P027 PR remains draft #31 against the unmerged P026 branch.
+
+The refreshed delta ledger now includes all five commits after the prior `3392dcc6` snapshot. Of the 10 commits from fork `main` to current upstream `main`, P027 contains three earlier authorization/WebSocket ports and now ports the update-command bootstrap fix (`2c1980f4`), alerts actions menu (`53a8b8a9`), and timing-rounding fix (`aec15f83`). The latter two preserve P026 name rendering and include upstream tests. The remaining four changes are Linux RAID/DNF/systemd/SELinux-specific and are classified `UPSTREAM ONLY / NOT APPLICABLE`; no Linux service or SELinux behavior was added to iOS. See `ios-p027-upstream-ledger.csv` for full SHAs and commit mapping.
+
+New implementation commits: `f8b5d7bc` (source `2c1980f4`), `02ed1133` (source `aec15f83`), and `b5afaa01` (source `53a8b8a9`). The build/timing/table changes were validated on the host; see the refreshed PR body and CI results for exact outcomes. Device qualification remains **DEFERRED — OWNER APPROVED**; P026 evidence is preserved.
+
+
+### Current-head host checks — implementation `b5afaa01` (2026-11-11)
+
+| Result | Command | Outcome |
+| --- | --- | --- |
+| PASS | `bun install --frozen-lockfile --cwd internal/site` | Locked frontend dependencies installed. |
+| PASS | `bun run --cwd internal/site build` | TypeScript and Vite production build succeeded; existing chunk-size and dynamic/static locale import warnings only. |
+| PASS | `bun test tests/utils.test.ts` (from `internal/site`) | 5 passed, 0 failed, 36 assertions. |
+| PASS | `go test -p 1 -tags='testing no_ui' ./internal/cmd/hub` | Exit 0, including update-command detection regression. |
+| PASS | `go build -p 1 -tags=no_ui -o /workspace/scratch/beszel-p027-hub ./internal/cmd/hub` | Exit 0. |
+| PASS | `go vet -p 1 -tags='testing no_ui' ./internal/cmd/hub` | Exit 0. |
+| PASS | `git diff --check` | Exit 0. |
+
+The first Go test attempt preceded the frontend build and stopped because the embedded `internal/site/dist` directory did not yet exist; the documented frontend build created it and the repeated Go test passed. The hub command build and vet used Go 1.27.3. Previous P027 host Hub/Agent tests, build and audit results remain recorded above. Hosted native CI is required for the final head; local Xcode/iOS SDK is unavailable. Device qualification: **DEFERRED — OWNER APPROVED**.
