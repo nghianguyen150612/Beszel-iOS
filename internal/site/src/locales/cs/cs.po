@@ -88,6 +88,10 @@ msgstr "{total, plural, one {# aktualizace} few {# aktualizace} many {# aktualiz
 msgid "{totalCount, plural, one {# service} other {# services}}"
 msgstr "{totalCount, plural, one {# služba} few {# služby} many {# služby} other {# služeb}}"
 
+#: src/components/alerts-history-columns.tsx
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr ""
+
 #: src/lib/utils.ts
 msgid "1 hour"
 msgstr "1 hodina"
@@ -209,6 +213,7 @@ msgstr "Historie upozornění"
 
 #: src/components/alerts/alert-button.tsx
 #: src/components/alerts/alerts-sheet.tsx
+#: src/components/system-actions-button.tsx
 msgid "Alerts"
 msgstr "Výstrahy"
 
@@ -229,7 +234,7 @@ msgstr "Všechny kontejnery"
 msgid "All Systems"
 msgstr "Všechny systémy"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Are you sure you want to delete {name}?"
 msgstr "Opravdu chcete odstranit {name}?"
 
@@ -242,13 +247,13 @@ msgstr "Jste si jistý?"
 msgid "Automatic copy requires a secure context."
 msgstr "Automatická kopie vyžaduje zabezpečený kontext."
 
-#. Package version available to install
-#: src/components/routes/system/package-updates-table.tsx
+#: src/components/routes/system/storage-pools-table.tsx
+msgctxt "Disk space available"
 msgid "Available"
 msgstr "Dostupné"
 
-#: src/components/routes/system/storage-pools-table.tsx
-msgctxt "Disk space available"
+#. Package version available to install
+#: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
 msgstr "Dostupné"
 
@@ -401,7 +406,7 @@ msgstr "Může zastavit"
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Cancel"
 msgstr "Zrušit"
 
@@ -426,6 +431,10 @@ msgstr "Celsia (°C)"
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Certificate"
 msgstr "Certifikát"
+
+#: src/lib/alerts.ts
+msgid "Certificate Expiration"
+msgstr ""
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Certificate expired {expires}"
@@ -576,7 +585,7 @@ msgstr "Kontejnery"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Continue"
 msgstr "Pokračovat"
 
@@ -610,7 +619,7 @@ msgctxt "Copy alerts from another system"
 msgid "Copy from"
 msgstr "Kopírovat z"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy host"
 msgstr "Kopírovat hostitele"
 
@@ -619,7 +628,7 @@ msgstr "Kopírovat hostitele"
 msgid "Copy Linux command"
 msgstr "Kopírovat příkaz Linux"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy name"
 msgstr "Kopírovat název"
 
@@ -638,6 +647,11 @@ msgstr "Zkopírujte instalační příkaz pro agenta níže nebo automaticky reg
 #: src/components/add-system.tsx
 msgid "Copy the<0>docker-compose.yml</0> content for the agent below, or register agents automatically with a <1>universal token</1>."
 msgstr "Zkopírujte obsah <0>docker-compose.yml</0> pro agenta níže nebo automaticky registrujte agenty s <1>univerzálním token</1>."
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Copy token"
+msgstr ""
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy YAML"
@@ -761,7 +775,7 @@ msgstr "Výchozí doba"
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/system/smart-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Delete"
 msgstr "Odstranit"
 
@@ -857,7 +871,7 @@ msgstr "Doba trvání"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Edit"
 msgstr "Upravit"
 
@@ -958,6 +972,7 @@ msgstr "Stávající systémy, které nejsou definovány v <0>config.yml</0>, bu
 msgid "Exited active"
 msgstr "Ukončeno aktivně"
 
+#: src/components/alerts-history-columns.tsx
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Expired"
 msgstr "Vypršelo"
@@ -965,6 +980,10 @@ msgstr "Vypršelo"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Expires after one hour or on hub restart."
 msgstr "Vyprší po jedné hodině nebo při restartu hubu."
+
+#: src/components/alerts/alerts-sheet.tsx
+msgid "Expires within <0>{value, plural, one {# day} other {# days}}</0>"
+msgstr ""
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -1141,6 +1160,11 @@ msgstr "Heartbeat úspěšně odeslán"
 #: src/components/logs-display.tsx
 msgid "Hide timestamps"
 msgstr "Skrýt časová razítka"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Hide token"
+msgstr ""
 
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
@@ -1438,6 +1462,10 @@ msgstr "Síťový provoz veřejných rozhraní"
 msgid "Network unit"
 msgstr "Síťová jednotka"
 
+#: src/components/routes/system/cpu-sheet.tsx
+msgid "Nice"
+msgstr ""
+
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
@@ -1504,6 +1532,11 @@ msgstr "Podpora OAuth 2 / OIDC"
 msgid "On each restart, systems in the database will be updated to match the systems defined in the file."
 msgstr "Při každém restartu budou systémy v databázi aktualizovány tak, aby odpovídaly systémům definovaným v souboru."
 
+#. placeholder {0}: alert.value
+#: src/components/active-alerts.tsx
+msgid "One or more certificates expire within {0, plural, one {# day} other {# days}}"
+msgstr ""
+
 #: src/lib/alerts.ts
 msgid "One or more containers are unhealthy"
 msgstr "Jeden nebo více kontejnerů není v pořádku"
@@ -1532,7 +1565,7 @@ msgstr "Jednorázové heslo"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/system/smart-table.tsx
 #: src/components/routes/system/storage-pools-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Open menu"
 msgstr "Otevřít menu"
 
@@ -1597,6 +1630,10 @@ msgid "Password must be at least 8 characters."
 msgstr "Heslo musí obsahovat alespoň 8 znaků."
 
 #: src/components/login/auth-form.tsx
+msgid "Password must be at most 71 characters."
+msgstr ""
+
+#: src/components/login/auth-form.tsx
 msgid "Password must be less than 72 bytes."
 msgstr "Heslo musí být menší než 72 bytů."
 
@@ -1614,7 +1651,7 @@ msgid "Patch"
 msgstr "Záplata"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Pause"
 msgstr "Pozastavit"
 
@@ -1834,9 +1871,14 @@ msgid "Restarts"
 msgstr "Restarty"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Resume"
 msgstr "Pokračovat"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Reveal token"
+msgstr ""
 
 #. Package version
 #: src/components/routes/system/package-updates-table.tsx
@@ -2010,7 +2052,6 @@ msgstr "Pro povolení monitorování heartbeat nastavte na hubu Beszel následuj
 #: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
-#: src/components/routes/system/info-bar.tsx
 msgid "Settings"
 msgstr "Nastavení"
 
@@ -2034,6 +2075,10 @@ msgstr "Síla signálu připojených rozhraní Wi-Fi"
 #: src/components/command-palette.tsx
 msgid "SMTP settings"
 msgstr "Nastavení SMTP"
+
+#: src/components/routes/system/cpu-sheet.tsx
+msgid "SoftIRQ"
+msgstr ""
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/systems-table/systems-table.tsx
@@ -2179,7 +2224,7 @@ msgstr "Celkový stav je <0>ok</0>, když jsou všechny systémy v provozu, <1>w
 msgid "Then log into the backend and reset your user account password in the users table."
 msgstr "Poté se přihlaste do backendu a obnovte heslo k uživatelskému účtu v tabulce uživatelů."
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "This action cannot be undone. This will permanently delete all current records for {name} from the database."
 msgstr "Tuto akci nelze vzít zpět. Tím se z databáze trvale odstraní všechny aktuální záznamy pro {name}."
 
@@ -2208,6 +2253,15 @@ msgstr "Na email(y)"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token"
 msgstr "Token"
+
+#. placeholder {0}: fingerprint.expand.system.name
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Token for {0}"
+msgstr ""
+
+#: src/components/token-value.tsx
+msgid "Token hidden"
+msgstr ""
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -2271,6 +2325,10 @@ msgstr "Spustí se, když využití paměti během 5 minut překročí prahovou 
 #: src/lib/alerts.ts
 msgid "Triggers when a container's health check reports unhealthy"
 msgstr "Spustí se, když kontrola stavu kontejneru oznámí nezdravý stav"
+
+#: src/lib/alerts.ts
+msgid "Triggers when an HTTPS certificate nears expiration"
+msgstr ""
 
 #: src/lib/alerts.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -2341,6 +2399,7 @@ msgid "Unit preferences"
 msgstr "Předvolby jednotek"
 
 #: src/components/command-palette.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Universal token"
 msgstr "Univerzální token"
@@ -2444,6 +2503,7 @@ msgid "Value"
 msgstr "Hodnota"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table.tsx
 msgid "View"
 msgstr "Zobrazení"

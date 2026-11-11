@@ -88,6 +88,10 @@ msgstr "{total, plural, one {# aktualizacja} few {# aktualizacje} many {# aktual
 msgid "{totalCount, plural, one {# service} other {# services}}"
 msgstr "{totalCount, plural, one {# usługa} few {# usługi} many {# usług} other {# usługi}}"
 
+#: src/components/alerts-history-columns.tsx
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr ""
+
 #: src/lib/utils.ts
 msgid "1 hour"
 msgstr "1 godzina"
@@ -209,6 +213,7 @@ msgstr "Historia alertów"
 
 #: src/components/alerts/alert-button.tsx
 #: src/components/alerts/alerts-sheet.tsx
+#: src/components/system-actions-button.tsx
 msgid "Alerts"
 msgstr "Alerty"
 
@@ -229,7 +234,7 @@ msgstr "Wszystkie kontenery"
 msgid "All Systems"
 msgstr "Wszystkie systemy"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Are you sure you want to delete {name}?"
 msgstr "Czy na pewno chcesz usunąć {name}?"
 
@@ -242,13 +247,13 @@ msgstr "Czy jesteś pewien?"
 msgid "Automatic copy requires a secure context."
 msgstr "Automatyczne kopiowanie wymaga bezpiecznego kontekstu."
 
-#. Package version available to install
-#: src/components/routes/system/package-updates-table.tsx
+#: src/components/routes/system/storage-pools-table.tsx
+msgctxt "Disk space available"
 msgid "Available"
 msgstr "Dostępne"
 
-#: src/components/routes/system/storage-pools-table.tsx
-msgctxt "Disk space available"
+#. Package version available to install
+#: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
 msgstr "Dostępne"
 
@@ -401,7 +406,7 @@ msgstr "Może zatrzymać"
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Cancel"
 msgstr "Anuluj"
 
@@ -426,6 +431,10 @@ msgstr "Celsjusza (°C)"
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Certificate"
 msgstr "Certyfikat"
+
+#: src/lib/alerts.ts
+msgid "Certificate Expiration"
+msgstr ""
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Certificate expired {expires}"
@@ -576,7 +585,7 @@ msgstr "Kontenery"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Continue"
 msgstr "Kontynuuj"
 
@@ -610,7 +619,7 @@ msgctxt "Copy alerts from another system"
 msgid "Copy from"
 msgstr "Kopiuj z"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy host"
 msgstr "Kopiuj host"
 
@@ -619,7 +628,7 @@ msgstr "Kopiuj host"
 msgid "Copy Linux command"
 msgstr "Kopiuj polecenie Linux"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy name"
 msgstr "Kopiuj nazwę"
 
@@ -638,6 +647,11 @@ msgstr "Skopiuj poniżej polecenie instalacji agenta albo zarejestruj agentów a
 #: src/components/add-system.tsx
 msgid "Copy the<0>docker-compose.yml</0> content for the agent below, or register agents automatically with a <1>universal token</1>."
 msgstr "Skopiuj poniżej zawartość pliku <0>docker-compose.yml</0> dla agenta lub zarejestruj agentów automatycznie przy użyciu <1>uniwersalnego tokenu</1>."
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Copy token"
+msgstr ""
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy YAML"
@@ -761,7 +775,7 @@ msgstr "Domyślny przedział czasu"
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/system/smart-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Delete"
 msgstr "Usuń"
 
@@ -857,7 +871,7 @@ msgstr "Czas trwania"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Edit"
 msgstr "Edytuj"
 
@@ -958,6 +972,7 @@ msgstr "Istniejące systemy, które nie są zdefiniowane w <0>config.yml</0>, zo
 msgid "Exited active"
 msgstr "Zakończono aktywnie"
 
+#: src/components/alerts-history-columns.tsx
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Expired"
 msgstr "Wygasły"
@@ -965,6 +980,10 @@ msgstr "Wygasły"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Expires after one hour or on hub restart."
 msgstr "Wygasa po godzinie lub przy ponownym uruchomieniu huba."
+
+#: src/components/alerts/alerts-sheet.tsx
+msgid "Expires within <0>{value, plural, one {# day} other {# days}}</0>"
+msgstr ""
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -1141,6 +1160,11 @@ msgstr "Heartbeat wysłany pomyślnie"
 #: src/components/logs-display.tsx
 msgid "Hide timestamps"
 msgstr "Ukryj znaczniki czasu"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Hide token"
+msgstr ""
 
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
@@ -1438,6 +1462,10 @@ msgstr "Ruch sieciowy interfejsów publicznych"
 msgid "Network unit"
 msgstr "Jednostka sieciowa"
 
+#: src/components/routes/system/cpu-sheet.tsx
+msgid "Nice"
+msgstr ""
+
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
@@ -1504,6 +1532,11 @@ msgstr "Wsparcie OAuth 2 / OIDC"
 msgid "On each restart, systems in the database will be updated to match the systems defined in the file."
 msgstr "Przy każdym ponownym uruchomieniu systemy w bazie danych będą aktualizowane, aby odpowiadały systemom zdefiniowanym w pliku."
 
+#. placeholder {0}: alert.value
+#: src/components/active-alerts.tsx
+msgid "One or more certificates expire within {0, plural, one {# day} other {# days}}"
+msgstr ""
+
 #: src/lib/alerts.ts
 msgid "One or more containers are unhealthy"
 msgstr "Co najmniej jeden kontener jest w złym stanie"
@@ -1532,7 +1565,7 @@ msgstr "Hasło jednorazowe"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/system/smart-table.tsx
 #: src/components/routes/system/storage-pools-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Open menu"
 msgstr "Otwórz menu"
 
@@ -1597,6 +1630,10 @@ msgid "Password must be at least 8 characters."
 msgstr "Hasło musi zawierać co najmniej 8 znaków."
 
 #: src/components/login/auth-form.tsx
+msgid "Password must be at most 71 characters."
+msgstr ""
+
+#: src/components/login/auth-form.tsx
 msgid "Password must be less than 72 bytes."
 msgstr "Hasło musi być mniejsze niż 72 bajty."
 
@@ -1614,7 +1651,7 @@ msgid "Patch"
 msgstr "Poprawka"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Pause"
 msgstr "Pauza"
 
@@ -1834,9 +1871,14 @@ msgid "Restarts"
 msgstr "Uruchamia ponownie"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Resume"
 msgstr "Wznów"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Reveal token"
+msgstr ""
 
 #. Package version
 #: src/components/routes/system/package-updates-table.tsx
@@ -2010,7 +2052,6 @@ msgstr "Ustaw następujące zmienne środowiskowe w hubie Beszel, aby włączyć
 #: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
-#: src/components/routes/system/info-bar.tsx
 msgid "Settings"
 msgstr "Ustawienia"
 
@@ -2034,6 +2075,10 @@ msgstr "Siła sygnału połączonych interfejsów Wi-Fi"
 #: src/components/command-palette.tsx
 msgid "SMTP settings"
 msgstr "Ustawienia SMTP"
+
+#: src/components/routes/system/cpu-sheet.tsx
+msgid "SoftIRQ"
+msgstr ""
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/systems-table/systems-table.tsx
@@ -2179,7 +2224,7 @@ msgstr "Ogólny status to <0>ok</0>, gdy wszystkie systemy działają, <1>ostrze
 msgid "Then log into the backend and reset your user account password in the users table."
 msgstr "Następnie zaloguj się do panelu administracyjnego i  zresetuj hasło do konta użytkownika w tabeli użytkowników."
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "This action cannot be undone. This will permanently delete all current records for {name} from the database."
 msgstr "Tej akcji nie można cofnąć. Spowoduje to trwałe usunięcie wszystkich bieżących rekordów dla {name} z bazy danych."
 
@@ -2208,6 +2253,15 @@ msgstr "Do e-mail(ów)"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token"
 msgstr "Token"
+
+#. placeholder {0}: fingerprint.expand.system.name
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Token for {0}"
+msgstr ""
+
+#: src/components/token-value.tsx
+msgid "Token hidden"
+msgstr ""
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -2271,6 +2325,10 @@ msgstr "Uruchamia się, gdy 5-minutowe średnie obciążenie systemu przekroczy 
 #: src/lib/alerts.ts
 msgid "Triggers when a container's health check reports unhealthy"
 msgstr "Wyzwala alert, gdy kontrola stanu kontenera zgłosi nieprawidłowy stan"
+
+#: src/lib/alerts.ts
+msgid "Triggers when an HTTPS certificate nears expiration"
+msgstr ""
 
 #: src/lib/alerts.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -2341,6 +2399,7 @@ msgid "Unit preferences"
 msgstr "Ustawienia jednostek"
 
 #: src/components/command-palette.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Universal token"
 msgstr "Uniwersalny token"
@@ -2444,6 +2503,7 @@ msgid "Value"
 msgstr "Wartość"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table.tsx
 msgid "View"
 msgstr "Widok"
