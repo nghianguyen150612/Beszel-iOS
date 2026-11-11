@@ -293,3 +293,57 @@ Remaining P028 work:
 Device qualification: **DEFERRED — OWNER APPROVED**. No device, production
 database, deployment, release, merge, PF or LaunchDaemon action occurred.
 Production `iOS` remains unchanged.
+
+
+## Recovery checkpoint — 2026-11-11, x/crypto security fix
+
+Repository: `/workspace/work/Beszel-iOS`. The implementation source is
+`b85cd8d9ee3bd7f054a6222fb2b50a265a3020f9` on
+`ios/p028-dependency-migration`, based on P027
+`c239ce0d8931405f728ef4763ad68bbbe187a9ac`. The remote branch was confirmed
+at that source before this handoff-only update. PR #32 remains Draft and targets
+`ios/p027-upstream-port`. Production `iOS` remains
+`0c3e4cd22ac24264834c401ad412e44aeda4e4f3`. Official Beszel main remains
+`800d18bbb5fa2240b6dbc7e155f3af0c34c01ad5`.
+
+Source commit `b85cd8d9` updates `golang.org/x/crypto` from v0.58.0 to
+`v0.58.1-0.20261009181718-2f1f834330b2`, upstream source commit
+`2f1f834330b2d36ab3db8bfb33aaa1ac16794588`, addressing GO-2026-5932. The
+existing x/net v0.62.0, x/sys v0.49.0 and x/term v0.47.0 selections remain.
+
+Exact local validation on the source tree:
+
+- With Go 1.27.4, `go mod verify`: PASS; `go mod tidy -diff`: PASS.
+- `go test -p 2 ./agent ./internal/hub/...`: PASS.
+- `go vet -p 2 ./agent ./internal/hub/...`: PASS.
+- `govulncheck v1.9.0`, built with Go 1.27.4, `-json ./...`: exit 0,
+  symbol-level source scan, 62 modules, x/crypto at the fixed version, zero
+  findings. Raw report SHA-256:
+  `981baa0cd155d54ce244bfeef24e67f52234e09f91d6be98a7e4efdd3b21204a`.
+- A scanner binary built with Go 1.26.11 against Go 1.27 source exited 1 with
+  the exact diagnostic: `This application uses version go1.26 of the
+  source-processing packages but runs version go1.27 of 'go list'`; it also
+  reported `internal/testutil/telemetry/fixtures.go:3:1: package requires
+  newer Go version go1.27 (application built with go1.26)`. Rebuilding the
+  pinned scanner with Go 1.27.4 resolved it.
+- `govulncheck -scan=module ./...` exited 2 with
+  `patterns are not accepted for module only scanning`; the supported full
+  `./...` symbol-level source scan above completed successfully.
+
+Exact-source hosted checks for `b85cd8d9ee3bd7f054a6222fb2b50a265a3020f9`:
+P013 run 42998692955 PASS for direct job 130449111834 and via-P027 job
+130449112349. Artifacts: direct 13845298529, SHA-256
+`bba58bc39b13b4b13e80c162896c4846428ec49163dbbe84309dd7e3f8a20b0d`; via-P027
+13845952510, SHA-256
+`9c8b330255a84a8e73a03817fb58884fbe0071c341a8d95f474b04869cef642c`.
+iOS Build run 42998693337: Procursus job 130449114387 PASS; native build job
+130449114026 was QUEUED at this checkpoint. Older CI for 3b24fefa remains
+historical and is not attributed to b85cd8d9.
+
+Current P028 status: the GO-2026-5932 module finding is addressed by the fixed
+upstream version and clean local symbol scan. Remaining work includes the
+adapted pagination port and full locale-catalog applicability review. Next
+action: complete exact-source iOS build/artifact qualification, then continue
+pagination commit 237f9641960f6192ed18b42833046d8e3346911f around the preserved
+virtualized table and settings behavior. Device qualification remains
+**DEFERRED — OWNER APPROVED**. No physical-device or production action occurred.
