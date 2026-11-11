@@ -262,11 +262,12 @@ Exact-source hosted qualification for
   `not_authorized`. It is saved as
   `ios-p028-artifact-consumer-verification-3b24fefa.json`.
 
-At this checkpoint, tracked source changes are pushed; this handoff and the
-verified evidence files are local documentation changes awaiting a docs
-commit. Historical b872 migration and native artifacts remain valid only for
-their recorded source SHA. The later docs-only commit does not change the
-validated application source or claim new code qualification.
+Implementation source `3b24fefa07cd6c34d0ecb228e84e93a70e4dd3fb` is pushed and
+remote-confirmed. The handoff and verified evidence bundle were first pushed
+in docs-only commit `99312cc601b769325c6b239c406d0d34f05b8ef7`; subsequent
+handoff-only updates also leave application source unchanged and do not claim
+new code qualification. Historical b872 migration and native artifacts remain
+valid only for their recorded source SHA.
 
 Remaining P028 work:
 
