@@ -84,7 +84,7 @@ def frontend_assets(directory):
 def build_info(text, name, expected_commit=None):
     version = re.search(r'^.+: (go[0-9.]+)$', text, re.MULTILINE)
     path = re.search(r'^\s+path\s+(\S+)$', text, re.MULTILINE)
-    settings = dict(re.findall(r'^\s+build\s+([\w.]+)=(.*)$', text, re.MULTILINE))
+    settings = dict(re.findall(r'^\s+build\s+([-\w.]+)=(.*)$', text, re.MULTILINE))
     command = 'agent' if name == NAMES[0] else 'hub'
     if not version or version[1] != 'go1.27.3' or not path or path[1] != 'github.com/henrygd/beszel/internal/cmd/' + command:
         raise ValueError(f'{name}: wrong Go version or Agent/Hub entry package')
