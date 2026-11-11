@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Go 1.27.3 contains the native GO-2026-6809 x509 fix and test it."""
+"""Verify Go 1.27.4 contains the native GO-2026-6809 x509 fix and test it."""
 
 import argparse
 import hashlib
@@ -10,8 +10,8 @@ import subprocess
 import sys
 
 
-EXPECTED_GO = "go1.27.3"
-GO_ARCHIVE_SHA256 = "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40"
+EXPECTED_GO = "go1.27.4"
+GO_ARCHIVE_SHA256 = "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840"
 UPSTREAM_CHANGE = "https://go-review.googlesource.com/c/go/+/851047"
 UPSTREAM_COMMIT = "7f86f957633ee31a1c17a1eb8452ca7a3d9bc141"
 SOURCE_SHA256 = {
@@ -47,7 +47,7 @@ def verify_sources(goroot: Path, version: str, expected: dict[str, str] = SOURCE
             raise ValueError(f"Go source missing or symlinked: {relative}")
         actual = sha256(path)
         if actual != digest:
-            raise ValueError(f"unknown Go 1.27.3 x509 source for {relative}: {actual}")
+            raise ValueError(f"unknown Go 1.27.4 x509 source for {relative}: {actual}")
         observed[relative] = actual
 
     verify = (goroot / "src/crypto/x509/verify.go").read_text()
@@ -72,7 +72,7 @@ def validate(goroot: Path, version: str) -> dict:
         "status": "PASS",
         "advisory": "GO-2026-6809",
         "go_version": version,
-        "fix_disposition": "native in official Go 1.27.3; custom P019/P022 backport not applied",
+        "fix_disposition": "native in official Go 1.27.4; custom P019/P022 backport not applied",
         "upstream_change": UPSTREAM_CHANGE,
         "upstream_commit": UPSTREAM_COMMIT,
         "official_linux_amd64_archive_sha256": GO_ARCHIVE_SHA256,

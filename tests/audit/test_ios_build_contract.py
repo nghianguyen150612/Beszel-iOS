@@ -79,12 +79,12 @@ class PayloadTests(unittest.TestCase):
         (self.root / 'SHA256SUMS').write_text(self.manifest)
 
     def test_go_build_info_identifies_entry_package_and_target(self):
-        info = 'binary: go1.27.3\n\tpath\tgithub.com/henrygd/beszel/internal/cmd/agent\n\tbuild\t-tags=no_self_update\n\tbuild\tGOOS=ios\n\tbuild\tGOARCH=arm64\n\tbuild\tCGO_ENABLED=1\n\tbuild\tGOARM64=v8.0\n\tbuild\tvcs.revision=test-sha\n\tbuild\tvcs.modified=false\n'
+        info = 'binary: go1.27.4\n\tpath\tgithub.com/henrygd/beszel/internal/cmd/agent\n\tbuild\t-tags=no_self_update\n\tbuild\tGOOS=ios\n\tbuild\tGOARCH=arm64\n\tbuild\tCGO_ENABLED=1\n\tbuild\tGOARM64=v8.0\n\tbuild\tvcs.revision=test-sha\n\tbuild\tvcs.modified=false\n'
         artifacts.build_info(info, artifacts.NAMES[0], 'test-sha')
         artifacts.build_info(info.replace('-tags=no_self_update', '-tags=other,no_self_update'), artifacts.NAMES[0], 'test-sha')
         for invalid in [info.replace('-tags=no_self_update', '-tags=unrelated'), info.replace('/agent', '/hub'), info.replace('GOOS=ios','GOOS=darwin'),
                         info.replace('GOARCH=arm64','GOARCH=amd64'),info.replace('CGO_ENABLED=1','CGO_ENABLED=0'),
-                        info.replace('go1.27.3','go1.27.2'), info.replace('GOARM64=v8.0','GOARM64=v8.1'),
+                        info.replace('go1.27.4','go1.27.2'), info.replace('GOARM64=v8.0','GOARM64=v8.1'),
                         info.replace('test-sha','other-sha'),info.replace('vcs.modified=false','vcs.modified=true')]:
             with self.assertRaises(ValueError):artifacts.build_info(invalid, artifacts.NAMES[0], 'test-sha')
 

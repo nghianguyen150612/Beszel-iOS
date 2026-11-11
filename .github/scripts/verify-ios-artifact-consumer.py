@@ -296,8 +296,8 @@ def _validate_x509_report(path: Path):
             or report.get("native_source_sha256") != validator.SOURCE_SHA256
             or report.get("matches_reviewed_backport_outputs") is not True
             or not isinstance(test_result, dict) or test_result.get("status") != "PASS"
-            or report.get("fix_disposition") != "native in official Go 1.27.3; custom P019/P022 backport not applied"):
-        raise VerificationError("native x509 validation evidence does not match the reviewed Go 1.27.3 fix")
+            or report.get("fix_disposition") != "native in official Go 1.27.4; custom P019/P022 backport not applied"):
+        raise VerificationError("native x509 validation evidence does not match the reviewed Go 1.27.4 fix")
     return {
         "status": report["status"],
         "advisory": report["advisory"],
@@ -392,7 +392,7 @@ def _validate_reproducibility(native_dir: Path, frontend: Path, source_root: Pat
     toolchain = report.get("toolchain")
     if (report.get("source_sha") != source_sha or report.get("source_tree_sha") != source_tree_sha
             or report.get("workflow_run_id") != run_id or not isinstance(toolchain, dict)
-            or toolchain.get("go") != "go1.27.3"
+            or toolchain.get("go") != "go1.27.4"
             or not isinstance(toolchain.get("xcodebuild"), str)
             or not toolchain["xcodebuild"].startswith("Xcode ")
             or "Build version " not in toolchain["xcodebuild"]
@@ -474,11 +474,11 @@ def verify_candidate_artifacts(payload_dir: Path, native_dir: Path, frontend: Pa
     patch = _json_file(native_dir / "runtime-patch.json")
     patch_source = (source_root / ".github/scripts/patch-go-ios-arm64-runtime.py").read_text(encoding="utf-8")
     source_match = re.search(r'^SUPPORTED_SOURCE_SHA256 = "([0-9a-f]{64})"$', patch_source, re.MULTILINE)
-    if (patch.get("status") != "PASS" or patch.get("go") != "go1.27.3"
+    if (patch.get("status") != "PASS" or patch.get("go") != "go1.27.4"
             or patch.get("replacement") != "zero-guarded YIELD loop; no CNTFRQ_EL0/CNTVCT_EL0 reads"
             or not source_match or patch.get("source_sha256") != source_match.group(1)
             or not re.fullmatch(r"[0-9a-f]{64}", patch.get("patched_sha256", ""))):
-        raise VerificationError("native runtime patch report is not the reviewed Go 1.27.3 A7 patch")
+        raise VerificationError("native runtime patch report is not the reviewed Go 1.27.4 A7 patch")
     runtime_reports = {
         "agent": _validate_runtime_report(native_dir / "runtime-agent.json"),
         "hub": _validate_runtime_report(native_dir / "runtime-hub.json"),
@@ -518,7 +518,7 @@ def verify_candidate_artifacts(payload_dir: Path, native_dir: Path, frontend: Pa
             "source_sha": source_sha,
             "tree_sha": source_tree_sha,
             "pinned_upstream_sha": PINNED_UPSTREAM_SHA,
-            "go_version": "1.27.3",
+            "go_version": "1.27.4",
             "frontend_lockfile_sha256": file_sha256(source_root / "internal/site/bun.lock"),
             "build_workflow_sha256": file_sha256(source_root / ".github/workflows/ios-build.yml"),
             "runtime_patch_script_sha256": file_sha256(source_root / ".github/scripts/patch-go-ios-arm64-runtime.py"),
@@ -548,7 +548,7 @@ def verify_candidate_artifacts(payload_dir: Path, native_dir: Path, frontend: Pa
             "release_payload_layout": release_result["payload_files"],
         },
         "runtime": {
-            "go": "go1.27.3",
+            "go": "go1.27.4",
             "minimum_ios": "12.0",
             "target": EXPECTED_TARGET,
             "patch_source_sha256": file_sha256(source_root / ".github/scripts/patch-go-ios-arm64-runtime.py"),

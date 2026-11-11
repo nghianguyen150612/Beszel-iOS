@@ -22,13 +22,14 @@ would wrap and spin for 2^32 iterations. These are concrete tooling defects.
 ## Supported source and replacement
 
 P007 originally validated Go 1.27.1. P019 updated its candidate to Go 1.27.2.
-P023 updates the current candidate to **Go 1.27.3**, matching `go.mod`; the
-patcher requires exactly that version and the reviewed complete source SHA and
-executable function shape from Go 1.27.3 `src/runtime/asm_arm64.s` through its
-next-function comment boundary. P019's Go 1.27.2 source evidence remains
-historical.
+P023 updated its candidate to Go 1.27.3. P028 updates the current candidate to
+**Go 1.27.4**, matching `go.mod`; the patcher requires exactly that version and
+the reviewed complete source SHA and executable function shape from Go 1.27.4
+`src/runtime/asm_arm64.s` through its next-function comment boundary. The
+Go 1.27.4 runtime source is byte-identical to Go 1.27.3. P019's Go 1.27.2 and
+P023's Go 1.27.3 evidence remain historical.
 [Fixture provenance](../tests/audit/fixtures/go-runtime-provenance.md) records
-both upstream sources, attribution, BSD license and fixture hashes.
+the upstream sources, attribution, BSD license and fixture hashes.
 
 The patch resolves `go env -json GOROOT GOVERSION`, requires a valid absolute
 GOROOT and regular non-symlink runtime file, and checks one start and one end
@@ -53,8 +54,9 @@ leave the original intact and remove the temporary file. There is no guarantee
 against arbitrary concurrent writers after the last check; CI owns an exclusive
 job-local copy. A repeated invocation deliberately exits nonzero, with no write.
 Unsupported versions report the expected and observed version explicitly. The
-1.27.1 and 1.27.2 fixtures remain historical P007/P019 evidence; the P023
-patch tests use a separate full Go 1.27.3 runtime source fixture.
+1.27.1 and 1.27.2 fixtures remain historical P007/P019 evidence; P023 records
+the original Go 1.27.3 qualification, and the current patch tests use a separate
+full Go 1.27.4 runtime source fixture.
 
 ## Toolchain isolation
 
@@ -91,8 +93,9 @@ none substitutes for actual A7 execution.
 P007 hosted run URLs and results are historical evidence for Go 1.27.1. P019
 hosted runs remain evidence for Go 1.27.2. P023 records its own tested source
 SHA, Go 1.27.3 runtime hashes, artifact provenance and results in
-`ios-p023-a7-runtime-review.md` and the P023 checkpoint before this runtime
-refresh is considered qualified. Exact prior hosted run URLs, tested source SHA, runtime hashes and results are in
+`ios-p023-a7-runtime-review.md` and the P023 checkpoint. P028's Go 1.27.4
+source and runtime update requires fresh exact-head qualification before it is
+considered qualified. Exact prior hosted run URLs, tested source SHA, runtime hashes and results are in
 [`ios-build-validation.json`](ios-build-validation.json) and
 [PR #9](https://github.com/nghianguyen150612/Beszel-iOS/pull/9). The PR records the
 final documentation-inclusive HEAD and its rerun, avoiding a self-referential

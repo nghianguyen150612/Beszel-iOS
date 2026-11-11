@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Patch only the reviewed Go 1.27.3 ARM64 procyield body, atomically."""
+"""Patch only the reviewed Go 1.27.4 ARM64 procyield body, atomically."""
 
 import hashlib
 import json
@@ -9,11 +9,11 @@ import stat
 import subprocess
 import tempfile
 
-SUPPORTED_VERSION = "go1.27.3"
+SUPPORTED_VERSION = "go1.27.4"
 SUPPORTED_SOURCE_SHA256 = "47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db"
 START = "TEXT runtime·procyieldAsm(SB),NOSPLIT,$0-0"
 END = "\n// Save state of caller into g->sched,"
-# Complete executable source shape from go1.27.3/src/runtime/asm_arm64.s.
+# Complete executable source shape from go1.27.4/src/runtime/asm_arm64.s.
 # Comments and horizontal whitespace carry no assembly semantics. All other
 # lines (including directives, labels and unexpected instructions) must match.
 expected_shape = (
@@ -72,7 +72,7 @@ def main():
         original = path.read_bytes()
         source_sha256 = hashlib.sha256(original).hexdigest()
         if source_sha256 != SUPPORTED_SOURCE_SHA256:
-            raise ValueError(f"unknown Go 1.27.3 runtime source SHA-256: {source_sha256}")
+            raise ValueError(f"unknown Go 1.27.4 runtime source SHA-256: {source_sha256}")
         patched = patch_source(original.decode("utf-8")).encode("utf-8")
         # Same-directory temporary file + rename avoids a truncated runtime if a
         # write fails. Verification completes before creating the temporary file.
