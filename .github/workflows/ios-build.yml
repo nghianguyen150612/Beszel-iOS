@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   # P017 review-only native verification: this trigger cannot publish releases.
   pull_request:
-    branches: [ios/upstream-v021-integration, ios/p026-device-acceptance]
+    branches: [ios/upstream-v021-integration, ios/p026-device-acceptance, ios/p027-upstream-port]
     paths:
       - ".github/workflows/ios-build.yml"
       - ".github/workflows/p017-release-candidate.yml"
@@ -225,8 +225,8 @@ jobs:
         run: |
           set -euo pipefail
           go test ./agent -run 'Test.*(Powermetrics|Macmon)' -count=1
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -trimpath -o "$RUNNER_TEMP/beszel-agent-macos" ./internal/cmd/agent
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -trimpath -o "$RUNNER_TEMP/beszel-hub-macos" ./internal/cmd/hub
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -tags=no_self_update -trimpath -o "$RUNNER_TEMP/beszel-agent-macos" ./internal/cmd/agent
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -tags=no_self_update -trimpath -o "$RUNNER_TEMP/beszel-hub-macos" ./internal/cmd/hub
 
       - name: Show and verify environment
         shell: bash
@@ -299,8 +299,8 @@ jobs:
           go env GOOS GOARCH CGO_ENABLED CC CGO_CFLAGS CGO_LDFLAGS GOROOT GOTOOLCHAIN
           mkdir -p build/ios "$RUNNER_TEMP/ios-repeat"
           for binary in agent hub; do
-            go build -trimpath -ldflags="-s -w" -o "build/ios/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
-            GOCACHE="$RUNNER_TEMP/ios-repeat-cache" go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/ios-repeat/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
+            go build -tags=no_self_update -trimpath -ldflags="-s -w" -o "build/ios/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
+            GOCACHE="$RUNNER_TEMP/ios-repeat-cache" go build -tags=no_self_update -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/ios-repeat/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
           done
           python3 .github/scripts/create-ios-reproducibility-manifest.py \
             --root "$GITHUB_WORKSPACE" \
@@ -318,7 +318,7 @@ jobs:
         run: |
           set -euo pipefail
           for binary in agent hub; do
-            go build -trimpath -o "$RUNNER_TEMP/beszel-$binary-validation" "./internal/cmd/$binary"
+            go build -tags=no_self_update -trimpath -o "$RUNNER_TEMP/beszel-$binary-validation" "./internal/cmd/$binary"
             python3 .github/scripts/verify-ios-runtime-binary.py "$RUNNER_TEMP/beszel-$binary-validation" --output "$RUNNER_TEMP/runtime-$binary.json"
           done
 

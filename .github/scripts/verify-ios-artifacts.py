@@ -91,6 +91,8 @@ def build_info(text, name, expected_commit=None):
     for key, value in {'GOOS': 'ios', 'GOARCH': 'arm64', 'GOARM64': 'v8.0', 'CGO_ENABLED': '1'}.items():
         if settings.get(key) != value:
             raise ValueError(f'{name}: wrong Go build setting {key}')
+    if 'no_self_update' not in settings.get('-tags', '').replace(' ', ',').split(','):
+        raise ValueError(f'{name}: iOS payload must use the no_self_update build contract')
     if expected_commit and (settings.get('vcs.revision') != expected_commit or settings.get('vcs.modified') != 'false'):
         raise ValueError(f'{name}: Go VCS metadata must match the clean tested feature commit')
     return {'go': version[1], 'entry_package': path[1], 'settings': settings}

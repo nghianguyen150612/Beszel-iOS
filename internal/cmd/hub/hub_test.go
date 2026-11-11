@@ -5,8 +5,16 @@ package main
 import (
 	"testing"
 
+	"github.com/henrygd/beszel/internal/ghupdate"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestUpdateCommandVisibility(t *testing.T) {
+	cmd, _, err := getBaseApp().RootCmd.Find([]string{"update"})
+	assert.NoError(t, err)
+	assert.Equal(t, "update", cmd.Name())
+	assert.Equal(t, ghupdate.SelfUpdateDisabled, cmd.Hidden)
+}
 
 func TestIsUpdateCmd(t *testing.T) {
 	rootCmd := getBaseApp().RootCmd
