@@ -2,7 +2,7 @@ name: P013 Hub migration fixture
 
 on:
   pull_request:
-    branches: [ios/upstream-v021-integration]
+    branches: [ios/upstream-v021-integration, ios/p027-upstream-port]
     paths:
       - "internal/**"
       - "go.mod"
@@ -75,12 +75,15 @@ jobs:
         run: |
           set -euo pipefail
           python3 tests/hub-migration/harness.py --output "$RUNNER_TEMP/p013-hub-fixture-evidence"
+          python3 tests/hub-migration/harness.py --via-p027 --output "$RUNNER_TEMP/p028-p027-fixture-evidence"
 
       - name: Upload synthetic fixture manifest only
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: p013-hub-recovery-evidence
-          path: ${{ runner.temp }}/p013-hub-fixture-evidence/
+          path: |
+            ${{ runner.temp }}/p013-hub-fixture-evidence/
+            ${{ runner.temp }}/p028-p027-fixture-evidence/
           if-no-files-found: ignore
           retention-days: 14
