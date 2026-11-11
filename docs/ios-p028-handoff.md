@@ -347,3 +347,53 @@ action: complete exact-source iOS build/artifact qualification, then continue
 pagination commit 237f9641960f6192ed18b42833046d8e3346911f around the preserved
 virtualized table and settings behavior. Device qualification remains
 **DEFERRED — OWNER APPROVED**. No physical-device or production action occurred.
+
+
+## Exact-source hosted qualification completion — 2026-11-11
+
+Implementation source `b85cd8d9ee3bd7f054a6222fb2b50a265a3020f9` remains the
+only source change after the P028 frontend/migration checkpoint. PR head
+`731f0032a4e9dbb1c232ca1be1e3edacafb594f6` contains that source plus only this
+handoff document; GitHub comparison `b85cd8d9..731f0032` confirms only
+`docs/ios-p028-handoff.md` changed.
+
+Exact-source migration run 43001248199 on PR head 731f0032: direct and via-P027
+jobs PASS. Artifacts: direct 13847380032, SHA-256
+`c1673cf43baef6c69cd3f7c6ae37b789034e8b8297d656913194109478049daa`; via-P027
+13846247625, SHA-256
+`40174de8b1b7fe425dad5a5ecbabdefb295ea5cd14b87b5ebde4a303dd608494`.
+
+Exact-source iOS Build run 43001248403: Procursus, native build and independent
+artifact consumer all PASS. The native job passed the real frontend rebuild,
+source-selection checks, portable telemetry and fault/race/network-monitor
+regressions, macOS/GPU parser checks, iOS Wi-Fi adapter compatibility, Go
+1.27.4 x509 security validation, isolated legacy ARM64 runtime patch, repeated
+Agent/Hub builds, runtime instruction and Mach-O inspection, no-private-linkage
+check, and payload/frontend manifest generation. The consumer independently
+rebuilt the frozen frontend and verified same-run archives, payload bytes and
+provenance against source 731f0032.
+
+Artifacts from run 43001248403:
+
+- `beszel-ios-arm64` 13846494954, 16,357,081 bytes, SHA-256
+  `bdf8cdf68d99007f99d5fe5055247a2c65e5ebabe4c6485bcb00086a3483ed43`.
+- `ios-native-validation` 13848270115, SHA-256
+  `6501ac26cc7cd9bad3a919405145a940ace819b084de65a7032dcb02b951d8b4`.
+- `ios-wifi-diagnostic-disabled` 13847961105, SHA-256
+  `0a9ec65fac07a41ef4479d1772234aae963bc5f02ae406215bebc9975bab4e8c`.
+- `ios-artifact-consumer-verification` 13846669640, SHA-256
+  `ce9554bd934dcd3c310dc195a2b2956402910a5576071da768d011478871d4fb`.
+  Consumer-verified Agent SHA-256:
+  `e7d1bc1f92df4c8a855b429935bb6edc4817f7ce809a4ed10c2926644de69954`; Hub
+  SHA-256: `d0485a3196f8ef17331cea75509570335a6e3a71e50989f7cd1f32c483a16a3d`.
+
+The previous iOS Build run 42998693337 on source b85cd8d9 was cancelled after
+a handoff-only push while its native job was still queued. Its successor
+43001248403 on the docs-only head above completed PASS; no app source or CI
+files changed after b85cd8d9. No release jobs were authorized; release jobs
+were skipped. Device qualification remains **DEFERRED — OWNER APPROVED**.
+
+Next P028 action: adapt upstream pagination commit
+`237f9641960f6192ed18b42833046d8e3346911f` without losing P026/P027 virtualized
+tables, system-name measurement and persisted settings; then review the
+remaining locale catalog entries. P029 has not started.
