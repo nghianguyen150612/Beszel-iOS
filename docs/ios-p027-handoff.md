@@ -89,7 +89,7 @@ auto toolchain selection used Go 1.27.3 as required by go.mod.
 | PASS | `python3 -m unittest discover -s tests/audit -p 'test_*.py'` with Go PATH | 137 passed |
 | PASS | `go mod verify` | all modules verified |
 | PASS | `git diff --check` | exit 0 |
-| BLOCKED | local native iOS/ARM64 link | Linux host lacks xcrun/iPhoneOS SDK; hosted native workflow requested |
+| BLOCKED | local native iOS/ARM64 link | Linux host lacks xcrun/iPhoneOS SDK; hosted native workflow later passed on the P027 source head (see final hosted results). |
 | NOT RUN | full old-to-new Hub migration harness | no PocketBase/schema/dependency change in this batch; required next batch |
 | NOT RUN | local race/full repository suites | targeted packages and existing hosted gates used; no full-suite claim |
 | DEFERRED | all physical-device gates | OWNER APPROVED |
@@ -156,4 +156,12 @@ New implementation commits: `f8b5d7bc` (source `2c1980f4`), `02ed1133` (source `
 | PASS | `go vet -p 1 -tags='testing no_ui' ./internal/cmd/hub` | Exit 0. |
 | PASS | `git diff --check` | Exit 0. |
 
-The first Go test attempt preceded the frontend build and stopped because the embedded `internal/site/dist` directory did not yet exist; the documented frontend build created it and the repeated Go test passed. The hub command build and vet used Go 1.27.3. Previous P027 host Hub/Agent tests, build and audit results remain recorded above. Hosted native CI is required for the final head; local Xcode/iOS SDK is unavailable. Device qualification: **DEFERRED — OWNER APPROVED**.
+The first Go test attempt preceded the frontend build and stopped because the embedded `internal/site/dist` directory did not yet exist; the documented frontend build created it and the repeated Go test passed. The hub command build and vet used Go 1.27.3. Previous P027 host Hub/Agent tests, build and audit results remain recorded above. Hosted native CI for source commit `d999720418795dc7089aef09fcfbae2af0e72151` completed PASS; local Xcode/iOS SDK remains unavailable. Device qualification: **DEFERRED — OWNER APPROVED**.
+
+## Final hosted results and handoff — 2026-11-11
+
+All final source-head PR workflows passed on implementation commit `d999720418795dc7089aef09fcfbae2af0e72151`: `procursus-package-updates` PASS; `build-ios` PASS; and `Verify uploaded iOS artifact bytes` PASS. The iOS build workflow passed native validators, frontend build, source selection, portable telemetry, Wi-Fi and network-monitor regressions, transport/race suites, macOS regressions, isolated Go 1.27.3 runtime patch/security checks, Agent/Hub build contracts, Mach-O/linkage checks and payload embedding. Independent same-run artifact reconstruction and byte/provenance verification passed. PR release validation and publishing jobs were skipped, as expected for a Draft PR; no release was produced.
+
+Local current-source checks are listed above and passed. The earlier x/net `govulncheck` reachable-symbol scan and Go module verification passed with the P027 dependency batch; the latest upstream code changes did not change dependencies. Overall host qualification for this implementation batch: **PASS** for the documented host checks and hosted gates. Full upstream qualification remains **BLOCKED** by the pending ledger entries and full old-to-new migration coverage; no PocketBase/CBOR/shoutrrr migration was accepted in this batch. Device qualification: **DEFERRED — OWNER APPROVED**.
+
+The current commit is documentation-only. Hosted results above qualify source commit `d999720418795dc7089aef09fcfbae2af0e72151`; no source or workflow changed afterward. The PR remains Draft #31 targeting the unmerged P026 branch.
