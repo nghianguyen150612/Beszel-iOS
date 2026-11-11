@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   # P017 review-only native verification: this trigger cannot publish releases.
   pull_request:
-    branches: [ios/upstream-v021-integration]
+    branches: [ios/upstream-v021-integration, ios/p026-device-acceptance]
     paths:
       - ".github/workflows/ios-build.yml"
       - ".github/workflows/p017-release-candidate.yml"
