@@ -38,6 +38,7 @@ from backup import (
 
 
 OLD_019_REV = "0c3e4cd22ac24264834c401ad412e44aeda4e4f3"
+P027_REV = "c239ce0d8931405f728ef4763ad68bbbe187a9ac"
 P013_STARTING_INTEGRATION_SHA = "d6239915e404668c10453ab2ec44f797b2f0178e"
 PROTECTED_DATA_DIR = pathlib.Path("/var/lib/beszel-hub")
 HEALTH_TIMEOUT_SECONDS = 45
@@ -1192,6 +1193,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=pathlib.Path, help="copy the generated evidence directory here")
     parser.add_argument("--old-rev", default=OLD_019_REV)
+    parser.add_argument("--via-p027", action="store_true", help="upgrade the synthetic v0.19 fixture through the verified P027/PocketBase 0.40.5 source before the candidate")
     args = parser.parse_args()
     if args.output:
         args.output = args.output.resolve()
@@ -1274,6 +1276,20 @@ def main() -> int:
         run([bun, "install", "--frozen-lockfile"], cwd=site)
         run([bun, "run", "build"], cwd=site)
         run([go, "build", "-trimpath", "-o", str(new_binary), "./internal/cmd/hub"], cwd=new_source)
+        intermediate_binary = binaries / "beszel-hub-p027"
+        if args.via_p027:
+            intermediate_source = root / "source-p027"
+            intermediate_source.mkdir()
+            with subprocess.Popen(["git", "archive", P027_REV], cwd=repo, stdout=subprocess.PIPE) as archive:
+                subprocess.run(["tar", "-x", "-C", str(intermediate_source)], stdin=archive.stdout, check=True)
+                assert archive.stdout is not None
+                archive.stdout.close()
+                if archive.wait() != 0:
+                    raise HarnessError("failed to materialize verified P027 source")
+            intermediate_site = intermediate_source / "internal/site"
+            run([bun, "install", "--frozen-lockfile"], cwd=intermediate_site)
+            run([bun, "run", "build"], cwd=intermediate_site)
+            run([go, "build", "-trimpath", "-o", str(intermediate_binary), "./internal/cmd/hub"], cwd=intermediate_source)
         old_version = subprocess.check_output([str(old_binary), "--version"], text=True).strip()
         old_agent_version = subprocess.check_output([str(old_agent_binary), "--version"], text=True).strip()
         new_version = subprocess.check_output([str(new_binary), "--version"], text=True).strip()
@@ -1582,7 +1598,21 @@ def main() -> int:
             symlinks=True,
         )
         migration_hub = HubProcess(new_binary, migration_data_dir, logs / "hub-021-migration.log")
+        intermediate_snapshot = None
+        intermediate_token = None
+        if args.via_p027:
+            intermediate_hub = HubProcess(intermediate_binary, migration_data_dir, logs / "hub-p027-migration.log")
+            intermediate_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+            intermediate_token = auth_token(intermediate_hub.base, "users", owner_email, SYNTHETIC_PASSWORD)
+            intermediate_hub.stop()
+            intermediate_snapshot = database_snapshot(migration_data_dir / "data.db")
+            if intermediate_snapshot["integrity_check"] != ["ok"]:
+                raise HarnessError("P027 fixture integrity failed")
         migration_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
+        if intermediate_token:
+            status, _, _ = request(migration_hub.base, "POST", "/api/collections/users/auth-refresh", token=intermediate_token)
+            if status != 200:
+                raise HarnessError(f"P027 auth token failed after PocketBase upgrade: HTTP {status}")
         migration_health, _, _ = request(migration_hub.base, "GET", "/api/health")
         if migration_health != 200:
             raise HarnessError(f"migrated v0.21 Hub health check failed: HTTP {migration_health}")
@@ -1660,6 +1690,22 @@ def main() -> int:
         )
         migration_hub.stop()
         migrated_second = database_snapshot(migration_data_dir / "data.db")
+        if intermediate_snapshot:
+            for key in ("schema_sha256", "record_counts", "migration_ledger", "application_settings"):
+                if intermediate_snapshot[key] != migrated_first[key]:
+                    raise HarnessError(f"PocketBase patch upgrade changed P027 database {key}")
+        import sqlite3
+        sqlite_integrity = {}
+        for name in ("data.db", "auxiliary.db"):
+            path = migration_data_dir / name
+            if not path.is_file():
+                raise HarnessError(f"missing migrated SQLite database: {name}")
+            with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as connection:
+                checks = [row[0] for row in connection.execute("PRAGMA integrity_check")]
+                foreign_keys = connection.execute("PRAGMA foreign_key_check").fetchall()
+            if checks != ["ok"] or foreign_keys:
+                raise HarnessError(f"{name}: integrity={checks}, foreign-key failures={len(foreign_keys)}")
+            sqlite_integrity[name] = {"integrity_check": checks, "foreign_key_check": foreign_keys}
         if migrated_second["integrity_check"] != ["ok"]:
             raise HarnessError(f"second v0.21 database integrity failed: {migrated_second['integrity_check']}")
         for key in ("schema_sha256", "record_counts", "migration_ledger", "application_settings"):
@@ -1930,6 +1976,8 @@ def main() -> int:
             "cases": interrupted_evidence,
         }
         migration_evidence = {
+            "via_p027": {"source": P027_REV, "pocketbase": "v0.40.5", "binary_sha256": file_sha256(intermediate_binary), "schema_records_ledger_preserved": True, "existing_session_refresh_http": 200} if args.via_p027 else None,
+            "main_and_auxiliary_sqlite": sqlite_integrity,
             "source_backup_sha256": backup_evidence["archive_sha256"],
             "target_version": new_version,
             "target_pocketbase_version": new_pocketbase,
