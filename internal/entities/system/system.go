@@ -165,15 +165,6 @@ func (b Battery) MarshalJSON() ([]byte, error) {
 	return json.Marshal([2]uint16{uint16(b[0]), uint16(b[1])})
 }
 
-func (b *Battery) UnmarshalJSON(data []byte) error {
-	var arr [2]uint8
-	if err := json.Unmarshal(data, &arr); err != nil {
-		return err
-	}
-	*b = arr
-	return nil
-}
-
 type GPUData struct {
 	// Explicit legacy zero power readings need presence independent of value.
 	powerZeroPresent        bool
