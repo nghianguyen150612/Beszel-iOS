@@ -72,7 +72,9 @@ func TestP024MemoryCompatibilityAcrossSystemRollups(t *testing.T) {
 	for i := range 9 {
 		add("1m", now.Add(-time.Duration(i+1)*time.Minute), newStats(i%2 == 0))
 	}
-	add("10m", now.Add(-15*time.Minute), newStats(true))
+	// This completed 10m record belongs in the active 20m window. The rollup
+	// cutoff intentionally excludes the prior interval at -15m.
+	add("10m", now.Add(-10*time.Minute), newStats(true))
 	for i := range 5 {
 		add("20m", now.Add(-time.Duration(30+15*i)*time.Minute), newStats(i%2 == 0))
 	}
