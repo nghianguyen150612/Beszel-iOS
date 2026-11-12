@@ -397,3 +397,26 @@ Next P028 action: adapt upstream pagination commit
 `237f9641960f6192ed18b42833046d8e3346911f` without losing P026/P027 virtualized
 tables, system-name measurement and persisted settings; then review the
 remaining locale catalog entries. P029 has not started.
+
+## P028 resume checkpoint — 2026-11-12
+
+Recovery began from the requested branch head `619c5e174bcb769cb68aebae28aa582e817deacf`; the remote branch matched before edits. The original checkout at `/workspace/Beszel-iOS` was preserved untouched because it was a separate clean `work` branch. Work continued in `/workspace/Beszel-iOS-P028` on `ios/p028-dependency-migration`, still based on P027 `c239ce0d8931405f728ef4763ad68bbbe187a9ac` and Draft PR #32.
+
+The pagination adaptation is in `b31f1daddbcc51fc1cf2b78aa6c66ee235462a1a`, mapped to upstream `237f9641960f6192ed18b42833046d8e3346911f`. Shared page sizes are 10, 20, 50, 100 and 200. The hook stores the preference in local storage and `$userSettings`, queuing authenticated changes through the existing user-settings API. The systems, containers, network monitors, systemd, SMART, storage pools, package updates and alert history tables now use the setting. TanStack sorting and filtering remain ahead of pagination. The existing systems/network/systemd/containers/SMART virtualizers remain; their measured row output and system-name width logic are preserved, and their scroll area resets when paged rows change. Alert history retains its existing small-screen controls.
+
+The locale review is in `0ab75a0b4fec6ed858e9ffbee35f8b05399a1793`, mapped to upstream `d781ced6c3c74ce4f48b8b0e500500d38d949095`. It ports the applicable certificate-expiry alert text, TLS certificate monitor controls, token copy/hide/reveal text, and shared pagination labels. Existing nonempty local translations were kept; missing translations were filled without replacing newer local wording. The two invariant CPU labels from this upstream change were already present. Validation found the 549 active English message keys in every locale and all 14 applicable P028 messages translated in all 34 catalogs. Lingui still reports 5–13 untranslated older messages in some catalogs; these retain the existing English fallback. The selected-locale number formatting from the earlier P028 commit remains covered by its regression test.
+
+Local validation for implementation source `0ab75a0b4fec6ed858e9ffbee35f8b05399a1793`:
+
+- From `internal/site`, `PATH=/workspace/.tools/bun/node_modules/.bin:$PATH bun test`: **PASS**, 74 tests / 354 assertions. Coverage includes empty, first, partial and clamped pages; sorting and filtering before pagination over 10,000 rows; page-size persistence and storage failure fallback; virtualized scroll reset; measured wide-character system-name sizing; and narrow mobile wrapping.
+- From `internal/site`, `PATH=/workspace/.tools/bun/node_modules/.bin:$PATH bun run build`: **PASS**, TypeScript and Vite production build. The build emitted 34 locale bundles and the real `dist` assets embedded by `internal/site/embed.go`. Existing notices remain for the dynamic English locale import and the large WebAssembly chunk.
+- `scripts/audit/validate_frontend_assets.py --dist internal/site/dist --manifest docs/ios-frontend-assets-manifest.sha256`: **PASS**, 98 files / 3,443,778 bytes / 34 locales; manifest SHA-256 `a22bf2562a522382be84b755b3bdd4ecae960f5c66c1680435c3fef9e517b21c`.
+- Locale key-parity and applicable-message validation with polib: **PASS**, 34 catalogs, 549 active keys, 14 required P028 messages translated in every catalog.
+- `python3 -m unittest discover -s tests/hub-migration -p 'test_*.py' -v`: **PASS**, 7 P013 backup/recovery unit tests.
+- `env -u NETWORK GOTOOLCHAIN=local PATH=/home/agent/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/bin:$PATH go test -count=1 -p 1 -tags='testing no_ui no_self_update' ./...`: **PASS**. Clearing `NETWORK` is required because the container exports its desktop network name and legacy Agent tests use that variable as their default.
+- The same Go 1.27.4 environment, `go vet -p 1 -tags='testing no_ui no_self_update' ./...`: **PASS**; `go mod verify`: **PASS**, all modules verified.
+- Exact-source hosted P013 migration, iOS Build, artifact consumer/provenance and current security scan: **NOT RUN** at this checkpoint; they must qualify the pushed source. Do not reuse older CI as qualification for this source.
+
+Upstream mappings are recorded in `docs/ios-p028-commit-map.csv`; both upstream ledger rows are updated. The tested frontend and Go source contains no physical-device work. Hosted qualification remains pending, so P028 is **PARTIAL — RESUMABLE**. Physical-device tests remain **DEFERRED — OWNER APPROVED**. Production `iOS` is unchanged, PR #32 remains Draft, and P029 has not started.
+
+Next exact action: verify the origin head has not moved, push the incremental commits and updated ledger/handoff to `ios/p028-dependency-migration`, then record the exact-source P013, iOS Build and artifact/provenance results here and in Draft PR #32.
