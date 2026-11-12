@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "candidate_source_sha": "b8722c5d94b42e9331e12acf399f9d00fd638b53",
+  "scanner": "v1.9.0",
+  "database": "https://vuln.go.dev",
+  "database_last_modified": "2026-11-11T02:51:11Z",
+  "go_version": "go1.27.4",
+  "scan_mode": "source",
+  "scan_level": "symbol",
+  "finding_count": 1,
+  "finding_ids": [
+    "GO-2026-5932"
+  ],
+  "finding_occurrences": {
+    "GO-2026-5932": 1
+  },
+  "findings": [
+    {
+      "id": "GO-2026-5932",
+      "fixed_version": "v0.58.1-0.20261009181718-2f1f834330b2",
+      "trace": [
+        {
+          "module": "golang.org/x/crypto",
+          "version": "v0.58.0"
+        }
+      ]
+    }
+  ],
+  "security_dispositions": [
+    {
+      "advisory": "GO-2026-6809",
+      "remediation_status": "REMEDIATED_AND_VERIFIED",
+      "go_version": "go1.27.4",
+      "native_source_sha256": {
+        "src/crypto/x509/root_darwin.go": "69b350fe1afa679935ca831c3beea9833d59d8cd62c6f0b4d02f14526dd46ac1",
+        "src/crypto/x509/root_windows.go": "ba910c270b9d096f50ccbf9426c03410ad16bc46a86e0ba4237d27c3381d28d0",
+        "src/crypto/x509/verify.go": "a239364c8fd240db693be8ec4f82e84958d9b4e4f265ff3923499e2161a34d86"
+      },
+      "standard_library_test": {
+        "command": "go test crypto/x509 -count=1",
+        "status": "PASS"
+      },
+      "custom_backport_applied": false
+    },
+    {
+      "advisory": "GO-2026-6608",
+      "raw_scanner_status": "absent from the exact Go 1.27.4 source scan",
+      "affected_versions": "Go 1.27.0 before 1.27.2",
+      "fixed_version": "go1.27.2",
+      "current_go_version": "go1.27.4",
+      "remediation_status": "REMEDIATED_AND_VERIFIED",
+      "actual_mitigation": "Run the official Go 1.27.4 toolchain, which includes the Go 1.27.2 standard-library fix; exact source scan contains no GO-2026-6608 finding.",
+      "release_owner_decision_required": false
+    },
+    {
+      "advisory": "GO-2026-5932",
+      "raw_scanner_status": "module-level finding retained",
+      "remediation_status": "NOT_REACHABLE_WITH_EVIDENCE",
+      "affected_package_imported_or_reachable": false,
+      "module_remains_present": true,
+      "actual_mitigation": "Static Go AST import guard plus host default, testing/no_ui, development, development/testing/no_ui, iOS testing/no_ui, and iOS development/testing/no_ui go list profiles; no OpenPGP paths found.",
+      "not_a_vulnerability_fix": true,
+      "release_owner_decision_required": true
+    }
+  ],
+  "openpgp_guard": {
+    "status": "PASS",
+    "source_files_scanned": 389,
+    "source_openpgp_imports": [],
+    "dependency_profiles": [
+      {
+        "name": "host-default-with-tests",
+        "package_count": 582,
+        "openpgp_packages": []
+      },
+      {
+        "name": "host-testing-no_ui-with-tests",
+        "package_count": 623,
+        "openpgp_packages": []
+      },
+      {
+        "name": "host-development-with-tests",
+        "package_count": 583,
+        "openpgp_packages": []
+      },
+      {
+        "name": "host-development-testing-no_ui-with-tests",
+        "package_count": 624,
+        "openpgp_packages": []
+      },
+      {
+        "name": "ios-arm64-testing-no_ui-with-tests",
+        "package_count": 639,
+        "openpgp_packages": []
+      },
+      {
+        "name": "ios-arm64-development-testing-no_ui-with-tests",
+        "package_count": 640,
+        "openpgp_packages": []
+      }
+    ]
+  },
+  "advisory_policy": {
+    "reviewed_on": "2026-10-22",
+    "default_action": "FAIL_ON_UNREVIEWED_FINDING"
+  }
+}

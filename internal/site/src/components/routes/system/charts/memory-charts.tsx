@@ -182,13 +182,7 @@ export function SwapChart({
 		<ChartCard empty={dataEmpty} grid={grid} title={t`Swap Usage`} description={t`Swap space used by the system`}>
 			<AreaChartDefault
 				chartData={chartData}
-				domain={[
-					0,
-					() => {
-						const stats = chartData.systemStats.at(-1)?.stats
-						return memoryFieldBytes(stats?.swap?.[0], stats?.s) ?? 0
-					},
-				]}
+				domain={[0, swapTotal ?? 0]}
 				contentFormatter={contentFormatter}
 				tickFormatter={tickFormatter}
 				dataPoints={[

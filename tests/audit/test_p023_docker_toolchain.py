@@ -6,8 +6,8 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ALPINE = "golang:1.27.3-alpine@sha256:d530cf60723abf1ffae0cd16bb546b379ec0550d2f3815e5b16ed69dbc00fba4"
-BOOKWORM = "golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5"
+ALPINE = "golang:1.27.4-alpine@sha256:0a5f7fe796599ff487605987432e7619ae45beeb2fba4c2ce0b907879932aebf"
+BOOKWORM = "golang:1.27.4-bookworm@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea"
 BUILDERS = {
     "dockerfile_hub": ALPINE,
     "dockerfile_agent": ALPINE,
@@ -25,12 +25,12 @@ class DockerToolchainTests(unittest.TestCase):
                 text = (ROOT / "internal" / name).read_text()
                 self.assertRegex(text, rf"(?m)^FROM --platform=\$BUILDPLATFORM {re.escape(image)} AS builder$")
                 self.assertRegex(text, r"(?m)^ENV GOTOOLCHAIN=local$")
-                self.assertRegex(text, r'(?m)^RUN test "\$\(go env GOVERSION\)" = go1\.27\.3$')
+                self.assertRegex(text, r'(?m)^RUN test "\$\(go env GOVERSION\)" = go1\.27\.4$')
 
     def test_procursus_test_container_uses_the_same_digest_pinned_go(self):
         workflow = (ROOT / ".github/workflows/ios-build.yml").read_text()
         self.assertIn(f"{BOOKWORM} bash -euo pipefail -c '", workflow)
-        self.assertIn('test "$(go env GOVERSION)" = go1.27.3', workflow)
+        self.assertIn('test "$(go env GOVERSION)" = go1.27.4', workflow)
 
 
 if __name__ == "__main__":

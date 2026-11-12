@@ -30,11 +30,20 @@ msgstr "{0} na voljo"
 msgid "{0} of {1} row(s) selected."
 msgstr "{0} od {1} vrstic izbranih."
 
+#. placeholder {0}: table.getFilteredRowModel().rows.length
+#: src/components/ui/shared-pagination.tsx
+msgid "{0} row(s)"
+msgstr "{0} vrstic"
+
 #. placeholder {0}: selectedIds.size
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "{0} selected"
 msgstr "Izbrano: {0}"
+
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{0}–{1} of {total} rows"
+#~ msgstr ""
 
 #: src/components/active-alerts.tsx
 msgid "{alertCount, plural, one {# active alert} other {# active alerts}}"
@@ -84,9 +93,17 @@ msgstr "{threads, plural, one {# nit} two {# niti} few {# niti} other {# niti}}"
 msgid "{total, plural, one {# update} other {# updates}}"
 msgstr "{total, plural, one {# posodobitev} two {# posodobitvi} few {# posodobitve} other {# posodobitev}}"
 
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{total} row(s)"
+#~ msgstr ""
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{totalCount, plural, one {# service} other {# services}}"
 msgstr "{totalCount, plural, one {# storitev} two {# storitvi} few {# storitve} other {# storitev}}"
+
+#: src/components/alerts-history-columns.tsx
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# dan} two {# dneva} few {# dni} other {# dni}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -209,6 +226,7 @@ msgstr "Zgodovina opozoril"
 
 #: src/components/alerts/alert-button.tsx
 #: src/components/alerts/alerts-sheet.tsx
+#: src/components/system-actions-button.tsx
 msgid "Alerts"
 msgstr "Opozorila"
 
@@ -229,7 +247,7 @@ msgstr "Vsi kontejnerji"
 msgid "All Systems"
 msgstr "Vsi sistemi"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Are you sure you want to delete {name}?"
 msgstr "Ali ste prepričani, da želite izbrisati {name}?"
 
@@ -242,13 +260,13 @@ msgstr "Ali ste prepričani?"
 msgid "Automatic copy requires a secure context."
 msgstr "Za samodejno kopiranje je potreben varen kontekst."
 
-#. Package version available to install
-#: src/components/routes/system/package-updates-table.tsx
+#: src/components/routes/system/storage-pools-table.tsx
+msgctxt "Disk space available"
 msgid "Available"
 msgstr "Na voljo"
 
-#: src/components/routes/system/storage-pools-table.tsx
-msgctxt "Disk space available"
+#. Package version available to install
+#: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
 msgstr "Na voljo"
 
@@ -401,7 +419,7 @@ msgstr "Lahko ustavi"
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Cancel"
 msgstr "Prekliči"
 
@@ -426,6 +444,10 @@ msgstr "Celzija (°C)"
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Certificate"
 msgstr "Certifikat"
+
+#: src/lib/alerts.ts
+msgid "Certificate Expiration"
+msgstr "Potek potrdila"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Certificate expired {expires}"
@@ -576,7 +598,7 @@ msgstr "Vsebniki"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Continue"
 msgstr "Nadaljuj"
 
@@ -610,7 +632,7 @@ msgctxt "Copy alerts from another system"
 msgid "Copy from"
 msgstr "Kopiraj iz"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy host"
 msgstr "Kopiraj gostitelja"
 
@@ -619,7 +641,7 @@ msgstr "Kopiraj gostitelja"
 msgid "Copy Linux command"
 msgstr "Kopiraj Linux ukaz"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy name"
 msgstr "Kopiraj ime"
 
@@ -638,6 +660,11 @@ msgstr "Kopirajte namestitveni ukaz za agenta spodaj ali registrirajte agente sa
 #: src/components/add-system.tsx
 msgid "Copy the<0>docker-compose.yml</0> content for the agent below, or register agents automatically with a <1>universal token</1>."
 msgstr "Kopirajte<0>docker-compose.yml</0> vsebino za agenta spodaj ali registrirajte agente samodejno z <1>univerzalnim žetonom</1>."
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Copy token"
+msgstr "Kopiraj žeton"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy YAML"
@@ -761,7 +788,7 @@ msgstr "Privzeto časovno obdobje"
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/system/smart-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Delete"
 msgstr "Izbriši"
 
@@ -857,7 +884,7 @@ msgstr "Trajanje"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Edit"
 msgstr "Uredi"
 
@@ -958,6 +985,7 @@ msgstr "Obstoječi sistemi, ki niso definirani v <0>config.yml</0>, bodo izbrisa
 msgid "Exited active"
 msgstr "Izhod aktivno"
 
+#: src/components/alerts-history-columns.tsx
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Expired"
 msgstr "Poteklo"
@@ -965,6 +993,10 @@ msgstr "Poteklo"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Expires after one hour or on hub restart."
 msgstr "Poteče po eni uri ali ob ponovnem zagonu huba."
+
+#: src/components/alerts/alerts-sheet.tsx
+msgid "Expires within <0>{value, plural, one {# day} other {# days}}</0>"
+msgstr "Poteče v <0>{value, plural, one {# dan} two {# dneva} few {# dni} other {# dni}}</0>"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -1142,6 +1174,11 @@ msgstr "Srčni utrip uspešno poslan"
 msgid "Hide timestamps"
 msgstr "Skrij časovne žige"
 
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Hide token"
+msgstr "Skrij žeton"
+
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
@@ -1186,7 +1223,7 @@ msgstr "Če ste izgubili geslo za svoj skrbniški račun, ga lahko ponastavite z
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Ignore TLS certificate errors"
-msgstr ""
+msgstr "Prezri napake potrdila TLS"
 
 #: src/components/containers-table/containers-table-columns.tsx
 msgctxt "Docker image"
@@ -1438,6 +1475,10 @@ msgstr "Omrežni promet javnih vmesnikov"
 msgid "Network unit"
 msgstr "Enota omrežja"
 
+#: src/components/routes/system/cpu-sheet.tsx
+#~ msgid "Nice"
+#~ msgstr ""
+
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
@@ -1504,6 +1545,11 @@ msgstr "Podpora za OAuth 2 / OIDC"
 msgid "On each restart, systems in the database will be updated to match the systems defined in the file."
 msgstr "Ob vsakem ponovnem zagonu bodo sistemi v zbirki podatkov posodobljeni, da se bodo ujemali s sistemi, definiranimi v datoteki."
 
+#. placeholder {0}: alert.value
+#: src/components/active-alerts.tsx
+msgid "One or more certificates expire within {0, plural, one {# day} other {# days}}"
+msgstr "Eno ali več potrdil poteče v {0, plural, one {# dan} two {# dneva} few {# dni} other {# dni}}"
+
 #: src/lib/alerts.ts
 msgid "One or more containers are unhealthy"
 msgstr "En ali več vsebnikov je v nezdravem stanju"
@@ -1532,7 +1578,7 @@ msgstr "Enkratno geslo"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/system/smart-table.tsx
 #: src/components/routes/system/storage-pools-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Open menu"
 msgstr "Odpri menu"
 
@@ -1576,10 +1622,11 @@ msgstr "Stran"
 
 #. placeholder {0}: pageIndex + 1
 #. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: Math.max(1, pageCount)
 #. placeholder {1}: Math.max(table.getPageCount(), 1)
-#. placeholder {1}: table.getPageCount()
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Page {0} of {1}"
 msgstr "Stran {0} od {1}"
 
@@ -1595,6 +1642,10 @@ msgstr "Geslo"
 #: src/components/login/auth-form.tsx
 msgid "Password must be at least 8 characters."
 msgstr "Geslo mora imeti vsaj 8 znakov."
+
+#: src/components/login/auth-form.tsx
+msgid "Password must be at most 71 characters."
+msgstr ""
 
 #: src/components/login/auth-form.tsx
 msgid "Password must be less than 72 bytes."
@@ -1614,7 +1665,7 @@ msgid "Patch"
 msgstr "Popravek"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Pause"
 msgstr "Premor"
 
@@ -1834,9 +1885,14 @@ msgid "Restarts"
 msgstr "Ponovni zagoni"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Resume"
 msgstr "Nadaljuj"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Reveal token"
+msgstr "Pokaži žeton"
 
 #. Package version
 #: src/components/routes/system/package-updates-table.tsx
@@ -1856,6 +1912,7 @@ msgstr "Zavrti žeton"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Rows per page"
 msgstr "Vrstic na stran"
 
@@ -2010,7 +2067,6 @@ msgstr "Na svojem vozlišču Beszel nastavite naslednje okoljske spremenljivke, 
 #: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
-#: src/components/routes/system/info-bar.tsx
 msgid "Settings"
 msgstr "Nastavitve"
 
@@ -2034,6 +2090,10 @@ msgstr "Jakost signala povezanih vmesnikov Wi-Fi"
 #: src/components/command-palette.tsx
 msgid "SMTP settings"
 msgstr "SMTP nastavitve"
+
+#: src/components/routes/system/cpu-sheet.tsx
+#~ msgid "SoftIRQ"
+#~ msgstr ""
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/systems-table/systems-table.tsx
@@ -2179,7 +2239,7 @@ msgstr "Splošno stanje je <0>v redu</0>, ko vsi sistemi delujejo, <1>opozorilo<
 msgid "Then log into the backend and reset your user account password in the users table."
 msgstr "Nato se prijavite v zaledni sistem in ponastavite geslo svojega uporabniškega računa v tabeli uporabnikov."
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "This action cannot be undone. This will permanently delete all current records for {name} from the database."
 msgstr "Tega dejanja ni mogoče razveljaviti. To bo trajno izbrisalo vse trenutne zapise za {name} iz zbirke podatkov."
 
@@ -2208,6 +2268,15 @@ msgstr "E-pošta za"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token"
 msgstr "Žeton"
+
+#. placeholder {0}: fingerprint.expand.system.name
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Token for {0}"
+msgstr "Žeton za {0}"
+
+#: src/components/token-value.tsx
+msgid "Token hidden"
+msgstr "Žeton je skrit"
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -2271,6 +2340,10 @@ msgstr "Sproži se, ko 5-minutna povprečna obremenitev preseže prag"
 #: src/lib/alerts.ts
 msgid "Triggers when a container's health check reports unhealthy"
 msgstr "Sproži se, ko preverjanje stanja vsebnika sporoči nezdravo stanje"
+
+#: src/lib/alerts.ts
+msgid "Triggers when an HTTPS certificate nears expiration"
+msgstr "Sproži se, ko se potrdilu HTTPS približuje potek veljavnosti"
 
 #: src/lib/alerts.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -2341,6 +2414,7 @@ msgid "Unit preferences"
 msgstr "Nastavitve enot"
 
 #: src/components/command-palette.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Universal token"
 msgstr "Univerzalni žeton"
@@ -2419,7 +2493,7 @@ msgstr "Uporaba shranjevalnega poola {displayName}"
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Use for self-signed certificates."
-msgstr ""
+msgstr "Uporabite za samopodpisana potrdila."
 
 #: src/components/routes/system/charts/memory-charts.tsx
 #: src/components/routes/system/charts/memory-charts.tsx
@@ -2444,6 +2518,7 @@ msgid "Value"
 msgstr "Vrednost"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table.tsx
 msgid "View"
 msgstr "Pogled"

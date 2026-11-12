@@ -84,13 +84,15 @@ def frontend_assets(directory):
 def build_info(text, name, expected_commit=None):
     version = re.search(r'^.+: (go[0-9.]+)$', text, re.MULTILINE)
     path = re.search(r'^\s+path\s+(\S+)$', text, re.MULTILINE)
-    settings = dict(re.findall(r'^\s+build\s+([\w.]+)=(.*)$', text, re.MULTILINE))
+    settings = dict(re.findall(r'^\s+build\s+([-\w.]+)=(.*)$', text, re.MULTILINE))
     command = 'agent' if name == NAMES[0] else 'hub'
-    if not version or version[1] != 'go1.27.3' or not path or path[1] != 'github.com/henrygd/beszel/internal/cmd/' + command:
+    if not version or version[1] != 'go1.27.4' or not path or path[1] != 'github.com/henrygd/beszel/internal/cmd/' + command:
         raise ValueError(f'{name}: wrong Go version or Agent/Hub entry package')
     for key, value in {'GOOS': 'ios', 'GOARCH': 'arm64', 'GOARM64': 'v8.0', 'CGO_ENABLED': '1'}.items():
         if settings.get(key) != value:
             raise ValueError(f'{name}: wrong Go build setting {key}')
+    if 'no_self_update' not in settings.get('-tags', '').replace(' ', ',').split(','):
+        raise ValueError(f'{name}: iOS payload must use the no_self_update build contract')
     if expected_commit and (settings.get('vcs.revision') != expected_commit or settings.get('vcs.modified') != 'false'):
         raise ValueError(f'{name}: Go VCS metadata must match the clean tested feature commit')
     return {'go': version[1], 'entry_package': path[1], 'settings': settings}

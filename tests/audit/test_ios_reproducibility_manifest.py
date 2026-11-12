@@ -47,7 +47,7 @@ class ReproducibilityManifestTests(unittest.TestCase):
         values = {
             "source_sha": "a" * 40,
             "source_tree_sha": "b" * 40,
-            "go_version": "go1.27.3",
+            "go_version": "go1.27.4",
             "frontend_lockfile": self.lock,
             "workflow": self.workflow,
             "runtime_patch_script": self.patch,

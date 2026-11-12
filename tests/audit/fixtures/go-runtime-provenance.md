@@ -44,3 +44,18 @@ patch output SHA-256 in the reviewed local toolchain is
 `c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f`. Hosted
 macOS iOS links must independently record their source and output hashes and
 inspect both linked binaries.
+# P028 Go 1.27.4 source refresh
+
+The official Go 1.27.4 Linux amd64 archive is listed at
+<https://go.dev/dl/go1.27.4.linux-amd64.tar.gz> with SHA-256
+`7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840`.
+Its `src/runtime/asm_arm64.s` has SHA-256
+`47f9313d4f956b4159dcf8b292bf340a12adb6b58ee9a94360fe948045e2c5db`, byte-
+identical to the Go 1.27.3 source recorded above. The exact `procyieldAsm`
+function shape is unchanged; the P028 patcher pins both the Go 1.27.4 version
+and this full-file source hash before applying the existing A7 replacement.
+
+The native x509 files checked for the Go 1.27.3 fix are also byte-identical in
+Go 1.27.4. The source archive's hashes are independently pinned by
+`scripts/audit/validate-go-x509-native.py`; the 1.27.4 standard-library test
+still runs on the active toolchain.

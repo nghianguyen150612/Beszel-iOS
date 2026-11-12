@@ -8,6 +8,7 @@ import {
 	type Table as TableType,
 	flexRender,
 	getCoreRowModel,
+	getPaginationRowModel,
 	getFilteredRowModel,
 	getSortedRowModel,
 	useReactTable,
@@ -46,6 +47,7 @@ import {
 	secondsToString,
 	hourWithSeconds,
 	formatShortDate,
+	formatNumber,
 } from "@/lib/utils"
 import { Trans } from "@lingui/react/macro"
 import { useStore } from "@nanostores/react"
@@ -62,6 +64,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { memo, useCallback, useMemo, useEffect, useRef, useState } from "react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { DataTablePagination, usePagination } from "@/components/ui/shared-pagination"
+import { resetVirtualizedScrollPosition } from "@/lib/pagination"
 
 // Column definition for S.M.A.R.T. attributes table
 export const smartColumns: ColumnDef<SmartAttribute>[] = [
@@ -206,7 +210,8 @@ export const createColumns = (
 		),
 		cell: ({ getValue }) => {
 			const hours = getValue() as number | undefined
-			if (hours == null) {
+			// hours is stored as 0 when the device doesn't report it (e.g. eMMC, mdraid)
+			if (!hours) {
 				return <div className="text-sm text-muted-foreground ms-1">N/A</div>
 			}
 			const seconds = hours * 3600
@@ -226,10 +231,10 @@ export const createColumns = (
 		),
 		cell: ({ getValue }) => {
 			const cycles = getValue() as number | undefined
-			if (cycles == null) {
+			if (!cycles) {
 				return <div className="text-muted-foreground ms-1">N/A</div>
 			}
-			return <span className="ms-1">{cycles.toLocaleString()}</span>
+			return <span className="ms-1">{formatNumber(cycles)}</span>
 		},
 	},
 	{
@@ -512,22 +517,27 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 		return isReadOnlyUser() ? baseColumns : [...baseColumns, actionColumn]
 	}, [systemId, actionColumn, longestName, longestModel, longestDevice])
 
+	const { pagination, onPaginationChange, resetPageIndex } = usePagination()
 	const table = useReactTable({
 		data: smartDevices || ([] as SmartDeviceRecord[]),
 		columns: tableColumns,
-		onSortingChange: setSorting,
-		onColumnFiltersChange: setColumnFilters,
+		onSortingChange: (updater) => { setSorting(updater); resetPageIndex() },
+		onColumnFiltersChange: (updater) => { setColumnFilters(updater); resetPageIndex() },
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		autoResetPageIndex: false,
+		onPaginationChange,
 		onRowSelectionChange: setRowSelection,
 		state: {
 			sorting,
 			columnFilters,
 			rowSelection,
 			globalFilter,
+			pagination,
 		},
-		onGlobalFilterChange: setGlobalFilter,
+		onGlobalFilterChange: (value) => { setGlobalFilter(value); resetPageIndex() },
 		globalFilterFn: (row, _columnId, filterValue) => {
 			const disk = row.original
 			const systemName = $allSystemsById.get()[disk.system]?.name ?? ""
@@ -564,7 +574,7 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 							<Input
 								placeholder={t`Filter...`}
 								value={globalFilter}
-								onChange={(event) => setGlobalFilter(event.target.value)}
+								onChange={(event) => table.setGlobalFilter(event.target.value)}
 								className="px-4 w-full max-w-full md:w-64"
 							/>
 							{globalFilter && (
@@ -574,7 +584,7 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 									size="icon"
 									aria-label={t`Clear`}
 									className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-									onClick={() => setGlobalFilter("")}
+									onClick={() => table.setGlobalFilter("")}
 								>
 									<XIcon className="h-4 w-4" />
 								</Button>
@@ -589,6 +599,7 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 					data={smartDevices}
 					openSheet={openSheet}
 				/>
+				<DataTablePagination table={table} />
 			</Card>
 			<DiskSheet diskId={activeDiskId} open={sheetOpen} onOpenChange={setSheetOpen} />
 		</div>
@@ -617,6 +628,9 @@ const SmartDevicesTable = memo(function SmartDevicesTable({
 		overscan: 5,
 	})
 	const virtualRows = virtualizer.getVirtualItems()
+	useEffect(() => {
+		if (scrollRef.current) resetVirtualizedScrollPosition(scrollRef.current)
+	}, [rows])
 
 	const paddingTop = Math.max(0, virtualRows[0]?.start ?? 0 - virtualizer.options.scrollMargin)
 	const paddingBottom = Math.max(0, virtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end ?? 0))

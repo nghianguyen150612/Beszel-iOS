@@ -4,6 +4,7 @@ import {
 	type ColumnFiltersState,
 	flexRender,
 	getCoreRowModel,
+	getPaginationRowModel,
 	getFilteredRowModel,
 	getSortedRowModel,
 	type Row,
@@ -22,6 +23,8 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { LogsDisplay, LogsFullscreenDialog, LogsIconButton, LogsTimestampToggle } from "@/components/logs-display"
 import { getLogTimestampDecorations } from "@/lib/logs"
+import { DataTablePagination, usePagination } from "@/components/ui/shared-pagination"
+import { resetVirtualizedScrollPosition } from "@/lib/pagination"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { pb } from "@/lib/api"
@@ -61,6 +64,7 @@ export default function SystemdTable({ systemId }: { systemId?: string }) {
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 	const [globalFilter, setGlobalFilter] = useState("")
+	const { pagination, onPaginationChange, resetPageIndex } = usePagination()
 
 	// clear old data when systemId changes
 	useEffect(() => {
@@ -129,8 +133,11 @@ export default function SystemdTable({ systemId }: { systemId?: string }) {
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
-		onSortingChange: setSorting,
-		onColumnFiltersChange: setColumnFilters,
+		getPaginationRowModel: getPaginationRowModel(),
+		autoResetPageIndex: false,
+		onPaginationChange,
+		onSortingChange: (updater) => { setSorting(updater); resetPageIndex() },
+		onColumnFiltersChange: (updater) => { setColumnFilters(updater); resetPageIndex() },
 		onColumnVisibilityChange: setColumnVisibility,
 		defaultColumn: {
 			sortUndefined: "last",
@@ -142,8 +149,9 @@ export default function SystemdTable({ systemId }: { systemId?: string }) {
 			columnFilters,
 			columnVisibility,
 			globalFilter,
+			pagination,
 		},
-		onGlobalFilterChange: setGlobalFilter,
+		onGlobalFilterChange: (value) => { setGlobalFilter(value); resetPageIndex() },
 		globalFilterFn: (row, _columnId, filterValue) => {
 			const service = row.original
 			const systemName = $allSystemsById.get()[service.system]?.name ?? ""
@@ -193,7 +201,7 @@ export default function SystemdTable({ systemId }: { systemId?: string }) {
 					<Input
 						placeholder={t`Filter...`}
 						value={globalFilter}
-						onChange={(e) => setGlobalFilter(e.target.value)}
+						onChange={(e) => table.setGlobalFilter(e.target.value)}
 						className="ms-auto px-4 w-full max-w-full md:w-64"
 					/>
 				</div>
@@ -201,6 +209,7 @@ export default function SystemdTable({ systemId }: { systemId?: string }) {
 			<div className="rounded-md">
 				<AllSystemdTable table={table} rows={rows} colLength={visibleColumns.length} systemId={systemId} />
 			</div>
+			<DataTablePagination table={table} />
 		</Card>
 	)
 }
@@ -234,6 +243,9 @@ const AllSystemdTable = memo(function AllSystemdTable({
 		overscan: 5,
 	})
 	const virtualRows = virtualizer.getVirtualItems()
+	useEffect(() => {
+		if (scrollRef.current) resetVirtualizedScrollPosition(scrollRef.current)
+	}, [rows])
 
 	const paddingTop = Math.max(0, virtualRows[0]?.start ?? 0 - virtualizer.options.scrollMargin)
 	const paddingBottom = Math.max(0, virtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end ?? 0))

@@ -1,4 +1,4 @@
-"""Disposable Go 1.27.3 fixtures; never patch the installed toolchain."""
+"""Disposable Go 1.27.4 fixtures; never patch the installed toolchain."""
 
 import hashlib
 import importlib.util
@@ -13,7 +13,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 PATCH = ROOT / ".github/scripts/patch-go-ios-arm64-runtime.py"
-FIXTURE = Path(__file__).with_name("fixtures") / "go1.27.3-asm_arm64.s"
+FIXTURE = Path(__file__).with_name("fixtures") / "go1.27.4-asm_arm64.s"
 spec = importlib.util.spec_from_file_location("runtime_patch", PATCH)
 patch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(patch)
@@ -34,7 +34,7 @@ class RuntimePatchTests(unittest.TestCase):
         self.fake = self.root / "go"
         self.fake.write_text('#!/bin/sh\n[ "$*" = "env -json GOROOT GOVERSION" ] || exit 99\nprintf "%s\\n" "$FIXTURE_GO_ENV"\n')
         self.fake.chmod(0o755)
-        self.info = {"GOROOT": str(self.root), "GOVERSION": "go1.27.3"}
+        self.info = {"GOROOT": str(self.root), "GOVERSION": "go1.27.4"}
 
     def run_patch(self, success=False):
         before = self.asm.read_bytes()
@@ -54,13 +54,13 @@ class RuntimePatchTests(unittest.TestCase):
                 before.decode()[before.decode().index(patch.START):before.decode().index(patch.END)],
                 patch.REPLACEMENT).encode()
             self.assertEqual(self.asm.read_bytes(), expected)
-            self.assertEqual(json.loads(result.stdout)["go"], "go1.27.3")
+            self.assertEqual(json.loads(result.stdout)["go"], "go1.27.4")
             self.assertEqual(self.asm.stat().st_mode & 0o777, 0o640)
         else:
             self.assertIn("ERROR:", result.stderr)
         return result
 
-    def test_exact_known_go_1_27_3(self):
+    def test_exact_known_go_1_27_4(self):
         self.assertEqual(hashlib.sha256(self.source).hexdigest(), patch.SUPPORTED_SOURCE_SHA256)
         self.run_patch(True)
 

@@ -8,6 +8,7 @@ import {
 	type ColumnFiltersState,
 	flexRender,
 	getCoreRowModel,
+	getPaginationRowModel,
 	getFilteredRowModel,
 	getSortedRowModel,
 	type Row,
@@ -54,6 +55,8 @@ import { $router, Link } from "../router"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { ActionsButton } from "../system-actions-button"
 import { SystemsTableColumns, IndicatorDot } from "./systems-table-columns"
+import { DataTablePagination, usePagination } from "@/components/ui/shared-pagination"
+import { resetVirtualizedScrollPosition } from "@/lib/pagination"
 
 type ViewMode = "table" | "grid"
 type StatusFilter = "all" | SystemRecord["status"]
@@ -80,6 +83,7 @@ export default function SystemsTable() {
 			JSON.parse(sessionStorage.getItem("besz-sortMode") || "null") ?? [{ id: "system", desc: false }]
 	)
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+	const { pagination, onPaginationChange, resetPageIndex } = usePagination()
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
 		() => $userSettings.get().cols ?? JSON.parse(localStorage.getItem("besz-cols") || "{}")
 	)
@@ -123,10 +127,11 @@ export default function SystemsTable() {
 	const handleStatusFilterChange = useCallback((value: string) => {
 		const next = value as StatusFilter
 		setStatusFilter(next)
+		resetPageIndex()
 		localStorage.setItem("besz-statusFilter", JSON.stringify(next))
 		$userSettings.setKey("statusFilter", next)
 		queueUserSettings({ statusFilter: next })
-	}, [])
+	}, [resetPageIndex])
 
 	const handleViewModeChange = useCallback((view: string) => {
 		const next = view as ViewMode
@@ -182,15 +187,19 @@ export default function SystemsTable() {
 		data: filteredData,
 		columns: columnDefs,
 		getCoreRowModel: getCoreRowModel(),
-		onSortingChange: handleSortingChange,
+		getPaginationRowModel: getPaginationRowModel(),
+		autoResetPageIndex: false,
+		onPaginationChange,
+		onSortingChange: (updater) => { handleSortingChange(updater); resetPageIndex() },
 		getSortedRowModel: getSortedRowModel(),
-		onColumnFiltersChange: setColumnFilters,
+		onColumnFiltersChange: (updater) => { setColumnFilters(updater); resetPageIndex() },
 		getFilteredRowModel: getFilteredRowModel(),
 		onColumnVisibilityChange: handleColumnVisibilityChange,
 		state: {
 			sorting,
 			columnFilters,
 			columnVisibility,
+			pagination,
 		},
 		defaultColumn: {
 			invertSorting: true,
@@ -226,7 +235,7 @@ export default function SystemsTable() {
 						<div className="relative flex-1">
 							<Input
 								placeholder={t`Filter...`}
-								onChange={(e) => setFilter(e.target.value)}
+									onChange={(e) => { setFilter(e.target.value); resetPageIndex() }}
 								value={filter}
 								className="ps-4 pe-10 w-full"
 							/>
@@ -237,7 +246,7 @@ export default function SystemsTable() {
 									size="icon"
 									aria-label={t`Clear`}
 									className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-									onClick={() => setFilter("")}
+									onClick={() => { setFilter(""); resetPageIndex() }}
 								>
 									<XIcon className="h-4 w-4" />
 								</Button>
@@ -401,6 +410,7 @@ export default function SystemsTable() {
 					)}
 				</div>
 			)}
+			<DataTablePagination table={table} />
 		</Card>
 	)
 }
@@ -427,6 +437,9 @@ const AllSystemsTable = memo(
 			overscan: 5,
 		})
 		const virtualRows = virtualizer.getVirtualItems()
+		useEffect(() => {
+			if (scrollRef.current) resetVirtualizedScrollPosition(scrollRef.current)
+		}, [rows])
 
 		const paddingTop = Math.max(0, virtualRows[0]?.start ?? 0 - virtualizer.options.scrollMargin)
 		const paddingBottom = Math.max(0, virtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end ?? 0))

@@ -1,11 +1,49 @@
 import { describe, expect, mock, test } from "bun:test"
+import { i18n } from "@lingui/core"
 
 mock.module("@lingui/core/macro", () => ({
 	t: (strings: any) => (typeof strings === "string" ? strings : strings?.[0] ?? ""),
 	plural: (count: number, forms: any) => forms.other ?? "",
 }))
 
-const { formatMicroseconds } = await import("../src/lib/utils")
+const { decimalString, formatMicroseconds, formatNumber, isVisuallyLonger } = await import("../src/lib/utils")
+
+test("system-name width measurement accounts for wide rendered characters", () => {
+	const previousDocument = globalThis.document
+	Object.defineProperty(globalThis, "document", {
+		configurable: true,
+		value: { createElement: () => ({ getContext: () => null }) },
+	})
+	try {
+		expect(isVisuallyLonger("漢", "A")).toBe(true)
+	} finally {
+		if (previousDocument) {
+			Object.defineProperty(globalThis, "document", { configurable: true, value: previousDocument })
+		} else {
+			Reflect.deleteProperty(globalThis, "document")
+		}
+	}
+})
+
+describe("app-locale number formatting", () => {
+	test("uses the selected language for grouping and decimal separators", () => {
+		const previousLocale = i18n.locale
+		try {
+			i18n.load("de-DE", {})
+			i18n.load("en-US", {})
+			i18n.load("en", {})
+			if (previousLocale) i18n.load(previousLocale, {})
+			i18n.activate("de-DE")
+			expect(formatNumber(1234)).toBe("1.234")
+			expect(decimalString(1234.5, 2)).toBe("1.234,50")
+
+			i18n.activate("en-US")
+			expect(decimalString(1234.5, 2)).toBe("1,234.50")
+		} finally {
+			i18n.activate(previousLocale || "en")
+		}
+	})
+})
 
 describe("formatMicroseconds", () => {
 	test("formats with fixedDigits = true (default)", () => {

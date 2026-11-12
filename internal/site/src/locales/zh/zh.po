@@ -30,11 +30,20 @@ msgstr "{0} 現已推出"
 msgid "{0} of {1} row(s) selected."
 msgstr "已選取 {1} 個項目中的 {0} 個"
 
+#. placeholder {0}: table.getFilteredRowModel().rows.length
+#: src/components/ui/shared-pagination.tsx
+msgid "{0} row(s)"
+msgstr "{0} 列"
+
 #. placeholder {0}: selectedIds.size
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "{0} selected"
 msgstr "已選取 {0} 個"
+
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{0}–{1} of {total} rows"
+#~ msgstr ""
 
 #: src/components/active-alerts.tsx
 msgid "{alertCount, plural, one {# active alert} other {# active alerts}}"
@@ -84,9 +93,17 @@ msgstr "{threads, plural, one {# 執行緒} other {# 執行緒}}"
 msgid "{total, plural, one {# update} other {# updates}}"
 msgstr "{total, plural, one {# 個更新} other {# 個更新}}"
 
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{total} row(s)"
+#~ msgstr ""
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{totalCount, plural, one {# service} other {# services}}"
 msgstr "{totalCount, plural, one {# 個服務} other {# 個服務}}"
+
+#: src/components/alerts-history-columns.tsx
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# 天} other {# 天}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -209,6 +226,7 @@ msgstr "警報歷史"
 
 #: src/components/alerts/alert-button.tsx
 #: src/components/alerts/alerts-sheet.tsx
+#: src/components/system-actions-button.tsx
 msgid "Alerts"
 msgstr "警報"
 
@@ -229,7 +247,7 @@ msgstr "所有容器"
 msgid "All Systems"
 msgstr "所有系統"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Are you sure you want to delete {name}?"
 msgstr "您確定要刪除 {name} 嗎？"
 
@@ -242,13 +260,13 @@ msgstr "您確定嗎？"
 msgid "Automatic copy requires a secure context."
 msgstr "只有在受保護的環境（HTTPS）才能自動複製。"
 
-#. Package version available to install
-#: src/components/routes/system/package-updates-table.tsx
+#: src/components/routes/system/storage-pools-table.tsx
+msgctxt "Disk space available"
 msgid "Available"
 msgstr "可用"
 
-#: src/components/routes/system/storage-pools-table.tsx
-msgctxt "Disk space available"
+#. Package version available to install
+#: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
 msgstr "可用"
 
@@ -401,7 +419,7 @@ msgstr "可停止"
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Cancel"
 msgstr "取消"
 
@@ -426,6 +444,10 @@ msgstr "攝氏 (°C)"
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Certificate"
 msgstr "憑證"
+
+#: src/lib/alerts.ts
+msgid "Certificate Expiration"
+msgstr "憑證到期"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Certificate expired {expires}"
@@ -576,7 +598,7 @@ msgstr "容器"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Continue"
 msgstr "繼續"
 
@@ -610,7 +632,7 @@ msgctxt "Copy alerts from another system"
 msgid "Copy from"
 msgstr "複製自"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy host"
 msgstr "複製主機"
 
@@ -619,7 +641,7 @@ msgstr "複製主機"
 msgid "Copy Linux command"
 msgstr "複製 Linux 指令"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy name"
 msgstr "複製名稱"
 
@@ -638,6 +660,11 @@ msgstr "以下方指令安裝 Agent ，或使用<0>通用 Token</0>進行自動�
 #: src/components/add-system.tsx
 msgid "Copy the<0>docker-compose.yml</0> content for the agent below, or register agents automatically with a <1>universal token</1>."
 msgstr "以下方<0>docker-compose.yml</0>執行 Agent，或使用<1>通用 Token</1>進行自動註冊。"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Copy token"
+msgstr "複製權杖"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy YAML"
@@ -761,7 +788,7 @@ msgstr "預設時間段"
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/system/smart-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Delete"
 msgstr "刪除"
 
@@ -857,7 +884,7 @@ msgstr "持續時間"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Edit"
 msgstr "編輯"
 
@@ -958,6 +985,7 @@ msgstr "未在 <0>config.yml</0> 中定義的現有系統將會被刪除。請�
 msgid "Exited active"
 msgstr "結束"
 
+#: src/components/alerts-history-columns.tsx
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Expired"
 msgstr "已過期"
@@ -965,6 +993,10 @@ msgstr "已過期"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Expires after one hour or on hub restart."
 msgstr "在一個小時後或者重新啟動 Hub 時過期。"
+
+#: src/components/alerts/alerts-sheet.tsx
+msgid "Expires within <0>{value, plural, one {# day} other {# days}}</0>"
+msgstr "<0>{value, plural, one {# 天} other {# 天}}</0>內到期"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -1142,6 +1174,11 @@ msgstr "Heartbeat 發送成功"
 msgid "Hide timestamps"
 msgstr "隱藏時間戳記"
 
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Hide token"
+msgstr "隱藏權杖"
+
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
@@ -1186,7 +1223,7 @@ msgstr "如果您遺失管理員帳號密碼，可以使用以下指令重設。
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Ignore TLS certificate errors"
-msgstr ""
+msgstr "忽略 TLS 憑證錯誤"
 
 #: src/components/containers-table/containers-table-columns.tsx
 msgctxt "Docker image"
@@ -1438,6 +1475,10 @@ msgstr "公開介面的網路流量"
 msgid "Network unit"
 msgstr "網路單位"
 
+#: src/components/routes/system/cpu-sheet.tsx
+#~ msgid "Nice"
+#~ msgstr ""
+
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
@@ -1504,6 +1545,11 @@ msgstr "支援 OAuth 2 / OIDC"
 msgid "On each restart, systems in the database will be updated to match the systems defined in the file."
 msgstr "每次重新啟動時，將會以檔案中的系統定義更新資料庫。"
 
+#. placeholder {0}: alert.value
+#: src/components/active-alerts.tsx
+msgid "One or more certificates expire within {0, plural, one {# day} other {# days}}"
+msgstr "一個或多個憑證將在 {0, plural, one {# 天} other {# 天}}內到期"
+
 #: src/lib/alerts.ts
 msgid "One or more containers are unhealthy"
 msgstr "一個或多個容器處於不健康狀態"
@@ -1532,7 +1578,7 @@ msgstr "一次性密碼"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/system/smart-table.tsx
 #: src/components/routes/system/storage-pools-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Open menu"
 msgstr "開啟選單"
 
@@ -1576,10 +1622,11 @@ msgstr "頁面"
 
 #. placeholder {0}: pageIndex + 1
 #. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: Math.max(1, pageCount)
 #. placeholder {1}: Math.max(table.getPageCount(), 1)
-#. placeholder {1}: table.getPageCount()
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Page {0} of {1}"
 msgstr "第 {0} 頁，共 {1} 頁"
 
@@ -1595,6 +1642,10 @@ msgstr "密碼"
 #: src/components/login/auth-form.tsx
 msgid "Password must be at least 8 characters."
 msgstr "密碼需要至少 8 個字元。"
+
+#: src/components/login/auth-form.tsx
+msgid "Password must be at most 71 characters."
+msgstr ""
 
 #: src/components/login/auth-form.tsx
 msgid "Password must be less than 72 bytes."
@@ -1614,7 +1665,7 @@ msgid "Patch"
 msgstr "修補"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Pause"
 msgstr "暫停"
 
@@ -1834,9 +1885,14 @@ msgid "Restarts"
 msgstr "重啟次數"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Resume"
 msgstr "繼續"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Reveal token"
+msgstr "顯示權杖"
 
 #. Package version
 #: src/components/routes/system/package-updates-table.tsx
@@ -1856,6 +1912,7 @@ msgstr "重設 Token"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Rows per page"
 msgstr "每頁列數"
 
@@ -2010,7 +2067,6 @@ msgstr "設定以下環境變數至 Beszel Hub 以啟用 Heartbeat 監控："
 #: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
-#: src/components/routes/system/info-bar.tsx
 msgid "Settings"
 msgstr "設定"
 
@@ -2034,6 +2090,10 @@ msgstr "已連線 Wi-Fi 介面的訊號強度"
 #: src/components/command-palette.tsx
 msgid "SMTP settings"
 msgstr "SMTP 設定"
+
+#: src/components/routes/system/cpu-sheet.tsx
+#~ msgid "SoftIRQ"
+#~ msgstr ""
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/systems-table/systems-table.tsx
@@ -2179,7 +2239,7 @@ msgstr "當所有系統都正常運行時，整體狀態為 <0>正常</0>；當�
 msgid "Then log into the backend and reset your user account password in the users table."
 msgstr "然後登入後台並在使用者列表中重設您的帳號密碼。"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "This action cannot be undone. This will permanently delete all current records for {name} from the database."
 msgstr "此操作無法復原。這將永久刪除資料庫中{name}的所有當前記錄。"
 
@@ -2208,6 +2268,15 @@ msgstr "發送到電子郵件"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token"
 msgstr "權杖"
+
+#. placeholder {0}: fingerprint.expand.system.name
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Token for {0}"
+msgstr "{0} 的權杖"
+
+#: src/components/token-value.tsx
+msgid "Token hidden"
+msgstr "權杖已隱藏"
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -2271,6 +2340,10 @@ msgstr "當 5 分鐘平均負載超過閾值時觸發"
 #: src/lib/alerts.ts
 msgid "Triggers when a container's health check reports unhealthy"
 msgstr "當容器健康檢查回報不健康時觸發"
+
+#: src/lib/alerts.ts
+msgid "Triggers when an HTTPS certificate nears expiration"
+msgstr "HTTPS 憑證即將到期時觸發"
 
 #: src/lib/alerts.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -2341,6 +2414,7 @@ msgid "Unit preferences"
 msgstr "單位偏好"
 
 #: src/components/command-palette.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Universal token"
 msgstr "通用 Token"
@@ -2419,7 +2493,7 @@ msgstr "儲存池 {displayName} 的使用量"
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Use for self-signed certificates."
-msgstr ""
+msgstr "用於自簽憑證。"
 
 #: src/components/routes/system/charts/memory-charts.tsx
 #: src/components/routes/system/charts/memory-charts.tsx
@@ -2444,6 +2518,7 @@ msgid "Value"
 msgstr "值"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table.tsx
 msgid "View"
 msgstr "檢視"

@@ -165,8 +165,8 @@ def build_manifest(*, source_sha: str, source_tree_sha: str, go_version: str,
                    build_ids=None, workflow_run_id=None):
     if not re.fullmatch(r"[0-9a-f]{40}", source_sha) or not re.fullmatch(r"[0-9a-f]{40}", source_tree_sha):
         raise ValueError("source and tree identity must be full lowercase Git SHA-1 values")
-    if go_version != "go1.27.3":
-        raise ValueError("reproducibility assessment requires Go 1.27.3")
+    if go_version != "go1.27.4":
+        raise ValueError("reproducibility assessment requires Go 1.27.4")
     if target != TARGET:
         raise ValueError("reproducibility assessment requires iOS ARM64 v8.0 with cgo")
     assets, assets_sha = frontend_manifest(frontend_dist)

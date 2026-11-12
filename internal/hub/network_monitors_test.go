@@ -82,6 +82,39 @@ func TestCreateNetworkMonitorsOnPausedSystem(t *testing.T) {
 	}
 }
 
+func TestP028DeleteMonitorUsesPersistedSystem(t *testing.T) {
+	hub, testApp, err := createTestHub(t)
+	require.NoError(t, err)
+	defer cleanupTestHub(hub, testApp)
+	user, err := createTestUser(hub)
+	require.NoError(t, err)
+	original, err := createTestRecord(hub, "systems", map[string]any{
+		"name": "original", "host": "127.0.0.1", "port": "45876",
+		"status": "paused", "users": []string{user.Id},
+	})
+	require.NoError(t, err)
+	// Only the persisted system exists in the manager. Its legacy agent does
+	// not support monitor transport, so this test never initiates a connection.
+	require.NoError(t, hub.sm.AddRecord(original, nil))
+	record, err := createTestRecord(hub, "network_monitors", map[string]any{
+		"system": original.Id, "target": "synthetic.invalid", "protocol": "icmp", "interval": 60,
+	})
+	require.NoError(t, err)
+	record, err = hub.FindRecordById("network_monitors", record.Id)
+	require.NoError(t, err)
+	record.Set("system", "pending-target")
+	require.Equal(t, original.Id, record.Original().GetString("system"))
+	require.NoError(t, hub.deleteNetworkMonitor(record))
+	// Reverse the pending edit: a missing original must fail even when the
+	// destination exists, rather than deleting from the wrong agent.
+	record.Set("system", "missing-original")
+	require.NoError(t, hub.SaveNoValidate(record))
+	record, err = hub.FindRecordById("network_monitors", record.Id)
+	require.NoError(t, err)
+	record.Set("system", original.Id)
+	require.ErrorContains(t, hub.deleteNetworkMonitor(record), "system not found")
+}
+
 func TestGenerateMonitorID(t *testing.T) {
 	tests := []struct {
 		name     string

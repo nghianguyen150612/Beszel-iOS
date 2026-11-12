@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   # P017 review-only native verification: this trigger cannot publish releases.
   pull_request:
-    branches: [ios/upstream-v021-integration, ios/p026-device-acceptance]
+    branches: [ios/upstream-v021-integration, ios/p026-device-acceptance, ios/p027-upstream-port]
     paths:
       - ".github/workflows/ios-build.yml"
       - ".github/workflows/p017-release-candidate.yml"
@@ -109,9 +109,9 @@ jobs:
             --env BESZEL_APT_QUERY_ISOLATED=1 \
             --env BESZEL_REQUIRE_OFFLINE_APT_SANDBOX=1 \
             --env BESZEL_HEALTH_DIR=/tmp/beszel-health \
-            golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 bash -euo pipefail -c '
+            golang:1.27.4-bookworm@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea bash -euo pipefail -c '
               mkdir -p "$HOME" "$GOCACHE" "$BESZEL_HEALTH_DIR"
-              test "$(go env GOVERSION)" = go1.27.3
+              test "$(go env GOVERSION)" = go1.27.4
               go version
               go test -race -v -tags "testing no_ui" ./agent \
                 -run "Test(DetectProcursusAPT|ParseProcursusAPT|ProcursusAPT|CompareDpkgVersions|CheckProcursusAPT)" \
@@ -225,8 +225,8 @@ jobs:
         run: |
           set -euo pipefail
           go test ./agent -run 'Test.*(Powermetrics|Macmon)' -count=1
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -trimpath -o "$RUNNER_TEMP/beszel-agent-macos" ./internal/cmd/agent
-          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -trimpath -o "$RUNNER_TEMP/beszel-hub-macos" ./internal/cmd/hub
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -tags=no_self_update -trimpath -o "$RUNNER_TEMP/beszel-agent-macos" ./internal/cmd/agent
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -tags=no_self_update -trimpath -o "$RUNNER_TEMP/beszel-hub-macos" ./internal/cmd/hub
 
       - name: Show and verify environment
         shell: bash
@@ -275,11 +275,11 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "$GOROOT/bin" >> "$GITHUB_PATH"
 
-      - name: Verify native Go 1.27.3 x509 security fix
+      - name: Verify native Go 1.27.4 x509 security fix
         shell: bash
         run: |
           set -euo pipefail
-          test "$(go env GOVERSION)" = go1.27.3
+          test "$(go env GOVERSION)" = go1.27.4
           python3 scripts/audit/validate-go-x509-native.py \
             --output "$RUNNER_TEMP/go-x509-security-native.json"
 
@@ -299,8 +299,8 @@ jobs:
           go env GOOS GOARCH CGO_ENABLED CC CGO_CFLAGS CGO_LDFLAGS GOROOT GOTOOLCHAIN
           mkdir -p build/ios "$RUNNER_TEMP/ios-repeat"
           for binary in agent hub; do
-            go build -trimpath -ldflags="-s -w" -o "build/ios/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
-            GOCACHE="$RUNNER_TEMP/ios-repeat-cache" go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/ios-repeat/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
+            go build -tags=no_self_update -trimpath -ldflags="-s -w" -o "build/ios/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
+            GOCACHE="$RUNNER_TEMP/ios-repeat-cache" go build -tags=no_self_update -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/ios-repeat/beszel-$binary-ios-arm64" "./internal/cmd/$binary"
           done
           python3 .github/scripts/create-ios-reproducibility-manifest.py \
             --root "$GITHUB_WORKSPACE" \
@@ -318,7 +318,7 @@ jobs:
         run: |
           set -euo pipefail
           for binary in agent hub; do
-            go build -trimpath -o "$RUNNER_TEMP/beszel-$binary-validation" "./internal/cmd/$binary"
+            go build -tags=no_self_update -trimpath -o "$RUNNER_TEMP/beszel-$binary-validation" "./internal/cmd/$binary"
             python3 .github/scripts/verify-ios-runtime-binary.py "$RUNNER_TEMP/beszel-$binary-validation" --output "$RUNNER_TEMP/runtime-$binary.json"
           done
 
@@ -413,7 +413,7 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Set up Go 1.27.3 for binary metadata inspection
+      - name: Set up Go 1.27.4 for binary metadata inspection
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
@@ -467,7 +467,7 @@ jobs:
           SOURCE_SHA="$(git rev-parse HEAD)"
           SOURCE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
           test "$SOURCE_SHA" = "$CANDIDATE_SOURCE_SHA"
-          test "$(go env GOVERSION)" = go1.27.3
+          test "$(go env GOVERSION)" = go1.27.4
           python3 .github/scripts/verify-ios-artifact-consumer.py \
             --repository "$REPOSITORY" \
             --run-id "$WORKFLOW_RUN_ID" \

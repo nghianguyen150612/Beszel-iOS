@@ -30,11 +30,20 @@ msgstr "Версия {0} е налична"
 msgid "{0} of {1} row(s) selected."
 msgstr "{0} от {1} селектирани."
 
+#. placeholder {0}: table.getFilteredRowModel().rows.length
+#: src/components/ui/shared-pagination.tsx
+msgid "{0} row(s)"
+msgstr "{0} ред(а)"
+
 #. placeholder {0}: selectedIds.size
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "{0} selected"
 msgstr "{0} избрани"
+
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{0}–{1} of {total} rows"
+#~ msgstr ""
 
 #: src/components/active-alerts.tsx
 msgid "{alertCount, plural, one {# active alert} other {# active alerts}}"
@@ -84,9 +93,17 @@ msgstr "{threads, plural, one {# нишка} other {# нишки}}"
 msgid "{total, plural, one {# update} other {# updates}}"
 msgstr "{total, plural, one {# актуализация} other {# актуализации}}"
 
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{total} row(s)"
+#~ msgstr ""
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{totalCount, plural, one {# service} other {# services}}"
 msgstr "{totalCount, plural, one {# услуга} other {# услуги}}"
+
+#: src/components/alerts-history-columns.tsx
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# ден} other {# дни}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -209,6 +226,7 @@ msgstr "История на нотификациите"
 
 #: src/components/alerts/alert-button.tsx
 #: src/components/alerts/alerts-sheet.tsx
+#: src/components/system-actions-button.tsx
 msgid "Alerts"
 msgstr "Тревоги"
 
@@ -229,7 +247,7 @@ msgstr "Всички контейнери"
 msgid "All Systems"
 msgstr "Всички системи"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Are you sure you want to delete {name}?"
 msgstr "Сигурен ли си, че искаш да изтриеш {name}?"
 
@@ -242,13 +260,13 @@ msgstr "Сигурни ли сте?"
 msgid "Automatic copy requires a secure context."
 msgstr "Автоматичното копиране изисква защитен контескт."
 
-#. Package version available to install
-#: src/components/routes/system/package-updates-table.tsx
+#: src/components/routes/system/storage-pools-table.tsx
+msgctxt "Disk space available"
 msgid "Available"
 msgstr "Налично"
 
-#: src/components/routes/system/storage-pools-table.tsx
-msgctxt "Disk space available"
+#. Package version available to install
+#: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
 msgstr "Налично"
 
@@ -401,7 +419,7 @@ msgstr "Може да се спре"
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Cancel"
 msgstr "Откажи"
 
@@ -426,6 +444,10 @@ msgstr "Целзий (°C)"
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Certificate"
 msgstr "Сертификат"
+
+#: src/lib/alerts.ts
+msgid "Certificate Expiration"
+msgstr "Изтичане на сертификат"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Certificate expired {expires}"
@@ -576,7 +598,7 @@ msgstr "Контейнери"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Continue"
 msgstr "Продължи"
 
@@ -610,7 +632,7 @@ msgctxt "Copy alerts from another system"
 msgid "Copy from"
 msgstr "Копиране от"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy host"
 msgstr "Копирай хоста"
 
@@ -619,7 +641,7 @@ msgstr "Копирай хоста"
 msgid "Copy Linux command"
 msgstr "Копирай linux командата"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy name"
 msgstr "Копирай име"
 
@@ -638,6 +660,11 @@ msgstr "Копирайте командата за инсталиране на �
 #: src/components/add-system.tsx
 msgid "Copy the<0>docker-compose.yml</0> content for the agent below, or register agents automatically with a <1>universal token</1>."
 msgstr "Копирайте съдържанието на<0>docker-compose.yml</0> за агента по-долу или регистрирайте агентите автоматично с <1>универсален токен</1>."
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Copy token"
+msgstr "Копиране на токена"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy YAML"
@@ -761,7 +788,7 @@ msgstr "Времеви диапазон по подразбиране"
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/system/smart-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Delete"
 msgstr "Изтрий"
 
@@ -857,7 +884,7 @@ msgstr "Продължителност"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Edit"
 msgstr "Редактирай"
 
@@ -958,6 +985,7 @@ msgstr "Съществуващи системи които не са дефин�
 msgid "Exited active"
 msgstr "Излезе активно"
 
+#: src/components/alerts-history-columns.tsx
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Expired"
 msgstr "Изтекъл"
@@ -965,6 +993,10 @@ msgstr "Изтекъл"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Expires after one hour or on hub restart."
 msgstr "Изтича след един час или при рестартиране на хъба."
+
+#: src/components/alerts/alerts-sheet.tsx
+msgid "Expires within <0>{value, plural, one {# day} other {# days}}</0>"
+msgstr "Изтича до <0>{value, plural, one {# ден} other {# дни}}</0>"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -1142,6 +1174,11 @@ msgstr "Heartbeat е изпратен успешно"
 msgid "Hide timestamps"
 msgstr "Скриване на времевите отпечатъци"
 
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Hide token"
+msgstr "Скриване на токена"
+
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
@@ -1186,7 +1223,7 @@ msgstr "Ако си загубил паролата до администрат�
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Ignore TLS certificate errors"
-msgstr ""
+msgstr "Игнориране на грешки в TLS сертификата"
 
 #: src/components/containers-table/containers-table-columns.tsx
 msgctxt "Docker image"
@@ -1438,6 +1475,10 @@ msgstr "Мрежов трафик на публични интерфейси"
 msgid "Network unit"
 msgstr "Единица за измерване на скорост"
 
+#: src/components/routes/system/cpu-sheet.tsx
+#~ msgid "Nice"
+#~ msgstr ""
+
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
@@ -1504,6 +1545,11 @@ msgstr "Поддръжка на OAuth 2 / OIDC"
 msgid "On each restart, systems in the database will be updated to match the systems defined in the file."
 msgstr "На всеки рестарт, системите в датабазата ще бъдат обновени да съвпадат със системите зададени във файла."
 
+#. placeholder {0}: alert.value
+#: src/components/active-alerts.tsx
+msgid "One or more certificates expire within {0, plural, one {# day} other {# days}}"
+msgstr "Един или повече сертификати изтичат до {0, plural, one {# ден} other {# дни}}"
+
 #: src/lib/alerts.ts
 msgid "One or more containers are unhealthy"
 msgstr "Един или повече контейнери са в неизправно състояние"
@@ -1532,7 +1578,7 @@ msgstr "Еднократна парола"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/system/smart-table.tsx
 #: src/components/routes/system/storage-pools-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Open menu"
 msgstr "Отвори менюто"
 
@@ -1576,10 +1622,11 @@ msgstr "Страница"
 
 #. placeholder {0}: pageIndex + 1
 #. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: Math.max(1, pageCount)
 #. placeholder {1}: Math.max(table.getPageCount(), 1)
-#. placeholder {1}: table.getPageCount()
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Page {0} of {1}"
 msgstr "Страница {0} от {1}"
 
@@ -1595,6 +1642,10 @@ msgstr "Парола"
 #: src/components/login/auth-form.tsx
 msgid "Password must be at least 8 characters."
 msgstr "Паролата трябва да е поне 8 символа."
+
+#: src/components/login/auth-form.tsx
+msgid "Password must be at most 71 characters."
+msgstr ""
 
 #: src/components/login/auth-form.tsx
 msgid "Password must be less than 72 bytes."
@@ -1614,7 +1665,7 @@ msgid "Patch"
 msgstr "Корекция"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Pause"
 msgstr "Пауза"
 
@@ -1834,9 +1885,14 @@ msgid "Restarts"
 msgstr "Рестартирания"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Resume"
 msgstr "Възобнови"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Reveal token"
+msgstr "Показване на токена"
 
 #. Package version
 #: src/components/routes/system/package-updates-table.tsx
@@ -1856,6 +1912,7 @@ msgstr "Пресъздаване на идентификатора"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Rows per page"
 msgstr "Редове на страница"
 
@@ -2010,7 +2067,6 @@ msgstr "Задайте следните променливи на средата
 #: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
-#: src/components/routes/system/info-bar.tsx
 msgid "Settings"
 msgstr "Настройки"
 
@@ -2034,6 +2090,10 @@ msgstr "Сила на сигнала на свързаните Wi-Fi интер�
 #: src/components/command-palette.tsx
 msgid "SMTP settings"
 msgstr "Настройки за SMTP"
+
+#: src/components/routes/system/cpu-sheet.tsx
+#~ msgid "SoftIRQ"
+#~ msgstr ""
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/systems-table/systems-table.tsx
@@ -2179,7 +2239,7 @@ msgstr "Общият статус е <0>ok</0>, когато всички сис
 msgid "Then log into the backend and reset your user account password in the users table."
 msgstr "След това влез в backend-а и нулирай паролата за потребителския акаунт в таблицата за потребители."
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "This action cannot be undone. This will permanently delete all current records for {name} from the database."
 msgstr "Това действие не може да бъде отменено. Това ще изтрие всички записи за {name} от датабазата."
 
@@ -2208,6 +2268,15 @@ msgstr "До имейл(ите)"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token"
 msgstr "Токен"
+
+#. placeholder {0}: fingerprint.expand.system.name
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Token for {0}"
+msgstr "Токен за {0}"
+
+#: src/components/token-value.tsx
+msgid "Token hidden"
+msgstr "Токенът е скрит"
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -2271,6 +2340,10 @@ msgstr "Задейства се, когато употребата на паме
 #: src/lib/alerts.ts
 msgid "Triggers when a container's health check reports unhealthy"
 msgstr "Задейства се, когато проверката на състоянието на контейнер отчете неизправност"
+
+#: src/lib/alerts.ts
+msgid "Triggers when an HTTPS certificate nears expiration"
+msgstr "Задейства се, когато HTTPS сертификат наближава изтичане"
 
 #: src/lib/alerts.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -2341,6 +2414,7 @@ msgid "Unit preferences"
 msgstr "Предпочитания на единицата"
 
 #: src/components/command-palette.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Universal token"
 msgstr "Универсален тоукън"
@@ -2419,7 +2493,7 @@ msgstr "Използване на пула {displayName}"
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Use for self-signed certificates."
-msgstr ""
+msgstr "Използвайте за самоподписани сертификати."
 
 #: src/components/routes/system/charts/memory-charts.tsx
 #: src/components/routes/system/charts/memory-charts.tsx
@@ -2444,6 +2518,7 @@ msgid "Value"
 msgstr "Стойност"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table.tsx
 msgid "View"
 msgstr "Изглед"

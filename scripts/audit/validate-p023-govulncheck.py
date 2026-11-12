@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate exact Go 1.27.3 scan output against the narrow P023 advisory policy."""
+"""Validate exact Go 1.27.4 scan output against the narrow P023 advisory policy."""
 
 import argparse
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 
 
-EXPECTED_GO = "go1.27.3"
+EXPECTED_GO = "go1.27.4"
 SCANNER_VERSION = "v1.9.0"
 GO_6608 = "GO-2026-6608"
 GO_6809 = "GO-2026-6809"
@@ -51,13 +51,13 @@ def read_jsonl(report: str) -> list[dict]:
 
 def validate_x509(evidence: dict, expected_go: str) -> dict:
     if expected_go != EXPECTED_GO or evidence.get("go_version") != EXPECTED_GO:
-        raise ValueError("native x509 evidence is not for Go 1.27.3")
+        raise ValueError("native x509 evidence is not for Go 1.27.4")
     if evidence.get("status") != "PASS" or evidence.get("advisory") != GO_6809:
         raise ValueError("GO-2026-6809 native x509 source validation is not a PASS")
-    if evidence.get("fix_disposition") != "native in official Go 1.27.3; custom P019/P022 backport not applied":
+    if evidence.get("fix_disposition") != "native in official Go 1.27.4; custom P019/P022 backport not applied":
         raise ValueError("GO-2026-6809 x509 transition does not identify the native fix")
     if evidence.get("native_source_sha256") != EXPECTED_X509_SOURCE_SHA256:
-        raise ValueError("Go 1.27.3 x509 source fingerprints do not match the reviewed CL 851047 output")
+        raise ValueError("Go 1.27.4 x509 source fingerprints do not match the reviewed CL 851047 output")
     if evidence.get("matches_reviewed_backport_outputs") is not True:
         raise ValueError("native x509 source does not match the reviewed P019/P022 fix output")
     if evidence.get("standard_library_test", {}).get("status") != "PASS":
@@ -159,9 +159,9 @@ def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_eviden
         details.append({"id": osv, "fixed_version": finding.get("fixed_version"), "trace": trace})
 
     if GO_6608 in counts:
-        raise ValueError(f"{GO_6608} remains in Go 1.27.3 source findings")
+        raise ValueError(f"{GO_6608} remains in Go 1.27.4 source findings")
     if GO_6809 in counts:
-        raise ValueError(f"{GO_6809} remains in Go 1.27.3 source findings despite the verified native x509 fix")
+        raise ValueError(f"{GO_6809} remains in Go 1.27.4 source findings despite the verified native x509 fix")
     unreviewed = sorted(set(counts) - {GO_5932})
     if unreviewed:
         raise ValueError(f"unreviewed Go advisory findings fail the P023 gate: {unreviewed}")
@@ -196,12 +196,12 @@ def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_eviden
             x509,
             {
                 "advisory": GO_6608,
-                "raw_scanner_status": "absent from the exact Go 1.27.3 source scan",
+                "raw_scanner_status": "absent from the exact Go 1.27.4 source scan",
                 "affected_versions": "Go 1.27.0 before 1.27.2",
                 "fixed_version": "go1.27.2",
                 "current_go_version": EXPECTED_GO,
                 "remediation_status": "REMEDIATED_AND_VERIFIED",
-                "actual_mitigation": "Run the official Go 1.27.3 toolchain, which includes the Go 1.27.2 standard-library fix; exact source scan contains no GO-2026-6608 finding.",
+                "actual_mitigation": "Run the official Go 1.27.4 toolchain, which includes the Go 1.27.2 standard-library fix; exact source scan contains no GO-2026-6608 finding.",
                 "release_owner_decision_required": False,
             },
             {

@@ -30,11 +30,20 @@ msgstr "Διαθέσιμη έκδοση {0}"
 msgid "{0} of {1} row(s) selected."
 msgstr "{0} από {1} σειρά(ες) επιλέχθηκαν."
 
+#. placeholder {0}: table.getFilteredRowModel().rows.length
+#: src/components/ui/shared-pagination.tsx
+msgid "{0} row(s)"
+msgstr "{0} γραμμή(ές)"
+
 #. placeholder {0}: selectedIds.size
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "{0} selected"
 msgstr "{0} επιλεγμένα"
+
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{0}–{1} of {total} rows"
+#~ msgstr ""
 
 #: src/components/active-alerts.tsx
 msgid "{alertCount, plural, one {# active alert} other {# active alerts}}"
@@ -84,9 +93,17 @@ msgstr "{threads, plural, one {# νήμα} other {# νήματα}}"
 msgid "{total, plural, one {# update} other {# updates}}"
 msgstr "{total, plural, one {# ενημέρωση} other {# ενημερώσεις}}"
 
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{total} row(s)"
+#~ msgstr ""
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{totalCount, plural, one {# service} other {# services}}"
 msgstr "{totalCount, plural, one {# υπηρεσία} other {# υπηρεσίες}}"
+
+#: src/components/alerts-history-columns.tsx
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# ημέρα} other {# ημέρες}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -209,6 +226,7 @@ msgstr "Ιστορικό ειδοποιήσεων"
 
 #: src/components/alerts/alert-button.tsx
 #: src/components/alerts/alerts-sheet.tsx
+#: src/components/system-actions-button.tsx
 msgid "Alerts"
 msgstr "Ειδοποιήσεις"
 
@@ -229,7 +247,7 @@ msgstr "Όλα τα κοντέινερ"
 msgid "All Systems"
 msgstr "Όλα τα συστήματα"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Are you sure you want to delete {name}?"
 msgstr "Είστε βέβαιοι ότι θέλετε να διαγράψετε το {name};"
 
@@ -242,13 +260,13 @@ msgstr "Είστε βέβαιοι;"
 msgid "Automatic copy requires a secure context."
 msgstr "Η αυτόματη αντιγραφή απαιτεί ασφαλές περιβάλλον."
 
-#. Package version available to install
-#: src/components/routes/system/package-updates-table.tsx
+#: src/components/routes/system/storage-pools-table.tsx
+msgctxt "Disk space available"
 msgid "Available"
 msgstr "Διαθέσιμο"
 
-#: src/components/routes/system/storage-pools-table.tsx
-msgctxt "Disk space available"
+#. Package version available to install
+#: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
 msgstr "Διαθέσιμο"
 
@@ -401,7 +419,7 @@ msgstr "Δυνατότητα διακοπής"
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Cancel"
 msgstr "Ακύρωση"
 
@@ -426,6 +444,10 @@ msgstr "Κελσίου (°C)"
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Certificate"
 msgstr "Πιστοποιητικό"
+
+#: src/lib/alerts.ts
+msgid "Certificate Expiration"
+msgstr "Λήξη πιστοποιητικού"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Certificate expired {expires}"
@@ -576,7 +598,7 @@ msgstr "Κοντέινερ"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Continue"
 msgstr "Συνέχεια"
 
@@ -610,7 +632,7 @@ msgctxt "Copy alerts from another system"
 msgid "Copy from"
 msgstr "Αντιγραφή από"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy host"
 msgstr "Αντιγραφή κεντρικού υπολογιστή"
 
@@ -619,7 +641,7 @@ msgstr "Αντιγραφή κεντρικού υπολογιστή"
 msgid "Copy Linux command"
 msgstr "Αντιγραφή εντολής Linux"
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Copy name"
 msgstr "Αντιγραφή ονόματος"
 
@@ -638,6 +660,11 @@ msgstr "Αντιγράψτε την παρακάτω εντολή εγκατάσ
 #: src/components/add-system.tsx
 msgid "Copy the<0>docker-compose.yml</0> content for the agent below, or register agents automatically with a <1>universal token</1>."
 msgstr "Αντιγράψτε το περιεχόμενο του <0>docker-compose.yml</0> για τον παρακάτω πράκτορα ή καταχωρίστε πράκτορες αυτόματα με ένα <1>καθολικό διακριτικό</1>."
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Copy token"
+msgstr "Αντιγραφή διακριτικού"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy YAML"
@@ -761,7 +788,7 @@ msgstr "Προεπιλεγμένη χρονική περίοδος"
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/system/smart-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Delete"
 msgstr "Διαγραφή"
 
@@ -857,7 +884,7 @@ msgstr "Διάρκεια"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 #: src/components/routes/settings/quiet-hours.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Edit"
 msgstr "Επεξεργασία"
 
@@ -958,6 +985,7 @@ msgstr "Τα υπάρχοντα συστήματα που δεν ορίζοντ�
 msgid "Exited active"
 msgstr "Ενεργό μετά την έξοδο"
 
+#: src/components/alerts-history-columns.tsx
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 msgid "Expired"
 msgstr "Έληξε"
@@ -965,6 +993,10 @@ msgstr "Έληξε"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Expires after one hour or on hub restart."
 msgstr "Λήγει μετά από μία ώρα ή με επανεκκίνηση του κόμβου."
+
+#: src/components/alerts/alerts-sheet.tsx
+msgid "Expires within <0>{value, plural, one {# day} other {# days}}</0>"
+msgstr "Λήγει εντός <0>{value, plural, one {# ημέρα} other {# ημέρες}}</0>"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -1142,6 +1174,11 @@ msgstr "Το heartbeat στάλθηκε με επιτυχία"
 msgid "Hide timestamps"
 msgstr "Απόκρυψη χρονοσφραγίδων"
 
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Hide token"
+msgstr "Απόκρυψη διακριτικού"
+
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
@@ -1186,7 +1223,7 @@ msgstr "Αν έχετε χάσει τον κωδικό πρόσβασης του
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Ignore TLS certificate errors"
-msgstr ""
+msgstr "Παράβλεψη σφαλμάτων πιστοποιητικού TLS"
 
 #: src/components/containers-table/containers-table-columns.tsx
 msgctxt "Docker image"
@@ -1438,6 +1475,10 @@ msgstr "Κίνηση δικτύου δημόσιων interfaces"
 msgid "Network unit"
 msgstr "Μονάδα δικτύου"
 
+#: src/components/routes/system/cpu-sheet.tsx
+#~ msgid "Nice"
+#~ msgstr ""
+
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
@@ -1504,6 +1545,11 @@ msgstr "Υποστήριξη OAuth 2 / OIDC"
 msgid "On each restart, systems in the database will be updated to match the systems defined in the file."
 msgstr "Σε κάθε επανεκκίνηση, τα συστήματα στη βάση δεδομένων θα ενημερώνονται ώστε να αντιστοιχούν στα συστήματα που ορίζονται στο αρχείο."
 
+#. placeholder {0}: alert.value
+#: src/components/active-alerts.tsx
+msgid "One or more certificates expire within {0, plural, one {# day} other {# days}}"
+msgstr "Ένα ή περισσότερα πιστοποιητικά λήγουν εντός {0, plural, one {# ημέρα} other {# ημέρες}}"
+
 #: src/lib/alerts.ts
 msgid "One or more containers are unhealthy"
 msgstr "Ένα ή περισσότερα κοντέινερ δεν είναι υγιή"
@@ -1532,7 +1578,7 @@ msgstr "Κωδικός μίας χρήσης"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/system/smart-table.tsx
 #: src/components/routes/system/storage-pools-table.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Open menu"
 msgstr "Άνοιγμα μενού"
 
@@ -1576,10 +1622,11 @@ msgstr "Σελίδα"
 
 #. placeholder {0}: pageIndex + 1
 #. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: Math.max(1, pageCount)
 #. placeholder {1}: Math.max(table.getPageCount(), 1)
-#. placeholder {1}: table.getPageCount()
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Page {0} of {1}"
 msgstr "Σελίδα {0} από {1}"
 
@@ -1595,6 +1642,10 @@ msgstr "Κωδικός πρόσβασης"
 #: src/components/login/auth-form.tsx
 msgid "Password must be at least 8 characters."
 msgstr "Ο κωδικός πρόσβασης πρέπει να έχει τουλάχιστον 8 χαρακτήρες."
+
+#: src/components/login/auth-form.tsx
+msgid "Password must be at most 71 characters."
+msgstr ""
 
 #: src/components/login/auth-form.tsx
 msgid "Password must be less than 72 bytes."
@@ -1614,7 +1665,7 @@ msgid "Patch"
 msgstr "Διόρθωση"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Pause"
 msgstr "Παύση"
 
@@ -1834,9 +1885,14 @@ msgid "Restarts"
 msgstr "Επανεκκινήσεις"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "Resume"
 msgstr "Συνέχιση"
+
+#: src/components/token-value.tsx
+#: src/components/token-value.tsx
+msgid "Reveal token"
+msgstr "Εμφάνιση διακριτικού"
 
 #. Package version
 #: src/components/routes/system/package-updates-table.tsx
@@ -1856,6 +1912,7 @@ msgstr "Ανανέωση token"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Rows per page"
 msgstr "Γραμμές ανά σελίδα"
 
@@ -2010,7 +2067,6 @@ msgstr "Ορίστε τις ακόλουθες μεταβλητές περιβά
 #: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
-#: src/components/routes/system/info-bar.tsx
 msgid "Settings"
 msgstr "Ρυθμίσεις"
 
@@ -2034,6 +2090,10 @@ msgstr "Ισχύς σήματος των συνδεδεμένων διεπαφώ
 #: src/components/command-palette.tsx
 msgid "SMTP settings"
 msgstr "Ρυθμίσεις SMTP"
+
+#: src/components/routes/system/cpu-sheet.tsx
+#~ msgid "SoftIRQ"
+#~ msgstr ""
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/systems-table/systems-table.tsx
@@ -2179,7 +2239,7 @@ msgstr "Η συνολική κατάσταση είναι <0>ok</0> όταν ό�
 msgid "Then log into the backend and reset your user account password in the users table."
 msgstr "Στη συνέχεια, συνδεθείτε στο backend και επαναφέρετε τον κωδικό πρόσβασης του λογαριασμού χρήστη στον πίνακα χρηστών."
 
-#: src/components/systems-table/systems-table-columns.tsx
+#: src/components/system-actions-button.tsx
 msgid "This action cannot be undone. This will permanently delete all current records for {name} from the database."
 msgstr "Αυτή η ενέργεια δεν μπορεί να αναιρεθεί. Θα διαγράψει οριστικά όλες τις τρέχουσες εγγραφές για το {name} από τη βάση δεδομένων."
 
@@ -2208,6 +2268,15 @@ msgstr "Προς email"
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token"
 msgstr "Διακριτικό"
+
+#. placeholder {0}: fingerprint.expand.system.name
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Token for {0}"
+msgstr "Διακριτικό για {0}"
+
+#: src/components/token-value.tsx
+msgid "Token hidden"
+msgstr "Το διακριτικό είναι κρυφό"
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -2271,6 +2340,10 @@ msgstr "Ενεργοποιείται όταν ο μέσος φόρτος 5 λε�
 #: src/lib/alerts.ts
 msgid "Triggers when a container's health check reports unhealthy"
 msgstr "Ενεργοποιείται όταν ο έλεγχος υγείας ενός κοντέινερ αναφέρει μη υγιή κατάσταση"
+
+#: src/lib/alerts.ts
+msgid "Triggers when an HTTPS certificate nears expiration"
+msgstr "Ενεργοποιείται όταν ένα πιστοποιητικό HTTPS πλησιάζει στη λήξη του"
 
 #: src/lib/alerts.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -2341,6 +2414,7 @@ msgid "Unit preferences"
 msgstr "Προτιμήσεις μονάδων μέτρησης"
 
 #: src/components/command-palette.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Universal token"
 msgstr "Καθολικό διακριτικό"
@@ -2419,7 +2493,7 @@ msgstr "Χρήση του pool αποθήκευσης {displayName}"
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Use for self-signed certificates."
-msgstr ""
+msgstr "Χρησιμοποιήστε το για αυτο-υπογεγραμμένα πιστοποιητικά."
 
 #: src/components/routes/system/charts/memory-charts.tsx
 #: src/components/routes/system/charts/memory-charts.tsx
@@ -2444,6 +2518,7 @@ msgid "Value"
 msgstr "Τιμή"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table.tsx
 msgid "View"
 msgstr "Προβολή"

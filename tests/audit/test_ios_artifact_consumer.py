@@ -146,10 +146,10 @@ class ArtifactZipTests(unittest.TestCase):
 
     def test_native_x509_record_requires_exact_official_toolchain_evidence(self):
         validator = consumer._load_script(ROOT / "scripts/audit/validate-go-x509-native.py", "go_x509_test_fixture")
-        evidence = {"status": "PASS", "advisory": "GO-2026-6809", "go_version": "go1.27.3",
+        evidence = {"status": "PASS", "advisory": "GO-2026-6809", "go_version": "go1.27.4",
                     "native_source_sha256": validator.SOURCE_SHA256,
                     "matches_reviewed_backport_outputs": True,
-                    "fix_disposition": "native in official Go 1.27.3; custom P019/P022 backport not applied",
+                    "fix_disposition": "native in official Go 1.27.4; custom P019/P022 backport not applied",
                     "standard_library_test": {"status": "PASS"}}
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "x509.json"
@@ -229,7 +229,7 @@ class ArtifactZipTests(unittest.TestCase):
             native.mkdir()
             report = {"schema_version": 1, "source_sha": source_sha, "source_tree_sha": tree_sha,
                       "workflow_run_id": run_id,
-                      "toolchain": {"go": "go1.27.3", "xcodebuild": "Xcode 16.4 Build version 16F6", "iphoneos_sdk": "18.5"},
+                      "toolchain": {"go": "go1.27.4", "xcodebuild": "Xcode 16.4 Build version 16F6", "iphoneos_sdk": "18.5"},
                       "target": consumer.EXPECTED_TARGET, "build_flags": ["-trimpath", "-ldflags=-s -w"], "inputs": inputs,
                       "source_equivalent": True, "byte_identical": True, "classification": "byte_identical",
                       "build_isolation": "isolated test builds", "builds": builds}
