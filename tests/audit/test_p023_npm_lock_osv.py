@@ -25,13 +25,14 @@ class P023NpmLockOsvTests(unittest.TestCase):
         self.advisory = {
             "id": module.REVIEWED_ID,
             "aliases": [module.REVIEWED_ALIAS],
+            "withdrawn": module.REVIEWED_WITHDRAWAL,
             "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"}],
             "affected": [{
                 "package": {"name": "braces", "ecosystem": "npm"},
                 "ranges": [{"type": "SEMVER", "events": [{"introduced": "0"}, {"last_affected": "3.0.3"}]}],
             }],
         }
-        self.response = [{"results": [{"vulns": [{"id": module.REVIEWED_ID, "modified": "2026-10-02T22:45:04Z"}]}]}]
+        self.response = [{"results": [{"vulns": []}]}]
 
     def scan(self, response=None, advisory=None, source_sha="a" * 40):
         return module.scan(
@@ -53,22 +54,28 @@ class P023NpmLockOsvTests(unittest.TestCase):
 
     def test_retains_exact_reviewed_finding_and_lock_provenance(self):
         summary, raw = self.scan()
-        self.assertEqual(summary["status"], "PASS_WITH_REVIEWED_ADVISORY")
-        self.assertEqual(summary["finding_ids"], [module.REVIEWED_ID])
+        self.assertEqual(summary["status"], "PASS_NO_ACTIVE_ADVISORIES")
+        self.assertEqual(summary["finding_ids"], [])
         self.assertEqual(summary["candidate_source_sha"], "a" * 40)
-        self.assertEqual(summary["findings"][0]["install_nodes"], [{"path": "node_modules/braces", "dev": True}])
+        self.assertEqual(summary["findings"], [])
+        self.assertEqual(summary["verified_withdrawals"][0]["withdrawn"], module.REVIEWED_WITHDRAWAL)
         self.assertEqual(len(raw["queries"]), 1)
 
-    def test_unreviewed_or_missing_findings_fail_closed(self):
-        for vuln_id in ("GHSA-aaaa-bbbb-cccc", None):
-            with self.subTest(vuln_id=vuln_id), self.assertRaises(ValueError):
-                response = [{"results": [{"vulns": [] if vuln_id is None else [{"id": vuln_id}]}]}]
-                self.scan(response=response)
+    def test_reappearing_or_unreviewed_findings_fail_closed(self):
+        for vuln_id in (module.REVIEWED_ID, "GHSA-aaaa-bbbb-cccc"):
+            with self.subTest(vuln_id=vuln_id), self.assertRaisesRegex(ValueError, "active or unreviewed"):
+                self.scan(response=[{"results": [{"vulns": [{"id": vuln_id}]}]}])
 
-    def test_new_fix_or_wrong_source_sha_requires_reassessment(self):
-        with self.assertRaisesRegex(ValueError, "fixed version"):
-            advisory = json.loads(json.dumps(self.advisory))
-            advisory["affected"][0]["ranges"][0]["events"].append({"fixed": "3.0.4"})
+    def test_missing_finding_requires_exact_withdrawal_timestamp(self):
+        advisory = json.loads(json.dumps(self.advisory))
+        advisory["withdrawn"] = "2026-10-24T00:00:00Z"
+        with self.assertRaisesRegex(ValueError, "verified OSV withdrawal"):
+            self.scan(advisory=advisory)
+
+    def test_changed_affected_range_or_wrong_source_sha_fails_closed(self):
+        advisory = json.loads(json.dumps(self.advisory))
+        advisory["affected"][0]["ranges"][0]["events"][-1]["last_affected"] = "3.0.2"
+        with self.assertRaisesRegex(ValueError, "previously reviewed braces@3.0.3"):
             self.scan(advisory=advisory)
         with self.assertRaisesRegex(ValueError, "full 40-character Git SHA"):
             self.scan(source_sha="short")
