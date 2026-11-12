@@ -44,7 +44,10 @@ class P023NpmLockOsvTests(unittest.TestCase):
         lock = json.loads((ROOT / "internal/site/package-lock.json").read_text())
         queries, nodes, skipped = module.lock_queries(lock)
         braces = [q for q in queries if q["package"]["name"] == "braces"]
-        self.assertEqual(nodes, 510)
+        # npm 11 prunes the superseded transitive graph after the compatible
+        # glob override; keep an exact count so the OSV scan covers every
+        # install node in the reviewed lockfile.
+        self.assertEqual(nodes, 481)
         self.assertEqual(skipped, 0)
         self.assertEqual(braces, [{"package": {"name": "braces", "ecosystem": "npm"}, "version": "3.0.3"}])
 
