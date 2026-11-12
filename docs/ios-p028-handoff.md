@@ -420,3 +420,55 @@ Local validation for implementation source `0ab75a0b4fec6ed858e9ffbee35f8b05399a
 Upstream mappings are recorded in `docs/ios-p028-commit-map.csv`; both upstream ledger rows are updated. The tested frontend and Go source contains no physical-device work. Hosted qualification remains pending, so P028 is **PARTIAL — RESUMABLE**. Physical-device tests remain **DEFERRED — OWNER APPROVED**. Production `iOS` is unchanged, PR #32 remains Draft, and P029 has not started.
 
 Next exact action: verify the origin head has not moved, push the incremental commits and updated ledger/handoff to `ios/p028-dependency-migration`, then record the exact-source P013, iOS Build and artifact/provenance results here and in Draft PR #32.
+
+## Exact-source qualification completed — 2026-11-12
+
+This section supersedes the pending hosted-validation statements above. Resume
+started from branch head `619c5e174bcb769cb68aebae28aa582e817deacf`; the current
+implementation source is `0ab75a0b4fec6ed858e9ffbee35f8b05399a1793`, with
+pagination at `b31f1daddbcc51fc1cf2b78aa6c66ee235462a1a`. The current PR head
+`11438e1e2d28e75ad72a4755626ca1bae00e6c9b` contains these changes plus
+handoff/ledger documentation. Both exact-source workflow runs below checked
+that PR head. Branch base remains P027 `c239ce0d8931405f728ef4763ad68bbbe187a9ac`.
+
+Exact-source P013 migration run
+[43147693701](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43147693701):
+**PASS**. Direct job `130949266863` and via-P027 job `130949267125` passed.
+Artifacts: direct fixture manifest `13911858592`, 25,672 bytes, SHA-256
+`ef17339ce43a1beddb76a7ad25cc67f3f9dde73b21255b4eb8414e8cd9c82747`; via-P027
+fixture manifest `13911708795`, 25,779 bytes, SHA-256
+`d41ee247059185ea26021ac53bf13f83d66289797739c83a7459ba722bea5516`.
+
+Exact-source iOS Build run
+[43147693708](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43147693708):
+**PASS**. Procursus job `130949267199`, native `build-ios` job `130949267612`,
+and independent artifact consumer `130955808856` passed. Release validation and
+release jobs were skipped. The native run rebuilt the production frontend, ran
+74 UI tests across 12 files, checked 98 embedded assets, and passed Go 1.27.4
+x509 security, iOS transport/race/network monitor, macOS/GPU, A7 runtime patch,
+repeated Agent/Hub build, runtime instruction/Mach-O and no-private-linkage
+checks. The independent consumer rebuilt the frontend and verified same-run
+archives, payload bytes and provenance against source `11438e1e`.
+
+Artifacts from run 43147693708:
+
+- `beszel-ios-arm64` ID `13913420920`, 16,359,082 bytes, archive SHA-256
+  `a73307d7208cf346981970ade110229674a81636f569ef6d59f291b3b38ef01d`.
+- `ios-native-validation` ID `13912214498`, 15,835 bytes, SHA-256
+  `d8a5f2fcdd934858781cd8af0023656e74111a3d6952464602eba7b05e26bb77`.
+- `ios-wifi-diagnostic-disabled` ID `13913625266`, 6,059 bytes, SHA-256
+  `5b712c56cddc64e926d66078f67c464c3b68f77757cf55e8ce95e9402f0681a6`.
+- `ios-artifact-consumer-verification` ID `13913910027`, 3,547 bytes, SHA-256
+  `b2abf38c9a25a0d3e8ca9a4ef7dce81c649f3a3811eafec00fa4421483708184`.
+
+Local frontend, locale, P013 migration, Go test/vet/module verification and
+embedded-asset validation results remain as recorded above; all passed. The
+upstream ledger now marks selected-locale number formatting, pagination and
+applicable locale updates as exact-source hosted validation PASS. The applicable
+locale set contains 14 P028 messages across 34 catalogs; untranslated older
+messages retain the existing English fallback.
+
+Beszel P028 scoped cloud and source qualification: **PASS**. Draft PR #32 remains
+open against `ios/p027-upstream-port`; physical-device qualification is
+**DEFERRED — OWNER APPROVED**. Production `iOS` is unchanged. No release was
+created and P029 has not started.
