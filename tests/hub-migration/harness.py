@@ -43,6 +43,7 @@ P029_RATE_LIMIT_MIGRATION = "1792483200_enable_request_limits.go"
 P029_RATE_LIMIT_STATE = {
     "enabled": True,
     "rules": [{"label": "*:auth", "maxRequests": 10, "duration": 60}],
+    "excludedIPs": [],
 }
 P013_STARTING_INTEGRATION_SHA = "d6239915e404668c10453ab2ec44f797b2f0178e"
 PROTECTED_DATA_DIR = pathlib.Path("/var/lib/beszel-hub")
@@ -883,7 +884,10 @@ def validate_p027_candidate_delta(intermediate: dict[str, Any], candidate: dict[
     if after_names[len(before_names):] != [P029_RATE_LIMIT_MIGRATION]:
         raise HarnessError("P029 migration ledger delta is not the one expected sign-in rate-limit migration")
     if candidate["rate_limit_settings"] != P029_RATE_LIMIT_STATE:
-        raise HarnessError("P029 migration did not persist the exact sign-in-only rate-limit settings")
+        raise HarnessError(
+            "P029 migration did not persist the exact sign-in-only rate-limit settings: "
+            f"got {candidate['rate_limit_settings']!r}, expected {P029_RATE_LIMIT_STATE!r}"
+        )
 
 
 def clone_backup_data(backup_dir: pathlib.Path, root: pathlib.Path, name: str) -> pathlib.Path:
