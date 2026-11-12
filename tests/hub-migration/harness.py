@@ -42,7 +42,9 @@ P027_REV = "c239ce0d8931405f728ef4763ad68bbbe187a9ac"
 P029_RATE_LIMIT_MIGRATION = "1792483200_enable_request_limits.go"
 P029_RATE_LIMIT_STATE = {
     "enabled": True,
-    "rules": [{"label": "*:auth", "maxRequests": 10, "duration": 60}],
+    # PocketBase 0.40.6 serializes its new audience field even when the
+    # sign-in-only rule uses the default (empty) audience.
+    "rules": [{"label": "*:auth", "audience": "", "maxRequests": 10, "duration": 60}],
     "excludedIPs": [],
 }
 P013_STARTING_INTEGRATION_SHA = "d6239915e404668c10453ab2ec44f797b2f0178e"
