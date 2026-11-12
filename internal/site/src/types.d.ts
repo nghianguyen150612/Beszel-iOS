@@ -422,6 +422,7 @@ export interface UserSettings {
 	monitorSortModeSystem?: Array<{ id: string; desc: boolean }>
 	grid?: boolean
 	displayMode?: "default" | "tabs"
+	rowsPerPage?: number
 }
 
 type ChartDataContainer = {

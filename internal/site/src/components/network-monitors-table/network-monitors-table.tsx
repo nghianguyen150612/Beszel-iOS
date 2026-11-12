@@ -10,6 +10,7 @@ import {
 	type ColumnFiltersState,
 	flexRender,
 	getCoreRowModel,
+	getPaginationRowModel,
 	getFilteredRowModel,
 	getSortedRowModel,
 	type Row,
@@ -31,6 +32,8 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { DataTablePagination, usePagination } from "@/components/ui/shared-pagination"
+import { resetVirtualizedScrollPosition } from "@/lib/pagination"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { subscribeKeys } from "nanostores"
 import { getMonitorColumns } from "@/components/network-monitors-table/network-monitors-columns"
@@ -280,6 +283,7 @@ export default function NetworkMonitorsTableNew({
 		return columns
 	}, [canManageMonitors, handleDeleteRequest, handleSetEnabled, systemId, longestTarget, $longestSystemName])
 
+	const { pagination, onPaginationChange, resetPageIndex } = usePagination()
 	const table = useReactTable({
 		data: monitors,
 		columns,
@@ -287,8 +291,11 @@ export default function NetworkMonitorsTableNew({
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
-		onSortingChange: handleSortingChange,
-		onColumnFiltersChange: setColumnFilters,
+		getPaginationRowModel: getPaginationRowModel(),
+		autoResetPageIndex: false,
+		onPaginationChange,
+		onSortingChange: (updater) => { handleSortingChange(updater); resetPageIndex() },
+		onColumnFiltersChange: (updater) => { setColumnFilters(updater); resetPageIndex() },
 		onColumnVisibilityChange: handleColumnVisibilityChange,
 		onRowSelectionChange: setRowSelection,
 		defaultColumn: {
@@ -302,8 +309,9 @@ export default function NetworkMonitorsTableNew({
 			columnVisibility,
 			rowSelection,
 			globalFilter,
+			pagination,
 		},
-		onGlobalFilterChange: setGlobalFilter,
+		onGlobalFilterChange: (value) => { setGlobalFilter(value); resetPageIndex() },
 		globalFilterFn: (row, _columnId, filterValue) => {
 			const value = (filterValue as string).trim()
 			if (!value) return true
@@ -338,7 +346,7 @@ export default function NetworkMonitorsTableNew({
 								<Input
 									placeholder={t`Filter...`}
 									value={globalFilter}
-									onChange={(e) => setGlobalFilter(e.target.value)}
+									onChange={(e) => table.setGlobalFilter(e.target.value)}
 									className="ms-auto px-4 w-full max-w-full md-lg:w-50"
 								/>
 								{globalFilter && (
@@ -348,7 +356,7 @@ export default function NetworkMonitorsTableNew({
 										size="icon"
 										aria-label={t`Clear`}
 										className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-										onClick={() => setGlobalFilter("")}
+										onClick={() => table.setGlobalFilter("")}
 									>
 										<XIcon className="h-4 w-4" />
 									</Button>
@@ -480,6 +488,7 @@ export default function NetworkMonitorsTableNew({
 					includesAllSystems={!systemId}
 				/>
 			</div>
+			<DataTablePagination table={table} />
 		</Card>
 	)
 }
@@ -520,6 +529,9 @@ const NetworkMonitorsTable = memo(function NetworkMonitorTable({
 		overscan: 5,
 	})
 	const virtualRows = virtualizer.getVirtualItems()
+	useEffect(() => {
+		if (scrollRef.current) resetVirtualizedScrollPosition(scrollRef.current)
+	}, [rows])
 
 	const paddingTop = Math.max(0, virtualRows[0]?.start ?? 0 - virtualizer.options.scrollMargin)
 	const paddingBottom = Math.max(0, virtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end ?? 0))

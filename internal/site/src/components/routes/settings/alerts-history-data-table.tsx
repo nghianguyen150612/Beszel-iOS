@@ -7,7 +7,6 @@ import {
 	getFilteredRowModel,
 	getPaginationRowModel,
 	getSortedRowModel,
-	type PaginationState,
 	type SortingState,
 	useReactTable,
 	type VisibilityState,
@@ -41,7 +40,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/components/ui/use-toast"
 import { alertInfo } from "@/lib/alerts"
 import { pb } from "@/lib/api"
-import { cn, formatDuration, formatShortDate, useBrowserStorage } from "@/lib/utils"
+import { cn, formatDuration, formatShortDate } from "@/lib/utils"
+import { pageSizes, usePagination } from "@/components/ui/shared-pagination"
 import type { AlertsHistoryRecord } from "@/types"
 import { alertsHistoryColumns } from "../../alerts-history-columns"
 
@@ -68,11 +68,7 @@ export default function AlertsHistoryDataTable() {
 	const { toast } = useToast()
 	const [deleteOpen, setDeleteDialogOpen] = useState(false)
 	
-	// Store pagination preference in local storage
-	const [pagination, setPagination] = useBrowserStorage<PaginationState>("ah-pagination", {
-		pageIndex: 0,
-		pageSize: 10,
-	})
+	const { pagination, onPaginationChange, resetPageIndex } = usePagination()
 
 	useEffect(() => {
 		let unsubscribe: (() => void) | undefined
@@ -139,11 +135,11 @@ export default function AlertsHistoryDataTable() {
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
-		onSortingChange: setSorting,
-		onColumnFiltersChange: setColumnFilters,
+		onSortingChange: (updater) => { setSorting(updater); resetPageIndex() },
+		onColumnFiltersChange: (updater) => { setColumnFilters(updater); resetPageIndex() },
 		onColumnVisibilityChange: setColumnVisibility,
 		onRowSelectionChange: setRowSelection,
-		onPaginationChange: setPagination,
+		onPaginationChange,
 		state: {
 			sorting,
 			columnFilters,
@@ -152,7 +148,7 @@ export default function AlertsHistoryDataTable() {
 			globalFilter,
 			pagination,
 		},
-		onGlobalFilterChange: setGlobalFilter,
+		onGlobalFilterChange: (value) => { setGlobalFilter(value); resetPageIndex() },
 		globalFilterFn: (row, _columnId, filterValue) => {
 			const system = row.original.expand?.system?.name ?? ""
 			const name = row.getValue("name") ?? ""
@@ -273,7 +269,7 @@ export default function AlertsHistoryDataTable() {
 					<Input
 						placeholder={t`Filter...`}
 						value={globalFilter}
-						onChange={(e) => setGlobalFilter(e.target.value)}
+							onChange={(e) => table.setGlobalFilter(e.target.value)}
 						className="px-4 w-full max-w-full @3xl:w-64"
 					/>
 				</div>
@@ -334,7 +330,7 @@ export default function AlertsHistoryDataTable() {
 								<SelectValue placeholder={table.getState().pagination.pageSize} />
 							</SelectTrigger>
 							<SelectContent side="top">
-								{[10, 20, 50, 100, 200].map((pageSize) => (
+						{pageSizes.map((pageSize) => (
 									<SelectItem key={pageSize} value={`${pageSize}`}>
 										{pageSize}
 									</SelectItem>
@@ -344,7 +340,7 @@ export default function AlertsHistoryDataTable() {
 					</div>
 					<div className="flex w-fit items-center justify-center text-sm font-medium">
 						<Trans>
-							Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+							Page {table.getState().pagination.pageIndex + 1} of {Math.max(table.getPageCount(), 1)}
 						</Trans>
 					</div>
 					<div className="ms-auto flex items-center gap-2 lg:ms-0">

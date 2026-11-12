@@ -8,7 +8,6 @@ import {
 	getFilteredRowModel,
 	getPaginationRowModel,
 	getSortedRowModel,
-	type PaginationState,
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table"
@@ -36,7 +35,8 @@ import { Separator } from "@/components/ui/separator"
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { pb } from "@/lib/api"
 import { classifyVersionChange, type VersionChange } from "@/lib/package-updates"
-import { cn, formatShortDate, useBrowserStorage } from "@/lib/utils"
+import { cn, formatShortDate } from "@/lib/utils"
+import { pageSizes, usePagination } from "@/components/ui/shared-pagination"
 import type { PackageUpdate, PackageUpdates } from "@/types"
 
 interface PackageUpdateRow extends PackageUpdate {
@@ -53,8 +53,6 @@ const changeVariant: Record<VersionChange, BadgeProps["variant"]> = {
 	revision: "secondary",
 	other: "outline",
 }
-
-const pageSizes = [10, 20, 50, 100, 200]
 
 function changeLabel(change: VersionChange) {
 	switch (change) {
@@ -188,10 +186,8 @@ export default function PackageUpdatesTable({ systemId, counts }: { systemId: st
 	const [error, setError] = useState<string | null>(null)
 	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }])
 	const [globalFilter, setGlobalFilter] = useState("")
-	// Store page size preference in local storage
-	const [pageSize, setPageSize] = useBrowserStorage("pu-page-size", pageSizes[1], sessionStorage)
-	const [pageIndex, setPageIndex] = useState(0)
-	const pagination = useMemo<PaginationState>(() => ({ pageIndex, pageSize }), [pageIndex, pageSize])
+	const { pagination, onPaginationChange, resetPageIndex } = usePagination()
+	const { pageIndex, pageSize } = pagination
 
 	useEffect(() => {
 		let cancelled = false
@@ -224,13 +220,9 @@ export default function PackageUpdatesTable({ systemId, counts }: { systemId: st
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
-		onSortingChange: setSorting,
-		onGlobalFilterChange: setGlobalFilter,
-		onPaginationChange: (updater) => {
-			const next = typeof updater === "function" ? updater(pagination) : updater
-			setPageIndex(next.pageIndex)
-			setPageSize(next.pageSize)
-		},
+		onSortingChange: (updater) => { setSorting(updater); resetPageIndex() },
+		onGlobalFilterChange: (value) => { setGlobalFilter(value); resetPageIndex() },
+		onPaginationChange,
 		state: { sorting, globalFilter, pagination },
 		globalFilterFn: (row, _columnId, filterValue: string) => {
 			const pkg = row.original
@@ -284,7 +276,7 @@ export default function PackageUpdatesTable({ systemId, counts }: { systemId: st
 							<Input
 								placeholder={t`Filter...`}
 								value={globalFilter}
-								onChange={(event) => setGlobalFilter(event.target.value)}
+								onChange={(event) => table.setGlobalFilter(event.target.value)}
 								className="px-4 w-full max-w-full md:w-64"
 							/>
 							{globalFilter && (
@@ -294,7 +286,7 @@ export default function PackageUpdatesTable({ systemId, counts }: { systemId: st
 									size="icon"
 									aria-label={t`Clear`}
 									className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-									onClick={() => setGlobalFilter("")}
+									onClick={() => table.setGlobalFilter("")}
 								>
 									<XIcon className="h-4 w-4" />
 								</Button>

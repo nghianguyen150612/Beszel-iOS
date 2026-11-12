@@ -5,6 +5,7 @@ import {
 	type ColumnFiltersState,
 	flexRender,
 	getCoreRowModel,
+	getPaginationRowModel,
 	getFilteredRowModel,
 	getSortedRowModel,
 	type Row,
@@ -20,6 +21,8 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/compon
 import { pb } from "@/lib/api"
 import type { ContainerRecord } from "@/types"
 import { containerChartCols } from "@/components/containers-table/containers-table-columns"
+import { DataTablePagination, usePagination } from "@/components/ui/shared-pagination"
+import { resetVirtualizedScrollPosition } from "@/lib/pagination"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { type ContainerHealth, ContainerHealthLabels } from "@/lib/enums"
 import { cn, useBrowserStorage } from "@/lib/utils"
@@ -63,6 +66,7 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 
 	const [rowSelection, setRowSelection] = useState({})
 	const [globalFilter, setGlobalFilter] = useState("")
+	const { pagination, onPaginationChange, resetPageIndex } = usePagination()
 
 	useEffect(() => {
 		function fetchData(systemId?: string) {
@@ -126,8 +130,11 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
-		onSortingChange: setSorting,
-		onColumnFiltersChange: setColumnFilters,
+		getPaginationRowModel: getPaginationRowModel(),
+		autoResetPageIndex: false,
+		onPaginationChange,
+		onSortingChange: (updater) => { setSorting(updater); resetPageIndex() },
+		onColumnFiltersChange: (updater) => { setColumnFilters(updater); resetPageIndex() },
 		onColumnVisibilityChange: setColumnVisibility,
 		onRowSelectionChange: setRowSelection,
 		defaultColumn: {
@@ -141,8 +148,9 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 			columnVisibility,
 			rowSelection,
 			globalFilter,
+			pagination,
 		},
-		onGlobalFilterChange: setGlobalFilter,
+		onGlobalFilterChange: (value) => { setGlobalFilter(value); resetPageIndex() },
 		globalFilterFn: (row, _columnId, filterValue) => {
 			const container = row.original
 			const systemName = $allSystemsById.get()[container.system]?.name ?? ""
@@ -180,7 +188,7 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 						<Input
 							placeholder={t`Filter...`}
 							value={globalFilter}
-							onChange={(e) => setGlobalFilter(e.target.value)}
+							onChange={(e) => table.setGlobalFilter(e.target.value)}
 							className="ps-4 pe-10 w-full"
 						/>
 						{globalFilter && (
@@ -190,7 +198,7 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 								size="icon"
 								aria-label={t`Clear`}
 								className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-								onClick={() => setGlobalFilter("")}
+								onClick={() => table.setGlobalFilter("")}
 							>
 								<XIcon className="h-4 w-4" />
 							</Button>
@@ -201,6 +209,7 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 			<div className="rounded-md">
 				<AllContainersTable table={table} rows={rows} colLength={visibleColumns.length} data={data} />
 			</div>
+			<DataTablePagination table={table} />
 		</Card>
 	)
 }
@@ -232,6 +241,9 @@ const AllContainersTable = memo(function AllContainersTable({
 		overscan: 5,
 	})
 	const virtualRows = virtualizer.getVirtualItems()
+	useEffect(() => {
+		if (scrollRef.current) resetVirtualizedScrollPosition(scrollRef.current)
+	}, [rows])
 
 	const paddingTop = Math.max(0, virtualRows[0]?.start ?? 0 - virtualizer.options.scrollMargin)
 	const paddingBottom = Math.max(0, virtualizer.getTotalSize() - (virtualRows[virtualRows.length - 1]?.end ?? 0))

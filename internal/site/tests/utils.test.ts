@@ -6,7 +6,24 @@ mock.module("@lingui/core/macro", () => ({
 	plural: (count: number, forms: any) => forms.other ?? "",
 }))
 
-const { decimalString, formatMicroseconds, formatNumber } = await import("../src/lib/utils")
+const { decimalString, formatMicroseconds, formatNumber, isVisuallyLonger } = await import("../src/lib/utils")
+
+test("system-name width measurement accounts for wide rendered characters", () => {
+	const previousDocument = globalThis.document
+	Object.defineProperty(globalThis, "document", {
+		configurable: true,
+		value: { createElement: () => ({ getContext: () => null }) },
+	})
+	try {
+		expect(isVisuallyLonger("漢", "A")).toBe(true)
+	} finally {
+		if (previousDocument) {
+			Object.defineProperty(globalThis, "document", { configurable: true, value: previousDocument })
+		} else {
+			Reflect.deleteProperty(globalThis, "document")
+		}
+	}
+})
 
 describe("app-locale number formatting", () => {
 	test("uses the selected language for grouping and decimal separators", () => {
