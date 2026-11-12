@@ -94,9 +94,13 @@ func UpdateConnection() error {
 	return file.Close()
 }
 
-// CleanUp removes the health file
+// CleanUp removes the health file; another agent may already have removed it.
 func CleanUp() error {
-	return os.Remove(healthFile)
+	err := os.Remove(healthFile)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
 }
 
 // CleanUpConnection removes the marker after the Agent loses its Hub connection.
