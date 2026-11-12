@@ -6,7 +6,7 @@ mock.module("@lingui/core/macro", () => ({
 	plural: (count: number, forms: any) => forms.other ?? "",
 }))
 
-const { decimalString, formatMicroseconds, formatNumber, isVisuallyLonger } = await import("../src/lib/utils")
+const { debounceByKey, decimalString, formatMicroseconds, formatNumber, isVisuallyLonger } = await import("../src/lib/utils")
 
 test("system-name width measurement accounts for wide rendered characters", () => {
 	const previousDocument = globalThis.document
@@ -99,5 +99,27 @@ describe("formatMicroseconds", () => {
 		expect(formatMicroseconds(Number.NaN)).toBe("-")
 		expect(formatMicroseconds(Number.POSITIVE_INFINITY)).toBe("-")
 		expect(formatMicroseconds(Number.NEGATIVE_INFINITY)).toBe("-")
+	})
+})
+
+describe("debounceByKey", () => {
+	const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+	test("calls for different keys within the wait are all delivered", async () => {
+		const calls: string[] = []
+		const send = debounceByKey((name: string) => calls.push(name), 20)
+		send("CPU", "CPU")
+		send("Memory", "Memory")
+		await wait(60)
+		expect(calls).toEqual(["CPU", "Memory"])
+	})
+
+	test("repeated calls for the same key keep only the last", async () => {
+		const calls: number[] = []
+		const send = debounceByKey((value: number) => calls.push(value), 20)
+		send("CPU", 80)
+		send("CPU", 90)
+		await wait(60)
+		expect(calls).toEqual([90])
 	})
 })
