@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Tanca la sessió"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Inici de sessió"
 
@@ -1738,6 +1739,10 @@ msgstr "Consulta <0>la documentació</0> per a les instruccions."
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Inicia la sessió al teu compte"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "Els testimonis permeten que els agents es connectin i es registrin. Les 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Els testimonis i les empremtes s'utilitzen per autenticar les connexions WebSocket amb el hub."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx
