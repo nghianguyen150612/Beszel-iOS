@@ -94,7 +94,7 @@ def validate_openpgp_guard(evidence: dict) -> dict:
 def validate_policy(policy: dict) -> dict:
     if policy.get("schema") != 1 or policy.get("milestone") != "P023":
         raise ValueError("unsupported P023 advisory policy schema")
-    if policy.get("reviewed_on") != "2026-10-22" or policy.get("default_action") != "FAIL_ON_UNREVIEWED_FINDING":
+    if policy.get("go_reviewed_on") != "2026-11-12" or policy.get("default_action") != "FAIL_ON_UNREVIEWED_FINDING":
         raise ValueError("P023 policy review date or fail-closed default is invalid")
     if policy.get("raw_scan_must_be_retained") is not True or policy.get("release_authorization") != "NOT_GRANTED":
         raise ValueError("P023 policy must retain raw scans and deny release authorization")
@@ -105,13 +105,13 @@ def validate_policy(policy: dict) -> dict:
     expected = {
         "advisory_id": GO_5932,
         "affected_module": "golang.org/x/crypto",
-        "resolved_module_version": "v0.58.0",
+        "resolved_module_version": "v0.59.0",
         "affected_package_prefix": OPENPGP_PREFIX,
-        "allowed_finding_shape": "module-only trace with no package or function symbols",
-        "minimum_occurrences": 1,
-        "maximum_occurrences": 1,
-        "remediation_status": "NOT_REACHABLE_WITH_EVIDENCE",
-        "release_owner_decision_required": True,
+        "allowed_finding_shape": "no raw finding; the fixed module version must remain free of GO-2026-5932",
+        "minimum_occurrences": 0,
+        "maximum_occurrences": 0,
+        "remediation_status": "REMEDIATED_BY_FIXED_MODULE_VERSION",
+        "release_owner_decision_required": False,
     }
     for key, value in expected.items():
         if entry.get(key) != value:
@@ -166,18 +166,7 @@ def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_eviden
     if unreviewed:
         raise ValueError(f"unreviewed Go advisory findings fail the P023 gate: {unreviewed}")
     if not policy_entry["minimum_occurrences"] <= counts.get(GO_5932, 0) <= policy_entry["maximum_occurrences"]:
-        raise ValueError("GO-2026-5932 raw scanner finding is missing or exceeds its reviewed occurrence bound")
-
-    for finding in details:
-        if finding["id"] != GO_5932:
-            continue
-        if any(step.get("package", "").startswith(OPENPGP_PREFIX) or "openpgp" in step.get("function", "").lower() for step in finding["trace"]):
-            raise ValueError("GO-2026-5932 contains an OpenPGP package or function trace")
-        for step in finding["trace"]:
-            if step.get("module") != policy_entry["affected_module"] or step.get("version") != policy_entry["resolved_module_version"]:
-                raise ValueError("GO-2026-5932 finding is outside the reviewed x/crypto module/version scope")
-            if step.get("package") is not None or step.get("function") is not None:
-                raise ValueError("GO-2026-5932 finding is not module-only")
+        raise ValueError("GO-2026-5932 reappeared at the fixed x/crypto version or exceeded its reviewed occurrence bound")
 
     return {
         "schema": 1,
@@ -206,13 +195,13 @@ def summarize(report: str, expected_go: str, x509_evidence: dict, openpgp_eviden
             },
             {
                 "advisory": GO_5932,
-                "raw_scanner_status": "module-level finding retained" if GO_5932 in counts else "absent from raw source findings",
-                "remediation_status": "NOT_REACHABLE_WITH_EVIDENCE",
+                "raw_scanner_status": "absent from exact source findings at fixed golang.org/x/crypto v0.59.0",
+                "remediation_status": "REMEDIATED_BY_FIXED_MODULE_VERSION",
+                "fixed_module_version": policy_entry["resolved_module_version"],
                 "affected_package_imported_or_reachable": False,
                 "module_remains_present": True,
-                "actual_mitigation": "Static Go AST import guard plus host default, testing/no_ui, development, development/testing/no_ui, iOS testing/no_ui, and iOS development/testing/no_ui go list profiles; no OpenPGP paths found.",
-                "not_a_vulnerability_fix": True,
-                "release_owner_decision_required": True,
+                "actual_mitigation": "Resolve golang.org/x/crypto to v0.59.0, beyond the version fixed in the reviewed OSV record; retain the Go AST import guard and six host/iOS dependency profiles with no OpenPGP paths.",
+                "release_owner_decision_required": False,
             },
         ],
         "openpgp_guard": openpgp,

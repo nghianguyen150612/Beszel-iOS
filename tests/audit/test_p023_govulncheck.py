@@ -22,7 +22,7 @@ class P023GoVulncheckTests(unittest.TestCase):
             "config": {
                 "scanner_version": "govulncheck v1.9.0",
                 "db": "https://vuln.go.dev",
-                "db_last_modified": "2026-10-21T00:27:29Z",
+                "db_last_modified": "2026-11-12T00:00:00Z",
                 "go_version": "go1.27.4",
                 "scan_mode": "source",
                 "scan_level": "symbol",
@@ -56,33 +56,27 @@ class P023GoVulncheckTests(unittest.TestCase):
     def report(self, *findings):
         return "\n".join([message(**self.config), message(**self.sbom), *(message(finding=f) for f in findings)])
 
-    def test_clean_go_1273_scan_and_native_x509_pass(self):
-        retained = {"osv": "GO-2026-5932", "trace": [{"module": "golang.org/x/crypto", "version": "v0.58.0"}]}
-        result = module.summarize(self.report(retained), "go1.27.4", self.x509, self.openpgp, self.policy)
-        self.assertEqual(result["finding_ids"], ["GO-2026-5932"])
+    def test_clean_go_1274_scan_and_fixed_x_crypto_pass(self):
+        result = module.summarize(self.report(), "go1.27.4", self.x509, self.openpgp, self.policy)
+        self.assertEqual(result["finding_ids"], [])
         self.assertEqual(result["security_dispositions"][0]["remediation_status"], "REMEDIATED_AND_VERIFIED")
         go6608 = next(item for item in result["security_dispositions"] if item["advisory"] == "GO-2026-6608")
         self.assertEqual(go6608["remediation_status"], "REMEDIATED_AND_VERIFIED")
         go5932 = next(item for item in result["security_dispositions"] if item["advisory"] == "GO-2026-5932")
-        self.assertTrue(go5932["not_a_vulnerability_fix"])
+        self.assertEqual(go5932["remediation_status"], "REMEDIATED_BY_FIXED_MODULE_VERSION")
 
-    def test_fails_if_the_known_module_finding_disappears(self):
-        with self.assertRaisesRegex(ValueError, "raw scanner finding is missing"):
-            module.summarize(self.report(), "go1.27.4", self.x509, self.openpgp, self.policy)
+    def test_rejects_a_go_5932_finding_at_the_fixed_module_version(self):
+        finding = {"osv": "GO-2026-5932", "trace": [{"module": "golang.org/x/crypto", "version": "v0.59.0"}]}
+        with self.assertRaisesRegex(ValueError, "GO-2026-5932 reappeared"):
+            module.summarize(self.report(finding), "go1.27.4", self.x509, self.openpgp, self.policy)
 
     def test_requires_full_candidate_source_sha(self):
         with self.assertRaisesRegex(ValueError, "full 40-character Git SHA"):
             module.summarize(self.report(), "go1.27.4", self.x509, self.openpgp, self.policy, "short")
 
-    def test_preserves_bounded_module_only_x_crypto_warning(self):
-        finding = {"osv": "GO-2026-5932", "trace": [{"module": "golang.org/x/crypto", "version": "v0.58.0"}]}
-        result = module.summarize(self.report(finding), "go1.27.4", self.x509, self.openpgp, self.policy)
-        self.assertEqual(result["finding_ids"], ["GO-2026-5932"])
-        self.assertEqual(result["findings"][0]["trace"][0]["module"], "golang.org/x/crypto")
-
-    def test_rejects_openpgp_symbol_trace(self):
-        finding = {"osv": "GO-2026-5932", "trace": [{"module": "golang.org/x/crypto", "version": "v0.58.0", "package": "golang.org/x/crypto/openpgp", "function": "openpgp.ReadMessage"}]}
-        with self.assertRaisesRegex(ValueError, "OpenPGP package or function trace"):
+    def test_rejects_openpgp_symbol_trace_even_when_fixed_version_is_reported(self):
+        finding = {"osv": "GO-2026-5932", "trace": [{"module": "golang.org/x/crypto", "version": "v0.59.0", "package": "golang.org/x/crypto/openpgp", "function": "openpgp.ReadMessage"}]}
+        with self.assertRaisesRegex(ValueError, "GO-2026-5932 reappeared"):
             module.summarize(self.report(finding), "go1.27.4", self.x509, self.openpgp, self.policy)
 
     def test_rejects_remediated_standard_library_advisories_returning(self):
