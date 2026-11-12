@@ -39,6 +39,11 @@ from backup import (
 
 OLD_019_REV = "0c3e4cd22ac24264834c401ad412e44aeda4e4f3"
 P027_REV = "c239ce0d8931405f728ef4763ad68bbbe187a9ac"
+P029_RATE_LIMIT_MIGRATION = "1792483200_enable_request_limits.go"
+P029_RATE_LIMIT_STATE = {
+    "enabled": True,
+    "rules": [{"label": "*:auth", "maxRequests": 10, "duration": 60}],
+}
 P013_STARTING_INTEGRATION_SHA = "d6239915e404668c10453ab2ec44f797b2f0178e"
 PROTECTED_DATA_DIR = pathlib.Path("/var/lib/beszel-hub")
 HEALTH_TIMEOUT_SECONDS = 45
@@ -838,6 +843,7 @@ def database_snapshot(path: pathlib.Path) -> dict[str, Any]:
             "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index','trigger','view') ORDER BY type,name"
         )]
         app_settings: dict[str, Any] = {}
+        rate_limit_settings: dict[str, Any] = {}
         if "_params" in tables:
             params_columns = [row[1] for row in connection.execute("PRAGMA table_info(_params)")]
             if {"id", "value"}.issubset(params_columns):
@@ -847,6 +853,7 @@ def database_snapshot(path: pathlib.Path) -> dict[str, Any]:
                         value = json.loads(row[0])
                         meta = value.get("meta", {}) if isinstance(value, dict) else {}
                         app_settings = {"appName": meta.get("appName", ""), "appURL": meta.get("appURL", "")}
+                        rate_limit_settings = value.get("rateLimits", {}) if isinstance(value, dict) else {}
                     except (TypeError, json.JSONDecodeError):
                         app_settings = {"parse_error": True}
         return {
@@ -855,10 +862,28 @@ def database_snapshot(path: pathlib.Path) -> dict[str, Any]:
             "record_counts": counts,
             "migration_ledger": migrations,
             "application_settings": app_settings,
+            "rate_limit_settings": rate_limit_settings,
             "schema_sha256": hashlib.sha256(json.dumps(schema, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
         }
     finally:
         connection.close()
+
+
+def validate_p027_candidate_delta(intermediate: dict[str, Any], candidate: dict[str, Any]) -> None:
+    """Require P029's one settings migration while preserving the P027 database state."""
+    for key in ("schema_sha256", "record_counts", "application_settings"):
+        if intermediate[key] != candidate[key]:
+            raise HarnessError(f"P029 migration changed P027 {key}")
+    before_rows = intermediate["migration_ledger"]
+    after_rows = candidate["migration_ledger"]
+    if after_rows[:len(before_rows)] != before_rows:
+        raise HarnessError("P029 migration changed or reordered an existing P027 migration ledger row")
+    after_names = [str(row[0]) for row in after_rows]
+    before_names = [str(row[0]) for row in before_rows]
+    if after_names[len(before_names):] != [P029_RATE_LIMIT_MIGRATION]:
+        raise HarnessError("P029 migration ledger delta is not the one expected sign-in rate-limit migration")
+    if candidate["rate_limit_settings"] != P029_RATE_LIMIT_STATE:
+        raise HarnessError("P029 migration did not persist the exact sign-in-only rate-limit settings")
 
 
 def clone_backup_data(backup_dir: pathlib.Path, root: pathlib.Path, name: str) -> pathlib.Path:
@@ -1658,6 +1683,7 @@ def main() -> int:
             "1790964708_network_monitor_skip_tls_verify.go",
             "1791926360_network_monitor_cert_alert.go",
             "1792309602_system_details_sockets.go",
+            P029_RATE_LIMIT_MIGRATION,
         ]
         missing_migrations = [name for name in required_migrations if migrated_ledger.count(name) != 1]
         if missing_migrations:
@@ -1694,9 +1720,7 @@ def main() -> int:
         migration_hub.stop()
         migrated_second = database_snapshot(migration_data_dir / "data.db")
         if intermediate_snapshot:
-            for key in ("schema_sha256", "record_counts", "migration_ledger", "application_settings"):
-                if intermediate_snapshot[key] != migrated_first[key]:
-                    raise HarnessError(f"PocketBase patch upgrade changed P027 database {key}")
+            validate_p027_candidate_delta(intermediate_snapshot, migrated_first)
         import sqlite3
         sqlite_integrity = {}
         for name in ("data.db", "auxiliary.db"):
@@ -1711,7 +1735,7 @@ def main() -> int:
             sqlite_integrity[name] = {"integrity_check": checks, "foreign_key_check": foreign_keys}
         if migrated_second["integrity_check"] != ["ok"]:
             raise HarnessError(f"second v0.21 database integrity failed: {migrated_second['integrity_check']}")
-        for key in ("schema_sha256", "record_counts", "migration_ledger", "application_settings"):
+        for key in ("schema_sha256", "record_counts", "migration_ledger", "application_settings", "rate_limit_settings"):
             if migrated_second[key] != migrated_first[key]:
                 raise HarnessError(f"second v0.21 startup changed database {key}")
         if migration_api_state != second_api_state:
@@ -1979,7 +2003,8 @@ def main() -> int:
             "cases": interrupted_evidence,
         }
         migration_evidence = {
-            "via_p027": {"source": P027_REV, "pocketbase": "v0.40.5", "binary_sha256": file_sha256(intermediate_binary), "schema_records_ledger_preserved": True, "existing_session_refresh_http": 200} if args.via_p027 else None,
+            "via_p027": {"source": P027_REV, "pocketbase": "v0.40.5", "binary_sha256": file_sha256(intermediate_binary), "schema_records_and_existing_settings_preserved": True, "preexisting_migration_ledger_rows_preserved": True, "p029_rate_limit_migration_applied_once": True, "existing_session_refresh_http": 200} if args.via_p027 else None,
+            "rate_limit_settings_after_migration": migrated_first["rate_limit_settings"],
             "main_and_auxiliary_sqlite": sqlite_integrity,
             "source_backup_sha256": backup_evidence["archive_sha256"],
             "target_version": new_version,
