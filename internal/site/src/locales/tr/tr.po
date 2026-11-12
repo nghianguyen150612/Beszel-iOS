@@ -30,11 +30,20 @@ msgstr "{0} mevcut"
 msgid "{0} of {1} row(s) selected."
 msgstr "{1} satırdan {0} tanesi seçildi."
 
+#. placeholder {0}: table.getFilteredRowModel().rows.length
+#: src/components/ui/shared-pagination.tsx
+msgid "{0} row(s)"
+msgstr "{0} satır"
+
 #. placeholder {0}: selectedIds.size
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "{0} selected"
 msgstr "{0} seçildi"
+
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{0}–{1} of {total} rows"
+#~ msgstr ""
 
 #: src/components/active-alerts.tsx
 msgid "{alertCount, plural, one {# active alert} other {# active alerts}}"
@@ -84,13 +93,17 @@ msgstr "{threads, plural, one {# iş parçacığı} other {# iş parçacığı}}
 msgid "{total, plural, one {# update} other {# updates}}"
 msgstr "{total, plural, one {# güncelleme} other {# güncelleme}}"
 
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{total} row(s)"
+#~ msgstr ""
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{totalCount, plural, one {# service} other {# services}}"
 msgstr "{totalCount, plural, one {# hizmet} other {# hizmet}}"
 
 #: src/components/alerts-history-columns.tsx
 msgid "{value, plural, one {# day} other {# days}}"
-msgstr ""
+msgstr "{value, plural, one {# gün} other {# gün}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -434,7 +447,7 @@ msgstr "Sertifika"
 
 #: src/lib/alerts.ts
 msgid "Certificate Expiration"
-msgstr ""
+msgstr "Sertifika Sona Erme"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Certificate expired {expires}"
@@ -651,7 +664,7 @@ msgstr "Aşağıdaki agent için <0>docker-compose.yml</0> içeriğini kopyalay�
 #: src/components/token-value.tsx
 #: src/components/token-value.tsx
 msgid "Copy token"
-msgstr ""
+msgstr "Belirteci kopyala"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy YAML"
@@ -983,7 +996,7 @@ msgstr "Bir saat sonra veya hub yeniden başlatıldığında sona erer."
 
 #: src/components/alerts/alerts-sheet.tsx
 msgid "Expires within <0>{value, plural, one {# day} other {# days}}</0>"
-msgstr ""
+msgstr "<0>{value, plural, one {# gün} other {# gün}}</0> içinde sona erer"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -1164,7 +1177,7 @@ msgstr "Zaman damgalarını gizle"
 #: src/components/token-value.tsx
 #: src/components/token-value.tsx
 msgid "Hide token"
-msgstr ""
+msgstr "Belirteci gizle"
 
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
@@ -1210,7 +1223,7 @@ msgstr "Yönetici hesabınızın şifresini kaybettiyseniz, aşağıdaki komutu 
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Ignore TLS certificate errors"
-msgstr ""
+msgstr "TLS sertifika hatalarını yoksay"
 
 #: src/components/containers-table/containers-table-columns.tsx
 msgctxt "Docker image"
@@ -1535,7 +1548,7 @@ msgstr "Her yeniden başlatmada, veritabanındaki sistemler dosyada tanımlanan 
 #. placeholder {0}: alert.value
 #: src/components/active-alerts.tsx
 msgid "One or more certificates expire within {0, plural, one {# day} other {# days}}"
-msgstr ""
+msgstr "Bir veya daha fazla sertifikanın süresi {0, plural, one {# gün} other {# gün}} içinde dolacak"
 
 #: src/lib/alerts.ts
 msgid "One or more containers are unhealthy"
@@ -1609,10 +1622,11 @@ msgstr "Sayfa"
 
 #. placeholder {0}: pageIndex + 1
 #. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: Math.max(1, pageCount)
 #. placeholder {1}: Math.max(table.getPageCount(), 1)
-#. placeholder {1}: table.getPageCount()
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Page {0} of {1}"
 msgstr "Sayfa {0} / {1}"
 
@@ -1878,7 +1892,7 @@ msgstr "Devam et"
 #: src/components/token-value.tsx
 #: src/components/token-value.tsx
 msgid "Reveal token"
-msgstr ""
+msgstr "Belirteci göster"
 
 #. Package version
 #: src/components/routes/system/package-updates-table.tsx
@@ -1898,6 +1912,7 @@ msgstr "Token'ı döndür"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Rows per page"
 msgstr "Sayfa başına satır"
 
@@ -2257,11 +2272,11 @@ msgstr "Erişim Anahtarı"
 #. placeholder {0}: fingerprint.expand.system.name
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token for {0}"
-msgstr ""
+msgstr "{0} için belirteç"
 
 #: src/components/token-value.tsx
 msgid "Token hidden"
-msgstr ""
+msgstr "Belirteç gizli"
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -2328,7 +2343,7 @@ msgstr "Bir konteyner sağlık kontrolü sağlıksız durum bildirdiğinde tetik
 
 #: src/lib/alerts.ts
 msgid "Triggers when an HTTPS certificate nears expiration"
-msgstr ""
+msgstr "Bir HTTPS sertifikasının süresi dolmaya yaklaştığında tetiklenir"
 
 #: src/lib/alerts.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -2478,7 +2493,7 @@ msgstr "Depolama pool'u {displayName} kullanımı"
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Use for self-signed certificates."
-msgstr ""
+msgstr "Kendinden imzalı sertifikalar için kullanın."
 
 #: src/components/routes/system/charts/memory-charts.tsx
 #: src/components/routes/system/charts/memory-charts.tsx

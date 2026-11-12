@@ -30,11 +30,20 @@ msgstr "{0} jest dostępna"
 msgid "{0} of {1} row(s) selected."
 msgstr "{0} z {1} wybranych wierszy."
 
+#. placeholder {0}: table.getFilteredRowModel().rows.length
+#: src/components/ui/shared-pagination.tsx
+msgid "{0} row(s)"
+msgstr "{0} wiersz(y)"
+
 #. placeholder {0}: selectedIds.size
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "{0} selected"
 msgstr "Wybrano: {0}"
+
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{0}–{1} of {total} rows"
+#~ msgstr ""
 
 #: src/components/active-alerts.tsx
 msgid "{alertCount, plural, one {# active alert} other {# active alerts}}"
@@ -84,13 +93,17 @@ msgstr "{threads, plural, one {# wątek} few {# wątki} many {# wątków} other 
 msgid "{total, plural, one {# update} other {# updates}}"
 msgstr "{total, plural, one {# aktualizacja} few {# aktualizacje} many {# aktualizacji} other {# aktualizacji}}"
 
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{total} row(s)"
+#~ msgstr ""
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{totalCount, plural, one {# service} other {# services}}"
 msgstr "{totalCount, plural, one {# usługa} few {# usługi} many {# usług} other {# usługi}}"
 
 #: src/components/alerts-history-columns.tsx
 msgid "{value, plural, one {# day} other {# days}}"
-msgstr ""
+msgstr "{value, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -434,7 +447,7 @@ msgstr "Certyfikat"
 
 #: src/lib/alerts.ts
 msgid "Certificate Expiration"
-msgstr ""
+msgstr "Wygaśnięcie certyfikatu"
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Certificate expired {expires}"
@@ -651,7 +664,7 @@ msgstr "Skopiuj poniżej zawartość pliku <0>docker-compose.yml</0> dla agenta 
 #: src/components/token-value.tsx
 #: src/components/token-value.tsx
 msgid "Copy token"
-msgstr ""
+msgstr "Kopiuj token"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy YAML"
@@ -983,7 +996,7 @@ msgstr "Wygasa po godzinie lub przy ponownym uruchomieniu huba."
 
 #: src/components/alerts/alerts-sheet.tsx
 msgid "Expires within <0>{value, plural, one {# day} other {# days}}</0>"
-msgstr ""
+msgstr "Wygasa w ciągu <0>{value, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}</0>"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -1164,7 +1177,7 @@ msgstr "Ukryj znaczniki czasu"
 #: src/components/token-value.tsx
 #: src/components/token-value.tsx
 msgid "Hide token"
-msgstr ""
+msgstr "Ukryj token"
 
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
@@ -1210,7 +1223,7 @@ msgstr "Jeśli utraciłeś hasło do swojego konta administratora, możesz je zr
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Ignore TLS certificate errors"
-msgstr ""
+msgstr "Ignoruj błędy certyfikatu TLS"
 
 #: src/components/containers-table/containers-table-columns.tsx
 msgctxt "Docker image"
@@ -1535,7 +1548,7 @@ msgstr "Przy każdym ponownym uruchomieniu systemy w bazie danych będą aktuali
 #. placeholder {0}: alert.value
 #: src/components/active-alerts.tsx
 msgid "One or more certificates expire within {0, plural, one {# day} other {# days}}"
-msgstr ""
+msgstr "Jeden lub więcej certyfikatów wygasa w ciągu {0, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}"
 
 #: src/lib/alerts.ts
 msgid "One or more containers are unhealthy"
@@ -1609,10 +1622,11 @@ msgstr "Strona"
 
 #. placeholder {0}: pageIndex + 1
 #. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: Math.max(1, pageCount)
 #. placeholder {1}: Math.max(table.getPageCount(), 1)
-#. placeholder {1}: table.getPageCount()
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Page {0} of {1}"
 msgstr "Strona {0} z {1}"
 
@@ -1878,7 +1892,7 @@ msgstr "Wznów"
 #: src/components/token-value.tsx
 #: src/components/token-value.tsx
 msgid "Reveal token"
-msgstr ""
+msgstr "Pokaż token"
 
 #. Package version
 #: src/components/routes/system/package-updates-table.tsx
@@ -1898,6 +1912,7 @@ msgstr "Zmień token"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Rows per page"
 msgstr "Wiersze na stronę"
 
@@ -2257,11 +2272,11 @@ msgstr "Token"
 #. placeholder {0}: fingerprint.expand.system.name
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token for {0}"
-msgstr ""
+msgstr "Token dla {0}"
 
 #: src/components/token-value.tsx
 msgid "Token hidden"
-msgstr ""
+msgstr "Token ukryty"
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -2328,7 +2343,7 @@ msgstr "Wyzwala alert, gdy kontrola stanu kontenera zgłosi nieprawidłowy stan"
 
 #: src/lib/alerts.ts
 msgid "Triggers when an HTTPS certificate nears expiration"
-msgstr ""
+msgstr "Uruchamia się, gdy certyfikat HTTPS zbliża się do wygaśnięcia"
 
 #: src/lib/alerts.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -2478,7 +2493,7 @@ msgstr "Użycie puli magazynu {displayName}"
 
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Use for self-signed certificates."
-msgstr ""
+msgstr "Użyj dla certyfikatów z podpisem własnym."
 
 #: src/components/routes/system/charts/memory-charts.tsx
 #: src/components/routes/system/charts/memory-charts.tsx

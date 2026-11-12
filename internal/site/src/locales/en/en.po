@@ -25,11 +25,20 @@ msgstr "{0} available"
 msgid "{0} of {1} row(s) selected."
 msgstr "{0} of {1} row(s) selected."
 
+#. placeholder {0}: table.getFilteredRowModel().rows.length
+#: src/components/ui/shared-pagination.tsx
+msgid "{0} row(s)"
+msgstr "{0} row(s)"
+
 #. placeholder {0}: selectedIds.size
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "{0} selected"
 msgstr "{0} selected"
+
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{0}–{1} of {total} rows"
+#~ msgstr "{0}–{1} of {total} rows"
 
 #: src/components/active-alerts.tsx
 msgid "{alertCount, plural, one {# active alert} other {# active alerts}}"
@@ -78,6 +87,10 @@ msgstr "{threads, plural, one {# thread} other {# threads}}"
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{total, plural, one {# update} other {# updates}}"
 msgstr "{total, plural, one {# update} other {# updates}}"
+
+#: src/components/ui/shared-pagination.tsx
+#~ msgid "{total} row(s)"
+#~ msgstr "{total} row(s)"
 
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{totalCount, plural, one {# service} other {# services}}"
@@ -1604,10 +1617,11 @@ msgstr "Page"
 
 #. placeholder {0}: pageIndex + 1
 #. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: Math.max(1, pageCount)
 #. placeholder {1}: Math.max(table.getPageCount(), 1)
-#. placeholder {1}: table.getPageCount()
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Page {0} of {1}"
 msgstr "Page {0} of {1}"
 
@@ -1893,6 +1907,7 @@ msgstr "Rotate token"
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/system/package-updates-table.tsx
+#: src/components/ui/shared-pagination.tsx
 msgid "Rows per page"
 msgstr "Rows per page"
 
