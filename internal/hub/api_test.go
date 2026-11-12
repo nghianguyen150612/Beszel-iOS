@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -1624,6 +1625,141 @@ func TestTrustedHeaderProxyAllowlist(t *testing.T) {
 				TestAppFactory:  testAppFactory,
 				BeforeTestFunc: func(t testing.TB, app *pbTests.TestApp, e *core.ServeEvent) {
 					beszelTests.CreateUser(app, "user@test.com", "password123")
+				},
+			}
+			scenario.Test(t)
+		})
+	}
+}
+
+func TestTrustedHeaderWithoutProxyWarning(t *testing.T) {
+	var hubs []*beszelTests.TestHub
+	defer func() {
+		for _, hub := range hubs {
+			hub.Cleanup()
+		}
+	}()
+
+	testAppFactory := func(t testing.TB) *pbTests.TestApp {
+		hub, _ := beszelTests.NewTestHub(t.TempDir())
+		hubs = append(hubs, hub)
+		hub.StartHub()
+		return hub.TestApp
+	}
+
+	testCases := []struct {
+		name          string
+		env           map[string]string
+		expectWarning bool
+	}{
+		{name: "header not set"},
+		{name: "trusted header without allowlist", env: map[string]string{"TRUSTED_AUTH_HEADER": "X-Beszel-Trusted"}, expectWarning: true},
+		{name: "trusted header with allowlist", env: map[string]string{"TRUSTED_AUTH_HEADER": "X-Beszel-Trusted", "TRUSTED_PROXY_IPS": "10.0.0.5"}},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("TRUSTED_AUTH_HEADER", "")
+			t.Setenv("TRUSTED_PROXY_IPS", "")
+			for key, value := range tc.env {
+				t.Setenv(key, value)
+			}
+
+			var logs bytes.Buffer
+			previous := slog.Default()
+			slog.SetDefault(slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelWarn})))
+			t.Cleanup(func() { slog.SetDefault(previous) })
+
+			scenario := beszelTests.ApiScenario{
+				Name:            "GET /api/health",
+				Method:          http.MethodGet,
+				URL:             "/api/health",
+				ExpectedStatus:  http.StatusOK,
+				ExpectedContent: []string{"API is healthy"},
+				TestAppFactory:  testAppFactory,
+			}
+			scenario.Test(t)
+			if tc.expectWarning {
+				require.Contains(t, logs.String(), "TRUSTED_AUTH_HEADER is set without TRUSTED_PROXY_IPS")
+				require.Contains(t, logs.String(), "header=X-Beszel-Trusted")
+			} else {
+				require.NotContains(t, logs.String(), "TRUSTED_AUTH_HEADER")
+			}
+		})
+	}
+}
+
+func TestTrustedHeaderUnknownUserWarning(t *testing.T) {
+	var hubs []*beszelTests.TestHub
+	defer func() {
+		for _, hub := range hubs {
+			hub.Cleanup()
+		}
+	}()
+
+	t.Setenv("TRUSTED_AUTH_HEADER", "X-Beszel-Trusted")
+	t.Setenv("BESZEL_HUB_TRUSTED_AUTH_HEADER", "X-Beszel-Trusted")
+	t.Setenv("TRUSTED_PROXY_IPS", "192.0.2.1")
+	t.Setenv("BESZEL_HUB_TRUSTED_PROXY_IPS", "192.0.2.1")
+
+	testAppFactory := func(t testing.TB) *pbTests.TestApp {
+		hub, _ := beszelTests.NewTestHub(t.TempDir())
+		hubs = append(hubs, hub)
+		hub.StartHub()
+		return hub.TestApp
+	}
+
+	const warning = "No user matches the automatic login email"
+	testCases := []struct {
+		name            string
+		method          string
+		url             string
+		headerEmail     string
+		createUser      bool
+		expectedStatus  int
+		expectedContent []string
+		expectWarning   bool
+	}{
+		{name: "auth refresh with unknown email", method: http.MethodPost, url: "/api/collections/users/auth-refresh", headerEmail: "unknown@test.com", expectedStatus: http.StatusUnauthorized, expectedContent: []string{"requires valid"}, expectWarning: true},
+		{name: "auth refresh with known email", method: http.MethodPost, url: "/api/collections/users/auth-refresh", headerEmail: "user@test.com", createUser: true, expectedStatus: http.StatusOK, expectedContent: []string{"\"token\":"}},
+		{name: "auth refresh without header", method: http.MethodPost, url: "/api/collections/users/auth-refresh", expectedStatus: http.StatusUnauthorized, expectedContent: []string{"requires valid"}},
+		{name: "other request with unknown email", method: http.MethodGet, url: "/api/health", headerEmail: "unknown@test.com", expectedStatus: http.StatusOK, expectedContent: []string{"API is healthy"}},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var logs bytes.Buffer
+			previous := slog.Default()
+			slog.SetDefault(slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelWarn})))
+			t.Cleanup(func() { slog.SetDefault(previous) })
+
+			headers := map[string]string{}
+			if tc.headerEmail != "" {
+				headers["X-Beszel-Trusted"] = tc.headerEmail
+			}
+			scenario := beszelTests.ApiScenario{
+				Name:            tc.method + " " + tc.url,
+				Method:          tc.method,
+				URL:             tc.url,
+				Headers:         headers,
+				ExpectedStatus:  tc.expectedStatus,
+				ExpectedContent: tc.expectedContent,
+				TestAppFactory:  testAppFactory,
+				BeforeTestFunc: func(t testing.TB, app *pbTests.TestApp, e *core.ServeEvent) {
+					if tc.createUser {
+						user, err := beszelTests.CreateUser(app, tc.headerEmail, "password123")
+						require.NoError(t, err)
+						user.SetVerified(true)
+						require.NoError(t, app.Save(user))
+					}
+				},
+				AfterTestFunc: func(t testing.TB, app *pbTests.TestApp, res *http.Response) {
+					if tc.expectWarning {
+						require.Contains(t, logs.String(), warning)
+						require.Contains(t, logs.String(), "email="+tc.headerEmail)
+					} else {
+						require.NotContains(t, logs.String(), warning)
+					}
 				},
 			}
 			scenario.Test(t)
