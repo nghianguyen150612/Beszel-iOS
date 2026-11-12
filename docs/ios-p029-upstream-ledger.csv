@@ -1,0 +1,17 @@
+upstream_sha,commit_time,classification,subject,disposition
+83a494424594b966e69cac529084cec640b7ee09,2026-11-11T17:26:34-05:00,IOS ADAPTATION REQUIRED,fix(hub): warn when no user matches the automatic login email (#2824),Pending semantic review and implementation.
+7205cde0728f4adecf29a32e07c25ad1d3f0e109,2026-11-11T17:15:56-05:00,IOS ADAPTATION REQUIRED,fix(tests): stop token-value test from replacing the utils module for the whole site suite,Pending semantic review and implementation.
+504d490ed413014fbd70c72f594cc61cbce6c639,2026-11-11T17:12:31-05:00,IOS ADAPTATION REQUIRED,Fix bulk monitor copy and import for URLs containing commas (#2716),Pending semantic review and implementation.
+17d721c77306d2a05c426bf79509ad32db40c7bc,2026-11-11T15:28:58-05:00,NOT APPLICABLE,fix: show needs-review notice on created feature requests (#2820),Upstream issue tracker configuration.
+dcd4f14807df8999d8bc94451ab0718bc4c26f6c,2026-11-11T15:19:25-05:00,IOS ADAPTATION REQUIRED,fix(hub): warn when TRUSTED_AUTH_HEADER is set without TRUSTED_PROXY_IPS (#2812),Pending semantic review and implementation.
+0f68d161b1278103c2ab296da43be012dded7501,2026-11-11T15:15:21-05:00,IOS ADAPTATION REQUIRED,fix(agent): keep NVMe SMART data when a 128-bit counter exceeds uint64 (#2732),Pending semantic review and implementation.
+ea4519014ea2ce21d8d38f03256a524ee5ef578b,2026-11-11T14:21:41-05:00,IOS ADAPTATION REQUIRED,"fix(ui): only probe auto login when configured, load login data once",Pending semantic review and implementation.
+701872e8cb99ac5c44264425fca641d06c96b428,2026-11-11T14:20:58-05:00,IOS ADAPTATION REQUIRED,fix(ui): finish automatic authentication before showing login (#2810),Pending semantic review and implementation.
+716b0b7676088ff9d8cc2b86a4a57a2ed376c14a,2026-11-11T13:02:30-05:00,NOT APPLICABLE,task: improve issue templates (#2818),Upstream issue tracker configuration.
+3ae9011ac4df5c6b7f41ec9c34f6e484daa57c0c,2026-11-11T12:49:47-05:00,IOS ADAPTATION REQUIRED,feat: rate limit sign-in attempts (#2641),Pending semantic review and implementation.
+a12fdb9f45e33e5ab70c1ae2c23ba73261ea02af,2026-11-11T11:56:01-05:00,IOS ADAPTATION REQUIRED,fix(agent): don't subtract host ZFS ARC from memory in LXC (#2767),Pending semantic review and implementation.
+46abf3576cbad6484ec5038ea68fe8356373a61c,2026-11-11T11:48:27-05:00,IOS ADAPTATION REQUIRED,"fix(agent): report failed services that were never active (#2776, #2777)",Pending semantic review and implementation.
+c986080304058018d5ba2c6dafb1cfd2f2f19c3e,2026-11-11T11:19:38-05:00,IOS ADAPTATION REQUIRED,fix(site): debounce alert saves per alert so enabling two alerts quickly keeps both (#2781),Pending semantic review and implementation.
+563f5a3aa684fd94614d43d7e79d3a1b72f3f0e6,2026-11-11T11:05:11-05:00,IOS ADAPTATION REQUIRED,chore(deps): upgrade go dependencies,Pending semantic review and implementation.
+437066ac550c959a721538afe781df8e2dd8714d,2026-11-11T10:57:39-05:00,PORT REQUIRED,fix(hub): improve exclusion of previous-interval records from rollup averages (#2807),Implemented 59254554; tests and exact-source CI pending.
+94fab6cb6f92f55a1fbbffe1f8f720b789065d05,2026-10-30,IOS ADAPTATION REQUIRED,macOS test fix,Health cleanup adapted in 9aa72ba4; other test and frontend changes remain to review. Hosted macOS covers packages but not cleanup idempotence.
