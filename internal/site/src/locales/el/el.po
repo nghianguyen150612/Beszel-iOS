@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Αποσύνδεση"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Σύνδεση"
 
@@ -1738,6 +1739,10 @@ msgstr "Ανατρέξτε στην <0>τεκμηρίωση</0> για οδηγ�
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Συνδεθείτε στον λογαριασμό σας"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "Τα διακριτικά επιτρέπουν στους πράκτορ
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Τα διακριτικά και τα αποτυπώματα χρησιμοποιούνται για την ταυτοποίηση συνδέσεων WebSocket προς τον κόμβο."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

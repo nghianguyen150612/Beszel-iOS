@@ -32,15 +32,8 @@ func TestAgentCancellationReleasesListener(t *testing.T) {
 			return true
 		}, 2*time.Second, 10*time.Millisecond)
 		cancel()
-		select {
-		case err := <-done:
-			require.NoError(t, err)
-		case <-time.After(2 * time.Second):
-			t.Fatal("agent did not stop after cancellation")
-		}
-		listener, err := net.Listen("tcp", opts.Addr)
-		require.NoError(t, err, "stopped agent must release its listening port")
-		require.NoError(t, listener.Close())
+		requireAgentStopped(t, done, "agent did not stop after cancellation")
+		requirePortReleased(t, opts.Addr)
 	}
 }
 
@@ -79,12 +72,7 @@ func TestAgentCancellationJoinsReconnect(t *testing.T) {
 	require.NoError(t, client.Close())
 	require.Eventually(t, cm.isConnectingNow, time.Second, time.Millisecond)
 	cancel()
-	select {
-	case err := <-done:
-		require.NoError(t, err)
-	case <-time.After(2 * time.Second):
-		t.Fatal("agent did not join its pending reconnect")
-	}
+	requireAgentStopped(t, done, "agent did not join its pending reconnect")
 	require.False(t, cm.isConnectingNow())
 	require.Eventually(t, func() bool {
 		a.serverMu.Lock()
@@ -100,6 +88,35 @@ func TestAgentCancellationJoinsReconnect(t *testing.T) {
 		}
 		return true
 	}, time.Second, 10*time.Millisecond, "stopped Agent must clear its SSH listener and refuse new connections")
+	requirePortReleased(t, opts.Addr)
+}
+
+// requireAgentStopped waits for Start to return after the context is cancelled.
+// The window is a liveness bound, not a performance assertion: `go test ./...`
+// runs packages in parallel, and shutdown on a loaded machine can take several
+// seconds.
+func requireAgentStopped(t *testing.T, done <-chan error, msg string) {
+	t.Helper()
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(30 * time.Second):
+		t.Fatal(msg)
+	}
+}
+
+// requirePortReleased fails unless addr becomes bindable again. The kernel can
+// hold the port briefly after the agent closes its listener.
+func requirePortReleased(t *testing.T, addr string) {
+	t.Helper()
+	require.Eventually(t, func() bool {
+		listener, err := net.Listen("tcp", addr)
+		if err != nil {
+			return false
+		}
+		_ = listener.Close()
+		return true
+	}, 2*time.Second, 10*time.Millisecond, "stopped agent must release its listening port %s", addr)
 }
 
 func TestAgentCancellationDuringHandshake(t *testing.T) {
@@ -123,10 +140,5 @@ func TestAgentCancellationDuringHandshake(t *testing.T) {
 		t.Fatal("agent did not reach the HTTP upgrade")
 	}
 	cancel()
-	select {
-	case err := <-done:
-		require.NoError(t, err)
-	case <-time.After(2 * time.Second):
-		t.Error("agent did not cancel its pending handshake")
-	}
+	requireAgentStopped(t, done, "agent did not cancel its pending handshake")
 }

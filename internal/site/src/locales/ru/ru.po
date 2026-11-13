@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Выйти"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Вход"
 
@@ -1738,6 +1739,10 @@ msgstr "Пожалуйста, смотрите <0>документацию</0> �
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Пожалуйста, войдите в свою учетную запись"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "Токены позволяют агентам подключаться 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Токены и отпечатки используются для аутентификации соединений WebSocket с хабом."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

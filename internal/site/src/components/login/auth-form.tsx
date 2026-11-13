@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro"
 import { Trans } from "@lingui/react/macro"
 import { getPagePath } from "@nanostores/router"
 import { KeyIcon, LoaderCircle, LockIcon, LogInIcon, MailIcon } from "lucide-react"
-import type { AuthMethodsList, AuthProviderInfo, OAuth2AuthConfig } from "pocketbase"
+import type { AuthMethodsList, AuthProviderInfo, ClientResponseError, OAuth2AuthConfig } from "pocketbase"
 import { useCallback, useEffect, useState } from "react"
 import * as v from "valibot"
 import { buttonVariants } from "@/components/ui/button"
@@ -38,7 +38,15 @@ const RegisterSchema = v.looseObject({
 	passwordConfirm: passwordSchema,
 })
 
-export const showLoginFaliedToast = (description = t`Please check your credentials and try again`) => {
+export const showLoginFaliedToast = (err?: unknown, description = t`Please check your credentials and try again`) => {
+	if ((err as ClientResponseError | undefined)?.status === 429) {
+		toast({
+			title: t`Too many login attempts`,
+			description: t`Please wait a moment and try again.`,
+			variant: "destructive",
+		})
+		return
+	}
 	toast({
 		title: t`Login attempt failed`,
 		description,
@@ -112,15 +120,16 @@ export function UserAuthForm({
 			} catch (err: any) {
 				const mfaId = err?.response?.mfaId
 				if (!mfaId) {
-					showLoginFaliedToast()
-					return
+					showLoginFaliedToast(err)
+					throw err
 				}
 				setMfaId(mfaId)
 				try {
 					const { otpId } = await pb.collection("users").requestOTP(email)
 					setOtpId(otpId)
-				} catch {
-					showLoginFaliedToast()
+				} catch (err) {
+					console.log({ err })
+					showLoginFaliedToast(err)
 				}
 			} finally {
 				setIsLoading(false)
@@ -151,7 +160,7 @@ export function UserAuthForm({
 			const authWindow = window.open()
 			if (!authWindow) {
 				setIsOauthLoading(false)
-				showLoginFaliedToast(t`Please enable pop-ups for this site`)
+				showLoginFaliedToast(undefined, t`Please enable pop-ups for this site`)
 				return
 			}
 			oAuthOpts.urlCallback = (url) => {
@@ -163,7 +172,7 @@ export function UserAuthForm({
 			.then(() => {
 				$authenticated.set(pb.authStore.isValid)
 			})
-			.catch(showLoginFaliedToast)
+			.catch((err: unknown) => showLoginFaliedToast(err))
 			.finally(() => {
 				setIsOauthLoading(false)
 			})
@@ -187,7 +196,7 @@ export function UserAuthForm({
 		if (code) {
 			const state = params.get("state")
 			const provider: AuthProviderInfo = JSON.parse(localStorage.getItem("provider") ?? "{}")
-		    localStorage.removeItem("provider")
+			localStorage.removeItem("provider")
 			window.history.replaceState({}, "", window.location.pathname)
 			if (!state || provider.state !== state) {
 				showLoginFaliedToast()
@@ -196,7 +205,7 @@ export function UserAuthForm({
 				pb.collection("users")
 					.authWithOAuth2Code(provider.name, code, provider.codeVerifier, `${window.location.origin}${basePath}`)
 					.then(() => $authenticated.set(pb.authStore.isValid))
-					.catch((e: unknown) => showLoginFaliedToast((e as Error).message))
+					.catch((e: unknown) => showLoginFaliedToast(e, (e as Error).message))
 					.finally(() => setIsOauthLoading(false))
 			}
 		}
@@ -206,25 +215,6 @@ export function UserAuthForm({
 			// Add a small timeout to ensure browser is ready to handle popups
 			setTimeout(() => loginWithOauth(authProviders[0], false), 300)
 			return
-		}
-
-		// refresh auth if not in above states (required for trusted auth header)
-		if (pb.authStore.token) {
-			pb.collection("users")
-				.authRefresh()
-				.then((res) => {
-					pb.authStore.save(res.token, res.record)
-					$authenticated.set(!!pb.authStore.isValid)
-				})
-				.catch((error: unknown) => {
-					const status = error && typeof error === "object" && "status" in error ? error.status : undefined
-					if (status === 401 || status === 403) {
-						pb.authStore.clear()
-						$authenticated.set(false)
-					} else {
-						console.error(`auth refresh failed (${status ?? "unknown"})`)
-					}
-				})
 		}
 	}, [])
 

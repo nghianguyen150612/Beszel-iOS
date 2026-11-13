@@ -15,6 +15,8 @@ type PublicAppInfo struct {
 	HUB_VERSION         string
 	HUB_URL             string
 	OAUTH_DISABLE_POPUP bool `json:"OAUTH_DISABLE_POPUP,omitzero"`
+	// AUTO_LOGIN tells the login page to try anonymous auth refresh before showing the form.
+	AUTO_LOGIN bool `json:",omitzero"`
 }
 
 // modifyIndexHTML injects the public app information into the index.html content
@@ -64,5 +66,8 @@ func getPublicAppInfo(hub *Hub) PublicAppInfo {
 	if val, _ := utils.GetEnv("OAUTH_DISABLE_POPUP"); val == "true" {
 		info.OAUTH_DISABLE_POPUP = true
 	}
+	autoLogin, _ := utils.GetEnv("AUTO_LOGIN")
+	trustedHeader, _ := utils.GetEnv("TRUSTED_AUTH_HEADER")
+	info.AUTO_LOGIN = autoLogin != "" || trustedHeader != ""
 	return info
 }

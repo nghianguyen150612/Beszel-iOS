@@ -1,0 +1,87 @@
+# P029: PARTIAL — RESUMABLE
+
+## Branch and source
+
+- Repository: `nghianguyen150612/Beszel-iOS`.
+- Resume branch: `ios/p029-upstream-integration`; live local and remote source at resumption was `42ca83910dc302e1d262e5f7a77f7aba1c65fb25`. The prompt expected `cca89adfa13e330d977e129c6a654a74d7f1f64a`, which was not the live tip. No reset or overwrite was performed.
+- P028 base: `79a71b7540a8789d6722404cb88f0ef488969281`.
+- Exact source qualified by hosted migration and regression workflows: `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`. Origin matched.
+- Existing Draft PR #33: https://github.com/nghianguyen150612/Beszel-iOS/pull/33, targeting `ios/p028-dependency-migration`.
+- Official upstream snapshot reviewed: `83a494424594b966e69cac529084cec640b7ee09`.
+
+## Implemented upstream changes
+
+- Upstream `437066ac550c959a721538afe781df8e2dd8714d` rollup cutoff correction: local `59254554` with regression test.
+- Upstream `94fab6cb6f92f55a1fbbffe1f8f720b789065d05` health cleanup and portable macOS test fixes: local `9aa72ba4` adapts idempotent health-file cleanup while retaining the iOS connection marker; `3885541c` carries the remaining portable macOS/localStorage fixes.
+- Authentication and access-control updates: `ea451901` / `701872e8` login probe/order changes and `dcd4f148` trusted-header proxy warning are adapted in local `ca82f633` with regressions. Missing-user auto-login warning from `83a49442` is covered there.
+- Upstream `3ae9011ac4df5c6b7f41ec9c34f6e484daa57c0c` sign-in rate limiting is adapted in `cab1b632`; alert save debounce `c9860803` and comma-containing monitor URLs `504d490e` are in `f990abdc`.
+- Agent/system fixes `46abf357` and `a12fdb9f` are adapted in `8d036ff5` with portable tests. NVMe 128-bit counter handling `0f68d161` is adapted in `ffc8ba60`.
+- Dependency refresh `563f5a3aa684fd94614d43d7e79d3a1b72f3f0e6` is in `b7addf14`: 18 changed modules were reviewed; PocketBase 0.40.6 and CBOR 2.10.0 remain pinned. The Go 1.27.4 toolchain and required iOS A7 runtime patches are retained. OSV checks on the changed module versions reported no findings; GO-2026-5932 is fixed at `golang.org/x/crypto v0.59.0`, and the P023 gate now requires the finding to stay absent.
+- Existing P028 frontend virtualization, pagination, 34 locale catalogs, iOS Agent/Hub packaging, and `no_self_update` contract are preserved.
+
+## Regression recovery and qualification
+
+- **PASS — frontend recovery.** The interrupted setup was inspected. `internal/site/dist` contained genuine nonempty production assets; no temporary placeholder was present, so no asset was removed. Bun 1.4.0 `bun install --frozen-lockfile` passed without lockfile changes. `bun run build` passed with Lingui extraction/compile, TypeScript, and Vite; it produced 98 production files. All 98 matched `docs/ios-frontend-assets-manifest.sha256`; the dist tree was 3.6 MB. The exact-source P017 job rebuilt the real frontend and recorded 98 assets with manifest SHA-256 `85d3d897b3d28b78c503d03cca02b2f6111ac5df383ce3c21a7c7d8f639ffb08`.
+- **PASS — frontend tests.** Local `bun test`: 100 passed, 0 failed, 399 assertions. Exact-source P017 run 43208797446 also passed the frontend suite and lockfile immutability check.
+- **PASS — Go tests and hygiene.** Go 1.27.4 local tests passed for records, Hub, Hub command, Agent, and health with `-tags 'testing no_ui'`. Local `go vet -p 2 -tags 'testing no_ui' ./...`, `go mod tidy -diff`, and `go mod verify` passed. Exact-source P017 run 43208797446/job 131150688472 repeated full canonical Go regressions, portable builds, vet, tidy, and module verification.
+- **PASS — migration fixtures.** Initial run 43206197889 on source `546e3480` had direct fixture PASS and via-P027 fixture FAIL (exit 1): PocketBase 0.40.6 serialized the new empty `audience` field while the exact expected JSON omitted it. The P029 test fixture now asserts `audience: ""` explicitly; it still rejects changed limits, labels, or nonempty audiences. Exact-source run [43207816939](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43207816939), source `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`, passed both direct job 131147359911 and via-P027 job 131147359891. The corrected `tests/hub-migration` Python suite also passed all 10 tests.
+- **PASS — security and CI regression.** Exact-source P017 run [43208797446](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43208797446), job 131150688472, passed Go 1.27.4 standard-library/dependency vulnerability checks, P023 audit/reachability validation, workflow analyzers (0 zizmor findings), strict Bun/npm dependency audits (both finding lists empty), full Go regression, and portable builds. Exact-source Go findings list was empty; the fixed x/crypto advisory remained absent. The separate local `tests/audit` suite passed all 138 tests.
+- **PASS — P017 source manifest.** Artifact `p017-regression-manifest` ID `13939727566`, SHA-256 `374e8887c61a06ffb6263c1776d43ace1f780d8802146883e8ee1dab75142b91`, records candidate source `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`, 98 frontend files, and manifest SHA above. This is test evidence, not a native binary.
+- P013 synthetic fixture evidence artifacts: direct ID `13940941253` SHA-256 `b9674e1d6c65429643ebe07eb4a331b16e927d26a7acd3a8e2b35123480cc321`; via-P027 ID `13940266516` SHA-256 `56e92a031c4a604abab319bec0aded988abe9db3a7f3474c70e957a15a14a223`. P017 security evidence artifacts: JavaScript audit ID `13938609485` SHA-256 `cbb49db7018357b05835adba817996a23fe906dc12344480b70a9bc13a378c6f`; Go vulnerability evidence ID `13938769517` SHA-256 `55d442dd119d5ea6022e3ad705aa8c7b3281352ae1c9d096a37677ace60c0d42`; workflow security ID `13940973315` SHA-256 `f580d3f90885757acdab4b4bb050a70a8f06fed56152f0824add7a4e4a2d0c19`.
+- **IN PROGRESS — native iOS/A7 build and artifact consumer.** Exact-source iOS Build run [43208801725](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43208801725), source `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`, has its Procursus check passing. First macOS job 131150871622 was cancelled without running any steps; its annotation states: “The job was not acquired by Runner of type hosted even after multiple attempts.” The workflow was rerun at 11:40 UTC; new macOS job 131158815481 is queued while Linux job 131158815856 runs. No native artifact was produced by the cancelled attempt. The rerun must complete runtime checks, native arm64 builds, payload provenance, and the independent artifact consumer before this gate can be marked PASS. The older 546e3480 iOS run was also cancelled and does not qualify native output.
+
+## Prior checkpoint status (superseded by recovery below)
+
+- **PASS:** P029-A real frontend build, frontend tests, Hub/Agent/records tests, Go vet/module verification, P013 direct and via-P027 migration fixtures, P023 vulnerability/dependency checks, P017 hosted regressions.
+- **IN PROGRESS:** retried exact-source native iOS/A7 build, iOS artifact hashes, independent consumer and provenance checks; first attempt was blocked by hosted runner acquisition.
+- **DEFERRED — OWNER APPROVED:** physical-device validation. A host native build does not establish device execution.
+- **NOT RUN:** physical-device tests. Production iOS was not changed, no release was published, and no device SSH/deployment/reboot/database/PF/LaunchDaemon action occurred.
+
+Next: finish run 43208801725 and record its job results, artifact IDs/SHA-256 and source-to-artifact verification; then update this handoff and the existing Draft PR #33 description. If the final commit changes only documentation, compare that final branch tip with tested code source `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e` and state the documentation-only delta.
+
+
+## 2026-11-13 recovery and bounded native retry
+
+- Recovered clean `ios/p029-upstream-integration` at expected origin HEAD `1b2f312e55767505ef5eb3d6cbda640ae9816b8d`. Draft PR #33 remains against `ios/p028-dependency-migration`. The delta from exact application source `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e` is documentation only.
+- Queried the complete exact-SHA Actions history (all event types): P013 `43207816939` and P017 `43208797446` remain **PASS**; no newer successful native run exists. Branch history contains no newer native workflow superseding `43208801725`.
+- Native attempts 1/job `131150871622` and 2/job `131158815481` were cancelled before any steps, with runner ID 0 and blank runner name. GitHub annotations explicitly report hosted runner acquisition failure and macOS capacity constraints. These are allocation failures, **not compilation failures**. Attempt 2 finished after about 15 minutes, before the 90-minute build timeout. No evidence of concurrency cancellation, build errors, or quota/permission denial was returned. `cancel-in-progress: true` exists, but the run history and annotations do not support that as the cause.
+- Workflow label `macos-15` requests a hosted macOS runner; no custom runner group is required. Linux Procursus passed. Admin-only runner inventory and Actions permission queries returned HTTP 403 for this integration; that limits administrative visibility and does not establish that workflow execution is forbidden.
+- Made exactly **one** failed-jobs rerun this session, preserving source SHA and workflow/release policy. Attempt 3 acquired runner `GitHub Actions 1000053238`; native job `131642478959` is executing; Procursus job `131642481760` passed. No source change was made to trigger a run. Detailed prior-attempt metadata and annotations: [runner investigation](evidence/p029-native-runner-investigation.json).
+- Independently rechecked P017 logs: **100 frontend tests, 399 assertions**. Downloaded source manifest artifact `13939727566` via the connector and verified ZIP SHA-256 `374e8887c61a06ffb6263c1776d43ace1f780d8802146883e8ee1dab75142b91`; it records exact SHA `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`, **98 assets**, and frontend manifest SHA-256 `85d3d897b3d28b78c503d03cca02b2f6111ac5df383ce3c21a7c7d8f639ffb08`.
+- Local independent Bun 1.4.0 frozen install, sync and real production build passed; all 98 generated files matched the checked manifest. Local tests again passed **100 tests / 399 assertions**. Generated PO text was restored; genuine untracked build assets were retained. Both maintenance sentinel suites passed. No lockfile changed.
+- The frozen 16-entry upstream ledger has no pending/unreviewed disposition. Retained the existing integration scope; no new upstream batch was added. Previously recorded Hub, Agent, records, health, Go vet/modules, P013 direct/via-P027 migrations and P017 security checks remain **PASS** for their exact SHA.
+- Native qualification remains pending until attempt 3 and independent consumer finish. Native artifact verification is **NOT RUN** at this checkpoint: no native artifact has yet been uploaded. Do not mark native PASS from runner allocation alone.
+- Production modifications: **NONE**. Release authorization remains **NOT_GRANTED**. Physical-device validation: **DEFERRED — OWNER APPROVED**; device tests **NOT RUN**.
+
+Next executable action: inspect attempt 3 of run `43208801725`; if successful, independently download and verify payload/evidence/consumer ZIP hashes, Mach-O arm64/iOS 12.0, A7 runtime patches, both payloads, embedded assets, no_self_update, source provenance and consumer result. If allocation fails again, use `NATIVE QUALIFICATION: BLOCKED — RUNNER AVAILABILITY`; do not start an unbounded retry loop.
+
+
+### Native build and independent local consumer — PASS
+
+Attempt 3 native job `131642478959` and Procursus `131642481760` completed **PASS** on exact source `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`, tree `c7a154812984e0c72f0d05ca0969f740a258487c`. Hosted independent consumer job `131649466627` is still queued; overall Actions run `43208801725` is not yet a terminal PASS.
+
+Independently downloaded the same-run ZIPs through the GitHub connector (direct CLI signed-blob download was forbidden), computed raw ZIP SHA-256 and matched GitHub metadata. Ran unchanged exact-source consumer validators from a detached qualification worktree, using the independently rebuilt frontend. **PASS:** thin Mach-O arm64 (not arm64e), device iOS deployment target 12.0, `GOOS=ios`, `GOARCH=arm64`, `GOARM64=v8.0`, Go 1.27.4, Agent/Hub payload layout/checksums, clean exact-SHA VCS metadata, `no_self_update`, all 98 embedded frontend assets, source selection, reviewed A7 runtime patch and unstripped instruction evidence (no counter-register access), x509 fix, no private Wi-Fi linkage, and byte-identical isolated-cache repeat builds. No physical device execution is implied.
+
+| Artifact | Full ID | Independently verified ZIP SHA-256 |
+| --- | --- | --- |
+| beszel-ios-arm64 | 14005295997 | `3fe605b9ea6ad0e3a5b15fccd5b6c2d2dac379d73ba686bb5d465e94779c6718` |
+| ios-native-validation | 14004249289 | `b7969f841acdbf45e9096ca73c57e3ab0e4cc2bbe0794ccbb46933b4fb81ac80` |
+| ios-wifi-diagnostic-disabled | 14004249286 | `cd4e0e86a61db02b9335bc9d86e9ca2432c007333d59fcb4486536eadfbce9c6` |
+
+Payload binary SHA-256:
+
+- Agent (9,526,384 bytes): `ef9ebc09d6bc148fd534759d837368af3f1cb6540849dd540ff067de801ea940`.
+- Hub (32,372,280 bytes): `0ce7246f38bff7d5a88cb5af1887ac2deb39111b7295e3a8c1590068bf590c86`.
+
+Patched runtime assembly SHA-256: `c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f`. Native structured frontend-manifest digest is `05ee7bd17179702d16f03d121a5830adcac082925ae5d63f71329f18b8397ed6`; it uses a different serialization from the checked text manifest/P017 digest `85d3d897...`, not different frontend bytes. Every checked asset and embedded asset matched.
+
+Full independent result: [local consumer](evidence/p029-local-artifact-consumer-verification.json); full artifact metadata: [artifacts](evidence/p029-native-artifacts.json). The existing consumer report retains legacy P025 candidate-label fields; exact source/tree and authenticated workflow branch identify this P029 build, and release authorization remains denied.
+
+Next: finish hosted consumer job `131649466627`, record its manifest artifact ID/digest and terminal run result. Do not rerun successful builds merely because a downstream consumer is queued. Host/native qualification has passing build and independent local byte verification, but the hosted gate remains pending. Device validation stays **DEFERRED — OWNER APPROVED**.
+
+
+### Saved recovery status
+
+The latest [CI snapshot](evidence/p029-final-ci-snapshot.json) records completed native/Procursus jobs and queued hosted consumer. **PASS:** exact-source host gates, native build and independent local artifact consumer. **NOT RUN:** queued hosted consumer `131649466627`. Overall hosted native qualification remains incomplete; do not report its Actions run as successful until that gate finishes. The earlier macOS allocation blocker has been resolved for the build itself.
+
+**P029: PARTIAL — RESUMABLE.** Next exact action: inspect run `43208801725` / consumer job `131649466627`, record the hosted verification manifest artifact ID/SHA-256 and terminal result. Native code source stays `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`; all later branch commits in this continuation are documentation/evidence only. Production modifications **NONE**; device validation **DEFERRED — OWNER APPROVED**.

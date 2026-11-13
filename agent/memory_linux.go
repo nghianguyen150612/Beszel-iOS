@@ -9,6 +9,12 @@ import (
 	"github.com/henrygd/beszel/agent/utils"
 )
 
+// canSubtractZfsArc reports whether host ARC accounting belongs to this Linux
+// memory view. LXC exposes host ARC data that is outside the guest's memory.
+func canSubtractZfsArc() bool {
+	return !inLxc()
+}
+
 // containerMemoryMetrics is only used when USE_CGROUP is explicitly enabled.
 // Unlike /proc/stat, lxcfs already serves a container-scoped /proc/meminfo,
 // so LXC keeps the existing memory path by default.
