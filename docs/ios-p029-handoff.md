@@ -78,3 +78,10 @@ Patched runtime assembly SHA-256: `c861b98d76ac487269c7f98c987b94ea9978c5f01740a
 Full independent result: [local consumer](evidence/p029-local-artifact-consumer-verification.json); full artifact metadata: [artifacts](evidence/p029-native-artifacts.json). The existing consumer report retains legacy P025 candidate-label fields; exact source/tree and authenticated workflow branch identify this P029 build, and release authorization remains denied.
 
 Next: finish hosted consumer job `131649466627`, record its manifest artifact ID/digest and terminal run result. Do not rerun successful builds merely because a downstream consumer is queued. Host/native qualification has passing build and independent local byte verification, but the hosted gate remains pending. Device validation stays **DEFERRED — OWNER APPROVED**.
+
+
+### Saved recovery status
+
+The latest [CI snapshot](evidence/p029-final-ci-snapshot.json) records completed native/Procursus jobs and queued hosted consumer. **PASS:** exact-source host gates, native build and independent local artifact consumer. **NOT RUN:** queued hosted consumer `131649466627`. Overall hosted native qualification remains incomplete; do not report its Actions run as successful until that gate finishes. The earlier macOS allocation blocker has been resolved for the build itself.
+
+**P029: PARTIAL — RESUMABLE.** Next exact action: inspect run `43208801725` / consumer job `131649466627`, record the hosted verification manifest artifact ID/SHA-256 and terminal result. Native code source stays `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`; all later branch commits in this continuation are documentation/evidence only. Production modifications **NONE**; device validation **DEFERRED — OWNER APPROVED**.
