@@ -54,3 +54,27 @@ Next: finish run 43208801725 and record its job results, artifact IDs/SHA-256 an
 - Production modifications: **NONE**. Release authorization remains **NOT_GRANTED**. Physical-device validation: **DEFERRED — OWNER APPROVED**; device tests **NOT RUN**.
 
 Next executable action: inspect attempt 3 of run `43208801725`; if successful, independently download and verify payload/evidence/consumer ZIP hashes, Mach-O arm64/iOS 12.0, A7 runtime patches, both payloads, embedded assets, no_self_update, source provenance and consumer result. If allocation fails again, use `NATIVE QUALIFICATION: BLOCKED — RUNNER AVAILABILITY`; do not start an unbounded retry loop.
+
+
+### Native build and independent local consumer — PASS
+
+Attempt 3 native job `131642478959` and Procursus `131642481760` completed **PASS** on exact source `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`, tree `c7a154812984e0c72f0d05ca0969f740a258487c`. Hosted independent consumer job `131649466627` is still queued; overall Actions run `43208801725` is not yet a terminal PASS.
+
+Independently downloaded the same-run ZIPs through the GitHub connector (direct CLI signed-blob download was forbidden), computed raw ZIP SHA-256 and matched GitHub metadata. Ran unchanged exact-source consumer validators from a detached qualification worktree, using the independently rebuilt frontend. **PASS:** thin Mach-O arm64 (not arm64e), device iOS deployment target 12.0, `GOOS=ios`, `GOARCH=arm64`, `GOARM64=v8.0`, Go 1.27.4, Agent/Hub payload layout/checksums, clean exact-SHA VCS metadata, `no_self_update`, all 98 embedded frontend assets, source selection, reviewed A7 runtime patch and unstripped instruction evidence (no counter-register access), x509 fix, no private Wi-Fi linkage, and byte-identical isolated-cache repeat builds. No physical device execution is implied.
+
+| Artifact | Full ID | Independently verified ZIP SHA-256 |
+| --- | --- | --- |
+| beszel-ios-arm64 | 14005295997 | `3fe605b9ea6ad0e3a5b15fccd5b6c2d2dac379d73ba686bb5d465e94779c6718` |
+| ios-native-validation | 14004249289 | `b7969f841acdbf45e9096ca73c57e3ab0e4cc2bbe0794ccbb46933b4fb81ac80` |
+| ios-wifi-diagnostic-disabled | 14004249286 | `cd4e0e86a61db02b9335bc9d86e9ca2432c007333d59fcb4486536eadfbce9c6` |
+
+Payload binary SHA-256:
+
+- Agent (9,526,384 bytes): `ef9ebc09d6bc148fd534759d837368af3f1cb6540849dd540ff067de801ea940`.
+- Hub (32,372,280 bytes): `0ce7246f38bff7d5a88cb5af1887ac2deb39111b7295e3a8c1590068bf590c86`.
+
+Patched runtime assembly SHA-256: `c861b98d76ac487269c7f98c987b94ea9978c5f01740a4596eecbfdb9c8bb91f`. Native structured frontend-manifest digest is `05ee7bd17179702d16f03d121a5830adcac082925ae5d63f71329f18b8397ed6`; it uses a different serialization from the checked text manifest/P017 digest `85d3d897...`, not different frontend bytes. Every checked asset and embedded asset matched.
+
+Full independent result: [local consumer](evidence/p029-local-artifact-consumer-verification.json); full artifact metadata: [artifacts](evidence/p029-native-artifacts.json). The existing consumer report retains legacy P025 candidate-label fields; exact source/tree and authenticated workflow branch identify this P029 build, and release authorization remains denied.
+
+Next: finish hosted consumer job `131649466627`, record its manifest artifact ID/digest and terminal run result. Do not rerun successful builds merely because a downstream consumer is queued. Host/native qualification has passing build and independent local byte verification, but the hosted gate remains pending. Device validation stays **DEFERRED — OWNER APPROVED**.
