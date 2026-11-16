@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Chiqish"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Kirish"
 
@@ -1738,6 +1739,10 @@ msgstr "Ko'rsatmalar uchun <0>hujjatlarni</0> ko'ring."
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Hisobingizga kiring"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "Tokenlar agentlarga ulanish va ro'yxatdan o'tish imkonini beradi. Barmoq
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Tokenlar va barmoq izlari hub'ga WebSocket ulanishlarini autentifikatsiya qilish uchun ishlatiladi."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

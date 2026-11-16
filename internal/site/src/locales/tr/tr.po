@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Çıkış Yap"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Giriş Yap"
 
@@ -1738,6 +1739,10 @@ msgstr "Talimatlar için lütfen <0>dokümantasyonu</0> inceleyin."
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Lütfen hesabınıza giriş yapın"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "Token'lar agentların bağlanıp kaydolmasına izin verir. Parmak izleri
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Token'lar ve parmak izleri hub'a WebSocket bağlantılarını doğrulamak için kullanılır."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

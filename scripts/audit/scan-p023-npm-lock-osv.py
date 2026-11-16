@@ -16,6 +16,7 @@ REVIEWED_ID = "GHSA-vfj7-8cjw-p6xm"
 REVIEWED_ALIAS = "CVE-2026-93687"
 REVIEWED_PACKAGE = "braces"
 REVIEWED_VERSION = "3.0.3"
+REVIEWED_WITHDRAWAL = "2026-10-23T12:53:02Z"
 SOURCE_SHA = re.compile(r"^[0-9a-f]{40}$")
 BATCH_SIZE = 100
 TIMEOUT_SECONDS = 30
@@ -141,42 +142,34 @@ def scan(lock_bytes: bytes, source_sha: str, batch_responses: list[dict], adviso
     if offset != len(queries):
         raise ValueError("OSV response did not cover every npm package/version query")
     ids = sorted({match["id"] for match in matches})
-    if ids != [REVIEWED_ID]:
-        raise ValueError(f"npm lock OSV scan found missing or unreviewed advisory IDs: {ids}")
-    reviewed = [m for m in matches if m["id"] == REVIEWED_ID]
-    if len(reviewed) != 1 or reviewed[0]["package"] != REVIEWED_PACKAGE or reviewed[0]["version"] != REVIEWED_VERSION:
-        raise ValueError("npm lock OSV scan did not produce exactly the reviewed braces@3.0.3 finding")
-    if not reviewed[0]["install_nodes"] or any(node["dev"] is not True for node in reviewed[0]["install_nodes"]):
-        raise ValueError("npm lock OSV finding is not confined to dev-only install nodes")
-
+    if ids:
+        raise ValueError(f"npm lock OSV scan found active or unreviewed advisory IDs: {ids}")
     if advisory.get("id") != REVIEWED_ID or REVIEWED_ALIAS not in advisory.get("aliases", []):
         raise ValueError("OSV advisory detail does not match the reviewed GHSA and CVE IDs")
+    if advisory.get("withdrawn") != REVIEWED_WITHDRAWAL:
+        raise ValueError("the missing historical braces finding is not supported by the verified OSV withdrawal")
     affected_records = [
         item for item in advisory.get("affected", [])
         if item.get("package", {}).get("name") == REVIEWED_PACKAGE
         and item.get("package", {}).get("ecosystem") == "npm"
     ]
-    if len(affected_records) != 1:
-        raise ValueError("OSV advisory no longer identifies exactly the npm braces package")
     events = [
         event
-        for interval in affected_records[0].get("ranges", [])
+        for item in affected_records
+        for interval in item.get("ranges", [])
         for event in interval.get("events", [])
     ]
-    if not any(event.get("introduced") == "0" for event in events) or not any(event.get("last_affected") == REVIEWED_VERSION for event in events):
-        raise ValueError("OSV advisory affected-version range changed from the reviewed braces range")
-    if any("fixed" in event for event in events):
-        raise ValueError("OSV advisory now lists a fixed version; reassess the dependency before accepting this residual")
+    if len(affected_records) != 1 or not any(event.get("introduced") == "0" for event in events) or not any(event.get("last_affected") == REVIEWED_VERSION for event in events):
+        raise ValueError("OSV withdrawal does not identify the previously reviewed braces@3.0.3 range")
 
     request_payload = {"queries": queries}
     raw_responses = {"endpoint": QUERY_ENDPOINT, "batch_responses": batch_responses}
-    severity_vectors = advisory.get("severity", [])
     summary = {
         "schema": 1,
-        "status": "PASS_WITH_REVIEWED_ADVISORY",
+        "status": "PASS_NO_ACTIVE_ADVISORIES",
         "candidate_source_sha": source_sha,
         "scanner": "OSV querybatch API",
-        "reviewed_on": "2026-10-22",
+        "reviewed_on": "2026-11-12",
         "endpoint": QUERY_ENDPOINT,
         "package_lock_sha256": sha256(lock_bytes),
         "package_lock_nodes_scanned": package_nodes,
@@ -184,17 +177,15 @@ def scan(lock_bytes: bytes, source_sha: str, batch_responses: list[dict], adviso
         "unique_package_version_queries": len(queries),
         "canonical_request_json_sha256": sha256(json.dumps(request_payload, separators=(",", ":")).encode()),
         "canonical_response_json_sha256": sha256(json.dumps(raw_responses, separators=(",", ":")).encode()),
-        "finding_ids": ids,
-        "findings": [{
+        "finding_ids": [],
+        "findings": [],
+        "verified_withdrawals": [{
             "advisory_id": REVIEWED_ID,
             "cve_id": REVIEWED_ALIAS,
             "package": REVIEWED_PACKAGE,
-            "version": REVIEWED_VERSION,
-            "install_nodes": reviewed[0]["install_nodes"],
-            "severity_vectors": severity_vectors,
+            "historically_affected_version": REVIEWED_VERSION,
+            "withdrawn": REVIEWED_WITHDRAWAL,
             "affected_events": events,
-            "first_patched_version": None,
-            "raw_scanner_status": "retained by full npm lock OSV query",
         }],
         "npm_audit_relationship": "independent full-lock cross-check; fallback is permitted only after the configured npm registry timeout",
         "release_authorization": "NOT_GRANTED",

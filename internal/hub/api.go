@@ -2,6 +2,8 @@ package hub
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -76,6 +78,11 @@ func (h *Hub) registerMiddlewares(se *core.ServeEvent) {
 		}
 		isAuthRefresh := e.Request.URL.Path == "/api/collections/users/auth-refresh" && e.Request.Method == http.MethodPost
 		e.Auth, err = e.App.FindAuthRecordByEmail("users", email)
+		// Log only for auth refresh: the login page sends one per attempt, while
+		// trusted authentication middleware also runs on every other request.
+		if isAuthRefresh && errors.Is(err, sql.ErrNoRows) {
+			slog.Warn("No user matches the automatic login email, showing the login form", "email", email)
+		}
 		if err != nil || !isAuthRefresh {
 			return e.Next()
 		}
@@ -95,6 +102,9 @@ func (h *Hub) registerMiddlewares(se *core.ServeEvent) {
 		// Require an explicit proxy allowlist before honoring a client supplied
 		// identity header. Without it, the header is ignored and normal auth runs.
 		trustedProxies, restricted := parseTrustedProxies()
+		if !restricted {
+			slog.Warn("TRUSTED_AUTH_HEADER is set without TRUSTED_PROXY_IPS; trusted-header authentication is disabled", "header", trustedHeader)
+		}
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
 			if !restricted || !isTrustedProxy(trustedProxies, e.Request.RemoteAddr) {
 				return e.Next()

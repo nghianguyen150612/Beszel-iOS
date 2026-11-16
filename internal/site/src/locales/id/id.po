@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Keluar"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Masuk"
 
@@ -1738,6 +1739,10 @@ msgstr "Silakan lihat <0>dokumentasi</0> untuk instruksi."
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Silakan masuk ke akun anda"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "Token memungkinkan agen untuk terhubung dan mendaftar. Fingerprint adala
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Token dan Fingerprint digunakan untuk mengautentikasi koneksi WebSocket ke hub."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

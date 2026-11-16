@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Odhlásit"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Přihlásit"
 
@@ -1738,6 +1739,10 @@ msgstr "Instrukce naleznete v <0>dokumentaci</0>."
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Přihlaste se prosím k vašemu účtu"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "Tokeny umožňují agentům připojení a registraci. Otisky jsou stabil
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Tokeny a otisky slouží k ověření připojení WebSocket k uzlu."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

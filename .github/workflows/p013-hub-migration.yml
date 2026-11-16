@@ -19,6 +19,7 @@ on:
       - "docs/ios-p025-*"
       - "docs/ios-wifi-rssi-*"
       - ".github/workflows/p013-hub-migration.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read

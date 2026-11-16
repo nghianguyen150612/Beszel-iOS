@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "登出"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "登入"
 
@@ -1738,6 +1739,10 @@ msgstr "請參閱<0>文件</0>以取得說明。"
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "請登入您的帳號"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "令牌允許代理程式連接和註冊。指紋是每個系統唯一的
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "令牌和指紋用於驗證到中心的WebSocket連接。"
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

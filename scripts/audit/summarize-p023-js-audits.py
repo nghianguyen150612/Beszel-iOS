@@ -164,6 +164,39 @@ def audit_report(path: Path, manager: str, exit_code: int) -> dict:
                 "raw_error_retained": True,
             }
         raise ValueError(f"{manager} audit returned an error payload")
+    if manager == "bun":
+        vulnerabilities = data.get("vulnerabilities", [])
+        metadata = data.get("metadata", {})
+        counts = metadata.get("vulnerabilities", {}) if isinstance(metadata, dict) else {}
+        if vulnerabilities in ([], {}) and isinstance(counts, dict) and not any(counts.values()):
+            if exit_code != 0:
+                raise ValueError("Bun clean audit JSON must exit successfully")
+            return {
+                "manager": manager,
+                "report_sha256": hashlib.sha256(raw.encode()).hexdigest(),
+                "report_bytes": len(raw.encode()),
+                "advisory_ids": [],
+                "command_exit_code": exit_code,
+                "status": "PASS_NO_FINDINGS",
+                "raw_finding_retained": True,
+            }
+    elif manager == "npm":
+        vulnerabilities = data.get("vulnerabilities")
+        metadata = data.get("metadata", {})
+        counts = metadata.get("vulnerabilities", {}) if isinstance(metadata, dict) else {}
+        expected_zero_counts = {"info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0, "total": 0}
+        if vulnerabilities == {} and counts == expected_zero_counts:
+            if exit_code != 0:
+                raise ValueError("npm clean audit JSON must exit successfully")
+            return {
+                "manager": manager,
+                "report_sha256": hashlib.sha256(raw.encode()).hexdigest(),
+                "report_bytes": len(raw.encode()),
+                "advisory_ids": [],
+                "command_exit_code": exit_code,
+                "status": "PASS_NO_FINDINGS",
+                "raw_finding_retained": True,
+            }
     id_map = {item.upper(): item for item in ALLOWED_IDS}
     normalized_ids = {item.upper() for item in ID_PATTERN.findall(raw)}
     if GHSA.upper() not in normalized_ids or normalized_ids - set(id_map):
@@ -201,19 +234,7 @@ def audit_report(path: Path, manager: str, exit_code: int) -> dict:
         raise ValueError(f"{manager} raw audit includes more than the one reviewed high package: {counts}")
     if exit_code not in (0, 1):
         raise ValueError(f"{manager} audit exited {exit_code}; inspect the retained report")
-    return {
-        "manager": manager,
-        "report_sha256": hashlib.sha256(raw.encode()).hexdigest(),
-        "report_bytes": len(raw.encode()),
-        "advisory_ids": sorted(ids),
-        "severity": "high",
-        "vulnerable_package_count": affected_package_count,
-        "root_advisory_count": 1,
-        "command_exit_code": exit_code,
-        "exit_status_interpreted_as": "reviewed vulnerability present" if exit_code == 1 else "audit command success; advisory still reported",
-        "raw_finding_retained": True,
-        "status": "PASS_WITH_REVIEWED_ADVISORY",
-    }
+    raise ValueError(f"{manager} audit still reports an active advisory after its verified withdrawal: {sorted(ids)}")
 
 
 def validate_npm_advisory_tree(data: dict, counts: dict) -> int:
@@ -252,8 +273,8 @@ def validate_npm_advisory_tree(data: dict, counts: dict) -> int:
 def validate_osv_lock_scan(report: dict, lock_path: Path, candidate_source_sha: str) -> dict:
     if not SOURCE_SHA.fullmatch(candidate_source_sha) or report.get("candidate_source_sha") != candidate_source_sha:
         raise ValueError("OSV npm-lock scan is not tied to the current candidate source commit")
-    if report.get("schema") != 1 or report.get("status") != "PASS_WITH_REVIEWED_ADVISORY":
-        raise ValueError("OSV npm-lock scan did not pass its bounded advisory policy")
+    if report.get("schema") != 1 or report.get("status") != "PASS_NO_ACTIVE_ADVISORIES":
+        raise ValueError("OSV npm-lock scan did not pass its fail-closed clean-scan policy")
     if report.get("endpoint") != "https://api.osv.dev/v1/querybatch":
         raise ValueError("OSV npm-lock scan used an unreviewed data source")
     lock_sha = hashlib.sha256(lock_path.read_bytes()).hexdigest()
@@ -263,64 +284,54 @@ def validate_osv_lock_scan(report: dict, lock_path: Path, candidate_source_sha: 
         raise ValueError("OSV npm-lock scan did not inspect package nodes")
     if not isinstance(report.get("unique_package_version_queries"), int) or report["unique_package_version_queries"] < 1:
         raise ValueError("OSV npm-lock scan did not issue exact package/version queries")
-    if report.get("finding_ids") != [GHSA] or len(report.get("findings", [])) != 1:
-        raise ValueError("OSV npm-lock scan must retain only the exact reviewed GHSA finding")
-    finding = report["findings"][0]
+    if report.get("finding_ids") != [] or report.get("findings") != []:
+        raise ValueError("OSV npm-lock scan contains an unexpected current advisory finding")
+    withdrawals = report.get("verified_withdrawals")
     expected = {
         "advisory_id": GHSA,
         "cve_id": CVE,
         "package": PACKAGE,
-        "version": VULNERABLE_VERSION,
-        "first_patched_version": None,
-        "raw_scanner_status": "retained by full npm lock OSV query",
+        "historically_affected_version": VULNERABLE_VERSION,
+        "withdrawn": "2026-10-23T12:53:02Z",
     }
-    if any(finding.get(key) != value for key, value in expected.items()):
-        raise ValueError("OSV npm-lock scan finding differs from the reviewed braces residual")
-    nodes = finding.get("install_nodes")
-    if not isinstance(nodes, list) or not nodes or any(node.get("dev") is not True for node in nodes):
-        raise ValueError("OSV braces finding is not confined to npm dev dependencies")
-    events = finding.get("affected_events")
-    if not isinstance(events, list) or not any(event.get("last_affected") == VULNERABLE_VERSION for event in events) or any("fixed" in event for event in events):
-        raise ValueError("OSV npm-lock scan does not prove the reviewed affected range and missing fix")
+    if not isinstance(withdrawals, list) or len(withdrawals) != 1 or any(
+        withdrawals[0].get(key) != value for key, value in expected.items()
+    ):
+        raise ValueError("OSV npm-lock scan does not retain the exact verified withdrawal evidence")
     return report
 
 
 def validate_policy(policy: dict) -> dict:
-    if policy.get("schema") != 1 or policy.get("milestone") != "P023" or policy.get("reviewed_on") != "2026-10-22":
+    if policy.get("schema") != 1 or policy.get("milestone") != "P023" or policy.get("reviewed_on") != "2026-10-22" or policy.get("frontend_reviewed_on") != "2026-11-12":
         raise ValueError("unexpected P023 JavaScript advisory policy metadata")
-    entries = policy.get("frontend_residuals")
-    if not isinstance(entries, list) or len(entries) != 1:
-        raise ValueError("P023 JavaScript policy must contain exactly one bounded frontend residual")
-    entry = entries[0]
-    expected = {
+    if policy.get("frontend_residuals") != []:
+        raise ValueError("P023 JavaScript policy still lists an active frontend residual")
+    expected_withdrawal = {
         "advisory_id": GHSA,
         "cve_id": CVE,
         "package": PACKAGE,
-        "resolved_version": VULNERABLE_VERSION,
-        "severity": "high",
-        "first_patched_version": None,
-        "execution_classification": "BUILD_ONLY_TRANSITIVE",
-        "remediation_status": "MITIGATED_WITH_RESIDUAL_RISK",
-        "release_owner_decision_required": True,
+        "historically_affected_version": VULNERABLE_VERSION,
+        "withdrawn": "2026-10-23T12:53:02Z",
+        "evidence_endpoint": "https://api.osv.dev/v1/vulns/GHSA-vfj7-8cjw-p6xm",
+        "current_lock_scan_required": True,
     }
-    for key, value in expected.items():
-        if entry.get(key) != value:
-            raise ValueError(f"P023 JavaScript policy has unexpected {key}")
-    if not entry.get("actual_mitigation") or not entry.get("exposure_limit"):
-        raise ValueError("P023 JavaScript policy lacks its mitigation or exposure limit")
+    if policy.get("verified_withdrawals") != [expected_withdrawal]:
+        raise ValueError("P023 JavaScript policy lacks the exact source-backed advisory withdrawal")
     fallback = policy.get("npm_audit_fallback")
     expected_fallback = {
         "allowed_only_for_error_prefix": "network timeout at: https://registry.npmjs.org/-/npm/v1/security/audits/",
         "raw_npm_error_must_be_retained": True,
         "fallback_scanner": "https://api.osv.dev/v1/querybatch",
         "scan_scope": "every exact package/version node in package-lock.json",
-        "allowed_finding_ids": [GHSA],
-        "new_or_missing_findings_action": "FAIL",
+        "allowed_finding_ids": [],
+        "withdrawn_finding_ids": [GHSA],
+        "new_or_reappearing_findings_action": "FAIL",
+        "withdrawal_evidence_required": True,
         "release_authorization": "NOT_GRANTED",
     }
     if fallback != expected_fallback:
         raise ValueError("P023 npm audit fallback policy is missing or wider than the reviewed OSV lock scan")
-    return entry
+    return expected_withdrawal
 
 
 def main() -> int:
@@ -341,7 +352,7 @@ def main() -> int:
         if not SOURCE_SHA.fullmatch(args.candidate_source_sha):
             raise ValueError("candidate source commit must be a full 40-character Git SHA")
         package_json = json.loads(args.package_json.read_text())
-        policy = validate_policy(json.loads(args.policy.read_text()))
+        withdrawal = validate_policy(json.loads(args.policy.read_text()))
         graph = {"bun": bun_graph(package_json, args.bun_lock), "npm": npm_graph(package_json, args.npm_lock)}
         audits = {
             "bun": audit_report(args.bun_report, "bun", args.bun_exit_code),
@@ -350,33 +361,29 @@ def main() -> int:
         osv = validate_osv_lock_scan(
             json.loads(args.npm_osv_report.read_text()), args.npm_lock, args.candidate_source_sha
         )
-        if audits["bun"].get("status") != "PASS_WITH_REVIEWED_ADVISORY" or audits["bun"].get("advisory_ids") != [GHSA]:
-            raise ValueError("Bun audit must retain the reviewed braces advisory")
+        if audits["bun"].get("status") != "PASS_NO_FINDINGS" or audits["bun"].get("advisory_ids") != []:
+            raise ValueError("Bun audit must pass with no active findings after the verified withdrawal")
         if audits["npm"].get("status") == "UNAVAILABLE_NETWORK":
             if audits["npm"].get("command_exit_code") == 0:
                 raise ValueError("npm audit reported a network error with a successful exit status")
-        elif audits["npm"].get("status") != "PASS_WITH_REVIEWED_ADVISORY" or audits["npm"].get("advisory_ids") != [GHSA]:
-            raise ValueError("npm audit must retain the reviewed braces advisory")
+        elif audits["npm"].get("status") != "PASS_NO_FINDINGS" or audits["npm"].get("advisory_ids") != []:
+            raise ValueError("npm audit must pass with no active findings after the verified withdrawal")
         if graph["bun"]["version"] != graph["npm"]["version"]:
             raise ValueError("Bun and npm locks resolve different braces versions")
         result = {
             "schema": 1,
             "candidate_source_sha": args.candidate_source_sha,
-            "reviewed_on": "2026-10-22",
+            "reviewed_on": "2026-11-12",
             "package_manager_lock_consistency": "PASS",
-            "dependency_audit_status": "PASS_WITH_REVIEWED_ADVISORY",
-            "npm_lock_fallback": "full-lock OSV query used because npm registry audit endpoint timed out" if audits["npm"].get("status") == "UNAVAILABLE_NETWORK" else "not needed; npm audit completed",
+            "dependency_audit_status": "PASS_NO_ACTIVE_ADVISORIES",
+            "npm_lock_fallback": "full-lock OSV query confirmed no active findings after the reviewed withdrawal because npm registry audit timed out" if audits["npm"].get("status") == "UNAVAILABLE_NETWORK" else "full-lock OSV query independently confirmed no active findings",
             "dependency_graph": graph,
             "raw_audits": audits,
             "npm_osv_lock_scan": osv,
-            "finding": {
-                **policy,
-                "raw_scanner_status": "OPEN in Bun audit and full npm-lock OSV query; npm registry audit endpoint unavailable" if audits["npm"].get("status") == "UNAVAILABLE_NETWORK" else "OPEN in Bun and npm audit reports",
-                "source_dependency_version": graph["bun"]["version"],
-                "production_runtime_dependency": False,
-                "generated_hub_assets_include_node_runtime": False,
+            "historical_withdrawal": {
+                **withdrawal,
                 "raw_scanner_reports_hashed": True,
-                "not_fixed_or_removed": True,
+                "active_findings": [],
             },
             "release_authorization": "NOT_GRANTED",
         }

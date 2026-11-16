@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "ログアウト"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "ログイン"
 
@@ -1738,6 +1739,10 @@ msgstr "手順については<0>ドキュメント</0>を参照してくださ�
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "アカウントにサインインしてください"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "トークンはエージェントの接続と登録を可能にします
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "トークンとフィンガープリントは、ハブへのWebSocket接続の認証に使用されます。"
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

@@ -47,7 +47,7 @@ func (a *Agent) updateMemoryStats(stats *system.Stats) {
 		used, cacheBuff := platformMemoryUsage(v, a.memCalc == "htop", runtime.GOOS)
 		metrics = memoryMetrics{Total: v.Total, Used: used, BuffCache: cacheBuff}
 		// Host ARC must not be subtracted from container-scoped accounting.
-		if a.zfs && runtime.GOOS != "ios" {
+		if a.zfs && canSubtractZfsArc() {
 			if size, _ := zfs.ARCSize(); size > 0 && size < metrics.Used {
 				arcSize = size
 				metrics.Used -= arcSize

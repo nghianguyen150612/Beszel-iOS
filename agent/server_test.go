@@ -49,11 +49,7 @@ func TestStartServer(t *testing.T) {
 	badSigner, err := gossh.NewSignerFromKey(badPrivKey)
 	require.NoError(t, err)
 
-	// Keep the socket path short enough for Darwin's Unix domain socket limit.
-	socketDir, err := os.MkdirTemp("", "beszel-ssh-")
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = os.RemoveAll(socketDir) })
-	socketFile := filepath.Join(socketDir, "beszel-test.sock")
+	socketFile := testSocketPath(t)
 
 	tests := []struct {
 		name        string
@@ -1044,6 +1040,16 @@ func TestGetHubVersionConcurrent(t *testing.T) {
 // dialTestAgentClient starts an agent SSH server on a private unix socket and
 // connects a real SSH client whose ClientVersion mimics a hub of the given
 // version, so session-protocol behavior can be exercised end to end.
+// testSocketPath keeps the path below Darwin's 104-byte sun_path limit. t.TempDir
+// embeds the test name beneath a long macOS temporary directory.
+func testSocketPath(t *testing.T) string {
+	t.Helper()
+	dir, err := os.MkdirTemp("", "bz")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	return filepath.Join(dir, "s.sock")
+}
+
 func dialTestAgentClient(t *testing.T, clientVersion string) *gossh.Client {
 	t.Helper()
 
@@ -1054,12 +1060,7 @@ func dialTestAgentClient(t *testing.T, clientVersion string) *gossh.Client {
 	sshPubKey, err := gossh.NewPublicKey(pubKey)
 	require.NoError(t, err)
 
-	// Keep the socket path short enough for macOS AF_UNIX limits even when the
-	// test name and runner's temporary directory are deeply nested.
-	socketDir, err := os.MkdirTemp(".", "beszel-test-")
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = os.RemoveAll(socketDir) })
-	socketFile := filepath.Join(socketDir, "agent.sock")
+	socketFile := testSocketPath(t)
 	agent, err := NewAgent("")
 	require.NoError(t, err)
 
@@ -1079,20 +1080,23 @@ func dialTestAgentClient(t *testing.T, clientVersion string) *gossh.Client {
 		}
 	})
 
-	// Wait for the listener instead of a fixed sleep.
+	// Wait for the listener instead of a fixed sleep. A bind failure arrives on
+	// errChan, so report it rather than waiting out the timeout with no reason.
+	var startErr error
 	require.Eventually(t, func() bool {
+		select {
+		case startErr = <-errChan:
+			return true
+		default:
+		}
 		conn, err := net.Dial("unix", socketFile)
 		if err != nil {
-			select {
-			case startErr := <-errChan:
-				require.NoError(t, startErr)
-			default:
-			}
 			return false
 		}
 		_ = conn.Close()
 		return true
 	}, 5*time.Second, 25*time.Millisecond)
+	require.NoError(t, startErr, "SSH server failed to start")
 
 	client, err := gossh.Dial("unix", socketFile, &gossh.ClientConfig{
 		User:            "u",

@@ -1,0 +1,163 @@
+{
+  "recovered_head": "1b2f312e55767505ef5eb3d6cbda640ae9816b8d",
+  "application_source": "4fbf4ed27ce0a6e3c921b998031081a1bff70d8e",
+  "run_id": 43208801725,
+  "run_attempt": 3,
+  "run_status_at_capture": "in_progress",
+  "run_conclusion_at_capture": null,
+  "prior_attempts": [
+    {
+      "attempt": 1,
+      "job_id": 131150871622,
+      "runner_id": 0,
+      "runner_name": "",
+      "labels": [
+        "macos-15"
+      ],
+      "started_at": "2026-11-12T11:24:15Z",
+      "completed_at": "2026-11-12T11:39:16Z",
+      "conclusion": "cancelled",
+      "steps": [],
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/nghianguyen150612/Beszel-iOS/blob/4fbf4ed27ce0a6e3c921b998031081a1bff70d8e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not acquired by Runner of type hosted even after multiple attempts",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/nghianguyen150612/Beszel-iOS/blob/4fbf4ed27ce0a6e3c921b998031081a1bff70d8e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/nghianguyen150612/Beszel-iOS/blob/4fbf4ed27ce0a6e3c921b998031081a1bff70d8e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/nghianguyen150612/Beszel-iOS/blob/4fbf4ed27ce0a6e3c921b998031081a1bff70d8e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "job_id": 131158815481,
+      "runner_id": 0,
+      "runner_name": "",
+      "labels": [
+        "macos-15"
+      ],
+      "started_at": "2026-11-12T11:40:26Z",
+      "completed_at": "2026-11-12T11:55:27Z",
+      "conclusion": "cancelled",
+      "steps": [],
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/nghianguyen150612/Beszel-iOS/blob/4fbf4ed27ce0a6e3c921b998031081a1bff70d8e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "The job was not acquired by Runner of type hosted even after multiple attempts",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/nghianguyen150612/Beszel-iOS/blob/4fbf4ed27ce0a6e3c921b998031081a1bff70d8e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/nghianguyen150612/Beszel-iOS/blob/4fbf4ed27ce0a6e3c921b998031081a1bff70d8e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/nghianguyen150612/Beszel-iOS/blob/4fbf4ed27ce0a6e3c921b998031081a1bff70d8e/.github",
+          "start_line": 1,
+          "start_column": null,
+          "end_line": 1,
+          "end_column": null,
+          "annotation_level": "notice",
+          "title": "",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+          "raw_details": ""
+        }
+      ]
+    }
+  ],
+  "current_jobs": [
+    {
+      "id": 131642478959,
+      "name": "build-ios",
+      "status": "in_progress",
+      "conclusion": null,
+      "runner_id": 1000053238,
+      "runner_name": "GitHub Actions 1000053238",
+      "labels": [
+        "macos-15"
+      ]
+    },
+    {
+      "id": 131642481760,
+      "name": "procursus-package-updates",
+      "status": "completed",
+      "conclusion": "success",
+      "runner_id": 1000053191,
+      "runner_name": "GitHub Actions 1000053191",
+      "labels": [
+        "ubuntu-latest"
+      ]
+    }
+  ],
+  "retry_policy": "One failed-jobs rerun this session; no source changes or additional retry loop",
+  "repository_admin_api": "Runner inventory and Actions permissions returned HTTP 403 Resource not accessible by integration; does not establish workflow restriction or exhausted quota",
+  "diagnosis": "Hosted runner acquisition/capacity in attempts 1 and 2; no compilation steps. Attempt 3 acquired macos-15."
+}

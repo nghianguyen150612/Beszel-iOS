@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Logg Ut"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Logg Inn"
 
@@ -1738,6 +1739,10 @@ msgstr "Vennligst se <0>dokumentasjonen</0> for instrukser."
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Vennligst logg inn på kontoen din"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "Tokens lar agenter koble til og registrere seg selv. Fingeravtrykk er st
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Tokens og fingeravtrykk blir brukt for å autentisere WebSocket-tilkoblinger til huben."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

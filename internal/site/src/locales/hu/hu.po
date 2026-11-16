@@ -1311,6 +1311,7 @@ msgid "Log Out"
 msgstr "Kijelentkezés"
 
 #: src/components/login/login.tsx
+#: src/components/login/login.tsx
 msgid "Login"
 msgstr "Bejelentkezés"
 
@@ -1738,6 +1739,10 @@ msgstr "Kérjük, nézze meg <0>a dokumentációt</0> az utasításokért."
 #: src/components/login/login.tsx
 msgid "Please sign in to your account"
 msgstr "Kérjük, jelentkezzen be a fiókjába"
+
+#: src/components/login/auth-form.tsx
+msgid "Please wait a moment and try again."
+msgstr ""
 
 #: src/components/routes/system/storage-pools-table.tsx
 msgid "Pool Health"
@@ -2291,6 +2296,10 @@ msgstr "A tokenek lehetővé teszik az ügynökök csatlakozását és regisztr�
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "A tokeneket és fingeravtrykkokat a hubhoz való WebSocket kapcsolatok hitelesítésére használják."
+
+#: src/components/login/auth-form.tsx
+msgid "Too many login attempts"
+msgstr ""
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

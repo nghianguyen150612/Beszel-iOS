@@ -46,17 +46,30 @@ class P023JavaScriptAuditTests(unittest.TestCase):
         self.assertEqual(bun["paths"], npm["paths"])
         self.assertTrue(npm["dev_dependency"])
 
-    def test_npm_high_advisory_is_retained_even_with_nonzero_audit_exit(self):
+    def test_active_advisory_is_rejected_after_verified_withdrawal(self):
         report = self.npm_report()
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "npm-audit.json"
             path.write_text(json.dumps(report))
-            result = module.audit_report(path, "npm", 1)
-        self.assertIn("GHSA-vfj7-8cjw-p6xm", result["advisory_ids"])
-        self.assertEqual(result["severity"], "high")
-        self.assertEqual(result["command_exit_code"], 1)
-        self.assertEqual(result["vulnerable_package_count"], 5)
-        self.assertEqual(result["root_advisory_count"], 1)
+            with self.assertRaisesRegex(ValueError, "still reports an active advisory"):
+                module.audit_report(path, "npm", 1)
+
+    def test_clean_npm_and_bun_reports_require_zero_findings_and_exit(self):
+        npm = {
+            "auditReportVersion": 2,
+            "vulnerabilities": {},
+            "metadata": {"vulnerabilities": {"info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0, "total": 0}},
+        }
+        bun = {"vulnerabilities": [], "metadata": {"vulnerabilities": {"high": 0, "total": 0}}}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            npm_path = Path(temp_dir) / "npm-audit.json"
+            bun_path = Path(temp_dir) / "bun-audit.json"
+            npm_path.write_text(json.dumps(npm))
+            bun_path.write_text(json.dumps(bun))
+            self.assertEqual(module.audit_report(npm_path, "npm", 0)["status"], "PASS_NO_FINDINGS")
+            self.assertEqual(module.audit_report(bun_path, "bun", 0)["status"], "PASS_NO_FINDINGS")
+            with self.assertRaisesRegex(ValueError, "must exit successfully"):
+                module.audit_report(npm_path, "npm", 1)
 
     def test_npm_audit_rejects_a_new_package_in_the_vulnerability_tree(self):
         report = self.npm_report()
@@ -89,7 +102,7 @@ class P023JavaScriptAuditTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "error payload"):
                 module.audit_report(path, "npm", 1)
 
-    def test_bun_advisory_record_is_retained(self):
+    def test_bun_advisory_record_is_rejected_after_verified_withdrawal(self):
         report = {
             "vulnerabilities": [{
                 "name": "braces",
@@ -102,8 +115,8 @@ class P023JavaScriptAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "bun-audit.json"
             path.write_text(json.dumps(report))
-            result = module.audit_report(path, "bun", 1)
-        self.assertEqual(result["advisory_ids"], ["GHSA-vfj7-8cjw-p6xm"])
+            with self.assertRaisesRegex(ValueError, "still reports an active advisory"):
+                module.audit_report(path, "bun", 1)
 
     def test_rejects_an_unreviewed_advisory(self):
         report = {"vulnerabilities": [{
@@ -129,38 +142,36 @@ class P023JavaScriptAuditTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unexpected severity"):
                 module.audit_report(path, "bun", 1)
 
-    def test_policy_keeps_frontend_finding_open_and_release_authorization_denied(self):
+    def test_policy_records_verified_frontend_withdrawal_and_denies_release_authorization(self):
         policy = json.loads((ROOT / "docs/ios-p023-advisory-policy.json").read_text())
         result = module.validate_policy(policy)
-        self.assertEqual(result["remediation_status"], "MITIGATED_WITH_RESIDUAL_RISK")
-        self.assertIsNone(result["first_patched_version"])
+        self.assertEqual(result["withdrawn"], "2026-10-23T12:53:02Z")
+        self.assertEqual(policy["frontend_residuals"], [])
         self.assertEqual(policy["release_authorization"], "NOT_GRANTED")
-        self.assertEqual(policy["npm_audit_fallback"]["new_or_missing_findings_action"], "FAIL")
+        self.assertEqual(policy["npm_audit_fallback"]["new_or_reappearing_findings_action"], "FAIL")
 
     def test_full_lock_osv_fallback_is_source_and_lock_bound(self):
         lock = ROOT / "internal/site/package-lock.json"
         report = {
             "schema": 1,
-            "status": "PASS_WITH_REVIEWED_ADVISORY",
+            "status": "PASS_NO_ACTIVE_ADVISORIES",
             "candidate_source_sha": "a" * 40,
             "endpoint": "https://api.osv.dev/v1/querybatch",
             "package_lock_sha256": hashlib.sha256(lock.read_bytes()).hexdigest(),
-            "package_lock_nodes_scanned": 510,
-            "unique_package_version_queries": 494,
-            "finding_ids": ["GHSA-vfj7-8cjw-p6xm"],
-            "findings": [{
+            "package_lock_nodes_scanned": 481,
+            "unique_package_version_queries": 473,
+            "finding_ids": [],
+            "findings": [],
+            "verified_withdrawals": [{
                 "advisory_id": "GHSA-vfj7-8cjw-p6xm",
                 "cve_id": "CVE-2026-93687",
                 "package": "braces",
-                "version": "3.0.3",
-                "install_nodes": [{"path": "node_modules/braces", "dev": True}],
-                "first_patched_version": None,
-                "raw_scanner_status": "retained by full npm lock OSV query",
-                "affected_events": [{"introduced": "0"}, {"last_affected": "3.0.3"}],
+                "historically_affected_version": "3.0.3",
+                "withdrawn": "2026-10-23T12:53:02Z",
             }],
         }
         result = module.validate_osv_lock_scan(report, lock, "a" * 40)
-        self.assertEqual(result["status"], "PASS_WITH_REVIEWED_ADVISORY")
+        self.assertEqual(result["status"], "PASS_NO_ACTIVE_ADVISORIES")
         report["candidate_source_sha"] = "b" * 40
         with self.assertRaisesRegex(ValueError, "current candidate source commit"):
             module.validate_osv_lock_scan(report, lock, "a" * 40)

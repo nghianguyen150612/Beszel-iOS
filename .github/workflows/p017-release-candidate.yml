@@ -190,6 +190,14 @@ jobs:
           sha256sum -c "$RUNNER_TEMP/p017-lock.sha256"
           git restore -- src/locales
           git diff --exit-code
+      - name: Verify Go modules and vet the full application
+        shell: bash
+        run: |
+          set -euo pipefail
+          go version
+          go mod tidy -diff
+          go mod verify
+          go vet -p 2 -tags 'testing no_ui' ./...
       - name: Audit installed Bun and npm dependency graphs
         shell: bash
         working-directory: internal/site

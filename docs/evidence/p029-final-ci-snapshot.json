@@ -1,0 +1,58 @@
+{
+  "captured_utc": "2026-11-13T02:40:31.683661+00:00",
+  "runs": [
+    {
+      "id": 43208801725,
+      "head_sha": "4fbf4ed27ce0a6e3c921b998031081a1bff70d8e",
+      "head_branch": "ios/p029-upstream-integration",
+      "path": ".github/workflows/ios-build.yml",
+      "event": "workflow_dispatch",
+      "run_attempt": 3,
+      "status": "queued",
+      "conclusion": null,
+      "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43208801725",
+      "updated_at": "2026-11-13T02:36:38Z",
+      "jobs": [
+        {
+          "id": 131642478959,
+          "name": "build-ios",
+          "status": "completed",
+          "conclusion": "success",
+          "labels": [
+            "macos-15"
+          ],
+          "runner_id": 1000053238,
+          "runner_name": "GitHub Actions 1000053238",
+          "started_at": "2026-11-13T02:18:33Z",
+          "completed_at": "2026-11-13T02:36:37Z"
+        },
+        {
+          "id": 131642481760,
+          "name": "procursus-package-updates",
+          "status": "completed",
+          "conclusion": "success",
+          "labels": [
+            "ubuntu-latest"
+          ],
+          "runner_id": 1000053191,
+          "runner_name": "GitHub Actions 1000053191",
+          "started_at": "2026-11-12T11:40:28Z",
+          "completed_at": "2026-11-12T11:41:31Z"
+        },
+        {
+          "id": 131649466627,
+          "name": "Verify uploaded iOS artifact bytes",
+          "status": "queued",
+          "conclusion": null,
+          "labels": [
+            "ubuntu-24.04"
+          ],
+          "runner_id": 0,
+          "runner_name": "",
+          "started_at": "2026-11-13T02:36:38Z",
+          "completed_at": null
+        }
+      ]
+    }
+  ]
+}

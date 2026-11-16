@@ -95,3 +95,12 @@ func TestHealthDirectoryOverride(t *testing.T) {
 	t.Setenv("BESZEL_HEALTH_DIR", dir)
 	assert.Equal(t, filepath.Join(dir, "beszel_health"), getHealthFilePath())
 }
+
+func TestCleanUpIsIdempotent(t *testing.T) {
+	original := healthFile
+	healthFile = filepath.Join(t.TempDir(), "health")
+	t.Cleanup(func() { healthFile = original })
+	require.NoError(t, Update())
+	require.NoError(t, CleanUp())
+	require.NoError(t, CleanUp())
+}

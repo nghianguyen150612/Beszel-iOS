@@ -226,6 +226,27 @@ func (sm *systemdManager) getServiceStats(conn *dbus.Conn, refresh bool) []*syst
 	return services
 }
 
+// keepUnit reports whether a unit should be listed. Failed units are retained even
+// when they have never reached active state, as happens with failing oneshot units.
+// When a skipped unit becomes inactive, discard any stale failed entry from an
+// earlier update. The caller must hold the lock.
+func (sm *systemdManager) keepUnit(unit dbus.UnitStatus, activeEnterTimestamp func() (any, error)) (bool, error) {
+	if unit.ActiveState == "failed" {
+		return true, nil
+	}
+	value, err := activeEnterTimestamp()
+	if err != nil {
+		return false, err
+	}
+	if ts, ok := value.(uint64); ok && ts != 0 && ts != math.MaxUint64 {
+		return true, nil
+	}
+	if unit.ActiveState == "inactive" {
+		delete(sm.serviceStatsMap, unit.Name)
+	}
+	return false, nil
+}
+
 // updateServiceStats updates the statistics for a single systemd service.
 func (sm *systemdManager) updateServiceStats(conn *dbus.Conn, unit dbus.UnitStatus) (*systemd.Service, error) {
 	sm.Lock()
@@ -233,13 +254,20 @@ func (sm *systemdManager) updateServiceStats(conn *dbus.Conn, unit dbus.UnitStat
 
 	ctx := context.Background()
 
-	// if service has never been active (no active since time), skip it
-	if activeEnterTsProp, err := conn.GetUnitTypePropertyContext(ctx, unit.Name, "Unit", "ActiveEnterTimestamp"); err == nil {
-		if ts, ok := activeEnterTsProp.Value.Value().(uint64); !ok || ts == 0 || ts == math.MaxUint64 {
-			return nil, errNoActiveTime
+	// Skip services that have never been active, except failed units that may
+	// never receive an ActiveEnterTimestamp (for example failing oneshot services).
+	keep, err := sm.keepUnit(unit, func() (any, error) {
+		prop, err := conn.GetUnitTypePropertyContext(ctx, unit.Name, "Unit", "ActiveEnterTimestamp")
+		if err != nil {
+			return nil, err
 		}
-	} else {
+		return prop.Value.Value(), nil
+	})
+	if err != nil {
 		return nil, err
+	}
+	if !keep {
+		return nil, errNoActiveTime
 	}
 
 	service, serviceExists := sm.serviceStatsMap[unit.Name]
