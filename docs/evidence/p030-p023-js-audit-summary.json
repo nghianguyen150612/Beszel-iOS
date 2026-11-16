@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "candidate_source_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+  "reviewed_on": "2026-11-12",
+  "package_manager_lock_consistency": "PASS",
+  "dependency_audit_status": "PASS_NO_ACTIVE_ADVISORIES",
+  "npm_lock_fallback": "full-lock OSV query independently confirmed no active findings",
+  "dependency_graph": {
+    "bun": {
+      "package": "braces",
+      "version": "3.0.3",
+      "dev_dependency": true,
+      "paths": [
+        [
+          "@lingui/vite-plugin",
+          "@lingui/cli",
+          "chokidar",
+          "braces"
+        ],
+        [
+          "@lingui/vite-plugin",
+          "@lingui/cli",
+          "micromatch",
+          "braces"
+        ]
+      ]
+    },
+    "npm": {
+      "package": "braces",
+      "version": "3.0.3",
+      "dev_dependency": true,
+      "paths": [
+        [
+          "@lingui/vite-plugin",
+          "@lingui/cli",
+          "chokidar",
+          "braces"
+        ],
+        [
+          "@lingui/vite-plugin",
+          "@lingui/cli",
+          "micromatch",
+          "braces"
+        ]
+      ]
+    }
+  },
+  "raw_audits": {
+    "bun": {
+      "manager": "bun",
+      "report_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "report_bytes": 3,
+      "advisory_ids": [],
+      "command_exit_code": 0,
+      "status": "PASS_NO_FINDINGS",
+      "raw_finding_retained": true
+    },
+    "npm": {
+      "manager": "npm",
+      "report_sha256": "654fd0690fd03875bab6cb7896c76499de5ef44bf228bfe93723aa6de9bd035a",
+      "report_bytes": 366,
+      "advisory_ids": [],
+      "command_exit_code": 0,
+      "status": "PASS_NO_FINDINGS",
+      "raw_finding_retained": true
+    }
+  },
+  "npm_osv_lock_scan": {
+    "schema": 1,
+    "status": "PASS_NO_ACTIVE_ADVISORIES",
+    "candidate_source_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+    "scanner": "OSV querybatch API",
+    "reviewed_on": "2026-11-12",
+    "endpoint": "https://api.osv.dev/v1/querybatch",
+    "package_lock_sha256": "306d9e0df497ab7582a1abde4ff1bfe8428b520727202e6941ea569ddfc0c1c2",
+    "package_lock_nodes_scanned": 481,
+    "workspace_links_skipped": 0,
+    "unique_package_version_queries": 473,
+    "canonical_request_json_sha256": "8d00f9e3224c258d56902f031a90bb080ee1a56019c306160b7cfb5db9cff0a0",
+    "canonical_response_json_sha256": "16ae5ef0b70848c619ecc8fc1499d4aeecf6678a35173e4de24547a975d0da1b",
+    "finding_ids": [],
+    "findings": [],
+    "verified_withdrawals": [
+      {
+        "advisory_id": "GHSA-vfj7-8cjw-p6xm",
+        "cve_id": "CVE-2026-93687",
+        "package": "braces",
+        "historically_affected_version": "3.0.3",
+        "withdrawn": "2026-10-23T12:53:02Z",
+        "affected_events": [
+          {
+            "introduced": "0"
+          },
+          {
+            "last_affected": "3.0.3"
+          }
+        ]
+      }
+    ],
+    "npm_audit_relationship": "independent full-lock cross-check; fallback is permitted only after the configured npm registry timeout",
+    "release_authorization": "NOT_GRANTED"
+  },
+  "historical_withdrawal": {
+    "advisory_id": "GHSA-vfj7-8cjw-p6xm",
+    "cve_id": "CVE-2026-93687",
+    "package": "braces",
+    "historically_affected_version": "3.0.3",
+    "withdrawn": "2026-10-23T12:53:02Z",
+    "evidence_endpoint": "https://api.osv.dev/v1/vulns/GHSA-vfj7-8cjw-p6xm",
+    "current_lock_scan_required": true,
+    "raw_scanner_reports_hashed": true,
+    "active_findings": []
+  },
+  "release_authorization": "NOT_GRANTED"
+}

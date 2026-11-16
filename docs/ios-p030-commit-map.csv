@@ -1,0 +1,3 @@
+upstream_sha,ios_source_commit,mapping,regression
+927ac992de0428b415984ef704256e64215ab0a5,444e61efab68dd27b01780f5c1534816cd57da25,Adapted conditional SQL and SMART/ZFS ownership guards to pinned PocketBase imports,record_ownership_test.go; existing same-system upsert suites
+87d61ea2b140f8027b44afe5afc4782a8bc5746e,444e61efab68dd27b01780f5c1534816cd57da25,Ingress and SMART guards ported; existing alerts/rollup equivalents preserved,nil_entries_test.go; nil_extrafs_test.go

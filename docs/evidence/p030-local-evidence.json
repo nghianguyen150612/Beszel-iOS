@@ -1,0 +1,62 @@
+{
+  "source_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+  "go": "go1.27.4",
+  "go_focused": "PASS \u2014 systems, records, alerts; testing no_ui",
+  "vet": "PASS \u2014 full application; testing no_ui",
+  "module_verify": "PASS",
+  "module_tidy": "PASS \u2014 no diff",
+  "bun": "1.4.0; frozen install",
+  "frontend_tests": "PASS \u2014 100 tests / 399 assertions",
+  "frontend_build": "PASS \u2014 98 real assets match existing manifest",
+  "audit_validators": "PASS \u2014 138 tests",
+  "migration_helpers": "PASS \u2014 10 tests",
+  "ios_sentinels": "PASS \u2014 45 checks",
+  "setup_failures": [
+    "Initial audit-validator run: two errors from unrelated /usr/bin/go; supported toolchain on PATH retry PASS",
+    "Initial concurrent vet overlapped dist regeneration and failed missing embed files; after real build, final vet PASS",
+    "Initial asset hash check used repository root; correct dist-root verification PASS for all 98 assets"
+  ],
+  "logs": {
+    "beszel-go-focused.log": {
+      "sha256": "e4c8daaeea7c952a674a3a85b7454fbd890930142d7a9c629d246f64df4f3f9f",
+      "bytes": 2595
+    },
+    "beszel-vet-final.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "beszel-tidy-final.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "beszel-mod-verify.log": {
+      "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd",
+      "bytes": 21
+    },
+    "beszel-bun-test.log": {
+      "sha256": "6ddffa77934ba55df08179b3c2382f847abd6937c76ff1a7ef261a9a9234e03a",
+      "bytes": 9090
+    },
+    "beszel-frontend-build.log": {
+      "sha256": "59c53a686951ad74b6eb5ac65e19f09c9f040fb480e96b20daed12afd0134f3c",
+      "bytes": 10807
+    },
+    "beszel-audit-tests-retry.log": {
+      "sha256": "713753c075b783d1b78e3cec6931149e80177496d8d0c7cf8dc4295229c4ac00",
+      "bytes": 239
+    },
+    "beszel-migration-tests.log": {
+      "sha256": "27b1ac6a6ed6ddaf6eea65f9b4dcec4b10d79b74ad5ba64eb407b488e687ff3d",
+      "bytes": 109
+    },
+    "beszel-sentinels.log": {
+      "sha256": "2445c4b2035b0743cb67f6a93ba9bfa3724f9b418dcede49d6da9455fa5645b5",
+      "bytes": 1511
+    },
+    "beszel-assets-retry.log": {
+      "sha256": "446ba3ac3dbeec38119c55f3771fee6bcf3f5b2a78dd3063d61f0e9a96af47dd",
+      "bytes": 3006
+    }
+  },
+  "physical_device": "DEFERRED \u2014 OWNER APPROVED"
+}

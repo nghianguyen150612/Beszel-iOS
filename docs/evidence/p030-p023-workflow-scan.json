@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "candidate_source_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+  "actionlint_version": "1.7.12",
+  "actionlint_archive_sha256": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
+  "actionlint_exit_code": 0,
+  "shellcheck_version": "0.11.0",
+  "shellcheck_archive_sha256": "b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6",
+  "zizmor_version": "1.31.1",
+  "zizmor_archive_sha256": "d185f726bdaf92df78273217dfdd24ebcd6b0ef48cf3ce776ff5762b6e138c99",
+  "zizmor_exit_code": 0,
+  "zizmor_findings": 0,
+  "action_refs_pinned_by_regression_test": true
+}
