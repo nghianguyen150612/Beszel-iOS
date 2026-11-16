@@ -1,4 +1,4 @@
-# P029: PARTIAL — RESUMABLE
+# P029: HOST/NATIVE QUALIFIED WITHIN IMPLEMENTED SCOPE
 
 ## Branch and source
 
@@ -85,3 +85,23 @@ Next: finish hosted consumer job `131649466627`, record its manifest artifact ID
 The latest [CI snapshot](evidence/p029-final-ci-snapshot.json) records completed native/Procursus jobs and queued hosted consumer. **PASS:** exact-source host gates, native build and independent local artifact consumer. **NOT RUN:** queued hosted consumer `131649466627`. Overall hosted native qualification remains incomplete; do not report its Actions run as successful until that gate finishes. The earlier macOS allocation blocker has been resolved for the build itself.
 
 **P029: PARTIAL — RESUMABLE.** Next exact action: inspect run `43208801725` / consumer job `131649466627`, record the hosted verification manifest artifact ID/SHA-256 and terminal result. Native code source stays `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`; all later branch commits in this continuation are documentation/evidence only. Production modifications **NONE**; device validation **DEFERRED — OWNER APPROVED**.
+
+
+## 2026-11-16 terminal evidence reconciliation (authoritative)
+
+Verified origin P029 HEAD `7fbed064a0a154d4865103b222665b9f1449c845` and existing Draft PR before editing. Qualified checkpoint `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e` differs from that HEAD only in documentation/evidence. All earlier queued/pending recovery statuses are superseded by this terminal record.
+
+- **PASS** — run [43208801725](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43208801725), attempt 3, completed/success on `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`.
+  - build-ios: **PASS**, job `131642478959`.
+  - procursus-package-updates: **PASS**, job `131642481760`.
+  - Verify uploaded iOS artifact bytes: **PASS**, job `131649466627`.
+  - release-ios-validate: **SKIPPED**, job `131656811319`.
+  - release-ios: **SKIPPED**, job `131656813495`.
+  - Artifact `ios-artifact-consumer-verification`, ID `14005602409`, archive `sha256:5d0d19becd14b9e1ab147be0602ca83c95534c9f12acf0562fb1370a02e4f19b`; expired=false.
+  - Artifact `beszel-ios-arm64`, ID `14005295997`, archive `sha256:3fe605b9ea6ad0e3a5b15fccd5b6c2d2dac379d73ba686bb5d465e94779c6718`; expired=false.
+  - Artifact `ios-native-validation`, ID `14004249289`, archive `sha256:b7969f841acdbf45e9096ca73c57e3ab0e4cc2bbe0794ccbb46933b4fb81ac80`; expired=false.
+  - Artifact `ios-wifi-diagnostic-disabled`, ID `14004249286`, archive `sha256:cd4e0e86a61db02b9335bc9d86e9ca2432c007333d59fcb4486536eadfbce9c6`; expired=false.
+
+**PASS — independent hosted consumer** `131649466627`: downloaded output artifact `14005602409` and independently matched ZIP SHA-256 `5d0d19becd14b9e1ab147be0602ca83c95534c9f12acf0562fb1370a02e4f19b`. Report status PASS, source `4fbf4ed27ce0a6e3c921b998031081a1bff70d8e`, tree `c7a154812984e0c72f0d05ca0969f740a258487c`; payload artifact `14005295997` and its existing hashes are preserved. Consumer checks exact source, both binary hashes, iOS 12.0 arm64, Go 1.27.4/A7 runtime, no_self_update and 98 embedded assets. Legacy candidate labels in the report do not grant release authorization. P013 `43207816939` and P017 `43208797446` rechecked completed/success on the same exact source.
+
+P029 is **host/native qualified within its implemented scope**. This is not production-release readiness. Physical-device validation: **DEFERRED — OWNER APPROVED**; device tests **NOT RUN**. Production modifications **NONE**; release jobs skipped/no publication; no existing Draft PR merged. P030 must obtain fresh qualification for every changed source checkpoint.
