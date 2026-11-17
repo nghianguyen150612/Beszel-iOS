@@ -5,6 +5,7 @@ package health
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -96,11 +97,63 @@ func TestHealthDirectoryOverride(t *testing.T) {
 	assert.Equal(t, filepath.Join(dir, "beszel_health"), getHealthFilePath())
 }
 
+func TestGetHealthFilePathsDoesNotWrite(t *testing.T) {
+	shmDir := t.TempDir()
+	t.Setenv("BESZEL_HEALTH_DIR", "")
+	paths := getHealthFilePaths(shmDir)
+	if runtime.GOOS == "linux" {
+		assert.Equal(t, filepath.Join(shmDir, "beszel_health"), paths[0])
+	}
+	assert.NoFileExists(t, filepath.Join(shmDir, "beszel_health"))
+}
+
+func TestCheckDoesNotTouchHealthFile(t *testing.T) {
+	healthFile := filepath.Join(t.TempDir(), "beszel_health")
+	restorePaths := SetPathsForTesting(healthFile, filepath.Join(t.TempDir(), "beszel_connected"))
+	t.Cleanup(restorePaths)
+	require.NoError(t, Update())
+	stale := time.Now().Add(-2 * time.Minute)
+	require.NoError(t, os.Chtimes(healthFile, stale, stale))
+
+	err := Check()
+	require.Error(t, err)
+	assert.Equal(t, "unhealthy", err.Error())
+	info, err := os.Stat(healthFile)
+	require.NoError(t, err)
+	assert.True(t, info.ModTime().Equal(stale), "Check changed the health marker's mtime")
+}
+
 func TestCleanUpIsIdempotent(t *testing.T) {
-	original := healthFile
-	healthFile = filepath.Join(t.TempDir(), "health")
-	t.Cleanup(func() { healthFile = original })
+	restorePaths := SetPathsForTesting(filepath.Join(t.TempDir(), "health"), filepath.Join(t.TempDir(), "connected"))
+	t.Cleanup(restorePaths)
 	require.NoError(t, Update())
 	require.NoError(t, CleanUp())
 	require.NoError(t, CleanUp())
+}
+
+func TestHealthFileFallback(t *testing.T) {
+	dir := t.TempDir()
+	unwritable := filepath.Join(dir, "missing-directory", "beszel_health")
+	fallback := filepath.Join(dir, "beszel_health")
+	restorePaths := SetHealthPathsForTesting([]string{unwritable, fallback}, filepath.Join(dir, "connected"))
+	t.Cleanup(restorePaths)
+
+	require.NoError(t, Update())
+	assert.NoFileExists(t, unwritable)
+	assert.FileExists(t, fallback)
+	assert.NoError(t, Check())
+}
+
+func TestCheckUsesNewestHealthMarker(t *testing.T) {
+	dir := t.TempDir()
+	stalePath := filepath.Join(dir, "shm_beszel_health")
+	freshPath := filepath.Join(dir, "tmp_beszel_health")
+	restorePaths := SetHealthPathsForTesting([]string{stalePath, freshPath}, filepath.Join(dir, "connected"))
+	t.Cleanup(restorePaths)
+
+	require.NoError(t, os.WriteFile(stalePath, nil, 0o600))
+	stale := time.Now().Add(-time.Hour)
+	require.NoError(t, os.Chtimes(stalePath, stale, stale))
+	require.NoError(t, os.WriteFile(freshPath, nil, 0o600))
+	assert.NoError(t, Check())
 }
