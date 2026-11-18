@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        upgrade_path: [direct, via-p027]
+        upgrade_path: [direct, via-p026, via-p027, via-p028, via-p029]
     env:
       PYTHONDONTWRITEBYTECODE: "1"
       BESZEL_HEALTH_DIR: ${{ github.workspace }}/.task/health
@@ -82,7 +82,7 @@ jobs:
         run: |
           set -euo pipefail
           args=()
-          if [ "$UPGRADE_PATH" = via-p027 ]; then args+=(--via-p027); fi
+          if [[ "$UPGRADE_PATH" == via-* ]]; then args+=(--via "${UPGRADE_PATH#via-}"); fi
           python3 tests/hub-migration/harness.py "${args[@]}" --output "$RUNNER_TEMP/p013-hub-fixture-evidence"
 
       - name: Upload synthetic fixture manifest only

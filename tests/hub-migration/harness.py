@@ -38,7 +38,13 @@ from backup import (
 
 
 OLD_019_REV = "0c3e4cd22ac24264834c401ad412e44aeda4e4f3"
-P027_REV = "c239ce0d8931405f728ef4763ad68bbbe187a9ac"
+HISTORICAL_HUB_REVISIONS = {
+    "p026": "2c4e0db3da1b2c074d8b3155ce3eb9179fdf40a3",
+    "p027": "c239ce0d8931405f728ef4763ad68bbbe187a9ac",
+    "p028": "3b24fefa07cd6c34d0ecb228e84e93a70e4dd3fb",
+    "p029": "4fbf4ed27ce0a6e3c921b998031081a1bff70d8e",
+}
+POCKETBASE_MODULES = {"github.com/pocketbase/pocketbase", "ganigeorgiev.com/pocketbase/pocketbase"}
 P029_RATE_LIMIT_MIGRATION = "1792483200_enable_request_limits.go"
 P029_RATE_LIMIT_STATE = {
     "enabled": True,
@@ -803,12 +809,16 @@ def file_sha256(path: pathlib.Path) -> str:
     return digest.hexdigest()
 
 
-def required_module_version(source: pathlib.Path, module: str) -> str:
-    for line in (source / "go.mod").read_text(encoding="utf-8").splitlines():
-        fields = line.strip().split()
-        if len(fields) >= 2 and fields[0] == module:
-            return fields[1]
-    raise HarnessError(f"{module} is not directly pinned in {source / 'go.mod'}")
+def pocketbase_dependency(source: pathlib.Path) -> tuple[str, str]:
+    manifest = source / "go.mod"
+    pins = [
+        (fields[0], fields[1])
+        for line in manifest.read_text(encoding="utf-8").splitlines()
+        if len(fields := line.split()) >= 2 and fields[0] in POCKETBASE_MODULES
+    ]
+    if len(pins) != 1:
+        raise HarnessError(f"expected one PocketBase module pin in {manifest}, found {pins}")
+    return pins[0]
 
 
 def open_database_readonly(path: pathlib.Path) -> Any:
@@ -1227,8 +1237,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=pathlib.Path, help="copy the generated evidence directory here")
     parser.add_argument("--old-rev", default=OLD_019_REV)
-    parser.add_argument("--via-p027", action="store_true", help="upgrade the synthetic v0.19 fixture through the verified P027/PocketBase 0.40.5 source before the candidate")
+    intermediate_options = parser.add_mutually_exclusive_group()
+    intermediate_options.add_argument("--via-p027", action="store_true", help="legacy spelling for --via p027")
+    intermediate_options.add_argument("--via", choices=HISTORICAL_HUB_REVISIONS, help="upgrade the fixture through a pinned prior integration")
     args = parser.parse_args()
+    intermediate_phase = "p027" if args.via_p027 else args.via
+    intermediate_revision = HISTORICAL_HUB_REVISIONS.get(intermediate_phase)
     if args.output:
         args.output = args.output.resolve()
         if args.output == PROTECTED_DATA_DIR or PROTECTED_DATA_DIR in args.output.parents:
@@ -1289,7 +1303,7 @@ def main() -> int:
         old_binary = binaries / "beszel-hub-0.19"
         old_agent_binary = binaries / "beszel-agent-0.19"
         new_binary = binaries / "beszel-hub-0.21"
-        old_pocketbase = required_module_version(old_source, "github.com/pocketbase/pocketbase")
+        _, old_pocketbase = pocketbase_dependency(old_source)
         for source in (old_source,):
             site = source / "internal" / "site"
             run([bun, "install", "--frozen-lockfile"], cwd=site)
@@ -1306,20 +1320,21 @@ def main() -> int:
             if archive.wait() != 0:
                 raise HarnessError("failed to materialize the current v0.21 Hub source")
         site = new_source / "internal" / "site"
-        new_pocketbase = required_module_version(new_source, "github.com/pocketbase/pocketbase")
+        new_pocketbase_module, new_pocketbase = pocketbase_dependency(new_source)
         run([bun, "install", "--frozen-lockfile"], cwd=site)
         run([bun, "run", "build"], cwd=site)
         run([go, "build", "-trimpath", "-o", str(new_binary), "./internal/cmd/hub"], cwd=new_source)
-        intermediate_binary = binaries / "beszel-hub-p027"
-        if args.via_p027:
-            intermediate_source = root / "source-p027"
+        intermediate_binary = binaries / "beszel-hub-intermediate"
+        if intermediate_revision:
+            intermediate_source = root / "source-intermediate"
             intermediate_source.mkdir()
-            with subprocess.Popen(["git", "archive", P027_REV], cwd=repo, stdout=subprocess.PIPE) as archive:
+            with subprocess.Popen(["git", "archive", intermediate_revision], cwd=repo, stdout=subprocess.PIPE) as archive:
                 subprocess.run(["tar", "-x", "-C", str(intermediate_source)], stdin=archive.stdout, check=True)
                 assert archive.stdout is not None
                 archive.stdout.close()
                 if archive.wait() != 0:
-                    raise HarnessError("failed to materialize verified P027 source")
+                    raise HarnessError(f"failed to materialize verified {intermediate_phase} source")
+            intermediate_module, intermediate_version = pocketbase_dependency(intermediate_source)
             intermediate_site = intermediate_source / "internal/site"
             run([bun, "install", "--frozen-lockfile"], cwd=intermediate_site)
             run([bun, "run", "build"], cwd=intermediate_site)
@@ -1634,19 +1649,19 @@ def main() -> int:
         migration_hub = HubProcess(new_binary, migration_data_dir, logs / "hub-021-migration.log")
         intermediate_snapshot = None
         intermediate_token = None
-        if args.via_p027:
-            intermediate_hub = HubProcess(intermediate_binary, migration_data_dir, logs / "hub-p027-migration.log")
+        if intermediate_revision:
+            intermediate_hub = HubProcess(intermediate_binary, migration_data_dir, logs / "hub-intermediate-migration.log")
             intermediate_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
             intermediate_token = auth_token(intermediate_hub.base, "users", owner_email, SYNTHETIC_PASSWORD)
             intermediate_hub.stop()
             intermediate_snapshot = database_snapshot(migration_data_dir / "data.db")
             if intermediate_snapshot["integrity_check"] != ["ok"]:
-                raise HarnessError("P027 fixture integrity failed")
+                raise HarnessError(f"{intermediate_phase} fixture integrity failed")
         migration_hub.start(env={"APP_URL": "https://p013.synthetic.invalid"})
         if intermediate_token:
             status, _, _ = request(migration_hub.base, "POST", "/api/collections/users/auth-refresh", token=intermediate_token)
             if status != 200:
-                raise HarnessError(f"P027 auth token failed after PocketBase upgrade: HTTP {status}")
+                raise HarnessError(f"{intermediate_phase} auth token failed after PocketBase upgrade: HTTP {status}")
         migration_health, _, _ = request(migration_hub.base, "GET", "/api/health")
         if migration_health != 200:
             raise HarnessError(f"migrated v0.21 Hub health check failed: HTTP {migration_health}")
@@ -1726,7 +1741,12 @@ def main() -> int:
         migration_hub.stop()
         migrated_second = database_snapshot(migration_data_dir / "data.db")
         if intermediate_snapshot:
-            validate_p027_candidate_delta(intermediate_snapshot, migrated_first)
+            if intermediate_phase == "p029":
+                for key in ("schema_sha256", "record_counts", "migration_ledger", "application_settings", "rate_limit_settings"):
+                    if intermediate_snapshot[key] != migrated_first[key]:
+                        raise HarnessError(f"PocketBase migration changed P029 database {key}")
+            else:
+                validate_p027_candidate_delta(intermediate_snapshot, migrated_first)
         import sqlite3
         sqlite_integrity = {}
         for name in ("data.db", "auxiliary.db"):
@@ -2009,11 +2029,22 @@ def main() -> int:
             "cases": interrupted_evidence,
         }
         migration_evidence = {
-            "via_p027": {"source": P027_REV, "pocketbase": "v0.40.5", "binary_sha256": file_sha256(intermediate_binary), "schema_records_and_existing_settings_preserved": True, "preexisting_migration_ledger_rows_preserved": True, "p029_rate_limit_migration_applied_once": True, "existing_session_refresh_http": 200} if args.via_p027 else None,
+            "intermediate": {
+                "phase": intermediate_phase,
+                "source": intermediate_revision,
+                "pocketbase_module": intermediate_module,
+                "pocketbase": intermediate_version,
+                "binary_sha256": file_sha256(intermediate_binary),
+                "schema_records_and_existing_settings_preserved": True,
+                "preexisting_migration_ledger_rows_preserved": True,
+                "p029_rate_limit_migration_applied_once": True,
+                "existing_session_refresh_http": 200,
+            } if intermediate_revision else None,
             "rate_limit_settings_after_migration": migrated_first["rate_limit_settings"],
             "main_and_auxiliary_sqlite": sqlite_integrity,
             "source_backup_sha256": backup_evidence["archive_sha256"],
             "target_version": new_version,
+            "target_pocketbase_module": new_pocketbase_module,
             "target_pocketbase_version": new_pocketbase,
             "first_health_http": migration_health,
             "second_health_http": second_health,

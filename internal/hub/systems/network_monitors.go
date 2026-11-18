@@ -7,10 +7,10 @@ import (
 
 	"database/sql"
 	"errors"
+	"ganigeorgiev.com/pocketbase/pocketbase/core"
 	"github.com/henrygd/beszel"
 	"github.com/henrygd/beszel/internal/common"
 	"github.com/henrygd/beszel/internal/entities/monitor"
-	"github.com/pocketbase/pocketbase/core"
 )
 
 // syncPendingNetworkMonitors runs on WebSocket connect and after successful stats
