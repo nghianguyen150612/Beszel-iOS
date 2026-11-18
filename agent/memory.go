@@ -16,6 +16,7 @@ type memoryMetrics struct {
 }
 
 var memoryVirtualMemory = mem.VirtualMemory
+var memorySwapMemory = mem.SwapMemory
 
 func (a *Agent) updateMemoryStats(stats *system.Stats) {
 	// These stats may be reused by callers. Clear optional memory values first
@@ -76,12 +77,20 @@ func (a *Agent) updateMemoryStats(stats *system.Stats) {
 }
 
 func platformSwapUsage(v *mem.VirtualMemoryStat, platform string) ([2]uint64, bool) {
-	if v == nil || platform == "ios" || v.SwapTotal == 0 {
+	if v == nil || platform == "ios" {
 		return [2]uint64{}, false
 	}
-	total := v.SwapTotal
-	used := saturatingSub(total, v.SwapFree)
-	return [2]uint64{total, min(used, total)}, true
+	total, free := v.SwapTotal, v.SwapFree
+	// gopsutil leaves the swap fields of VirtualMemory unset on non-Linux hosts.
+	if total == 0 && platform != "linux" {
+		if swap, err := memorySwapMemory(); err == nil && swap != nil {
+			total, free = swap.Total, swap.Free
+		}
+	}
+	if total == 0 {
+		return [2]uint64{}, false
+	}
+	return [2]uint64{total, saturatingSub(total, free)}, true
 }
 
 func normalizeMemoryMetrics(metrics memoryMetrics) memoryMetrics {

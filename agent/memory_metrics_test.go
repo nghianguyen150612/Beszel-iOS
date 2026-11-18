@@ -27,6 +27,40 @@ func TestPlatformSwapUsage(t *testing.T) {
 	require.Equal(t, [2]uint64{2 << 20, 0}, swap)
 }
 
+func TestPlatformSwapUsageFallback(t *testing.T) {
+	original := memorySwapMemory
+	t.Cleanup(func() { memorySwapMemory = original })
+	calls := 0
+	memorySwapMemory = func() (*mem.SwapMemoryStat, error) {
+		calls++
+		return &mem.SwapMemoryStat{Total: 4 << 30, Free: 1 << 30}, nil
+	}
+
+	for _, platform := range []string{"darwin", "freebsd", "openbsd", "windows"} {
+		swap, ok := platformSwapUsage(&mem.VirtualMemoryStat{}, platform)
+		require.True(t, ok, platform)
+		require.Equal(t, [2]uint64{4 << 30, 3 << 30}, swap, platform)
+	}
+	require.Equal(t, 4, calls)
+
+	for _, platform := range []string{"linux", "ios"} {
+		swap, ok := platformSwapUsage(&mem.VirtualMemoryStat{}, platform)
+		require.False(t, ok, platform)
+		require.Zero(t, swap, platform)
+	}
+	swap, ok := platformSwapUsage(&mem.VirtualMemoryStat{SwapTotal: 2, SwapFree: 1}, "darwin")
+	require.True(t, ok)
+	require.Equal(t, [2]uint64{2, 1}, swap)
+	require.Equal(t, 4, calls, "never call the fallback for Linux, iOS, or a populated sample")
+
+	memorySwapMemory = func() (*mem.SwapMemoryStat, error) {
+		return nil, errors.New("swap unavailable")
+	}
+	swap, ok = platformSwapUsage(&mem.VirtualMemoryStat{}, "freebsd")
+	require.False(t, ok)
+	require.Zero(t, swap)
+}
+
 func TestNormalizeMemoryMetrics(t *testing.T) {
 	require.Equal(t, memoryMetrics{}, normalizeMemoryMetrics(memoryMetrics{Used: 1, BuffCache: 2}))
 	require.Equal(t, memoryMetrics{Total: 100, Used: 100, BuffCache: 100},
