@@ -80,3 +80,70 @@ Review decisions: PocketBase relocation commits `d21e60b6afb4ee5a944fbef343f56fa
 Draft PR [#34](https://github.com/nghianguyen150612/Beszel-iOS/pull/34) remains open and targets `ios/p029-upstream-integration`. Production `iOS` remains `0c3e4cd22ac24264834c401ad412e44aeda4e4f3`; no tag, release, merge, production change, or watcher change occurred. Device validation is **DEFERRED — OWNER APPROVED**.
 
 **P030: PARTIAL — RESUMABLE.** Beszel source `ac22b6be505d100ce1ab61111f9f7b37a6712b20` now has exact-source host, migration, native and independent-consumer PASS. Next exact action: continue the deferred PocketBase module relocation review with direct/via-P013 migration fixtures and iOS/A7 qualification before changing module paths. Do not count run `44010182491` or historical artifact `14210402117` as qualification for `ac22b6be`.
+
+## November 18 P030 resume
+
+**P030: PARTIAL — RESUMABLE.** Verified starting HEAD `f0bf280e9f336fd2e0a88a3799e3f0e794dca290`, clean local checkout, and open Draft [PR #34](https://github.com/nghianguyen150612/Beszel-iOS/pull/34) against P029 base `1f8cac7bd3a7764f559a6aaea56935bd3152147a`. The last fully qualified source is `ac22b6be505d100ce1ab61111f9f7b37a6712b20`. Artifact `14298977691` belongs to that checkpoint. The retained changed source is `931999def419959d95462d036f1d86f912d67390`.
+
+| Official Beszel reference | SHA | Commit timestamp |
+| --- | --- | --- |
+| `main` | `3f93a621d6bc6a92f9c2df12b16c4344dc991ac5` | 2026-11-17T15:02:43-05:00 |
+| PocketBase relocation | `d21e60b6afb4ee5a944fbef343f56facf772d275` | 2026-11-12T10:48:17-05:00 |
+| Relocation follow-up | `0b51c7262f2d77fd68bc8f9532539bdbcca23415` | 2026-11-12T10:51:41-05:00 |
+| Portable swap correction | `067af2d93592747581e28d15e4451303dff61fa6` | 2026-11-17T14:12:38-05:00 |
+
+### PocketBase gate
+
+Implementation `d24df76ccdf80ef5f61bc6079646522368ddd3f6` moved all Go imports, including the P013 rollup probe, and extended P013 to exercise pinned P026, P027, P028 and P029 checkpoints. Exact test source `a13030714043006a8ee65c69377094d6a19bec14` restored generated ordering changes in the 34 catalogs before qualification. The application dependency changes in that candidate were:
+
+| Dependency | Established graph | Candidate graph |
+| --- | --- | --- |
+| PocketBase | `github.com/pocketbase/pocketbase` 0.40.6 | `ganigeorgiev.com/pocketbase/pocketbase` 0.42.2 |
+| dbx | `github.com/pocketbase/dbx` 1.12.0 | `ganigeorgiev.com/pocketbase/dbx` 1.13.0 |
+| fexpr | `github.com/ganigeorgiev/fexpr` 0.6.0 | `ganigeorgiev.com/fexpr` 0.7.0 |
+| ozzo-validation | `github.com/pocketbase/ozzo-validation/v4` 4.3.0 | `ganigeorgiev.com/pocketbase/ozzo-validation/v4` 4.4.1 |
+| modernc SQLite / libc | 1.60.1 / 1.77.1 | 1.62.0 / 1.80.1 |
+| modernc cc/v4, ccgo/v4, gc/v3 | 4.29.7, 4.36.1, 3.1.5 | 4.30.6-0.20261101114202-1b9d1a076f6b, 4.38.1, 3.2.0 |
+
+The verified module `go.sum` in the candidate preserves the exact upstream archive and module hashes. PocketBase 0.42.2 resolves to tag commit `9873ed8ffdf2e7a99bd57e269a33f7cea51620d9`, with archive checksum `h1:OBrrcVlHD5ZC2ZTFbKr2YkS0mUROGf+TkLbverK7CxQ=`. Its minimum Go version is 1.27. The application used Go 1.27.4 and the existing A7 runtime patches. PocketBase adds a late 401 response for unknown or expired Authorization tokens, OAuth UI corrections, an auxiliary log vacuum threshold, and optional hook event metadata. Existing application authorization and protocol suites passed with the new module.
+
+The supported migration/rollback boundary in the fixture is a verified **cold** checkpoint of the stopped Hub, both databases and related state, followed by startup on a disposable restored clone. PocketBase's online backup issues separate `VACUUM INTO` operations for `data.db` and `auxiliary.db`. Those operations establish per-database snapshots. The online backup path was source-reviewed, and online restore was **NOT RUN**. Recovery after a failed upgrade uses the complete checkpoint and prior binary.
+
+- **PASS** — exact-source Go 1.27.4 full `testing no_ui` suite, full vet, module verify and tidy; bootstrap, auth and authorization, Hub API, WebSocket/CBOR, storage, alert/notification, ownership, health and embedded asset regressions. WAL reader/writer isolation was exercised separately for the main and auxiliary databases. The first local test invocation preceded frontend asset generation and failed to resolve embedded files. The full run after the real frontend build passed. Frozen Bun 1.4.0 install, production build, 112 tests / 432 assertions and all 98 manifest hashes passed after catalog compilation.
+- **PASS** — local direct P013 and four hosted P013 jobs in [44224594028](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44224594028). The redacted evidence confirms fresh initialization, identities/relations, migration ordering and idempotence, API/auth/session behavior, both integrity checks and five synthetic recovery exercises. The direct archive was downloaded independently and matched its digest.
+- **FAIL** — hosted via-P029 job `134534546715` in the same run. The pinned historical binary build failed fetching `modernc.org/sqlite@v1.60.1` from `proxy.golang.org` with an HTTP/2 stream `INTERNAL_ERROR`. The job did not open a fixture. **PASS** — the local via-P029 retry on the exact candidate exercised the historical 0.40.6 binary and then the candidate. Session refresh returned HTTP 200, the schema/counts and migration rows were unchanged, main and auxiliary databases passed integrity and foreign-key checks, and all five cold restore cases passed. The first local attempt ran out of disk while compiling the intermediate binary. The retry after reclaiming build-cache space passed. Redacted local manifest SHA-256 `44bcdf86a6e63e0a1d48d8b01760ae85ac44b740604e40a8cdb8c4a0a126aa94`.
+- **FAIL** — hosted P017 run [44224597813](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44224597813), job `134534558637`, at the JavaScript audit step. The npm lockfile OSV scan exited 1 on the active advisory. The Bun and npm reports also identify [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) in `picomatch` through 4.0.7. No published fixed version was available. The JS archive `14392850617` independently matched SHA-256 `776e98bf5488975f589ac95b8c49330e6a7957f0aa742cd9a841689a92258fc3`. The independently verified Go scan archive `14392501458`, SHA-256 `d3f1a9e3fc19b667523bb9aecb90a9d029e3ff1fc5e25d5db4b08c920e485d55`, contained zero symbol findings. The audit failure skipped later P017 validation and reporting steps. The OpenPGP and Go disposition validators passed locally after making the production frontend files available to the candidate worktree.
+
+| Hosted P013 path | Job | Redacted artifact | Archive SHA-256 |
+| --- | --- | --- | --- |
+| Direct | `134534546844` | `14392930273` | `9722e7bfb9f7c8b68c74fac87f518e6d5df5da99b1557a1adb53082ebd6f5e5c` |
+| Via P026 | `134534546872` | `14392152256` | `933bc71f8662086aca8113da21ecedf4384de06a2e2f46d4cfb528015107bd0c` |
+| Via P027 | `134534546500` | `14392117248` | `4ade29b542aa12f21959405f16ba658298a48952ebca9bef9199d8c02d93b8ba` |
+| Via P028 | `134534546714` | `14391973688` | `d5ab464c1734907a25382a73f98106d4b03f0e772dc1b8e20a880c642375c0ee` |
+
+**BLOCKED — PocketBase 0.42.2.** Ordinary revert `474458f7e6c3780568a5d1ec3c3ccfd09b9cca5f` restores the exact start tree, including PocketBase 0.40.6, both Go module manifests, and the original migration workflow. The candidate commit and evidence remain in branch history.
+
+### Independent retained implementation
+
+Source `931999def419959d95462d036f1d86f912d67390` adapts upstream swap telemetry correction `067af2d93592747581e28d15e4451303dff61fa6`. When gopsutil supplies no swap total in `VirtualMemory`, non-Linux desktop/server agents can use `SwapMemory`. Existing populated counters remain authoritative. The test verifies macOS, FreeBSD, OpenBSD and Windows fallback, Linux and iOS exclusion, legacy-compatible values, and unavailable-counter handling. iOS still reports swap as unavailable. There is no database schema, CBOR protocol, dependency, embedded asset or locale change.
+
+QNAP-specific Linux ZFS collection is **DEFERRED**. The Homebrew installer changes are **NOT APPLICABLE** to Procursus and iOS. Locale changes and the complete API-key/MCP feature remain **DEFERRED**. A context/message/plural-key comparison of the four upstream catalog updates found 101 catalog entries where upstream fills a currently untranslated, supported key and one change to an existing translation. Validating placeholders and importing the fill-only entries is a separate batch. All 34 catalogs and English fallback are preserved. Physical-device qualification remains **DEFERRED — OWNER APPROVED**.
+
+- **PASS** — Go 1.27.4 full `testing no_ui` suite, full vet, `go mod verify` and `go mod tidy -diff`. Frozen Bun install, production build and 112 tests / 432 assertions passed on the identical frontend tree. All 98 checked embedded-asset hashes matched.
+- **PASS** — retained-source P013 run [44225924399](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44225924399). Direct job `134538958099`, artifact `14393002280`, archive SHA-256 `5dc513252d306286369c59cb8017e848b7ea9069c779aed592ba67e70c44beda`. Via-P027 job `134538957790`, artifact `14393261244`, archive SHA-256 `aefdb61eb65b3830188e093ad743a753bf473752804b6742d8543a9aabd47a83`.
+- **FAIL** — retained-source P017 [44225928437](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44225928437), job `134538970309`. The npm lockfile OSV scan stopped at the same `picomatch` advisory, also present in the Bun/npm reports. Independently downloaded evidence `14392083684` matched archive SHA-256 `1deb94ed07389296ad6ac4adf353d67bcebef6261318b37993975af1bd33347d`. The strict JavaScript gate and lockfiles were preserved. The source-symbol Go scan and local OpenPGP/disposition checks passed with zero findings. Its independently downloaded archive `14392807162` matched SHA-256 `cf91d9331ae5a924d6987bd1f6cb683923f8b388797c15cc98647fa2ec5724c4`. Workflow security scan passed, artifact `14392422975`, SHA-256 `35a8b9f599888671321aa98c176fc9cd6221ff99492f2f0aa99584ecc8cb6e6c`.
+
+### Native evidence
+
+- **PASS** — PocketBase 0.42.2 candidate `a13030714043006a8ee65c69377094d6a19bec14` native iOS 12/A7 and Procursus run [44224601174](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44224601174). Build `134534571328`, Procursus `134534571100`, and independent artifact consumer `134541371295` passed. Consumer verified the exact candidate source and tree `fc3e20fa4fbcf7e0b357966fa48636d251b12dea`, Agent SHA-256 `450b3d9bdefbd84e40ccd3fd9254a594896f29ecd91c43e13a603121a21ad6bf`, and Hub SHA-256 `3f64f35aa538e5855378ba176232b2469de23dba4b39f394b5920e93010f1302`. Release jobs `134542598885` and `134542599875` were skipped.
+
+| Candidate native artifact | ID | Archive SHA-256 |
+| --- | --- | --- |
+| Agent and Hub | `14392823351` | `b0bfff48ee74dec759852636a49bc4ca9f3169556131ffed06a4f74afc157599` |
+| Native validation | `14393575857` | `3d5bd1d0c1a9ee10ed4e3332436b4aa40affe41ff90de6a3b3dfeaaac172e131` |
+| Disabled Wi-Fi diagnostic | `14393306793` | `eab2873b90d54e274770e555ff97ed71eb3969ba73533f1973c33f04d2db2c4a` |
+| Independent consumer report | `14392194531` | `c0b66fca06b52197b1640e3838dc5decf12b1afa6e15a18ff3b93a4c52405d06` |
+
+The consumer report ZIP was independently downloaded and matched GitHub's digest. This proves native qualification for the reverted candidate scope. Full qualification stays **BLOCKED** by P017. The retained source `931999def419959d95462d036f1d86f912d67390` has its own native run [44227046274](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44227046274), dispatched at that SHA.
+
+Next action is to resolve the `picomatch` advisory in the locked Bun and npm graphs with a compatible published fix and rerun P017 with unchanged audit thresholds. Then reapply the candidate by reversing `474458f7e6c3780568a5d1ec3c3ccfd09b9cca5f` in an ordinary commit, run all five P013 paths, and qualify each gate on that exact SHA before retaining the upgrade. **P030: PARTIAL — RESUMABLE.**
