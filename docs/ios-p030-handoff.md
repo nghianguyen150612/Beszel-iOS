@@ -147,3 +147,16 @@ QNAP-specific Linux ZFS collection is **DEFERRED**. The Homebrew installer chang
 The consumer report ZIP was independently downloaded and matched GitHub's digest. This proves native qualification for the reverted candidate scope. Full qualification stays **BLOCKED** by P017. The retained source `931999def419959d95462d036f1d86f912d67390` has its own native run [44227046274](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44227046274), dispatched at that SHA.
 
 Next action is to resolve the `picomatch` advisory in the locked Bun and npm graphs with a compatible published fix and rerun P017 with unchanged audit thresholds. Then reapply the candidate by reversing `474458f7e6c3780568a5d1ec3c3ccfd09b9cca5f` in an ordinary commit, run all five P013 paths, and qualify each gate on that exact SHA before retaining the upgrade. **P030: PARTIAL — RESUMABLE.**
+
+### Retained-source native terminal evidence
+
+**PASS** — run [44227046274](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44227046274), source `931999def419959d95462d036f1d86f912d67390`, build job `134542648175`, Procursus job `134542648499`, independent consumer job `134550143978`. Release jobs `134550918469` and `134550919691` were skipped. The consumer verified source tree `aaff0c8af6665eea0268bb5e754e8c3b3ec895ca`, Agent SHA-256 `81e3dbece83d7225ad3b5648e02c7961338e0441e0bdacb174a09ab749fdc4cf` and Hub SHA-256 `8fdc248b8efd8c46869bfc396d920f2add22f7a5fcaa0312e82cdf86104b610d`.
+
+| Artifact | ID | Archive SHA-256 |
+| --- | --- | --- |
+| Agent and Hub | `14394691277` | `6e05da06515ed0637f46e60adfa8f05262afa202ad4bc99372dc4b43df6dfb29` |
+| Independent consumer | `14394661164` | `e0a4d571376744d4900f00b28803db86db0046e9f39858b238b2880e9271c6ca` |
+| Native validation | `14393873323` | `00813235228e7fcc19dcb2b5dd401aa9ad6de59fab2482f9c4304d626a48309e` |
+| Disabled Wi-Fi diagnostic | `14394002861` | `bfe7608feb0ea95851eb064ab58087ba58e6ebc55aae70e33dfe0c6eb84eacea` |
+
+The consumer report ZIP was independently downloaded and its digest matched GitHub. The exact-source serial Go suite and portable Agent/Hub builds passed locally, with clean `vcs.revision` metadata. Full qualification remains **BLOCKED** by the strict JavaScript audit; the last fully qualified source remains `ac22b6be505d100ce1ab61111f9f7b37a6712b20`.
