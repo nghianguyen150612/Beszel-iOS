@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 // handleSmartDeviceAlert sends alerts when a SMART device state worsens into WARNING/FAILED.

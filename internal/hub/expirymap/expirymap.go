@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"ganigeorgiev.com/pocketbase/pocketbase/tools/store"
+	"github.com/pocketbase/pocketbase/tools/store"
 )
 
 type val[T comparable] struct {

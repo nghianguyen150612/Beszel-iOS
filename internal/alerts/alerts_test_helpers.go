@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 func NewTestAlertManagerWithoutWorker(app hubLike) *AlertManager {

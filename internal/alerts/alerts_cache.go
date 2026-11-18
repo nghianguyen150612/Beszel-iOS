@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"ganigeorgiev.com/pocketbase/dbx"
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
-	"ganigeorgiev.com/pocketbase/pocketbase/tools/store"
+	"github.com/pocketbase/dbx"
+	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/store"
 )
 
 // CachedAlertData represents the relevant fields of an alert record for status checking and updates.

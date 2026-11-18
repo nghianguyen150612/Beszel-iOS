@@ -9,8 +9,8 @@ import (
 	"github.com/henrygd/beszel/internal/hub/utils"
 	"github.com/henrygd/beszel/internal/migrations"
 
-	"ganigeorgiev.com/pocketbase/dbx"
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/dbx"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 type UserManager struct {

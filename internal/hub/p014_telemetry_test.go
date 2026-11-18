@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/henrygd/beszel/internal/common"
 	"github.com/henrygd/beszel/internal/entities/smart"
@@ -24,6 +23,7 @@ import (
 	beszelTests "github.com/henrygd/beszel/internal/tests"
 	"github.com/henrygd/beszel/internal/testutil/telemetry"
 	"github.com/lxzan/gws"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )

@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"strings"
 
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 var (

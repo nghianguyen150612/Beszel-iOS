@@ -3,7 +3,7 @@
 package records
 
 import (
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 // DeleteOldSystemStats exposes deleteOldSystemStats for testing

@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"ganigeorgiev.com/pocketbase/dbx"
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/dbx"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 // Delete old records

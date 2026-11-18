@@ -10,7 +10,7 @@ import (
 	"github.com/henrygd/beszel/internal/records"
 	"github.com/henrygd/beszel/internal/tests"
 
-	"ganigeorgiev.com/pocketbase/dbx"
+	"github.com/pocketbase/dbx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

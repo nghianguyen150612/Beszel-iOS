@@ -7,10 +7,10 @@ import (
 	"testing/synctest"
 	"time"
 
-	"ganigeorgiev.com/pocketbase/dbx"
-	"ganigeorgiev.com/pocketbase/pocketbase/tools/types"
 	"github.com/henrygd/beszel/internal/entities/system"
 	beszelTests "github.com/henrygd/beszel/internal/tests"
+	"github.com/pocketbase/dbx"
+	"github.com/pocketbase/pocketbase/tools/types"
 	"github.com/stretchr/testify/require"
 )
 

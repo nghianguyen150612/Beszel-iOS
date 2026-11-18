@@ -3,8 +3,8 @@ package alerts
 import (
 	"time"
 
-	"ganigeorgiev.com/pocketbase/dbx"
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/dbx"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 // On triggered alert record delete, set matching alert history record to resolved

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"ganigeorgiev.com/pocketbase/pocketbase/tests"
-	pbcron "ganigeorgiev.com/pocketbase/pocketbase/tools/cron"
+	"github.com/pocketbase/pocketbase/tests"
+	pbcron "github.com/pocketbase/pocketbase/tools/cron"
 	"github.com/stretchr/testify/require"
 )
 

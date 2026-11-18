@@ -3,8 +3,8 @@ package migrations
 import (
 	"os"
 
-	"ganigeorgiev.com/pocketbase/pocketbase/core"
-	m "ganigeorgiev.com/pocketbase/pocketbase/migrations"
+	"github.com/pocketbase/pocketbase/core"
+	m "github.com/pocketbase/pocketbase/migrations"
 )
 
 const (
