@@ -171,7 +171,7 @@ Bun 1.4.0 lock SHA-256 `bb6e22344f87c9e34463f78e2b5985585bae036272adaee670f27f77
 
 **PASS** — independent Linux change `1f1ced78b18078b5ee8c2229b9a0e2c11ed963f3` adapts upstream `c3b60db0d461da49bc502a274c63dd666edfab58` (2026-11-17T14:29:38-05:00), using the QNAP `/proc/lpl/kstat/zfs` path when the standard path is missing. Synthetic tests cover ARC size, pool counters and standard-path precedence. Go 1.27.4 `go test -p 2 -tags='testing no_ui' ./agent/...` and corresponding vet passed. No dependency, protocol or iOS collector changes. The required full P017 audit remains **BLOCKED** by the active advisory. The prior failed P017 run 44225928437 remains evidence; no threshold or advisory disposition changed. PocketBase remains 0.40.6 pending security clearance.
 
-Hosted qualification for source `1f1ced78b18078b5ee8c2229b9a0e2c11ed963f3` was dispatched as P013 `44265680064`, P017 `44265684612` and iOS `44265689094`. Check terminal results before attributing any artifact to this source. Next action: obtain an official verified fix for both affected major lines, update both locks, inspect every installed copy, run unchanged strict audits and full frontend/native qualification, then recover the PocketBase candidate and rerun its full migration matrix.
+Hosted qualification for source `1f1ced78b18078b5ee8c2229b9a0e2c11ed963f3` completed as P013 `44265680064`, P017 `44265684612` and iOS `44265689094`. P013 and native are PASS (job and artifact details in “Terminal qualification for retained QNAP source”); the original P017 failed on the active advisory and remains preserved. Next action: obtain an official verified fix for both affected major lines, update both locks, inspect every installed copy, run unchanged strict audits and full frontend/native qualification, then recover the PocketBase candidate and rerun its full migration matrix.
 
 ### Qualification update for QNAP source
 
@@ -199,6 +199,14 @@ The user required a verified security remediation before recovering PocketBase. 
 At recovery the P030 branch and origin were both `b10bd565d5bd5a653bf07062e9b25fd51ee0edc4`, with a clean worktree. Retained application source is `1f1ced78b18078b5ee8c2229b9a0e2c11ed963f3`; this update changes documentation only. Draft PR [#34](https://github.com/nghianguyen150612/Beszel-iOS/pull/34) remains open against `ios/p029-upstream-integration`.
 
 The most recent P017 security qualification is **PASS** in run [44440922693](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44440922693), job `135281267501`, on documentation-only source `93d82c6ed6c6e0ff29a18b6062d62e176a5e3028`. Its application, workflow and lockfile tree matches retained source `1f1ced78...`; no application-source changes separate them. The unchanged strict npm and Bun audit commands returned exit 0. Frozen install, tests, production build, asset/security checks and Go checks completed. This does not establish that picomatch code was corrected.
+
+### Terminal qualification for retained QNAP source
+
+The terminal results were checked against GitHub on 2026-11-19. Application source `1f1ced78b18078b5ee8c2229b9a0e2c11ed963f3` has:
+
+- **PASS** — P013 run [44265680064](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44265680064): direct job `134676224454`, artifact `14410891615`, SHA-256 `3d1b9acf24fcc48ad9b2cf0d198cfe60cbed065ce42c8eaaf9060b0b08e04c24`; via-P027 job `134676221022`, artifact `14411975348`, SHA-256 `050bd958f0c450be3821f91073f74aff8826e9de332860a8d76e124526258083`.
+- **PASS** — native run [44265689094](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44265689094): build `134669522891`, Procursus `134669522604`, independent consumer `134684368294`. Agent/Hub artifact `14411254465`, SHA-256 `f57769617496f1125fc645636184d13dc7f428302f2273044038e0d15ba405c4`; consumer report `14411199970`, SHA-256 `deb9fb7e9d4b6201fd5b2d03d622ecb1d254c042c4c22a5333d3abf0f78a3725`; native validation artifact `14411453937`, SHA-256 `1179d204bc4c8c389e45b7493a494b25d22d8efed1eb3b78a23d942390b74f78`; Wi-Fi diagnostic artifact `14411648268`, SHA-256 `0ba13cf0be5c610004e3133b506c8bdae36409e234fabbd3941bd3b4b06f9851`.
+- **PASS, application-tree equivalent** — P017 run [44440922693](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44440922693), job `135281267501`, on documentation-only `93d82c6ed6c6e0ff29a18b6062d62e176a5e3028`; frontend/config/workflow/lockfile and application tree match `1f1ced78...`. The earlier P017 failure on exact `1f1ced78...` remains preserved because it occurred before advisory withdrawal.
 
 ### P030-A — picomatch disposition
 
