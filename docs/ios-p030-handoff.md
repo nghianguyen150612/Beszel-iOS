@@ -190,3 +190,58 @@ At 2026-11-19 01:58 UTC GitHub and OSV reported GHSA-fc5q-39xc-vjpf withdrawn at
 **PASS** — P013 via-P027 retry job `134676221022` on source `1f1ced78b18078b5ee8c2229b9a0e2c11ed963f3`, run `44265680064`, artifact `14411975348`, SHA-256 `050bd958f0c450be3821f91073f74aff8826e9de332860a8d76e124526258083`. The initial download failure remains recorded above. **PASS** — native run `44265689094`, build `134669522891`, Procursus `134669522604`, independent consumer `134684368294`. Agent/Hub artifact `14411254465`, SHA-256 `f57769617496f1125fc645636184d13dc7f428302f2273044038e0d15ba405c4`; consumer report `14411199970`, SHA-256 `deb9fb7e9d4b6201fd5b2d03d622ecb1d254c042c4c22a5333d3abf0f78a3725`.
 
 The user required a verified security remediation before recovering PocketBase. The package behavior has no verified fix and NVD remains open, so PocketBase recovery is **BLOCKED** despite the audit gate passing after withdrawal. Continue to restrict untrusted glob input and reassess a verified maintained fix or formal security disposition before applying the candidate. Physical-device work remains **DEFERRED — OWNER APPROVED**.
+
+
+## November 19 P030 security and PocketBase recovery
+
+### Starting state and retained source
+
+At recovery the P030 branch and origin were both `b10bd565d5bd5a653bf07062e9b25fd51ee0edc4`, with a clean worktree. Retained application source is `1f1ced78b18078b5ee8c2229b9a0e2c11ed963f3`; this update changes documentation only. Draft PR [#34](https://github.com/nghianguyen150612/Beszel-iOS/pull/34) remains open against `ios/p029-upstream-integration`.
+
+The most recent P017 security qualification is **PASS** in run [44440922693](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44440922693), job `135281267501`, on documentation-only source `93d82c6ed6c6e0ff29a18b6062d62e176a5e3028`. Its application, workflow and lockfile tree matches retained source `1f1ced78...`; no application-source changes separate them. The unchanged strict npm and Bun audit commands returned exit 0. Frozen install, tests, production build, asset/security checks and Go checks completed. This does not establish that picomatch code was corrected.
+
+### P030-A — picomatch disposition
+
+Evidence was refreshed at **2026-11-19 08:22 UTC**:
+
+- GitHub marks [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) withdrawn at `2026-11-18T15:38:56Z`; its record still names CVE-2026-112366, severity High, affected versions through 4.0.7 and no first patched release.
+- [OSV](https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf) was modified at `2026-11-18T15:56:12Z`, records the withdrawal and affected versions from 0 through 4.0.7.
+- [NVD](https://nvd.nist.gov/vuln/detail/CVE-2026-112366) still reports “Awaiting Analysis”; its last-modified field is `2026-10-19T21:13:39.973Z`.
+- npm registry latest remains picomatch `4.0.7`, published `2026-08-24T14:36:23.690Z`. The upstream `master` and `v2` references had open, unmerged fix proposals (#270 and #246); proposal #235 is closed without merge. No official fixed release or maintained drop-in replacement was verified. Withdrawal is not a code fix.
+- A resource-bounded check compiled `+(*a)` and matched 28 `a` characters followed by `!` in isolated Node subprocesses. Installed picomatch 2.3.2 and 4.0.4 each consumed the 2-second CPU limit and were terminated (exit -9). A first attempt with a 512 MiB address-space cap failed before execution because Node/V8 could not reserve its segmented table; it is not counted as behavior evidence. No unbounded experiment was run.
+
+Exact Beszel lock hashes: `internal/site/bun.lock` SHA-256 `bb6e22344f87c9e34463f78e2b5985585bae036272adaee670f27f77b23d07df`; `internal/site/package-lock.json` SHA-256 `306d9e0df497ab7582a1abde4ff1bfe8428b520727202e6941ea569ddfc0c1c2`. Installed copies are picomatch 2.3.2 under micromatch, anymatch and readdirp, and 4.0.4 at the Vite dependency root; the paths are frontend development/build dependencies. The app source has no picomatch/micromatch import, built frontend assets contain no picomatch code, and no public app endpoint was found that accepts a glob. Lingui locale extraction and Vite/content scans use repository-controlled patterns. A hostile change to checked-out build configuration or source could still consume CPU on a CI runner.
+
+- **AUDIT STATUS — PASS:** unchanged strict checks pass after advisory withdrawal; previous failing audit evidence remains preserved.
+- **PATCH STATUS — NOT PATCHED:** no verified release or merged fix; installed copies remain within the withdrawn range.
+- **RUNTIME EXPOSURE — NOT APPLICABLE:** picomatch is absent from deployed frontend bundles and the runtime is the Go Hub/Agent.
+- **BUILD-TIME EXPOSURE — PRESENT, CONSTRAINED:** glob parsing is used by repository-controlled build tooling; no untrusted runtime glob source was identified.
+- **RESIDUAL RISK — PRESENT:** the bounded test reproduced CPU exhaustion on installed 2.3.2 and 4.0.4; latest 4.0.7 has no verified correction.
+- **ACCEPTANCE STATUS — BLOCKED:** no authorized project acceptance of the residual behavior is recorded. Preserve this gate; do not label the component patched or accepted-risk.
+
+Sources: GitHub Advisory API, OSV API, NVD CVE API, npm registry metadata, [picomatch upstream](https://github.com/micromatch/picomatch), [upstream PR #270](https://github.com/micromatch/picomatch/pull/270), [upstream PR #246](https://github.com/micromatch/picomatch/pull/246) and [maintainer explanation on #235](https://github.com/micromatch/picomatch/pull/235). API and package-registry facts above were retrieved 2026-11-19 08:22 UTC.
+
+### P030-C — PocketBase 0.42.2 candidate
+
+The main P030 branch remains on PocketBase 0.40.6. Candidate `a13030714043006a8ee65c69377094d6a19bec14` remains isolated in `/workspace/scratch/beszel-pocketbase-candidate`; the ordinary revert `474458f7e6c3780568a5d1ec3c3ccfd09b9cca5f` remains part of branch history. The candidate graph is the relocated PocketBase 0.42.2 module, dbx 1.13.0, fexpr 0.7.0, ozzo validation 4.4.1, modernc SQLite 1.62.0/libc 1.80.1 and its recorded transitive upgrades. Candidate tag commit and checksums are recorded above in the PocketBase gate section.
+
+**Migration engineering: PASS on the exact candidate, with the hosted P029 transport failure retained.** Prior exact-candidate P013 evidence covers direct, via-P026, via-P027 and via-P028 hosted jobs in run [44224594028](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/44224594028); the synthetic local via-P029 retry also passed. It verified session refresh, schema and migration-history preservation, records/relationships, main and auxiliary database integrity and foreign keys, idempotence/restarts and five cold recovery cases. Candidate Go 1.27.4 tests/vet, module verification/tidy, Hub auth/API/WebSocket/CBOR/hooks and native/A7 consumer qualification are recorded above.
+
+**Dependency transport diagnosis: PASS.** The old hosted via-P029 job `134534546715` failed before opening the fixture when proxy.golang.org returned HTTP/2 `INTERNAL_ERROR` fetching modernc.org/sqlite v1.60.1. A bounded retry using the normal verified Go proxy and checksum database downloaded that exact module successfully into an isolated cache; Go verified module sum `h1:/blz53O951KWFOso4QQvEs/Fq6cDBKLtMVrYNSeJVKw=` and go.mod sum `h1:1dIoEagfDE72QytD5scH1lxARtaUgKgHC/NuApA27r0=`, from upstream v1.60.1 tag `b122d0417c01508beb55158faedeb64a0c5bfd8a`. This classifies the prior failure as transient proxy transport, not a missing artifact, checksum mismatch or database incompatibility.
+
+A new exact-candidate via-P029 harness attempt on 2026-11-19 rebuilt the historical and candidate frontends, then stopped compiling the candidate Hub with `no space left on device` before opening the fixture. **NOT RUN** for that retry; it is an environment failure, not a migration failure. Candidate `go mod verify` and `go mod tidy -diff` passed afterward. No source or production database was changed.
+
+The supported recovery boundary remains a cold, coordinated checkpoint of the stopped Hub including both databases and related state. PocketBase's online backup takes separate `VACUUM INTO` snapshots of `data.db` and `auxiliary.db`; those are not an atomic cross-database point. Online restore remains **NOT RUN**. No production credentials or data were used.
+
+**Integration decision: BLOCKED.** The independent Go migration evidence does not clear the picomatch owner-acceptance gate. Keep 0.40.6 on the main branch until an official corrective release or authorized security disposition exists; then reproduce the hosted via-P029 path and run the full exact-source P017/native/consumer qualification on the integrated tree.
+
+### Current action and status
+
+- **PASS** — retained-source P017 on the unchanged app/config/lock tree; strict audit, Go scan, workflow scan and frontend qualification.
+- **PASS** — isolated candidate migration engineering on the five P013 paths using prior exact-candidate results; hosted P029 proxy failure is before fixture, local retry passed.
+- **FAIL (environment, before fixture)** — latest local P029 candidate rebuild stopped for disk exhaustion; no migration assertion ran.
+- **BLOCKED** — PocketBase candidate integration pending the unresolved picomatch acceptance decision.
+- **DEFERRED** — physical-device testing remains OWNER APPROVED; no device operations performed.
+- **P030: PARTIAL — RESUMABLE.**
+
+Exact P017 evidence: JS artifact `14490952465`, SHA-256 `64ddd0823dd5daf20414afda8ed1f0e8c1f6f979090783b5285be3835bd9229b`; Go scan `14490398265`, SHA-256 `a0c339e5019faec358fc3ae52af9433b397ced56c09e2ce5072723985891dd5c`; workflow scan `14490004411`, SHA-256 `3cc2e00be79f5801953858017bda98cd52c8e7d3a923bf1ce99ba28b70705949`. Bun 1.4.0 and Go 1.27.4 were used. No new P013 or native workflow was started because the main source did not change and disk space was insufficient.
