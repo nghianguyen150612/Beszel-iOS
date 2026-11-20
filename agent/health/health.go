@@ -14,20 +14,25 @@ import (
 
 // healthFile is the path to the health file
 var healthFile = getHealthFilePath()
+var healthFiles = getHealthFilePaths("/dev/shm")
 var connectionFile = getConnectionFilePath()
 
 func getHealthFilePath() string {
-	filename := "beszel_health"
+	return getHealthFilePaths("/dev/shm")[0]
+}
+
+// getHealthFilePaths lists the liveness marker locations in write preference order.
+// Resolving paths is read-only so `agent health` cannot refresh its own marker.
+func getHealthFilePaths(shmDir string) []string {
+	const filename = "beszel_health"
 	if dir := os.Getenv("BESZEL_HEALTH_DIR"); dir != "" {
-		return filepath.Join(dir, filename)
+		return []string{filepath.Join(dir, filename)}
 	}
+	tmpPath := filepath.Join(os.TempDir(), filename)
 	if runtime.GOOS == "linux" {
-		fullPath := filepath.Join("/dev/shm", filename)
-		if err := updateHealthFile(fullPath); err == nil {
-			return fullPath
-		}
+		return []string{filepath.Join(shmDir, filename), tmpPath}
 	}
-	return filepath.Join(os.TempDir(), filename)
+	return []string{tmpPath}
 }
 
 func getConnectionFilePath() string {
@@ -49,7 +54,26 @@ func updateHealthFile(path string) error {
 
 // Check checks whether the Agent event loop has refreshed its liveness marker recently.
 func Check() error {
-	return checkFile(healthFile, "unhealthy")
+	var newest time.Time
+	var lastError error
+	for _, path := range healthFiles {
+		info, err := os.Stat(path)
+		if err != nil {
+			lastError = err
+			continue
+		}
+		if info.ModTime().After(newest) {
+			newest = info.ModTime()
+		}
+	}
+	if newest.IsZero() {
+		return lastError
+	}
+	if time.Since(newest) > 91*time.Second {
+		log.Println("over 90 seconds since last connection")
+		return errors.New("unhealthy")
+	}
+	return nil
 }
 
 // CheckConnection reports whether the connection manager has a recent
@@ -79,7 +103,13 @@ func checkFile(path, staleMessage string) error {
 
 // Update updates the modification time of the health file
 func Update() error {
-	return updateHealthFile(healthFile)
+	var err error
+	for _, path := range healthFiles {
+		if err = updateHealthFile(path); err == nil {
+			return nil
+		}
+	}
+	return err
 }
 
 // UpdateConnection records a successful authenticated Hub connection.
@@ -96,11 +126,12 @@ func UpdateConnection() error {
 
 // CleanUp removes the health file; another agent may already have removed it.
 func CleanUp() error {
-	err := os.Remove(healthFile)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
+	for _, path := range healthFiles {
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
 	}
-	return err
+	return nil
 }
 
 // CleanUpConnection removes the marker after the Agent loses its Hub connection.

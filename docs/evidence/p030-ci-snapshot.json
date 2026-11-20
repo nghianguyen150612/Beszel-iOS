@@ -1,0 +1,2022 @@
+{
+  "Beszel-iOS-43831987596-jobs": {
+    "total_count": 1,
+    "jobs": [
+      {
+        "id": 133179258129,
+        "run_id": 43831987596,
+        "workflow_name": "P017 Release Candidate Regression",
+        "head_branch": "ios/p030-upstream-integration",
+        "run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831987596",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUX-KAs8AAAAfAho1EQ",
+        "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/jobs/133179258129",
+        "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43831987596/job/133179258129",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-16T08:32:03Z",
+        "started_at": "2026-11-16T08:32:04Z",
+        "completed_at": "2026-11-16T08:38:38Z",
+        "name": "candidate-regression",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-16T08:32:05Z",
+            "completed_at": "2026-11-16T08:32:06Z"
+          },
+          {
+            "name": "Checkout candidate source, not the PR merge pseudo-commit",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-16T08:32:06Z",
+            "completed_at": "2026-11-16T08:32:09Z"
+          },
+          {
+            "name": "Pinned Go toolchain from go.mod",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-16T08:32:09Z",
+            "completed_at": "2026-11-16T08:32:17Z"
+          },
+          {
+            "name": "Verify native Go 1.27.4 x509 security fix",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-16T08:32:17Z",
+            "completed_at": "2026-11-16T08:32:56Z"
+          },
+          {
+            "name": "Go standard-library and dependency vulnerability scan",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-16T08:32:56Z",
+            "completed_at": "2026-11-16T08:33:12Z"
+          },
+          {
+            "name": "Bun 1.4.0",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-16T08:33:12Z",
+            "completed_at": "2026-11-16T08:33:13Z"
+          },
+          {
+            "name": "Verify source provenance and frozen upstream ancestry",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-16T08:33:13Z",
+            "completed_at": "2026-11-16T08:33:13Z"
+          },
+          {
+            "name": "Prepare workspace-local health marker directory",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-16T08:33:13Z",
+            "completed_at": "2026-11-16T08:33:13Z"
+          },
+          {
+            "name": "Audit, bootstrap, installer and release isolation regressions",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-16T08:33:13Z",
+            "completed_at": "2026-11-16T08:33:53Z"
+          },
+          {
+            "name": "Scan GitHub Actions workflows with pinned analyzers",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-16T08:33:53Z",
+            "completed_at": "2026-11-16T08:33:54Z"
+          },
+          {
+            "name": "Build genuine pinned frontend and check lockfile immutability",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-16T08:33:54Z",
+            "completed_at": "2026-11-16T08:34:24Z"
+          },
+          {
+            "name": "Verify Go modules and vet the full application",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-11-16T08:34:24Z",
+            "completed_at": "2026-11-16T08:35:10Z"
+          },
+          {
+            "name": "Audit installed Bun and npm dependency graphs",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-16T08:35:10Z",
+            "completed_at": "2026-11-16T08:35:12Z"
+          },
+          {
+            "name": "Upload P023 JavaScript dependency evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-16T08:35:12Z",
+            "completed_at": "2026-11-16T08:35:13Z"
+          },
+          {
+            "name": "Verify OpenPGP package reachability",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-16T08:35:13Z",
+            "completed_at": "2026-11-16T08:35:16Z"
+          },
+          {
+            "name": "Validate exact Go scan and bounded advisory disposition",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-16T08:35:16Z",
+            "completed_at": "2026-11-16T08:35:16Z"
+          },
+          {
+            "name": "Upload P023 Go vulnerability and reachability evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-16T08:35:16Z",
+            "completed_at": "2026-11-16T08:35:17Z"
+          },
+          {
+            "name": "Full canonical Go regression and portable builds",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18,
+            "started_at": "2026-11-16T08:35:17Z",
+            "completed_at": "2026-11-16T08:38:31Z"
+          },
+          {
+            "name": "Record source and frontend manifest (not a native iOS artifact)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19,
+            "started_at": "2026-11-16T08:38:31Z",
+            "completed_at": "2026-11-16T08:38:31Z"
+          },
+          {
+            "name": "Upload candidate regression manifest only",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20,
+            "started_at": "2026-11-16T08:38:31Z",
+            "completed_at": "2026-11-16T08:38:32Z"
+          },
+          {
+            "name": "Upload GitHub Actions workflow security evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21,
+            "started_at": "2026-11-16T08:38:32Z",
+            "completed_at": "2026-11-16T08:38:33Z"
+          },
+          {
+            "name": "Post Bun 1.4.0",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 40,
+            "started_at": "2026-11-16T08:38:33Z",
+            "completed_at": "2026-11-16T08:38:34Z"
+          },
+          {
+            "name": "Post Pinned Go toolchain from go.mod",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 41,
+            "started_at": "2026-11-16T08:38:34Z",
+            "completed_at": "2026-11-16T08:38:34Z"
+          },
+          {
+            "name": "Post Checkout candidate source, not the PR merge pseudo-commit",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 42,
+            "started_at": "2026-11-16T08:38:34Z",
+            "completed_at": "2026-11-16T08:38:34Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 43,
+            "started_at": "2026-11-16T08:38:34Z",
+            "completed_at": "2026-11-16T08:38:34Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-runs/133179258129",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000053475,
+        "runner_name": "GitHub Actions 1000053475",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      }
+    ]
+  },
+  "Beszel-iOS-43832000386-artifacts": {
+    "total_count": 4,
+    "artifacts": [
+      {
+        "id": 14210945139,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIxMDk0NTEzOQ==",
+        "name": "ios-artifact-consumer-verification",
+        "size_in_bytes": 3529,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210945139",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210945139/zip",
+        "expired": false,
+        "digest": "sha256:c9d41b0085337e2897db8e62ab1e4487a7c783dd60b5e11b722bd83891e7ff9b",
+        "created_at": "2026-11-16T08:53:11Z",
+        "updated_at": "2026-11-16T08:53:11Z",
+        "expires_at": "2026-12-16T08:53:10Z",
+        "workflow_run": {
+          "id": 43832000386,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      },
+      {
+        "id": 14210581791,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIxMDU4MTc5MQ==",
+        "name": "ios-native-validation",
+        "size_in_bytes": 15864,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210581791",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210581791/zip",
+        "expired": false,
+        "digest": "sha256:f322a25233198b7b5f42d3254099b36cc086c30e8ddca28935a73562e1a84737",
+        "created_at": "2026-11-16T08:51:58Z",
+        "updated_at": "2026-11-16T08:51:58Z",
+        "expires_at": "2027-02-14T08:32:08Z",
+        "workflow_run": {
+          "id": 43832000386,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      },
+      {
+        "id": 14210442206,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIxMDQ0MjIwNg==",
+        "name": "ios-wifi-diagnostic-disabled",
+        "size_in_bytes": 6062,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210442206",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210442206/zip",
+        "expired": false,
+        "digest": "sha256:550662f165e1f8d6ae5613c90648ac261e866b9fa710d034c76810803dbdd0ff",
+        "created_at": "2026-11-16T08:51:56Z",
+        "updated_at": "2026-11-16T08:51:56Z",
+        "expires_at": "2027-02-14T08:32:08Z",
+        "workflow_run": {
+          "id": 43832000386,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      },
+      {
+        "id": 14210402117,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIxMDQwMjExNw==",
+        "name": "beszel-ios-arm64",
+        "size_in_bytes": 16394852,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210402117",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210402117/zip",
+        "expired": false,
+        "digest": "sha256:032c5e5334a4793e616c27ebaf3c86f987e16e128bd527b4809ee9c6793d9507",
+        "created_at": "2026-11-16T08:51:54Z",
+        "updated_at": "2026-11-16T08:51:54Z",
+        "expires_at": "2027-02-14T08:32:08Z",
+        "workflow_run": {
+          "id": 43832000386,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      }
+    ]
+  },
+  "Beszel-iOS-43832000386-jobs": {
+    "total_count": 5,
+    "jobs": [
+      {
+        "id": 133179298056,
+        "run_id": 43832000386,
+        "workflow_name": "iOS Build",
+        "head_branch": "ios/p030-upstream-integration",
+        "run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUX-KAs8AAAAfAhrRCA",
+        "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/jobs/133179298056",
+        "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/job/133179298056",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-16T08:32:08Z",
+        "started_at": "2026-11-16T08:32:37Z",
+        "completed_at": "2026-11-16T08:52:09Z",
+        "name": "build-ios",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-16T08:32:38Z",
+            "completed_at": "2026-11-16T08:32:41Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-16T08:32:41Z",
+            "completed_at": "2026-11-16T08:32:42Z"
+          },
+          {
+            "name": "Run iOS maintenance sentinels",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-16T08:32:42Z",
+            "completed_at": "2026-11-16T08:32:43Z"
+          },
+          {
+            "name": "Prepare workspace-local health marker directory",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-16T08:32:43Z",
+            "completed_at": "2026-11-16T08:32:43Z"
+          },
+          {
+            "name": "Setup Go",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-16T08:32:43Z",
+            "completed_at": "2026-11-16T08:33:00Z"
+          },
+          {
+            "name": "Setup Bun",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-16T08:33:00Z",
+            "completed_at": "2026-11-16T08:33:02Z"
+          },
+          {
+            "name": "Test native build validators",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-16T08:33:02Z",
+            "completed_at": "2026-11-16T08:33:16Z"
+          },
+          {
+            "name": "Build and test real web UI",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-16T08:33:16Z",
+            "completed_at": "2026-11-16T08:33:58Z"
+          },
+          {
+            "name": "Verify iOS, macOS and Linux source selection",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-16T08:33:58Z",
+            "completed_at": "2026-11-16T08:34:11Z"
+          },
+          {
+            "name": "Test portable telemetry and macOS regressions",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-16T08:34:11Z",
+            "completed_at": "2026-11-16T08:35:33Z"
+          },
+          {
+            "name": "Test disabled native Wi-Fi diagnostic and public CF ownership",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-16T08:35:33Z",
+            "completed_at": "2026-11-16T08:36:18Z"
+          },
+          {
+            "name": "Test iOS Wi-Fi unavailable adapter and shared telemetry contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12,
+            "started_at": "2026-11-16T08:36:18Z",
+            "completed_at": "2026-11-16T08:37:55Z"
+          },
+          {
+            "name": "Test transport faults and races",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-11-16T08:37:55Z",
+            "completed_at": "2026-11-16T08:45:33Z"
+          },
+          {
+            "name": "Test network monitor compatibility and fault recovery",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14,
+            "started_at": "2026-11-16T08:45:33Z",
+            "completed_at": "2026-11-16T08:47:48Z"
+          },
+          {
+            "name": "Preserve macOS build and GPU parser tests",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-16T08:47:48Z",
+            "completed_at": "2026-11-16T08:48:37Z"
+          },
+          {
+            "name": "Show and verify environment",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-16T08:48:37Z",
+            "completed_at": "2026-11-16T08:48:41Z"
+          },
+          {
+            "name": "Patch isolated Go runtime for legacy iOS ARM64",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-16T08:48:41Z",
+            "completed_at": "2026-11-16T08:48:53Z"
+          },
+          {
+            "name": "Verify native Go 1.27.4 x509 security fix",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18,
+            "started_at": "2026-11-16T08:48:53Z",
+            "completed_at": "2026-11-16T08:49:20Z"
+          },
+          {
+            "name": "Build separate disabled iOS Wi-Fi diagnostic and client compile fixture",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19,
+            "started_at": "2026-11-16T08:49:20Z",
+            "completed_at": "2026-11-16T08:49:42Z"
+          },
+          {
+            "name": "Build Beszel Agent and Hub twice with isolated caches",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20,
+            "started_at": "2026-11-16T08:49:42Z",
+            "completed_at": "2026-11-16T08:51:36Z"
+          },
+          {
+            "name": "Inspect runtime instructions in unstripped validation builds",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21,
+            "started_at": "2026-11-16T08:51:36Z",
+            "completed_at": "2026-11-16T08:51:48Z"
+          },
+          {
+            "name": "Inspect native Mach-O outputs",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 22,
+            "started_at": "2026-11-16T08:51:48Z",
+            "completed_at": "2026-11-16T08:51:48Z"
+          },
+          {
+            "name": "Verify unavailable Wi-Fi adds no private linkage",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 23,
+            "started_at": "2026-11-16T08:51:48Z",
+            "completed_at": "2026-11-16T08:51:48Z"
+          },
+          {
+            "name": "Generate and verify exact payload and frontend embedding",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 24,
+            "started_at": "2026-11-16T08:51:48Z",
+            "completed_at": "2026-11-16T08:51:51Z"
+          },
+          {
+            "name": "Upload iOS review payload",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 25,
+            "started_at": "2026-11-16T08:51:51Z",
+            "completed_at": "2026-11-16T08:51:54Z"
+          },
+          {
+            "name": "Upload separate disabled Wi-Fi diagnostic review artifact",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 26,
+            "started_at": "2026-11-16T08:51:54Z",
+            "completed_at": "2026-11-16T08:51:56Z"
+          },
+          {
+            "name": "Upload native validation evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 27,
+            "started_at": "2026-11-16T08:51:56Z",
+            "completed_at": "2026-11-16T08:51:58Z"
+          },
+          {
+            "name": "Post Setup Bun",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 52,
+            "started_at": "2026-11-16T08:51:58Z",
+            "completed_at": "2026-11-16T08:51:58Z"
+          },
+          {
+            "name": "Post Setup Go",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 53,
+            "started_at": "2026-11-16T08:51:58Z",
+            "completed_at": "2026-11-16T08:51:58Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 54,
+            "started_at": "2026-11-16T08:51:58Z",
+            "completed_at": "2026-11-16T08:51:59Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 55,
+            "started_at": "2026-11-16T08:51:59Z",
+            "completed_at": "2026-11-16T08:52:02Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-runs/133179298056",
+        "labels": [
+          "macos-15"
+        ],
+        "runner_id": 1000053476,
+        "runner_name": "GitHub Actions 1000053476",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 133179298469,
+        "run_id": 43832000386,
+        "workflow_name": "iOS Build",
+        "head_branch": "ios/p030-upstream-integration",
+        "run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUX-KAs8AAAAfAhrSpQ",
+        "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/jobs/133179298469",
+        "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/job/133179298469",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-16T08:32:08Z",
+        "started_at": "2026-11-16T08:32:10Z",
+        "completed_at": "2026-11-16T08:33:10Z",
+        "name": "procursus-package-updates",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-16T08:32:11Z",
+            "completed_at": "2026-11-16T08:32:14Z"
+          },
+          {
+            "name": "Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-16T08:32:14Z",
+            "completed_at": "2026-11-16T08:32:20Z"
+          },
+          {
+            "name": "Setup Go",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-16T08:32:20Z",
+            "completed_at": "2026-11-16T08:32:26Z"
+          },
+          {
+            "name": "Download Go modules for offline sandbox test",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-16T08:32:26Z",
+            "completed_at": "2026-11-16T08:32:29Z"
+          },
+          {
+            "name": "Test Procursus detection, parser, and network-disabled read-only query",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-16T08:32:29Z",
+            "completed_at": "2026-11-16T08:33:07Z"
+          },
+          {
+            "name": "Post Setup Go",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-16T08:33:07Z",
+            "completed_at": "2026-11-16T08:33:07Z"
+          },
+          {
+            "name": "Post Checkout",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-11-16T08:33:07Z",
+            "completed_at": "2026-11-16T08:33:07Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-11-16T08:33:07Z",
+            "completed_at": "2026-11-16T08:33:07Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-runs/133179298469",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": 1000053477,
+        "runner_name": "GitHub Actions 1000053477",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 133188479177,
+        "run_id": 43832000386,
+        "workflow_name": "iOS Build",
+        "head_branch": "ios/p030-upstream-integration",
+        "run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUX-KAs8AAAAfAqboyQ",
+        "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/jobs/133188479177",
+        "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/job/133188479177",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-16T08:52:09Z",
+        "started_at": "2026-11-16T08:52:12Z",
+        "completed_at": "2026-11-16T08:53:15Z",
+        "name": "Verify uploaded iOS artifact bytes",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-16T08:52:12Z",
+            "completed_at": "2026-11-16T08:52:16Z"
+          },
+          {
+            "name": "Checkout exact candidate source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-16T08:52:16Z",
+            "completed_at": "2026-11-16T08:52:22Z"
+          },
+          {
+            "name": "Set up Go 1.27.4 for binary metadata inspection",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-16T08:52:22Z",
+            "completed_at": "2026-11-16T08:52:29Z"
+          },
+          {
+            "name": "Set up Bun 1.4.0 for independent frontend reconstruction",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-16T08:52:29Z",
+            "completed_at": "2026-11-16T08:52:30Z"
+          },
+          {
+            "name": "Rebuild frozen frontend assets from the candidate source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-16T08:52:30Z",
+            "completed_at": "2026-11-16T08:53:00Z"
+          },
+          {
+            "name": "Download same-run native payload",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-16T08:53:00Z",
+            "completed_at": "2026-11-16T08:53:03Z"
+          },
+          {
+            "name": "Download same-run native validation evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-16T08:53:03Z",
+            "completed_at": "2026-11-16T08:53:04Z"
+          },
+          {
+            "name": "Independently verify artifact ZIPs, payload bytes, and provenance",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-16T08:53:04Z",
+            "completed_at": "2026-11-16T08:53:10Z"
+          },
+          {
+            "name": "Upload sanitized artifact verification manifest",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-16T08:53:10Z",
+            "completed_at": "2026-11-16T08:53:11Z"
+          },
+          {
+            "name": "Post Set up Bun 1.4.0 for independent frontend reconstruction",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-16T08:53:11Z",
+            "completed_at": "2026-11-16T08:53:12Z"
+          },
+          {
+            "name": "Post Set up Go 1.27.4 for binary metadata inspection",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-16T08:53:12Z",
+            "completed_at": "2026-11-16T08:53:12Z"
+          },
+          {
+            "name": "Post Checkout exact candidate source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18,
+            "started_at": "2026-11-16T08:53:12Z",
+            "completed_at": "2026-11-16T08:53:12Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19,
+            "started_at": "2026-11-16T08:53:12Z",
+            "completed_at": "2026-11-16T08:53:12Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-runs/133188479177",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000053543,
+        "runner_name": "GitHub Actions 1000053543",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 133189003742,
+        "run_id": 43832000386,
+        "workflow_name": "iOS Build",
+        "head_branch": "ios/p030-upstream-integration",
+        "run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUX-KAs8AAAAfAq7p3g",
+        "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/jobs/133189003742",
+        "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/job/133189003742",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-11-16T08:53:16Z",
+        "started_at": "2026-11-16T08:53:16Z",
+        "completed_at": "2026-11-16T08:53:16Z",
+        "name": "release-ios",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-runs/133189003742",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      },
+      {
+        "id": 133189004043,
+        "run_id": 43832000386,
+        "workflow_name": "iOS Build",
+        "head_branch": "ios/p030-upstream-integration",
+        "run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUX-KAs8AAAAfAq7rCw",
+        "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/jobs/133189004043",
+        "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/job/133189004043",
+        "status": "completed",
+        "conclusion": "skipped",
+        "created_at": "2026-11-16T08:53:16Z",
+        "started_at": "2026-11-16T08:53:16Z",
+        "completed_at": "2026-11-16T08:53:16Z",
+        "name": "release-ios-validate",
+        "steps": [],
+        "check_run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-runs/133189004043",
+        "labels": [
+          "ubuntu-latest"
+        ],
+        "runner_id": null,
+        "runner_name": null,
+        "runner_group_id": null,
+        "runner_group_name": null
+      }
+    ]
+  },
+  "Beszel-iOS-43831994187-artifacts": {
+    "total_count": 2,
+    "artifacts": [
+      {
+        "id": 14209910014,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIwOTkxMDAxNA==",
+        "name": "p013-hub-recovery-evidence-direct",
+        "size_in_bytes": 25906,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14209910014",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14209910014/zip",
+        "expired": false,
+        "digest": "sha256:52bf98d2a6554918f8601d0572af0a5b7f9e557cd9ea33b6bebd34fc105867b2",
+        "created_at": "2026-11-16T08:35:39Z",
+        "updated_at": "2026-11-16T08:35:39Z",
+        "expires_at": "2026-11-30T08:35:38Z",
+        "workflow_run": {
+          "id": 43831994187,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      },
+      {
+        "id": 14209895232,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIwOTg5NTIzMg==",
+        "name": "p013-hub-recovery-evidence-via-p027",
+        "size_in_bytes": 26107,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14209895232",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14209895232/zip",
+        "expired": false,
+        "digest": "sha256:f5ff0fb9a396c0ec3a1fb7d65f566df8c62a3058afc62616f277532f9c532484",
+        "created_at": "2026-11-16T08:36:34Z",
+        "updated_at": "2026-11-16T08:36:34Z",
+        "expires_at": "2026-11-30T08:36:33Z",
+        "workflow_run": {
+          "id": 43831994187,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      }
+    ]
+  },
+  "Beszel-iOS-43831994187-jobs": {
+    "total_count": 2,
+    "jobs": [
+      {
+        "id": 133179347697,
+        "run_id": 43831994187,
+        "workflow_name": "P013 Hub migration fixture",
+        "head_branch": "ios/p030-upstream-integration",
+        "run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831994187",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUX-KAs8AAAAfAhuS8Q",
+        "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/jobs/133179347697",
+        "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43831994187/job/133179347697",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-16T08:32:15Z",
+        "started_at": "2026-11-16T08:32:16Z",
+        "completed_at": "2026-11-16T08:35:43Z",
+        "name": "genuine-hub-fixture (direct)",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-16T08:32:17Z",
+            "completed_at": "2026-11-16T08:32:18Z"
+          },
+          {
+            "name": "Checkout exact feature source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-16T08:32:18Z",
+            "completed_at": "2026-11-16T08:32:20Z"
+          },
+          {
+            "name": "Set up Go",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-16T08:32:20Z",
+            "completed_at": "2026-11-16T08:32:28Z"
+          },
+          {
+            "name": "Prepare workspace-local health marker directory",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-16T08:32:28Z",
+            "completed_at": "2026-11-16T08:32:28Z"
+          },
+          {
+            "name": "Set up Bun",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-16T08:32:28Z",
+            "completed_at": "2026-11-16T08:32:29Z"
+          },
+          {
+            "name": "Verify pinned toolchain and source matrix",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-16T08:32:29Z",
+            "completed_at": "2026-11-16T08:32:29Z"
+          },
+          {
+            "name": "Test backup and restore failure cases",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-16T08:32:29Z",
+            "completed_at": "2026-11-16T08:32:30Z"
+          },
+          {
+            "name": "Build genuine v0.19 fixture and reopen with v0.19",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-16T08:32:30Z",
+            "completed_at": "2026-11-16T08:35:38Z"
+          },
+          {
+            "name": "Upload synthetic fixture manifest only",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-16T08:35:38Z",
+            "completed_at": "2026-11-16T08:35:39Z"
+          },
+          {
+            "name": "Post Set up Bun",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-16T08:35:39Z",
+            "completed_at": "2026-11-16T08:35:40Z"
+          },
+          {
+            "name": "Post Set up Go",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-16T08:35:40Z",
+            "completed_at": "2026-11-16T08:35:41Z"
+          },
+          {
+            "name": "Post Checkout exact feature source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18,
+            "started_at": "2026-11-16T08:35:41Z",
+            "completed_at": "2026-11-16T08:35:41Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19,
+            "started_at": "2026-11-16T08:35:41Z",
+            "completed_at": "2026-11-16T08:35:41Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-runs/133179347697",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000053478,
+        "runner_name": "GitHub Actions 1000053478",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      {
+        "id": 133179348232,
+        "run_id": 43831994187,
+        "workflow_name": "P013 Hub migration fixture",
+        "head_branch": "ios/p030-upstream-integration",
+        "run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831994187",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUX-KAs8AAAAfAhuVCA",
+        "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/jobs/133179348232",
+        "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43831994187/job/133179348232",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-16T08:32:15Z",
+        "started_at": "2026-11-16T08:32:17Z",
+        "completed_at": "2026-11-16T08:36:38Z",
+        "name": "genuine-hub-fixture (via-p027)",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-16T08:32:18Z",
+            "completed_at": "2026-11-16T08:32:19Z"
+          },
+          {
+            "name": "Checkout exact feature source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-16T08:32:19Z",
+            "completed_at": "2026-11-16T08:32:21Z"
+          },
+          {
+            "name": "Set up Go",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-16T08:32:21Z",
+            "completed_at": "2026-11-16T08:32:29Z"
+          },
+          {
+            "name": "Prepare workspace-local health marker directory",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-16T08:32:29Z",
+            "completed_at": "2026-11-16T08:32:29Z"
+          },
+          {
+            "name": "Set up Bun",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-16T08:32:29Z",
+            "completed_at": "2026-11-16T08:32:31Z"
+          },
+          {
+            "name": "Verify pinned toolchain and source matrix",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-16T08:32:31Z",
+            "completed_at": "2026-11-16T08:32:31Z"
+          },
+          {
+            "name": "Test backup and restore failure cases",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-16T08:32:31Z",
+            "completed_at": "2026-11-16T08:32:31Z"
+          },
+          {
+            "name": "Build genuine v0.19 fixture and reopen with v0.19",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-16T08:32:31Z",
+            "completed_at": "2026-11-16T08:36:33Z"
+          },
+          {
+            "name": "Upload synthetic fixture manifest only",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-11-16T08:36:33Z",
+            "completed_at": "2026-11-16T08:36:34Z"
+          },
+          {
+            "name": "Post Set up Bun",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-16T08:36:34Z",
+            "completed_at": "2026-11-16T08:36:35Z"
+          },
+          {
+            "name": "Post Set up Go",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-16T08:36:35Z",
+            "completed_at": "2026-11-16T08:36:35Z"
+          },
+          {
+            "name": "Post Checkout exact feature source",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18,
+            "started_at": "2026-11-16T08:36:35Z",
+            "completed_at": "2026-11-16T08:36:35Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19,
+            "started_at": "2026-11-16T08:36:35Z",
+            "completed_at": "2026-11-16T08:36:35Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-runs/133179348232",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000053479,
+        "runner_name": "GitHub Actions 1000053479",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      }
+    ]
+  },
+  "Beszel-iOS-43831987596-run": {
+    "id": 43831987596,
+    "name": "P017 Release Candidate Regression",
+    "node_id": "WFR_kwLOUX-KAs8AAAAKNJcNjA",
+    "head_branch": "ios/p030-upstream-integration",
+    "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+    "path": ".github/workflows/p017-release-candidate.yml",
+    "display_title": "P017 Release Candidate Regression",
+    "run_number": 72,
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "workflow_id": 388161745,
+    "check_suite_id": 118658946041,
+    "check_suite_node_id": "CS_kwDOUX-KAs8AAAAboJ_T-Q",
+    "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831987596",
+    "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43831987596",
+    "pull_requests": [
+      {
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls/34",
+        "id": 5333717728,
+        "number": 34,
+        "head": {
+          "ref": "ios/p030-upstream-integration",
+          "sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+          "repo": {
+            "id": 1367312898,
+            "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+            "name": "Beszel-iOS"
+          }
+        },
+        "base": {
+          "ref": "ios/p029-upstream-integration",
+          "sha": "1f8cac7bd3a7764f559a6aaea56935bd3152147a",
+          "repo": {
+            "id": 1367312898,
+            "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+            "name": "Beszel-iOS"
+          }
+        }
+      }
+    ],
+    "created_at": "2026-11-16T08:32:01Z",
+    "updated_at": "2026-11-16T08:38:38Z",
+    "actor": {
+      "login": "nghianguyen150612",
+      "id": 207304907,
+      "node_id": "U_kgDODFs4yw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/nghianguyen150612",
+      "html_url": "https://github.com/nghianguyen150612",
+      "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+      "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+      "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+      "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+      "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "run_attempt": 1,
+    "referenced_workflows": [],
+    "run_started_at": "2026-11-16T08:32:01Z",
+    "triggering_actor": {
+      "login": "nghianguyen150612",
+      "id": 207304907,
+      "node_id": "U_kgDODFs4yw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/nghianguyen150612",
+      "html_url": "https://github.com/nghianguyen150612",
+      "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+      "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+      "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+      "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+      "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "jobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831987596/jobs",
+    "logs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831987596/logs",
+    "check_suite_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-suites/118658946041",
+    "artifacts_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831987596/artifacts",
+    "cancel_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831987596/cancel",
+    "rerun_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831987596/rerun",
+    "previous_attempt_url": null,
+    "workflow_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/workflows/388161745",
+    "head_commit": {
+      "id": "444e61efab68dd27b01780f5c1534816cd57da25",
+      "tree_id": "14e55a423d03f31576b2495461b78ea26c590925",
+      "message": "fix(hub): isolate agent-owned records and sanitize null telemetry",
+      "timestamp": "2026-11-16T08:31:27Z",
+      "author": {
+        "name": "Nguyen Nghia",
+        "email": "nghianguyen150006@gmail.com"
+      },
+      "committer": {
+        "name": "Nguyen Nghia",
+        "email": "nghianguyen150006@gmail.com"
+      }
+    },
+    "repository": {
+      "id": 1367312898,
+      "node_id": "R_kgDOUX-KAg",
+      "name": "Beszel-iOS",
+      "full_name": "nghianguyen150612/Beszel-iOS",
+      "private": false,
+      "owner": {
+        "login": "nghianguyen150612",
+        "id": 207304907,
+        "node_id": "U_kgDODFs4yw",
+        "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/nghianguyen150612",
+        "html_url": "https://github.com/nghianguyen150612",
+        "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+        "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+        "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+        "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+        "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+        "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/nghianguyen150612/Beszel-iOS",
+      "description": "Unofficial native Beszel Agent and Hub port for jailbroken iOS devices.",
+      "fork": true,
+      "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+      "forks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/forks",
+      "keys_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/teams",
+      "hooks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/hooks",
+      "issue_events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/events",
+      "assignees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/tags",
+      "blobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/languages",
+      "stargazers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/stargazers",
+      "contributors_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contributors",
+      "subscribers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscribers",
+      "subscription_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscription",
+      "commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/merges",
+      "archive_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/downloads",
+      "issues_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/labels{/name}",
+      "releases_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/deployments"
+    },
+    "head_repository": {
+      "id": 1367312898,
+      "node_id": "R_kgDOUX-KAg",
+      "name": "Beszel-iOS",
+      "full_name": "nghianguyen150612/Beszel-iOS",
+      "private": false,
+      "owner": {
+        "login": "nghianguyen150612",
+        "id": 207304907,
+        "node_id": "U_kgDODFs4yw",
+        "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/nghianguyen150612",
+        "html_url": "https://github.com/nghianguyen150612",
+        "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+        "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+        "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+        "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+        "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+        "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/nghianguyen150612/Beszel-iOS",
+      "description": "Unofficial native Beszel Agent and Hub port for jailbroken iOS devices.",
+      "fork": true,
+      "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+      "forks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/forks",
+      "keys_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/teams",
+      "hooks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/hooks",
+      "issue_events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/events",
+      "assignees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/tags",
+      "blobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/languages",
+      "stargazers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/stargazers",
+      "contributors_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contributors",
+      "subscribers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscribers",
+      "subscription_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscription",
+      "commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/merges",
+      "archive_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/downloads",
+      "issues_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/labels{/name}",
+      "releases_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/deployments"
+    }
+  },
+  "Beszel-iOS-43832000386-run": {
+    "id": 43832000386,
+    "name": "iOS Build",
+    "node_id": "WFR_kwLOUX-KAs8AAAAKNJc_gg",
+    "head_branch": "ios/p030-upstream-integration",
+    "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+    "path": ".github/workflows/ios-build.yml",
+    "display_title": "iOS Build",
+    "run_number": 170,
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "workflow_id": 358687243,
+    "check_suite_id": 118658979074,
+    "check_suite_node_id": "CS_kwDOUX-KAs8AAAAboKBVAg",
+    "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386",
+    "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43832000386",
+    "pull_requests": [
+      {
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls/34",
+        "id": 5333717728,
+        "number": 34,
+        "head": {
+          "ref": "ios/p030-upstream-integration",
+          "sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+          "repo": {
+            "id": 1367312898,
+            "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+            "name": "Beszel-iOS"
+          }
+        },
+        "base": {
+          "ref": "ios/p029-upstream-integration",
+          "sha": "1f8cac7bd3a7764f559a6aaea56935bd3152147a",
+          "repo": {
+            "id": 1367312898,
+            "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+            "name": "Beszel-iOS"
+          }
+        }
+      }
+    ],
+    "created_at": "2026-11-16T08:32:07Z",
+    "updated_at": "2026-11-16T08:53:16Z",
+    "actor": {
+      "login": "nghianguyen150612",
+      "id": 207304907,
+      "node_id": "U_kgDODFs4yw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/nghianguyen150612",
+      "html_url": "https://github.com/nghianguyen150612",
+      "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+      "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+      "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+      "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+      "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "run_attempt": 1,
+    "referenced_workflows": [],
+    "run_started_at": "2026-11-16T08:32:07Z",
+    "triggering_actor": {
+      "login": "nghianguyen150612",
+      "id": 207304907,
+      "node_id": "U_kgDODFs4yw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/nghianguyen150612",
+      "html_url": "https://github.com/nghianguyen150612",
+      "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+      "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+      "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+      "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+      "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "jobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/jobs",
+    "logs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/logs",
+    "check_suite_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-suites/118658979074",
+    "artifacts_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/artifacts",
+    "cancel_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/cancel",
+    "rerun_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43832000386/rerun",
+    "previous_attempt_url": null,
+    "workflow_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/workflows/358687243",
+    "head_commit": {
+      "id": "444e61efab68dd27b01780f5c1534816cd57da25",
+      "tree_id": "14e55a423d03f31576b2495461b78ea26c590925",
+      "message": "fix(hub): isolate agent-owned records and sanitize null telemetry",
+      "timestamp": "2026-11-16T08:31:27Z",
+      "author": {
+        "name": "Nguyen Nghia",
+        "email": "nghianguyen150006@gmail.com"
+      },
+      "committer": {
+        "name": "Nguyen Nghia",
+        "email": "nghianguyen150006@gmail.com"
+      }
+    },
+    "repository": {
+      "id": 1367312898,
+      "node_id": "R_kgDOUX-KAg",
+      "name": "Beszel-iOS",
+      "full_name": "nghianguyen150612/Beszel-iOS",
+      "private": false,
+      "owner": {
+        "login": "nghianguyen150612",
+        "id": 207304907,
+        "node_id": "U_kgDODFs4yw",
+        "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/nghianguyen150612",
+        "html_url": "https://github.com/nghianguyen150612",
+        "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+        "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+        "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+        "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+        "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+        "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/nghianguyen150612/Beszel-iOS",
+      "description": "Unofficial native Beszel Agent and Hub port for jailbroken iOS devices.",
+      "fork": true,
+      "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+      "forks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/forks",
+      "keys_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/teams",
+      "hooks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/hooks",
+      "issue_events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/events",
+      "assignees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/tags",
+      "blobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/languages",
+      "stargazers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/stargazers",
+      "contributors_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contributors",
+      "subscribers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscribers",
+      "subscription_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscription",
+      "commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/merges",
+      "archive_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/downloads",
+      "issues_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/labels{/name}",
+      "releases_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/deployments"
+    },
+    "head_repository": {
+      "id": 1367312898,
+      "node_id": "R_kgDOUX-KAg",
+      "name": "Beszel-iOS",
+      "full_name": "nghianguyen150612/Beszel-iOS",
+      "private": false,
+      "owner": {
+        "login": "nghianguyen150612",
+        "id": 207304907,
+        "node_id": "U_kgDODFs4yw",
+        "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/nghianguyen150612",
+        "html_url": "https://github.com/nghianguyen150612",
+        "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+        "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+        "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+        "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+        "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+        "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/nghianguyen150612/Beszel-iOS",
+      "description": "Unofficial native Beszel Agent and Hub port for jailbroken iOS devices.",
+      "fork": true,
+      "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+      "forks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/forks",
+      "keys_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/teams",
+      "hooks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/hooks",
+      "issue_events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/events",
+      "assignees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/tags",
+      "blobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/languages",
+      "stargazers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/stargazers",
+      "contributors_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contributors",
+      "subscribers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscribers",
+      "subscription_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscription",
+      "commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/merges",
+      "archive_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/downloads",
+      "issues_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/labels{/name}",
+      "releases_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/deployments"
+    }
+  },
+  "Beszel-iOS-43831994187-run": {
+    "id": 43831994187,
+    "name": "P013 Hub migration fixture",
+    "node_id": "WFR_kwLOUX-KAs8AAAAKNJcnSw",
+    "head_branch": "ios/p030-upstream-integration",
+    "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+    "path": ".github/workflows/p013-hub-migration.yml",
+    "display_title": "P013 Hub migration fixture",
+    "run_number": 138,
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "workflow_id": 386220760,
+    "check_suite_id": 118658963245,
+    "check_suite_node_id": "CS_kwDOUX-KAs8AAAAboKAXLQ",
+    "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831994187",
+    "html_url": "https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/43831994187",
+    "pull_requests": [
+      {
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls/34",
+        "id": 5333717728,
+        "number": 34,
+        "head": {
+          "ref": "ios/p030-upstream-integration",
+          "sha": "444e61efab68dd27b01780f5c1534816cd57da25",
+          "repo": {
+            "id": 1367312898,
+            "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+            "name": "Beszel-iOS"
+          }
+        },
+        "base": {
+          "ref": "ios/p029-upstream-integration",
+          "sha": "1f8cac7bd3a7764f559a6aaea56935bd3152147a",
+          "repo": {
+            "id": 1367312898,
+            "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+            "name": "Beszel-iOS"
+          }
+        }
+      }
+    ],
+    "created_at": "2026-11-16T08:32:04Z",
+    "updated_at": "2026-11-16T08:36:39Z",
+    "actor": {
+      "login": "nghianguyen150612",
+      "id": 207304907,
+      "node_id": "U_kgDODFs4yw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/nghianguyen150612",
+      "html_url": "https://github.com/nghianguyen150612",
+      "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+      "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+      "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+      "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+      "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "run_attempt": 1,
+    "referenced_workflows": [],
+    "run_started_at": "2026-11-16T08:32:04Z",
+    "triggering_actor": {
+      "login": "nghianguyen150612",
+      "id": 207304907,
+      "node_id": "U_kgDODFs4yw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/nghianguyen150612",
+      "html_url": "https://github.com/nghianguyen150612",
+      "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+      "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+      "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+      "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+      "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+      "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "jobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831994187/jobs",
+    "logs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831994187/logs",
+    "check_suite_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/check-suites/118658963245",
+    "artifacts_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831994187/artifacts",
+    "cancel_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831994187/cancel",
+    "rerun_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/runs/43831994187/rerun",
+    "previous_attempt_url": null,
+    "workflow_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/workflows/386220760",
+    "head_commit": {
+      "id": "444e61efab68dd27b01780f5c1534816cd57da25",
+      "tree_id": "14e55a423d03f31576b2495461b78ea26c590925",
+      "message": "fix(hub): isolate agent-owned records and sanitize null telemetry",
+      "timestamp": "2026-11-16T08:31:27Z",
+      "author": {
+        "name": "Nguyen Nghia",
+        "email": "nghianguyen150006@gmail.com"
+      },
+      "committer": {
+        "name": "Nguyen Nghia",
+        "email": "nghianguyen150006@gmail.com"
+      }
+    },
+    "repository": {
+      "id": 1367312898,
+      "node_id": "R_kgDOUX-KAg",
+      "name": "Beszel-iOS",
+      "full_name": "nghianguyen150612/Beszel-iOS",
+      "private": false,
+      "owner": {
+        "login": "nghianguyen150612",
+        "id": 207304907,
+        "node_id": "U_kgDODFs4yw",
+        "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/nghianguyen150612",
+        "html_url": "https://github.com/nghianguyen150612",
+        "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+        "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+        "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+        "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+        "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+        "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/nghianguyen150612/Beszel-iOS",
+      "description": "Unofficial native Beszel Agent and Hub port for jailbroken iOS devices.",
+      "fork": true,
+      "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+      "forks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/forks",
+      "keys_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/teams",
+      "hooks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/hooks",
+      "issue_events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/events",
+      "assignees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/tags",
+      "blobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/languages",
+      "stargazers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/stargazers",
+      "contributors_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contributors",
+      "subscribers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscribers",
+      "subscription_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscription",
+      "commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/merges",
+      "archive_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/downloads",
+      "issues_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/labels{/name}",
+      "releases_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/deployments"
+    },
+    "head_repository": {
+      "id": 1367312898,
+      "node_id": "R_kgDOUX-KAg",
+      "name": "Beszel-iOS",
+      "full_name": "nghianguyen150612/Beszel-iOS",
+      "private": false,
+      "owner": {
+        "login": "nghianguyen150612",
+        "id": 207304907,
+        "node_id": "U_kgDODFs4yw",
+        "avatar_url": "https://avatars.githubusercontent.com/u/207304907?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/nghianguyen150612",
+        "html_url": "https://github.com/nghianguyen150612",
+        "followers_url": "https://api.github.com/users/nghianguyen150612/followers",
+        "following_url": "https://api.github.com/users/nghianguyen150612/following{/other_user}",
+        "gists_url": "https://api.github.com/users/nghianguyen150612/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/nghianguyen150612/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/nghianguyen150612/subscriptions",
+        "organizations_url": "https://api.github.com/users/nghianguyen150612/orgs",
+        "repos_url": "https://api.github.com/users/nghianguyen150612/repos",
+        "events_url": "https://api.github.com/users/nghianguyen150612/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/nghianguyen150612/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/nghianguyen150612/Beszel-iOS",
+      "description": "Unofficial native Beszel Agent and Hub port for jailbroken iOS devices.",
+      "fork": true,
+      "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS",
+      "forks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/forks",
+      "keys_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/teams",
+      "hooks_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/hooks",
+      "issue_events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/events",
+      "assignees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/tags",
+      "blobs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/languages",
+      "stargazers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/stargazers",
+      "contributors_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contributors",
+      "subscribers_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscribers",
+      "subscription_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/subscription",
+      "commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/merges",
+      "archive_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/downloads",
+      "issues_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/labels{/name}",
+      "releases_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/deployments"
+    }
+  },
+  "Beszel-iOS-43831987596-artifacts": {
+    "total_count": 4,
+    "artifacts": [
+      {
+        "id": 14210111269,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIxMDExMTI2OQ==",
+        "name": "p023-workflow-security-evidence",
+        "size_in_bytes": 1235,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210111269",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14210111269/zip",
+        "expired": false,
+        "digest": "sha256:68ab8ded4c97abb6078f9736015a6561288975c0200a3158f460e00d5e2f1eb3",
+        "created_at": "2026-11-16T08:38:33Z",
+        "updated_at": "2026-11-16T08:38:33Z",
+        "expires_at": "2026-11-30T08:38:33Z",
+        "workflow_run": {
+          "id": 43831987596,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      },
+      {
+        "id": 14209147735,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIwOTE0NzczNQ==",
+        "name": "p017-regression-manifest",
+        "size_in_bytes": 405,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14209147735",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14209147735/zip",
+        "expired": false,
+        "digest": "sha256:c058ec973cee6cc2fd2bf100a49c2618d4b665e3c42e0de8c2b4f54996569e25",
+        "created_at": "2026-11-16T08:38:32Z",
+        "updated_at": "2026-11-16T08:38:32Z",
+        "expires_at": "2026-11-30T08:38:32Z",
+        "workflow_run": {
+          "id": 43831987596,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      },
+      {
+        "id": 14208523808,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIwODUyMzgwOA==",
+        "name": "p023-javascript-audit-evidence",
+        "size_in_bytes": 13351,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14208523808",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14208523808/zip",
+        "expired": false,
+        "digest": "sha256:cf9c7003bd70d787a07b3ab7fc643fbdd04f92903ecd2979139d7811bcb39d93",
+        "created_at": "2026-11-16T08:35:13Z",
+        "updated_at": "2026-11-16T08:35:13Z",
+        "expires_at": "2026-11-30T08:35:12Z",
+        "workflow_run": {
+          "id": 43831987596,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      },
+      {
+        "id": 14208214555,
+        "node_id": "MDg6QXJ0aWZhY3QxNDIwODIxNDU1NQ==",
+        "name": "p023-go-vulnerability-evidence",
+        "size_in_bytes": 102967,
+        "url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14208214555",
+        "archive_download_url": "https://api.github.com/repos/nghianguyen150612/Beszel-iOS/actions/artifacts/14208214555/zip",
+        "expired": false,
+        "digest": "sha256:cd987818eafefe1289e5d632fbdbb1487094005812c1cc1f2dcb7beb32857ea1",
+        "created_at": "2026-11-16T08:35:17Z",
+        "updated_at": "2026-11-16T08:35:17Z",
+        "expires_at": "2026-11-30T08:35:16Z",
+        "workflow_run": {
+          "id": 43831987596,
+          "repository_id": 1367312898,
+          "head_repository_id": 1367312898,
+          "head_branch": "ios/p030-upstream-integration",
+          "head_sha": "444e61efab68dd27b01780f5c1534816cd57da25"
+        }
+      }
+    ]
+  }
+}

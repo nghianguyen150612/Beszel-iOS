@@ -29,20 +29,23 @@ import { cn, useBrowserStorage } from "@/lib/utils"
 import { Sheet, SheetTitle, SheetHeader, SheetContent, SheetDescription } from "../ui/sheet"
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog"
 import { Button } from "@/components/ui/button"
-import { $allSystemsById } from "@/lib/stores"
+import { $allSystemsById, $systemsLoaded } from "@/lib/stores"
 import { LoaderCircleIcon, MaximizeIcon, RefreshCwIcon, XIcon } from "lucide-react"
 import { Separator } from "../ui/separator"
 import { $router, Link } from "../router"
-import { listenKeys } from "nanostores"
 import { getPagePath } from "@nanostores/router"
 import { LogsDisplay, LogsFullscreenDialog, LogsIconButton, LogsTimestampToggle } from "@/components/logs-display"
 import { getLogTimestampDecorations } from "@/lib/logs"
+import { ContainerRefreshCoordinator, mergeSystemContainers, selectRecentContainers } from "./container-refresh"
 
 const syntaxTheme = "github-dark-dimmed"
 
 export default function ContainersTable({ systemId }: { systemId?: string }) {
-	const loadTime = Date.now()
-	const [data, setData] = useState<ContainerRecord[] | undefined>(undefined)
+	const [containerSnapshot, setContainerSnapshot] = useState<{
+		systemId: string | undefined
+		items: ContainerRecord[]
+	} | undefined>()
+	const data = containerSnapshot && containerSnapshot.systemId === systemId ? containerSnapshot.items : undefined
 	const [sorting, setSorting] = useBrowserStorage<SortingState>(
 		`sort-c-${systemId ? 1 : 0}`,
 		[{ id: systemId ? "name" : "system", desc: false }],
@@ -69,60 +72,65 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 	const { pagination, onPaginationChange, resetPageIndex } = usePagination()
 
 	useEffect(() => {
-		function fetchData(systemId?: string) {
-			pb.collection<ContainerRecord>("containers")
-				.getList(0, 2000, {
+		const coordinator = new ContainerRefreshCoordinator<ContainerRecord>({
+			fetch: async (requestedSystemId, signal) => {
+				const { items } = await pb.collection<ContainerRecord>("containers").getList(0, 2000, {
 					fields: "id,name,image,updatable,ports,cpu,memory,net,health,status,system,updated",
-					filter: systemId ? pb.filter("system={:system}", { system: systemId }) : undefined,
+					filter: requestedSystemId
+						? pb.filter("system={:system}", { system: requestedSystemId })
+						: undefined,
+					requestKey: null,
+					signal,
 				})
-				.then(({ items }) => {
-					if (items.length === 0) {
-						setData((curItems) => {
-							if (systemId) {
-								return curItems?.filter((item) => item.system !== systemId) ?? []
-							}
-							return []
-						})
-						return
-					}
-					setData((curItems) => {
-						const lastUpdated = Math.max(items[0].updated, items.at(-1)?.updated ?? 0)
-						const containerIds = new Set()
-						const newItems: ContainerRecord[] = []
-						for (const item of items) {
-							if (Math.abs(lastUpdated - item.updated) < 70_000) {
-								containerIds.add(item.id)
-								newItems.push(item)
-							}
-						}
-						for (const item of curItems ?? []) {
-							if (!containerIds.has(item.id) && lastUpdated - item.updated < 70_000) {
-								newItems.push(item)
-							}
-						}
-						return newItems
-					})
-				})
-		}
+				return items
+			},
+			onInitial: (items) => setContainerSnapshot({ systemId: undefined, items: selectRecentContainers(items) }),
+			onSystem: (refreshedSystemId, items) =>
+				setContainerSnapshot((current) => ({
+					systemId,
+					items: mergeSystemContainers(
+						current && current.systemId === systemId ? current.items : [],
+						refreshedSystemId,
+						items
+					),
+				})),
+			onSystemRemoved: (removedSystemId) => setContainerSnapshot((current) => {
+				if (!current) return current
+				if (current.systemId === undefined) {
+					return { ...current, items: current.items.filter((item) => item.system !== removedSystemId) }
+				}
+				return current.systemId === removedSystemId ? { ...current, items: [] } : current
+			}),
+			onError: (error) => console.error(error),
+		})
 
-		// initial load
-		fetchData(systemId)
-
-		// if no systemId, pull system containers after every system update
-		if (!systemId) {
-			return $allSystemsById.listen((_value, _oldValue, systemId) => {
-				// exclude initial load of systems
-				if (Date.now() - loadTime > 500) {
-					fetchData(systemId)
+		let unsubscribe: (() => void) | undefined
+		if (systemId) {
+			coordinator.startSystem(systemId)
+			unsubscribe = $allSystemsById.listen((systems, oldSystems, changedSystemId) => {
+				if (changedSystemId !== systemId) return
+				if (systems[systemId]) {
+					if (oldSystems[systemId] || $systemsLoaded.get()) coordinator.refreshSystem(systemId)
+				} else if (oldSystems[systemId]) {
+					coordinator.removeSystem(systemId)
 				}
 			})
+		} else {
+			unsubscribe = $allSystemsById.listen((systems, oldSystems, changedSystemId) => {
+				if (systems[changedSystemId]) {
+					if (oldSystems[changedSystemId] || $systemsLoaded.get()) coordinator.refreshSystem(changedSystemId)
+				} else if (oldSystems[changedSystemId]) {
+					coordinator.removeSystem(changedSystemId)
+				}
+			})
+			coordinator.startAll()
 		}
 
-		// if systemId, fetch containers after the system is updated
-		return listenKeys($allSystemsById, [systemId], (_newSystems) => {
-			fetchData(systemId)
-		})
-	}, [])
+		return () => {
+			unsubscribe?.()
+			coordinator.dispose()
+		}
+	}, [systemId])
 
 	const table = useReactTable({
 		data: data ?? [],

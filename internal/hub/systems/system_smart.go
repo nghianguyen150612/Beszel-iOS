@@ -3,6 +3,7 @@ package systems
 import (
 	"database/sql"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 
@@ -124,6 +125,9 @@ func (sys *System) upsertSmartDeviceRecord(app core.App, collection *core.Collec
 		}
 		record = core.NewRecord(collection)
 		record.Set("id", recordID)
+	} else if record.GetString("system") != sys.Id {
+		// ID collision with another system's device: never take it over.
+		return nil
 	}
 
 	name := device.DiskName
@@ -131,6 +135,7 @@ func (sys *System) upsertSmartDeviceRecord(app core.App, collection *core.Collec
 		name = deviceKey
 	}
 
+	device.Attributes = slices.DeleteFunc(device.Attributes, func(a *smart.SmartAttribute) bool { return a == nil })
 	powerOnHours, powerCycles := extractPowerMetrics(device.Attributes)
 	record.Set("system", sys.Id)
 	record.Set("name", name)
@@ -151,6 +156,9 @@ func (sys *System) upsertSmartDeviceRecord(app core.App, collection *core.Collec
 // extractPowerMetrics extracts power on hours and power cycles from SMART attributes
 func extractPowerMetrics(attributes []*smart.SmartAttribute) (powerOnHours, powerCycles uint64) {
 	for _, attr := range attributes {
+		if attr == nil {
+			continue
+		}
 		nameLower := strings.ToLower(attr.Name)
 		if powerOnHours == 0 && (strings.Contains(nameLower, "poweronhours") || strings.Contains(nameLower, "power_on_hours")) {
 			powerOnHours = attr.RawValue

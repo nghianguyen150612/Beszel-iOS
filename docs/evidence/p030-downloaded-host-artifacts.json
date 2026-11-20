@@ -1,0 +1,22 @@
+[
+  {
+    "id": 14208523808,
+    "archive_sha256": "cf9c7003bd70d787a07b3ab7fc643fbdd04f92903ecd2979139d7811bcb39d93",
+    "status": "PASS \u2014 independently downloaded ZIP matches GitHub digest"
+  },
+  {
+    "id": 14209147735,
+    "archive_sha256": "c058ec973cee6cc2fd2bf100a49c2618d4b665e3c42e0de8c2b4f54996569e25",
+    "status": "PASS \u2014 independently downloaded ZIP matches GitHub digest"
+  },
+  {
+    "id": 14210111269,
+    "archive_sha256": "68ab8ded4c97abb6078f9736015a6561288975c0200a3158f460e00d5e2f1eb3",
+    "status": "PASS \u2014 independently downloaded ZIP matches GitHub digest"
+  },
+  {
+    "id": 14208214555,
+    "archive_sha256": "cd987818eafefe1289e5d632fbdbb1487094005812c1cc1f2dcb7beb32857ea1",
+    "status": "PASS \u2014 independently downloaded ZIP matches GitHub digest"
+  }
+]
