@@ -267,3 +267,21 @@ Picomatch refresh: GitHub advisory remains withdrawn; npm latest and GitHub late
 ### Hosted via-P029 result
 
 **PASS** — exact candidate `a13030714043006a8ee65c69377094d6a19bec14`, P013 run `44224594028` attempt 2, job `136066005105`. The genuine v0.19 Hub initialized the synthetic fixture, which traversed the pinned P029 intermediate (PocketBase 0.40.6) and candidate; harness reported PASS. Historical Hub SHA-256 `dd9a912a3812327e781402d535dd90d86ded462d7ed344f5651353221e1a3797`; candidate Hub SHA-256 `3374cf64118bb0a4bcbf8733831b3a252f744d72f74401047c1e337f33e3bd4a`. Synthetic evidence artifact `14598309933` has GitHub-reported and upload-log SHA-256 `756f9d7a05bc872689f34e541be83d5295422ad94a9a6c4983cb9b7c1e0f7973`. Independent artifact download was blocked by blob HTTP 403; digest has not been independently checked and fixture manifest has not been independently inspected. Prior local detailed fixture assertions and hosted other paths are recorded above. Migration engineering is PASS for the tested matrix; candidate integration remains BLOCKED — OWNER SECURITY ACCEPTANCE. Next: recover independent artifact access and inspect the manifest; retain 0.40.6 pending authorized disposition.
+
+## Final evidence reconciliation — 2026-11-20
+
+Starting HEAD `a2bdec381070b5e06d306cdb808eb0e7b459e37c` matched origin and open Draft PR #34 against P029. The only changes from qualified retained application source `1f1ced78b18078b5ee8c2229b9a0e2c11ed963f3` are the three P030 documentation files. PocketBase 0.40.6 remains integrated.
+
+**VIA-P029 HOSTED MIGRATION: PASS.** GitHub confirms run `44224594028`, attempt 2, job `136066005105`, candidate `a13030714043006a8ee65c69377094d6a19bec14`; the prior hosted download failure occurred before fixture execution. Direct and via-P026/P027/P028 and via-P029 migration engineering are qualified by the recorded runs. No migration was rerun during this reconciliation.
+
+**INDEPENDENT ARTIFACT INSPECTION: PASS — reported by the user.** The user reports independent download and inspection of artifact `14598309933`, archive SHA-256 `756f9d7a05bc872689f34e541be83d5295422ad94a9a6c4983cb9b7c1e0f7973`, manifest SHA-256 `b3efc3197e22fd89408888e638a5df1bd2d6839053a42a80e110aad7fb453995`, ZIP integrity, source identities, ledger continuity, database integrity, persisted records, health checks, five recovery cases and diagnostic hashes. The archive contains the manifest and 11 synthetic failure/recovery logs. This supersedes the earlier evidence-access blocker: the prior HTTP 403 was resolved by that independent inspection. No verification JSON was supplied in this workspace; this session independently confirmed GitHub's run/job status and artifact metadata/digest, but a fresh archive download again returned HTTP 403, so this session did not reproduce the ZIP or manifest checks. Preserve that distinction and the user-reported evidence provenance.
+
+### Owner decision record
+
+1. **Migration engineering:** PASS for the recorded candidate direct and P026–P029 paths; independent artifact inspection PASS as reported above. This does not integrate the candidate.
+2. **Picomatch security:** strict audits PASS after advisory withdrawal; package fix NOT VERIFIED, runtime exposure NOT IDENTIFIED, build-time exposure PRESENT, CONSTRAINED, residual risk PRESENT. **OWNER ACCEPTANCE NOT GRANTED.** Owner decision requested: accept the documented residual build-time risk or require a verified compatible remediation.
+3. **Candidate integration:** NOT AUTHORIZED; 0.42.2 remains isolated and integration is BLOCKED pending the required owner security disposition. If authorized, reapply normally and run the exact-source qualification described above.
+4. **Physical-device qualification:** DEFERRED — OWNER APPROVED; no device work authorized by this record.
+5. **Stable release:** NOT AUTHORIZED; no production readiness, merge or deployment is implied.
+
+Implemented and agreed retained-source engineering is qualified with documented exclusions; it does not establish full upstream equivalence. **P030: PARTIAL — RESUMABLE**, because mandatory owner security acceptance remains outstanding. Next: obtain the owner's security decision; preserve the candidate and existing evidence until then.
