@@ -10,6 +10,12 @@ extern "C" {
 char *BeszelGoVersion(void);
 char *BeszelGoPlatform(void);
 void BeszelGoFree(char *ptr);
+// Input strings are copied synchronously; caller retains ownership.
+// Start/metrics return NULL on success or an owned error string.
+char *BeszelAgentStart(const char *configurationJSON);
+void BeszelAgentStop(void);
+char *BeszelAgentStatusJSON(void);
+char *BeszelAgentUpdateMetrics(const char *metricsJSON);
 
 #ifdef __cplusplus
 }

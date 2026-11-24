@@ -6,6 +6,9 @@ on:
     branches:
       - feature/stock-ios-ipa
     paths:
+      - "agent/**"
+      - "internal/common/**"
+      - "internal/entities/**"
       - "ios-app/**"
       - "scripts/stock-ios/**"
       - ".github/workflows/ios-ipa.yml"
@@ -17,7 +20,25 @@ permissions:
   contents: read
 
 jobs:
+  agent-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Shared Agent and embedded protocol regressions
+        run: |
+          go mod verify
+          go vet -tags testing ./agent/... ./ios-app/BridgeCore
+          go test -tags testing ./agent/... ./ios-app/BridgeCore
+          go test -race ./agent ./ios-app/BridgeCore
+          sh tests/ios-patch-sentinels.sh
+          sh tests/upstream-sync-test.sh
   stock-ios-ipa:
+    needs: agent-regression
     # Isolated from the jailbreak Agent/Hub build and release pipeline.
     runs-on: macos-15
     timeout-minutes: 45
@@ -37,7 +58,10 @@ jobs:
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-path
       - name: Verify platform-neutral Go bridge component
-        run: go test ./ios-app/BridgeCore
+        run: |
+          go test ./ios-app/BridgeCore
+          go test -race ./agent -run TestEmbedded
+          go vet ./agent ./ios-app/BridgeCore
       - name: Build ad-hoc-signed stock iOS IPA
         run: bash scripts/stock-ios/build-ipa.sh
       - name: Upload development IPA and checksum

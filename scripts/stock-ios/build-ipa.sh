@@ -43,6 +43,8 @@ xcrun --sdk iphoneos swiftc \
   -import-objc-header ios-app/Bridge/BeszelGoBridge.h \
   ios-app/App/BeszelStockAgentApp.swift \
   ios-app/App/ContentView.swift \
+  ios-app/App/AgentController.swift \
+  ios-app/Metrics/StockMetrics.swift \
   -Xlinker -force_load -Xlinker "$LIB" \
   -lresolv \
   -o "$APP/BeszelStockAgent"
@@ -63,4 +65,4 @@ unzip -t "$IPA" >/dev/null
 ( cd "$OUT" && shasum -a 256 "$(basename "$IPA")" > SHA256SUMS )
 ( cd "$OUT" && shasum -a 256 -c SHA256SUMS )
 echo "Development archive produced: $IPA"
-echo "P1 ONLY: installability, Agent↔Hub transport and on-device execution NOT VALIDATED."
+echo "P2 partial: Hub statistics acceptance and physical-device execution NOT VALIDATED."

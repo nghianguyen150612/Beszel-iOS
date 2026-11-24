@@ -1,8 +1,7 @@
 //go:build ios && cgo
 
 // Native C ABI for embedding the actual Go runtime in a signed iPhoneOS app.
-// This deliberately does NOT start the Agent in P1: its current initialization
-// still includes collectors and lifecycle behavior unsuitable for stock iOS.
+// Embedded runtime uses explicit configuration and never starts SSH.
 package main
 
 /*
@@ -29,6 +28,34 @@ func BeszelGoPlatform() *C.char {
 //export BeszelGoFree
 func BeszelGoFree(ptr *C.char) {
 	C.free(unsafe.Pointer(ptr))
+}
+
+//export BeszelAgentStart
+func BeszelAgentStart(config *C.char) *C.char {
+	if config == nil {
+		return C.CString("missing configuration")
+	}
+	if err := bridgecore.Start(C.GoString(config)); err != nil {
+		return C.CString(err.Error())
+	}
+	return nil
+}
+
+//export BeszelAgentStop
+func BeszelAgentStop() { bridgecore.Stop() }
+
+//export BeszelAgentStatusJSON
+func BeszelAgentStatusJSON() *C.char { return C.CString(bridgecore.StatusJSON()) }
+
+//export BeszelAgentUpdateMetrics
+func BeszelAgentUpdateMetrics(payload *C.char) *C.char {
+	if payload == nil {
+		return C.CString("missing metrics")
+	}
+	if err := bridgecore.UpdateMetrics(C.GoString(payload)); err != nil {
+		return C.CString(err.Error())
+	}
+	return nil
 }
 
 func main() {}
