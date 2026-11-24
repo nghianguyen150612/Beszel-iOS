@@ -25,12 +25,24 @@ type Configuration struct {
 // Snapshot preserves availability independently from a valid zero measurement.
 // Volume values describe only the application container's accessible volume.
 type Snapshot struct {
-	PhysicalMemory uint64    `json:"physicalMemory"`
-	BatteryPercent *float64  `json:"batteryPercent"`
-	BatteryState   string    `json:"batteryState"`
-	VolumeCapacity *uint64   `json:"volumeCapacity"`
-	AvailableToApp *uint64   `json:"availableToApp"`
-	SampledAt      time.Time `json:"sampledAt"`
+	PhysicalMemory uint64                  `json:"physicalMemory,omitempty"`
+	BatteryPercent *float64                `json:"batteryPercent"`
+	BatteryState   string                  `json:"batteryState"`
+	VolumeCapacity *uint64                 `json:"volumeCapacity"`
+	AvailableToApp *uint64                 `json:"availableToApp"`
+	SampledAt      time.Time               `json:"sampledAt"`
+	Probes         map[string]ProbeReading `json:"probes,omitempty"`
+}
+
+// ProbeReading is local diagnostics only. A raw JSON value preserves large
+// integer counters, strings and tick arrays without conversion to float64.
+type ProbeReading struct {
+	Available bool            `json:"available"`
+	Scope     string          `json:"scope"`
+	Unit      string          `json:"unit"`
+	SampledAt time.Time       `json:"sampledAt"`
+	Value     json.RawMessage `json:"value,omitempty"`
+	Reason    string          `json:"reason,omitempty"`
 }
 
 var native struct {
@@ -47,7 +59,7 @@ func Start(configuration string) error {
 	return native.runtime.Start(agent.EmbeddedConfig{HubURL: c.HubURL, Token: c.Token, HubKey: c.HubKey, DataDirectory: c.DataDirectory,
 		Details: system.Details{Hostname: c.Name, CpuModel: c.Model, Os: system.Darwin, OsName: "iOS " + c.OSVersion, Arch: runtime.GOARCH},
 		Collect: func(common.DataRequestOptions) (*system.CombinedData, error) {
-			// The current Hub cannot represent unavailable CPU/system-memory usage.
+			// The current Hub cannot represent a partial stock system snapshot.
 			// Preserve the native sample locally until an approved protocol solution exists.
 			return nil, errors.New("required whole-system metrics unavailable")
 		},
@@ -70,6 +82,14 @@ func UpdateMetrics(payload string) error {
 	if s.VolumeCapacity != nil && s.AvailableToApp != nil && *s.AvailableToApp > *s.VolumeCapacity {
 		return errors.New("invalid volume capacity")
 	}
+	for _, reading := range s.Probes {
+		hasValue := len(reading.Value) != 0 && string(reading.Value) != "null"
+		if reading.Scope == "" || reading.Unit == "" || reading.SampledAt.IsZero() ||
+			(reading.Available && (!hasValue || reading.Reason != "")) ||
+			(!reading.Available && (hasValue || reading.Reason == "")) {
+			return errors.New("invalid native probe reading")
+		}
+	}
 	native.Lock()
 	native.snapshot = s
 	native.Unlock()
@@ -84,6 +104,6 @@ func StatusJSON() string {
 		GoVersion  string   `json:"goVersion"`
 		Metrics    Snapshot `json:"metrics"`
 		Limitation string   `json:"limitation"`
-	}{native.runtime.Status(), runtime.Version(), s, "Hub stats blocked: required CPU and system-memory usage have no unavailable representation"})
+	}{native.runtime.Status(), runtime.Version(), s, "Hub stats blocked: current Hub requires a complete system snapshot"})
 	return string(b)
 }

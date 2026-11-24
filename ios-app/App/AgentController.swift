@@ -1,40 +1,11 @@
 import Foundation
 import SwiftUI
-import Security
 import UIKit
 
 func goString(_ pointer: UnsafeMutablePointer<CChar>?) -> String {
     guard let pointer else { return "" }
     defer { BeszelGoFree(pointer) }
     return String(cString: pointer)
-}
-
-enum TokenStore {
-    private static let query: [String: Any] = [
-        kSecClass as String: kSecClassGenericPassword,
-        kSecAttrService as String: "BeszelStockAgent",
-        kSecAttrAccount as String: "registration-token",
-        kSecAttrSynchronizable as String: false
-    ]
-    static func load() throws -> String {
-        var q = query
-        q[kSecReturnData as String] = true
-        var value: CFTypeRef?
-        let result = SecItemCopyMatching(q as CFDictionary, &value)
-        if result == errSecItemNotFound { return "" }
-        guard result == errSecSuccess, let data = value as? Data, let token = String(data: data, encoding: .utf8) else {
-            throw NSError(domain: NSOSStatusErrorDomain, code: Int(result))
-        }
-        return token
-    }
-    static func save(_ token: String) throws {
-        let attributes: [String: Any] = [kSecValueData as String: Data(token.utf8), kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly]
-        let result = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        if result == errSecItemNotFound {
-            let status = SecItemAdd(query.merging(attributes) { _, new in new } as CFDictionary, nil)
-            guard status == errSecSuccess else { throw NSError(domain: NSOSStatusErrorDomain, code: Int(status)) }
-        } else if result != errSecSuccess { throw NSError(domain: NSOSStatusErrorDomain, code: Int(result)) }
-    }
 }
 
 @MainActor final class AgentController: ObservableObject {
@@ -45,6 +16,7 @@ enum TokenStore {
     @Published var diagnostics = ""
     @Published var error = ""
     private let worker = DispatchQueue(label: "beszel.agent.runtime")
+    private let metrics = StockMetrics()
     private var timer: Timer?
     private var active = true
     private var directory: URL?
@@ -59,7 +31,7 @@ enum TokenStore {
             try excluded.setResourceValues(values)
             directory = url
         } catch { self.error = "Configuration storage unavailable: \(error.localizedDescription)" }
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: CPUSampler.cadence, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
     }
@@ -74,7 +46,7 @@ enum TokenStore {
     }
     func connect() {
         guard active, let directory, save() else { return }
-        let config: [String: Any] = ["hubURL": hubURL, "hubKey": hubKey, "token": token, "dataDirectory": directory.path, "model": StockMetrics.modelIdentifier(), "osVersion": UIDevice.current.systemVersion, "name": UIDevice.current.name]
+        let config: [String: Any] = ["hubURL": hubURL, "hubKey": hubKey, "token": token, "dataDirectory": directory.path, "model": StockMetrics.modelIdentifier() ?? "unavailable", "osVersion": UIDevice.current.systemVersion, "name": UIDevice.current.name]
         guard let data = try? JSONSerialization.data(withJSONObject: config), let json = String(data: data, encoding: .utf8) else { return }
         state = "connecting"
         worker.async {
@@ -89,12 +61,17 @@ enum TokenStore {
     }
     func sceneChanged(_ phase: ScenePhase) {
         active = phase == .active
-        if !active { disconnect() } else { refresh() }
+        if !active {
+            metrics.resetCPU()
+            disconnect()
+        } else {
+            refresh()
+        }
         // Resume requires an explicit Connect. No indefinite background claim.
     }
     func refresh() {
-        guard active, let directory else { return }
-        let sample = StockMetrics.sample(directory: directory)
+        guard active else { return }
+        let sample = metrics.sample(directory: directory)
         guard let data = try? JSONSerialization.data(withJSONObject: sample), let json = String(data: data, encoding: .utf8) else { return }
         worker.async {
             let sampleError = json.withCString { goString(BeszelAgentUpdateMetrics($0)) }

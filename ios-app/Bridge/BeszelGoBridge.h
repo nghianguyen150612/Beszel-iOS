@@ -1,6 +1,8 @@
 #ifndef BESZEL_GO_BRIDGE_H
 #define BESZEL_GO_BRIDGE_H
 
+#include "../Metrics/HostMetrics.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

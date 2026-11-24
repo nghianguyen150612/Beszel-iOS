@@ -21,11 +21,11 @@ struct ContentView: View {
                 Section("Diagnostics") {
                     LabeledContent("Beszel", value: goString(BeszelGoVersion()))
                     LabeledContent("Go target", value: goString(BeszelGoPlatform()))
-                    LabeledContent("Device", value: StockMetrics.modelIdentifier())
+                    LabeledContent("Device", value: StockMetrics.modelIdentifier() ?? "Unavailable")
                     Text(controller.diagnostics).font(.caption).textSelection(.enabled)
                 }
                 Section {
-                    Text("Foreground only. Reconnect explicitly after returning to the app. Native metrics are collected locally; Hub stats are blocked because mandatory CPU and system-memory usage cannot safely represent unavailable values in the existing protocol. P2 is partial.")
+                    Text("Foreground only. Reconnect explicitly after returning to the app. Metric probes appear in local diagnostics. Hub stats require a complete system snapshot, including whole-system storage and network measurements.")
                         .font(.footnote)
                 }
             }.navigationTitle("Beszel Agent")

@@ -36,6 +36,7 @@ test -s "$LIB"
 test -s "${LIB%.a}.h"
 
 echo "Compiling SwiftUI host and linking the real Go runtime."
+"$TEMP_DIR/clang-ios.sh" -Wall -Wextra -Werror -c ios-app/Metrics/HostMetrics.c -o "$TEMP_DIR/HostMetrics.o"
 xcrun --sdk iphoneos swiftc \
   -parse-as-library \
   -target arm64-apple-ios16.0 \
@@ -44,20 +45,24 @@ xcrun --sdk iphoneos swiftc \
   ios-app/App/BeszelStockAgentApp.swift \
   ios-app/App/ContentView.swift \
   ios-app/App/AgentController.swift \
+  ios-app/App/TokenStore.swift \
   ios-app/Metrics/StockMetrics.swift \
+  ios-app/Metrics/MetricSampling.swift \
+  "$TEMP_DIR/HostMetrics.o" \
   -Xlinker -force_load -Xlinker "$LIB" \
   -lresolv \
   -o "$APP/BeszelStockAgent"
 
-cp ios-app/Resources/Info.plist "$APP/Info.plist"
-plutil -lint "$APP/Info.plist"
+cp ios-app/Resources/Info.plist ios-app/Resources/PrivacyInfo.xcprivacy "$APP/"
+plutil -lint "$APP/Info.plist" "$APP/PrivacyInfo.xcprivacy"
 file "$APP/BeszelStockAgent"
 lipo -info "$APP/BeszelStockAgent" | grep -q 'arm64'
 otool -l "$APP/BeszelStockAgent" | grep -q 'LC_BUILD_VERSION'
 
 # This deliberately does not embed a provisioning profile or Apple credentials.
 codesign --force --sign - --timestamp=none "$APP"
-codesign --verify --verbose=2 "$APP"
+codesign --verify --strict --verbose=2 "$APP"
+codesign --display --verbose=4 --entitlements :- "$APP"
 
 IPA="$OUT/BeszelStockAgent-development-adhoc.ipa"
 ( cd "$TEMP_DIR" && zip -q -r "$IPA" Payload )

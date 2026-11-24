@@ -3,6 +3,7 @@ package bridgecore
 import (
 	"encoding/json"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -60,4 +61,50 @@ func TestInvalidBridgeConfigurationRecovery(t *testing.T) {
 	}
 	Stop()
 	Stop()
+}
+
+func TestConcurrentNativeProbeSnapshots(t *testing.T) {
+	const available = `{"batteryState":"unplugged","probes":{"batteryPercent":{"available":true,"scope":"device battery","unit":"percent","sampledAt":"2026-11-24T08:00:00Z","value":0}}}`
+	const unavailable = `{"batteryState":"unknown","probes":{"batteryPercent":{"available":false,"scope":"device battery","unit":"percent","sampledAt":"2026-11-24T08:00:01Z","reason":"unknown"}}}`
+
+	for _, invalid := range []string{
+		strings.Replace(available, `"value":0`, `"value":null`, 1),
+		strings.Replace(unavailable, `"reason":"unknown"`, `"reason":"unknown","value":0`, 1),
+		strings.Replace(unavailable, `"sampledAt":"2026-11-24T08:00:01Z",`, "", 1),
+	} {
+		if err := UpdateMetrics(invalid); err == nil {
+			t.Errorf("accepted inconsistent probe: %s", invalid)
+		}
+	}
+
+	if err := UpdateMetrics(available); err != nil {
+		t.Fatal(err)
+	}
+	var updates sync.WaitGroup
+	for _, payload := range []string{available, unavailable} {
+		updates.Go(func() {
+			for range 100 {
+				if err := UpdateMetrics(payload); err != nil {
+					t.Error(err)
+				}
+			}
+		})
+	}
+	for range 100 {
+		var status struct {
+			Metrics Snapshot `json:"metrics"`
+		}
+		if err := json.Unmarshal([]byte(StatusJSON()), &status); err != nil {
+			t.Fatal(err)
+		}
+		reading := status.Metrics.Probes["batteryPercent"]
+		if reading.Available {
+			if string(reading.Value) != "0" || status.Metrics.BatteryState != "unplugged" {
+				t.Error("inconsistent available snapshot", status)
+			}
+		} else if reading.Reason != "unknown" || status.Metrics.BatteryState != "unknown" {
+			t.Error("inconsistent unavailable snapshot", status)
+		}
+	}
+	updates.Wait()
 }
