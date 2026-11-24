@@ -1,0 +1,51 @@
+name: Stock iOS IPA (development)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/stock-ios-ipa
+    paths:
+      - "ios-app/**"
+      - "scripts/stock-ios/**"
+      - ".github/workflows/ios-ipa.yml"
+      - "go.mod"
+      - "go.sum"
+      - "beszel.go"
+
+permissions:
+  contents: read
+
+jobs:
+  stock-ios-ipa:
+    # Isolated from the jailbreak Agent/Hub build and release pipeline.
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Checkout feature source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Show toolchain
+        run: |
+          go version
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+      - name: Verify platform-neutral Go bridge component
+        run: go test ./ios-app/BridgeCore
+      - name: Build ad-hoc-signed stock iOS IPA
+        run: bash scripts/stock-ios/build-ipa.sh
+      - name: Upload development IPA and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: beszel-stock-ios-development-ipa
+          path: |
+            build/stock-ios/BeszelStockAgent-development-adhoc.ipa
+            build/stock-ios/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
