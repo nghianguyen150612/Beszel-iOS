@@ -50,3 +50,12 @@ The IPA is ad-hoc signed for development packaging; it requires valid device-spe
 ## Restrictions
 
 No merge, release, production access, jailbreak service changes or device operations are authorized. The P030 integration stack remains independent. Stock iPhone execution is **NOT VALIDATED / DEFERRED**.
+
+## P2 continuation
+
+The P1 artifact and its qualification above remain historical evidence. Subsequent
+P2 source embeds the real shared Agent and adds explicit foreground lifecycle,
+Keychain and native metric snapshots. Its transport is tested with both a fixture
+and the actual disposable Hub handler/database. Native stats acceptance remains
+BLOCKED; see [P2 handoff](stock-ios-ipa-p2-handoff.md) for current scope, new build
+evidence and remaining acceptance criteria. No physical execution is claimed.

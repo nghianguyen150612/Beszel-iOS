@@ -87,3 +87,12 @@ to the new A15-targeted stock application by default.
 - SideStore re-sign and actual stock iPhone launch: **NOT RUN / DEFERRED**.
 - Agent↔Hub connectivity, real stock metrics, Keychain and suspension: **P2/P3,
   NOT IMPLEMENTED**.
+
+## P2 continuation (supersedes pending P2 statements above)
+
+The existing bridge now embeds the shared Agent with explicit configuration,
+WebSocket-only context lifecycle, Keychain UI and public native metric snapshots.
+Full Hub stats remain BLOCKED by mandatory numeric fields without an unavailable
+representation. See [P2 handoff](stock-ios-ipa-p2-handoff.md). P3 and device execution
+remain deferred. The stockios build tag also excludes executable CPU sampling at
+package initialization; the legacy iOS target retains its previous initialization.
