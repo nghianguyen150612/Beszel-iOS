@@ -14,7 +14,7 @@ assert hashlib.sha256(ipa.read_bytes()).hexdigest() == checksum[0], "IPA checksu
 with zipfile.ZipFile(ipa) as archive:
     assert archive.testzip() is None, "corrupt ZIP"
     root = "Payload/BeszelStockAgent.app/"
-    assert all(name.startswith(root) for name in archive.namelist()), "unexpected IPA payload"
+    assert all(name == "Payload/" or name.startswith(root) for name in archive.namelist()), "unexpected IPA payload"
     info = plistlib.loads(archive.read(root + "Info.plist"))
     assert info["MinimumOSVersion"] == "16.0", "wrong plist minimum iOS"
     assert info["CFBundleExecutable"] == "BeszelStockAgent", "wrong executable"
