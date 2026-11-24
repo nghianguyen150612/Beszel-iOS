@@ -30,6 +30,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Build embedded Hub assets for integration test
+        working-directory: internal/site
+        run: |
+          bun install --frozen-lockfile
+          bun run build
       - name: Shared Agent and embedded protocol regressions
         run: |
           go mod verify
