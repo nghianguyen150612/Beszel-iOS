@@ -61,6 +61,6 @@ IPA="$OUT/BeszelStockAgent-development-adhoc.ipa"
 ( cd "$TEMP_DIR" && zip -q -r "$IPA" Payload )
 unzip -t "$IPA" >/dev/null
 ( cd "$OUT" && shasum -a 256 "$(basename "$IPA")" > SHA256SUMS )
-shasum -a 256 -c "$OUT/SHA256SUMS"
+( cd "$OUT" && shasum -a 256 -c SHA256SUMS )
 echo "Development archive produced: $IPA"
 echo "P1 ONLY: installability, Agent↔Hub transport and on-device execution NOT VALIDATED."
