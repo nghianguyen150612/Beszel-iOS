@@ -31,7 +31,7 @@ chmod +x "$TEMP_DIR/clang-ios.sh"
 
 echo "Building Go c-archive with an iPhoneOS target (no A7 runtime patch)."
 CGO_ENABLED=1 GOOS=ios GOARCH=arm64 CC="$TEMP_DIR/clang-ios.sh" \
-  go build -trimpath -buildmode=c-archive -o "$LIB" ./ios-app/GoBridge
+  go build -tags stockios -trimpath -buildmode=c-archive -o "$LIB" ./ios-app/GoBridge
 test -s "$LIB"
 test -s "${LIB%.a}.h"
 

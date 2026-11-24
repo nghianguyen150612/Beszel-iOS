@@ -7,6 +7,7 @@ on:
       - feature/stock-ios-ipa
     paths:
       - "agent/**"
+      - "internal/hub/stock_embedded_test.go"
       - "internal/common/**"
       - "internal/entities/**"
       - "ios-app/**"
@@ -35,6 +36,7 @@ jobs:
           go vet -tags testing ./agent/... ./ios-app/BridgeCore
           go test -tags testing ./agent/... ./ios-app/BridgeCore
           go test -race ./agent ./ios-app/BridgeCore
+          go test -tags testing ./internal/hub -run TestStockEmbeddedActualHub -count=1
           sh tests/ios-patch-sentinels.sh
           sh tests/upstream-sync-test.sh
   stock-ios-ipa:
