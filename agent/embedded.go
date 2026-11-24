@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/hex"
 	"errors"
 	"net"
@@ -177,6 +178,15 @@ func (r *EmbeddedRuntime) run(ctx context.Context, client *WebSocketClient, retr
 				r.update("network_error", "Hub connection failed (check network, URL and TLS trust)")
 			}
 		} else {
+			// After the handshake, the run loop owns cancellation so intentional
+			// Stop can write a close frame before releasing the socket.
+			raw := conn.NetConn()
+			if secure, ok := raw.(*tls.Conn); ok {
+				raw = secure.NetConn()
+			}
+			if cancellable, ok := raw.(*cancelConn); ok {
+				cancellable.stop()
+			}
 			client.Conn = conn
 			finished := make(chan struct{})
 			go func() { defer close(finished); conn.ReadLoop() }()
@@ -207,7 +217,7 @@ func (d contextDialer) Dial(network, addr string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Cancellation also interrupts TLS/HTTP handshake and an active read loop.
+	// Cancellation interrupts TLS/HTTP handshake; run takes ownership afterward.
 	stop := context.AfterFunc(d.ctx, func() { _ = conn.Close() })
 	return &cancelConn{Conn: conn, stop: stop}, nil
 }
