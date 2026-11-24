@@ -95,6 +95,18 @@ func (h *GetDataHandler) Handle(hctx *HandlerContext) error {
 	var options common.DataRequestOptions
 	_ = cbor.Unmarshal(hctx.Request.Data, &options)
 
+	if hctx.Agent.embeddedCollect != nil {
+		data, err := hctx.Agent.embeddedCollect(options)
+		if err != nil || data == nil {
+			// Use the existing protocol error envelope; never send partial required stats.
+			return hctx.Client.sendMessage(common.AgentResponse{Id: hctx.RequestID, Error: "stock metrics unavailable: required system-wide fields cannot be represented safely"})
+		}
+		err = hctx.SendResponse(data, hctx.RequestID)
+		if err == nil && hctx.Client.metricsUpdated != nil {
+			hctx.Client.metricsUpdated()
+		}
+		return err
+	}
 	sysStats := hctx.Agent.gatherStats(options)
 	return hctx.SendResponse(sysStats, hctx.RequestID)
 }

@@ -51,6 +51,8 @@ func (e *caCertFileError) Unwrap() error {
 // It handles authentication, message routing, and connection lifecycle management.
 type WebSocketClient struct {
 	gws.BuiltinEventHandler
+	embeddedStatus     func(string, string)
+	metricsUpdated     func()
 	options            *gws.ClientOption                   // WebSocket client configuration options
 	agent              *Agent                              // Reference to the parent agent
 	Conn               *gws.Conn                           // Active WebSocket connection
@@ -168,7 +170,7 @@ func (client *WebSocketClient) getOptions() *gws.ClientOption {
 	}
 
 	// update the hub url to use websocket scheme and api path
-	if client.hubURL.Scheme == "https" {
+	if client.hubURL.Scheme == "https" || client.hubURL.Scheme == "wss" {
 		client.hubURL.Scheme = "wss"
 	} else {
 		client.hubURL.Scheme = "ws"
@@ -176,7 +178,7 @@ func (client *WebSocketClient) getOptions() *gws.ClientOption {
 	client.hubURL.Path = path.Join(client.hubURL.Path, "api/beszel/agent-connect")
 
 	// make sure BESZEL_AGENT_ALL_PROXY works (GWS only checks ALL_PROXY)
-	if val := os.Getenv("BESZEL_AGENT_ALL_PROXY"); val != "" {
+	if val := os.Getenv("BESZEL_AGENT_ALL_PROXY"); val != "" && client.embeddedStatus == nil {
 		os.Setenv("ALL_PROXY", val)
 	}
 
@@ -222,10 +224,14 @@ func (client *WebSocketClient) OnOpen(conn *gws.Conn) {
 // OnClose handles WebSocket connection closure.
 // It logs the closure reason and notifies the connection manager.
 func (client *WebSocketClient) OnClose(conn *gws.Conn, err error) {
-	if err != nil {
+	if err != nil && client.embeddedStatus == nil {
 		slog.Warn("Connection closed", "err", strings.TrimPrefix(err.Error(), "gws: "))
 	}
-	client.agent.connectionManager.eventChan <- WebSocketDisconnect
+	if client.embeddedStatus != nil {
+		client.embeddedStatus("network_error", "Hub disconnected")
+	} else {
+		client.agent.connectionManager.eventChan <- WebSocketDisconnect
+	}
 }
 
 // OnMessage handles incoming WebSocket messages from the hub.
@@ -266,18 +272,30 @@ func (client *WebSocketClient) handleAuthChallenge(msg *common.HubRequest[cbor.R
 	}
 
 	if err := client.verifySignature(authRequest.Signature); err != nil {
+		if client.embeddedStatus != nil {
+			client.embeddedStatus("authentication_error", "Hub signature verification failed")
+			_ = client.Conn.NetConn().Close()
+		}
 		return err
 	}
 
 	client.hubVerified = true
-	client.agent.connectionManager.eventChan <- WebSocketConnect
+	if client.embeddedStatus != nil {
+		client.embeddedStatus("connected", "")
+	} else {
+		client.agent.connectionManager.eventChan <- WebSocketConnect
+	}
 
 	response := &common.FingerprintResponse{
 		Fingerprint: client.fingerprint,
 	}
 
 	if authRequest.NeedSysInfo {
-		response.Name, _ = utils.GetEnv("SYSTEM_NAME")
+		if client.embeddedStatus == nil {
+			response.Name, _ = utils.GetEnv("SYSTEM_NAME")
+		} else {
+			response.Name = client.agent.systemDetails.Hostname
+		}
 		response.Hostname = client.agent.systemDetails.Hostname
 		serverAddr := client.agent.connectionManager.serverOptions.Addr
 		_, response.Port, _ = net.SplitHostPort(serverAddr)
