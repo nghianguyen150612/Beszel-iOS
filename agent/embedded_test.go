@@ -272,3 +272,20 @@ func TestEmbeddedReconnectIdentityAndUnavailableStats(t *testing.T) {
 		t.Fatal("failed stats marked successful")
 	}
 }
+
+func TestEmbeddedConcurrentStartStop(t *testing.T) {
+	c, _ := embeddedTestConfig(t)
+	c.HubURL = "http://127.0.0.1:1"
+	c.AllowInsecureDevelopment = true
+	var r EmbeddedRuntime
+	var wg sync.WaitGroup
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); _ = r.Start(c); _ = r.Status(); r.Stop() }()
+	}
+	wg.Wait()
+	r.Stop()
+	if r.Status().State != "disconnected" {
+		t.Fatal(r.Status())
+	}
+}

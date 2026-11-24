@@ -64,5 +64,6 @@ IPA="$OUT/BeszelStockAgent-development-adhoc.ipa"
 unzip -t "$IPA" >/dev/null
 ( cd "$OUT" && shasum -a 256 "$(basename "$IPA")" > SHA256SUMS )
 ( cd "$OUT" && shasum -a 256 -c SHA256SUMS )
+python3 scripts/stock-ios/verify-ipa.py "$IPA"
 echo "Development archive produced: $IPA"
 echo "P2 partial: Hub statistics acceptance and physical-device execution NOT VALIDATED."
