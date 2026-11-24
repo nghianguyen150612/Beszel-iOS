@@ -230,6 +230,132 @@ Actions run: [45356510358](https://github.com/nghianguyen150612/Beszel-iOS/actio
 
 As of 2026-11-24 08:37 UTC: **PASS** Linux regression job including actual Hub
 integration. **BLOCKED (runner availability)** final-source macOS job remains
-queued, with no steps started. No final-source artifact ID/checksum exists yet.
+queued, with no steps started. At that checkpoint, no artifact ID or checksum existed.
 The previous build PASS is explicitly scoped to `14ba52d1` above. Superseded run
 `45356317718` was cancelled to prioritize the final source.
+
+
+## P2.1 checkpoint — 2026-11-24
+
+**P2: PARTIAL — RESUMABLE. STOCK STATS ACCEPTANCE: BLOCKED.**
+Physical-device validation remains **DEFERRED — OWNER APPROVED**.
+
+The workspace initially had a clean `work` checkout at the `iOS` baseline
+`0c3e4cd22ac24264834c401ad412e44aeda4e4f3`. The fetched feature branch
+and Draft PR #35 both started at `2f73a45552f188c2e78a31b50480091501f60837`.
+The P2.1 implementation and qualification source is
+`3fb7b11a3ddf55e612f1b522b84e54121b8da246`. This handoff update is a separate
+documentation-only commit. Branch `feature/stock-ios-ipa` and PR base `iOS` continue.
+
+### Reconciliation of historical P2 run
+
+[Run 45356510358](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/45356510358)
+is pinned to `93d88aee73ab0960014049dabead4db08f4aded3`. Attempt 1
+recorded Linux **PASS**. Its [macOS job 138316250019](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/45356510358/job/138316250019)
+was cancelled at 08:45:32 UTC. The sole retry, attempt 2, reused the successful
+Linux result. Its [macOS job 138364126009](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/45356510358/job/138364126009)
+was cancelled at 10:16:39 UTC. Both macOS jobs show no runner, no job steps
+and no build logs. Check-run annotations say the hosted Arm runner never
+acquired the job after multiple attempts and cite capacity constraints.
+Overall run conclusion is **failure** on both attempts. Artifact count is **0**.
+Historical P1 and intermediate P2 artifacts remain evidence for their own SHAs.
+
+### BUILD VERIFIED — P2.1 implementation SHA
+
+[Run 45372067725, attempt 1](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/45372067725/attempts/1)
+completed **PASS** at `3fb7b11a3ddf55e612f1b522b84e54121b8da246`.
+Linux regression job `138368574956`, native job `138369283103`, and independent
+artifact-consumer job `138372244473` all passed. P2.1 uses `macos-15-intel`
+to use a separate hosted capacity pool. The build still targets iPhoneOS arm64.
+The native log records Go 1.27.1, Xcode 16.4, iPhoneOS SDK 18.5, host Go checks,
+Swift algorithm tests, injected Keychain tests, c-archive compilation, C probe
+and SwiftUI linking, app signing, checksum verification and upload.
+
+| Evidence | Result |
+| --- | --- |
+| Actions artifact | [14909806701](https://github.com/nghianguyen150612/Beszel-iOS/actions/runs/45372067725/artifacts/14909806701), development ZIP, 3,728,154 bytes |
+| Outer ZIP SHA-256 | `1e1e21189fd174b4edd48403e30f0cc1e6d69c9d6ae6649bcd94950fda80e614` |
+| Inner IPA SHA-256 | `dfa565795bb276d65b857c2254c9177d8639ce5377171ce8029aec8778638fb1` |
+| Source and integrity | `SOURCE.sha` equals qualification SHA, ZIP integrity for both archives and attached IPA SHA256SUMS verified independently after downloading from the GitHub connector. Direct CLI artifact download returned HTTP 403 at the storage redirect |
+| Bundle | `Payload/BeszelStockAgent.app`, `dev.nghianguyen.beszel.stockagent` 0.1.0 (1), iPhone family, iPhoneOS platform, Info.plist minimum 16.0, PrivacyInfo.xcprivacy present |
+| Executable | Thin Mach-O arm64 MH_EXECUTE, LC_BUILD_VERSION iOS (2), minimum 16.0, SDK 18.5.0. Go build info shows `GOOS=ios`, `GOARCH=arm64`, Go 1.27.1 and `stockios`. Defined Go ABI, C CPU and C VM symbols verified independently |
+| Signing | Hosted strict `codesign` verification passed. Ad-hoc CodeDirectory and resource seal present. CDHash `421ebbf908abe2085ed2056ea506a2c242a02ceb`. Team identifier unset, no embedded entitlements or provisioning profile |
+
+### HUB PROTOCOL VERIFIED — existing Agent and disposable Hub
+
+The actual Hub verifies the signed fingerprint exchange, stores the installation
+fingerprint, sends CBOR GetData over WebSocket and decodes responses. Integration
+tests cover invalid registration token, reconnect with the same fingerprint,
+clean Stop and no inbound SSH listener. Protocol fixtures check request-ID echo.
+A stock-style backend error produced **zero** `system_stats` rows and no
+successful LastMetrics timestamp. The current Hub can close the connection and
+mark the system down following that error.
+
+A separate successful **synthetic** sample persisted 4 GiB total and battery
+`[0,4]` in Stats, with `[0,4]` preserved in Info. The same database row contained
+false zeros for CPU, memory used/percent/cache and root disk total/used/percent.
+Info also stored zero CPU/memory/disk percent, bandwidth and uptime. A transport
+decoder regression shows missing or null CBOR values can leave stale values in
+the reused Go destination as well. No actual native stock observation is in
+either Hub test. See [compatibility matrix and owner decision](stock-ios-ipa-metric-compatibility.md).
+
+### METRIC ACCEPTANCE — BLOCKED
+
+Public native probes now measure logical CPU counts, and attempt per-core host
+ticks, aggregate interval utilization and Mach VM free/Darwin-available/
+Darwin-used memory for local diagnostics. The snapshot also records physical
+memory bytes, UIKit battery level/state, device identity and app-scoped volume
+capacity. Each probe reports scope, unit, time and availability. The signed
+stock sandbox has not been exercised. Whole-system root-disk usage, traffic,
+I/O, load, swap, sensor and other host or privileged series are unqualified.
+App-scoped volume estimates cannot stand in for root usage. The stock Agent
+still sends the existing error envelope. No production Hub, protocol or schema
+changes were made. See [public API semantics and probe tests](stock-ios-ipa-native-capabilities.md).
+
+### Regression and device evidence
+
+- **PASS** local and hosted tagged Agent and BridgeCore, Go module verification
+  and vet, Agent and bridge race tests, and disposable Hub integration.
+  Local Hub transport, WebSocket, systems, records and focused metric alert
+  tests also passed. The broader alerts suite hit duplicate
+  `GET /_/extensions.js` registration. `TestUserAlertsApi` reproduced the
+  panic on the starting feature SHA. An extra race run of the real Hub fixture
+  found existing Hub connection cleanup races, reproduced on the starting SHA
+  at `WsConn.IsConnected` during socket close. These two broader failures stay
+  open. The normal Agent/bridge race and disposable integration results are scoped
+  accordingly.
+- **PASS** Swift 6 portable sampling test on Linux and hosted macOS. Hosted
+  macOS also passed injected Security tests, and compiled the real iPhoneOS
+  Keychain and Mach code. A mirrored iPhoneOS SDK was used for a supplementary
+  Linux cross-build of the C probe and Go c-archive.
+- **PASS** jailbreak patch sentinels (44), upstream-sync checks (10), Linux
+  default Agent and Hub CLI builds and legacy/stock CPU-init file selection.
+  A private copy of Go 1.27.1 was patched with the existing A7 runtime script.
+  After correcting the Linux cross-linker selection, it produced the legacy
+  iPhoneOS arm64 Agent (minimum iOS 12.0). Disassembly confirms `YIELD` in
+  `runtime.procyieldAsm`. The stock archive uses the unpatched runtime.
+- **DEVICE EXECUTION NOT VALIDATED.** Physical iPhone 13 and A7 execution,
+  stock sandbox Mach behavior, real Keychain operations and provisioning/
+  installation remain unvalidated. An ad-hoc signature provides development
+  bundle evidence only. No P3 lifecycle work, device access, SideStore operation
+  or production use occurred.
+
+### P2.1 changes and exact next action
+
+Implementation SHA `3fb7b11a3ddf55e612f1b522b84e54121b8da246` covers
+`ios-app/Metrics/{HostMetrics.c,HostMetrics.h,MetricSampling.swift,StockMetrics.swift}`,
+`ios-app/App/{AgentController.swift,ContentView.swift,TokenStore.swift}`,
+`ios-app/Bridge/BeszelGoBridge.h`, `ios-app/BridgeCore/{runtime.go,runtime_test.go}`,
+`ios-app/Resources/PrivacyInfo.xcprivacy`,
+`ios-app/Tests/{MetricSamplingTests.swift,TokenStoreTests.swift}`,
+`internal/hub/stock_embedded_test.go`, the isolated IPA workflow and the two
+`scripts/stock-ios/` build/verification scripts. This documentation-only
+checkpoint adds the matrix and native capability notes alongside this handoff.
+
+The next engineering decision is owner approval of the proposed negotiated
+partial GetData contract. If approved, first implement a presence-aware
+battery-only round trip against a disposable Hub. Check database keys, valid
+zero, gaps, rollup denominators and alert transitions. Obtain authorization
+separately for physical native measurements before claiming a stock metric
+was accepted. If the extension is declined, retain local diagnosis and the
+existing error while seeking a complete, scope-correct legacy snapshot.
