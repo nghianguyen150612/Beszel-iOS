@@ -64,6 +64,7 @@ type FingerprintResponse struct {
 type DataRequestOptions struct {
 	CacheTimeMs    uint16 `cbor:"0,keyasint"`
 	IncludeDetails bool   `cbor:"1,keyasint"`
+	PartialVersion uint8  `cbor:"2,keyasint,omitempty"` // Reserved opt-in; not yet enabled by Hub.
 }
 
 type ZfsDataRequest struct {
