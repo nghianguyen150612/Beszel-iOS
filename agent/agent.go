@@ -22,6 +22,8 @@ import (
 const defaultDataCacheTimeMs uint16 = 60_000
 
 type Agent struct {
+	embeddedCollect func(common.DataRequestOptions) (*system.CombinedData, error)
+
 	sync.Mutex                                                                      // Used to lock agent while collecting data
 	debug                     bool                                                  // true if LOG_LEVEL is set to debug
 	zfs                       bool                                                  // true if system has arcstats

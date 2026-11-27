@@ -1,0 +1,111 @@
+name: Stock iOS IPA (development)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/stock-ios-ipa
+    paths:
+      - "agent/**"
+      - "internal/hub/stock_embedded_test.go"
+      - "internal/common/**"
+      - "internal/entities/**"
+      - "ios-app/**"
+      - "scripts/stock-ios/**"
+      - ".github/workflows/ios-ipa.yml"
+      - "go.mod"
+      - "go.sum"
+      - "beszel.go"
+
+permissions:
+  contents: read
+
+jobs:
+  agent-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Build embedded Hub assets for integration test
+        working-directory: internal/site
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+      - name: Shared Agent and embedded protocol regressions
+        run: |
+          go mod verify
+          go vet -tags testing ./agent/... ./ios-app/BridgeCore
+          go test -tags testing ./agent/... ./ios-app/BridgeCore
+          go test -race ./agent ./ios-app/BridgeCore
+          go test -tags testing ./internal/hub -run TestStockEmbeddedActualHub -count=1
+          sh tests/ios-patch-sentinels.sh
+          sh tests/upstream-sync-test.sh
+  stock-ios-ipa:
+    needs: agent-regression
+    # Isolated from the jailbreak Agent/Hub build and release pipeline.
+    # Use the Intel pool after hosted arm64 capacity cancelled the P2 job.
+    # The compiler still explicitly targets arm64-apple-ios16.0.
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    steps:
+      - name: Checkout feature source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Show toolchain
+        run: |
+          go version
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+      - name: Verify platform-neutral Go bridge component
+        run: |
+          go test ./ios-app/BridgeCore
+          go test -race ./agent -run TestEmbedded
+          go vet ./agent ./ios-app/BridgeCore
+      - name: Test native sampling algorithms on the macOS host
+        run: |
+          xcrun --sdk macosx swiftc -swift-version 6 ios-app/Metrics/MetricSampling.swift ios-app/Tests/MetricSamplingTests.swift -o "$RUNNER_TEMP/stock-metric-tests"
+          "$RUNNER_TEMP/stock-metric-tests"
+          xcrun --sdk macosx swiftc -swift-version 6 ios-app/App/TokenStore.swift ios-app/Tests/TokenStoreTests.swift -o "$RUNNER_TEMP/stock-keychain-tests"
+          "$RUNNER_TEMP/stock-keychain-tests"
+      - name: Build ad-hoc-signed stock iOS IPA
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          bash scripts/stock-ios/build-ipa.sh
+          git rev-parse HEAD > build/stock-ios/SOURCE.sha
+          python3 scripts/stock-ios/verify-ipa.py build/stock-ios/BeszelStockAgent-development-adhoc.ipa "$GITHUB_SHA"
+      - name: Upload development IPA and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: beszel-stock-ios-development-ipa
+          path: |
+            build/stock-ios/BeszelStockAgent-development-adhoc.ipa
+            build/stock-ios/SHA256SUMS
+            build/stock-ios/SOURCE.sha
+          if-no-files-found: error
+          retention-days: 14
+  verify-ipa-artifact:
+    needs: stock-ios-ipa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: beszel-stock-ios-development-ipa
+          path: build/stock-ios
+      - name: Verify downloaded exact-source IPA
+        run: python3 scripts/stock-ios/verify-ipa.py build/stock-ios/BeszelStockAgent-development-adhoc.ipa "$GITHUB_SHA"
